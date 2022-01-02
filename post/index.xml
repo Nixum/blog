@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Posts on Nixum Blog</title><link>/post/</link><description>Recent content in Posts on Nixum Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Mon, 25 Feb 2019 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml"/><item><title>PlaceHolder</title><link>/p/placeholder/</link><pubDate>Mon, 25 Feb 2019 00:00:00 +0000</pubDate><guid>/p/placeholder/</guid><description>Content 个人是后端开发，以Go和Java为主要开发语言，该Repository主要记录已使用或者感兴趣的技术的知识点，以及一些工作中的感受之类。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Posts on Nixum Blog</title><link>https://nixum.github.io/blog/post/</link><description>Recent content in Posts on Nixum Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Mon, 25 Feb 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://nixum.github.io/blog/post/index.xml" rel="self" type="application/rss+xml"/><item><title>PlaceHolder</title><link>https://nixum.github.io/blog/p/placeholder/</link><pubDate>Mon, 25 Feb 2019 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/placeholder/</guid><description>Content 个人是后端开发，以Go和Java为主要开发语言，该Repository主要记录已使用或者感兴趣的技术的知识点，以及一些工作中的感受之类。
 emmm有时间再好好美化首页README。
-阅读的时候可以直接看对应的gitbook即可，gitbook入口、github入口</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+阅读的时候可以直接看对应的gitbook即可，gitbook入口、github入口</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，在极端环境下，ZooKeeper可能会丢弃一些请求，消费者程序需要重新请求才能获得结果。另外在进行leader选举时集群都是不可用，所以说，ZooKeeper不能保证服务可用性。
 使用场景 集群管理，监控节点存活状态 主节点选举，当服务以master-salve模式进行部署，当主节点挂掉后选出新的主节点 服务发现 分布式锁，提供独占锁、共享锁 分布式自增id 搭配Kafka、dubbo等使用 特点 顺序一致性：同一客户端发起的事务请求，最终将会严格地按照顺序被应用到 ZooKeeper 中去。 原子性：所有事务请求的处理结果在整个集群中所有机器上的应用情况是一致的，也就是说，要么整个集群中所有的机器都成功应用了某一个事务，要么都没有应用。 单一系统映像：无论客户端连到哪一个 ZooKeeper 服务器上，其看到的服务端数据模型都是一致的。 可靠性：一旦一次更改请求被应用，更改的结果就会被持久化，直到被下一次更改覆盖。 数据模型 类似文件系统，根节点为 / ，每创建一个节点会从根节点开始挂，树形结构，每个数据节点称为znode，可以存储数据，每个znode还有自己所属的节点类型和节点状态
 持久节点：一旦创建就一直存在，直到将其删除。 持久顺序节点：一个父节点可以为其子节点 维护一个创建的先后顺序 ，这个顺序体现在 节点名称 上，是节点名称后自动添加一个由 10 位数字组成的数字串，从 0 开始计数。 临时节点：临时节点的生命周期是与 客户端会话 绑定的，会话消失则节点消失 。临时节点 只能做叶子节点 ，不能创建子节点。 临时顺序节点：父节点可以创建一个维持了顺序的临时节点(和前面的持久顺序性节点一样)。 ZAB协议 通过ZAB协议保证注册到ZooKeeper上的主从节点状态同步，该协议有两种模式
 崩溃恢复
 当整个 Zookeeper 集群刚刚启动或者Leader服务器宕机、重启或者网络故障导致不存在过半的服务器与 Leader 服务器保持正常通信时，所有服务器进入崩溃恢复模式，首先选举产生新的 Leader 服务器，然后集群中 Follower 服务器开始与新的 Leader 服务器进行数据同步。
 消息广播
-当集群中超过半数机器与该 Leader 服务器完成数据同步之后，退出恢复模式进入消息广播模式，Leader 服务器开始接收客户端的事务请求生成事物提案（超过半数同意）来进行事务请求处理。</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>git流程
+当集群中超过半数机器与该 Leader 服务器完成数据同步之后，退出恢复模式进入消息广播模式，Leader 服务器开始接收客户端的事务请求生成事物提案（超过半数同意）来进行事务请求处理。</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>git流程
 常用命令 git init
 将一个普通文件夹变成git仓库，此时文件夹下多出.git文件夹，表示可以使用git管理，此时这个文件夹称为git工作区
 或者
@@ -23,7 +23,7 @@ git push -u origin master
 撤回修改 git log 查看提交记录，获取commit id
 git reset &amp;ndash; 文件名 或者 commitId
 使用当前分支上的修改覆盖暂存区，用来撤销最后一次 git add files
-git checkout &amp;ndash; 文件名</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+git checkout &amp;ndash; 文件名</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 内存模型 这里的内存模型不是指内存分配、整理回收的规范，而是在并发环境下多goroutine读取共享变量时变量的可见性条件。
 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
 happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。
@@ -33,7 +33,7 @@ Go只保证goroutine内部重排对读写顺序没有影响，如果存在共享
 全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。
 init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。
 当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数
-var ( a = c + b // == 9 b = f() // == 4 c = f() // == 5 d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+var ( a = c + b // == 9 b = f() // == 4 c = f() // == 5 d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 以下基于go.1.14
 函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
 go在编译时会自动判断函数是否可以内联，当函数内包含以下内容时不会被内联：闭包调用，select，for，defer，go关键字创建的协程等。
@@ -43,10 +43,10 @@ go在编译时会自动判断函数是否可以内联，当函数内包含以下
 go编译时默认会使用内联优化，使用go build --gcflags=&amp;quot;-l&amp;quot; main.go可禁掉全局内联，如果传递两个或以上-l，则会打开内联
 数组 声明时必须指定固定长度，因为编译时需要知道数组长度以便分配内存，如var arr1 [5]int，或者var arr2 = [5]int{1,2,3}, 其余数字为0 数组长度最大是2Gb 当数组类型是整形时，所有元素都会被自动初始化为0，即声明完数组，数组会被设置类型的默认值 可以使用new()来创建，如var arr3 = new([3]int)，arr3的类型是*[3]int，arr1、arr2的类型是[5]int 函数的参数可以是[5]int, 表明入参是数组，如果是[]int，表明入参是slice。类型[3]int和[5]int是两种不同的类型。 数组是值类型，赋值和传参会进行拷贝，函数内部的修改不会影响原始数组。 如果数组中的元素个数小于或等于4个，所有变量会直接在栈上初始化；当数组元素大于4个，变量就会在静态存储区初始化然后拷贝到栈上。 切片Slice 数据结构 slice本质是一个结构体，所以它是值类型是不难理解的，它仅仅只是对数组的一种包装，且该结构体不包含任何函数，任何对slice的处理都是go的内置函数来处理的。
 type Slice struct { ptr unsafe.Pointer // 指向数组的指针 len int // 切片长度 cap int // 切片容量 } 基本 创建时无需指定长度，如 slice1 := []int{1,2,3}, 此时长度和容量均为3
-从数组上截取arr1 := [5]int; var slice2 []int = arr1[1:3], 此时长度2，容量5，且对slice2的修改会影响arr1。</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+从数组上截取arr1 := [5]int; var slice2 []int = arr1[1:3], 此时长度2，容量5，且对slice2的修改会影响arr1。</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 BIO 特点
 BIO是同步阻塞的，以流的形式处理，基于字节流和字符流 每个请求都需要创建独立的线程，处理Read和Write 并发数较大时，就算是使用了线程池，也需要创建大量的线程来处理 连接建立后，如果处理线程被读操作阻塞了，那就阻塞了，只能等到读完才能进行其他操作 以基于TCP协议的Socket，编写服务端Demo
-package com.nixum.bio; import java.io.InputStream; import java.io.PrintWriter; import java.net.ServerSocket; import java.net.Socket; import java.util.Date; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; public class BIOServer { public static void main(String[] args) throws Exception { ExecutorService newCachedThreadPool = Executors.newCachedThreadPool(); //创建ServerSocket ServerSocket serverSocket = new ServerSocket(8080); while (true) { // 主线程负责处理监听 final Socket socket = serverSocket.accept(); // 创建线程处理请求 newCachedThreadPool.execute(() -&amp;gt; { handler(socket); }); } } public static void handler(Socket socket) { try { byte[] bytes = new byte[1024]; //通过socket获取输入流 InputStream inputStream = socket.</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+package com.nixum.bio; import java.io.InputStream; import java.io.PrintWriter; import java.net.ServerSocket; import java.net.Socket; import java.util.Date; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; public class BIOServer { public static void main(String[] args) throws Exception { ExecutorService newCachedThreadPool = Executors.newCachedThreadPool(); //创建ServerSocket ServerSocket serverSocket = new ServerSocket(8080); while (true) { // 主线程负责处理监听 final Socket socket = serverSocket.accept(); // 创建线程处理请求 newCachedThreadPool.execute(() -&amp;gt; { handler(socket); }); } } public static void handler(Socket socket) { try { byte[] bytes = new byte[1024]; //通过socket获取输入流 InputStream inputStream = socket.</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 以下笔记如没指定版本，都是基于JDK1.8
 Collection javaCollection类图简版
 Set HashSet 1.基本 底层是HashMap，因此初始容量，默认负载因子、扩容倍数这些都和HashMap一样
@@ -56,7 +56,7 @@ private transient HashMap&amp;lt;E,Object&amp;gt; map; private static final Obje
 最大是Integer.MAX_VALUE - 8（2^31 - 1，一些虚拟器需要在数组前加个头标签，所以减去 8 ）
 调用此构造方法时，
 public ArrayList(Collection&amp;lt;? extends E&amp;gt; c) 其中要注意的是，里面有这样一句话
-// c.toArray might (incorrectly) not return Object[] (see 6260652) if (elementData.getClass() != Object[].</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+// c.toArray might (incorrectly) not return Object[] (see 6260652) if (elementData.getClass() != Object[].</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 一、面向对象 面向对象的特征： 抽象(注意与当前目标有关的，选择一部分，暂时不用部分细节，分为过程抽象、数据抽象) 继承：联结类的层次模型、允许和鼓励类的重用，派生类可以从它的基类那里继承方法和实例变量，进行修改和新增使其更适合 封装：封装是把过程和数据包围起来，对数据的访问只能通过已定义的界面，这些对象通过一个受保护的接口访问其他对象 多态：允许不同类的对象对同一消息作出响应，包括参数化多态性和包含多态性，灵活、抽象、行为共享、代码共享，解决程序函数同名问题
 二、基础类型及其包装类型 基本类型 boolean byte char short int float long double 包装类型 Boolean Byte Character Short Integer Float Long Double 位数 1 8 16 16 32 32 64 64 字节数 1 2 2 4 4 8 8 字符集
 unicode是字符集，一种标准，UTF-8、UTF-16、GBK之类的是编码方式，是字符集的具体实现
@@ -65,7 +65,7 @@ char可以保存一个中文字符
 java中采用unicode编码，无论中文、英文都是占2个字节
 java虚拟机中使用UTF-16编码方式
 java的字节码文件(.class)文件采用的是UTF-8编码，但是在java 运行时会使用UTF-16编码。
-参考Java中的UTF-8、UTF-16编码字符所占字节数</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+参考Java中的UTF-8、UTF-16编码字符所占字节数</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 线程、进程、协程 进程：可以简单理解为一个应用程序，进程是资源分配的基本单位。比如一个进程拥有自己的堆、栈、虚存空间、文件描述符等。
 涉及到用户态和内核态的切换。
 进程间的通信：
@@ -84,7 +84,7 @@ Golang 的 goroutine 是如何实现的？
 线程间可以通过直接读写同一进程中的数据进行通信，在java中如使用共享变量、wait/notify机制、阻塞队列；但是进程通信需要借助管道、消息队列、共享存储、信号量、信号、套接字socket
 上下文切换的开销
 当CPU从执行一个线程切换到执行另外一个线程的时候，它需要先存储当前线程的本地的数据，程序指针等，然后载入另一个线程的本地数据，程序指针等，最后才开始执行。这种切换称为“上下文切换”(“context switch”)。CPU会在一个上下文中执行一个线程，然后切换到另外一个上下文中执行另外一个线程。
-调度方式 非抢占式：系统一旦开始执行某一进程，就会让该线程就会一直执行下去，直至完成，或者发生了其他事件导致系统放弃对该进程的执行后，才会去执行另外一个进程。 抢占式：系统执行某一进程，在其执行期间，系统可以立即停止当前进程，转而执行另外一个进程，待处理完后，重新回来继续执行之前停止的进程 调度原理 用户空间线程和内核空间线程之间的映射关系</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+调度方式 非抢占式：系统一旦开始执行某一进程，就会让该线程就会一直执行下去，直至完成，或者发生了其他事件导致系统放弃对该进程的执行后，才会去执行另外一个进程。 抢占式：系统执行某一进程，在其执行期间，系统可以立即停止当前进程，转而执行另外一个进程，待处理完后，重新回来继续执行之前停止的进程 调度原理 用户空间线程和内核空间线程之间的映射关系</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 JVM内存模型 JVM内存模型
 方法区也叫永久代，持久代，非堆，不算在堆里面
 年轻代也叫新生代
@@ -106,14 +106,14 @@ java虚拟机栈中引用的对象
 这部分属于其他语言写的方法所使用到的对象，道理跟上面是java虚拟机栈是类似的
 上面两种更像是判断什么对象该被回收，至于要怎么回收，回收有什么策略，就有下面这几种了。
 复制 标记-清理 标记 - 整理 三色标记 把所有对象放到白色的集合中 从根节点开始遍历对象，遍历到的白色对象从白色集合中放到灰色集合中 遍历灰色集合对象，把灰色对象引用的白色集合的对象放入到灰色集合中，同时把遍历过的灰色集合中的对象放到黑色集合中 循环步骤3，直到灰色集合中没有对象 步骤4结束后，白色集合中的对象为不可达对象，进行回收 参考：深入理解Go-垃圾回收机制
-垃圾收集器 CMS 执行过程 初始标记(STW initial mark)：这个过程从垃圾回收的&amp;quot;根对象&amp;quot;开始，只扫描到能够和&amp;quot;根对象&amp;quot;直接关联的对象，并作标记。所以这个过程虽然暂停了整个JVM，但是很快就完成了。 并发标记(Concurrent marking)：这个阶段紧随初始标记阶段，在初始标记的基础上继续向下追溯标记。并发标记阶段，应用程序的线程和并发标记的线程并发执行，所以用户不会感受到停顿。 并发预清理(Concurrent precleaning)：并发预清理阶段仍然是并发的。在这个阶段，虚拟机查找在执行并发标记阶段新进入老年代的对象(可能会有一些对象从新生代晋升到老年代， 或者有一些对象被分配到老年代)。通过重新扫描，减少下一个阶段&amp;quot;重新标记&amp;quot;的工作，因为下一个阶段会Stop The World。 重新标记(STW remark)：这个阶段会暂停虚拟机，收集器线程扫描在CMS堆中剩余的对象。扫描从&amp;quot;跟对象&amp;quot;开始向下追溯，并处理对象关联。 并发清理(Concurrent sweeping)：清理垃圾对象，这个阶段收集器线程和应用程序线程并发执行。 并发重置(Concurrent reset)：这个阶段，重置CMS收集器的数据结构状态，等待下一次垃圾回收。 G1 执行过程 标记阶段：首先是初始标记(Initial-Mark),这个阶段也是停顿的(stop-the-word)，并且会稍带触发一次yong GC。 并发标记：这个过程在整个堆中进行，并且和应用程序并发运行。并发标记过程可能被yong GC中断。在并发标记阶段，如果发现区域对象中的所有对象都是垃圾，那个这个区域会被立即回收(图中打X)。同时，并发标记过程中，每个区域的对象活性(区域中存活对象的比例)被计算。 再标记：这个阶段是用来补充收集并发标记阶段产新的新垃圾。与之不同的是，G1中采用了更快的算法:SATB。 清理阶段：选择活性低的区域(同时考虑停顿时间)，等待下次yong GC一起收集，对应GC log: [GC pause (mixed)]，这个过程也会有停顿(STW)。 回收/完成：新的yong GC清理被计算好的区域。但是有一些区域还是可能存在垃圾对象，可能是这些区域中对象活性较高，回收不划算，也肯能是为了迎合用户设置的时间，不得不舍弃一些区域的收集。 内存分配和回收策略 1.</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+垃圾收集器 CMS 执行过程 初始标记(STW initial mark)：这个过程从垃圾回收的&amp;quot;根对象&amp;quot;开始，只扫描到能够和&amp;quot;根对象&amp;quot;直接关联的对象，并作标记。所以这个过程虽然暂停了整个JVM，但是很快就完成了。 并发标记(Concurrent marking)：这个阶段紧随初始标记阶段，在初始标记的基础上继续向下追溯标记。并发标记阶段，应用程序的线程和并发标记的线程并发执行，所以用户不会感受到停顿。 并发预清理(Concurrent precleaning)：并发预清理阶段仍然是并发的。在这个阶段，虚拟机查找在执行并发标记阶段新进入老年代的对象(可能会有一些对象从新生代晋升到老年代， 或者有一些对象被分配到老年代)。通过重新扫描，减少下一个阶段&amp;quot;重新标记&amp;quot;的工作，因为下一个阶段会Stop The World。 重新标记(STW remark)：这个阶段会暂停虚拟机，收集器线程扫描在CMS堆中剩余的对象。扫描从&amp;quot;跟对象&amp;quot;开始向下追溯，并处理对象关联。 并发清理(Concurrent sweeping)：清理垃圾对象，这个阶段收集器线程和应用程序线程并发执行。 并发重置(Concurrent reset)：这个阶段，重置CMS收集器的数据结构状态，等待下一次垃圾回收。 G1 执行过程 标记阶段：首先是初始标记(Initial-Mark),这个阶段也是停顿的(stop-the-word)，并且会稍带触发一次yong GC。 并发标记：这个过程在整个堆中进行，并且和应用程序并发运行。并发标记过程可能被yong GC中断。在并发标记阶段，如果发现区域对象中的所有对象都是垃圾，那个这个区域会被立即回收(图中打X)。同时，并发标记过程中，每个区域的对象活性(区域中存活对象的比例)被计算。 再标记：这个阶段是用来补充收集并发标记阶段产新的新垃圾。与之不同的是，G1中采用了更快的算法:SATB。 清理阶段：选择活性低的区域(同时考虑停顿时间)，等待下次yong GC一起收集，对应GC log: [GC pause (mixed)]，这个过程也会有停顿(STW)。 回收/完成：新的yong GC清理被计算好的区域。但是有一些区域还是可能存在垃圾对象，可能是这些区域中对象活性较高，回收不划算，也肯能是为了迎合用户设置的时间，不得不舍弃一些区域的收集。 内存分配和回收策略 1.</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 Kubernetes 基本
 容器的本质是进程，Kubernetes相当于操作系统，管理这些进程组。
 CNI：Container Network Interface，容器网络接口规范，如 Flannel、Calico、AWS VPC CNI kubelet：负责创建、管理各个节点上运行时的容器和Pod，这个交互依赖CRI的远程调用接口，通过Socket和容器运行时通信。 kubelet 还通过 gRPC 协议同一个叫作 Device Plugin 的插件进行交互。这个插件，是 Kubernetes 项目用来管理 GPU 等宿主机物理设备的主要组件 kubelet 的另一个重要功能，则是调用网络插件和存储插件为容器配置网络和持久化存储，交互的接口是CNI和CSI CRI：Container Runtime Interface，容器运行时的各项核心操作的接口规范，是一组gRPC接口。包含两类服务，镜像服务和运行时服务。镜像服务提供下载、检查和删除镜像的RPC接口；运行时服务包含用于管理容器生命周期，与容器交互的调用的RPC接口（exec / attach / port-forward等）。dockershim、containerd、cri-o都是遵循CRI的容器运行时，称为高层级运行时。 CSI：Container Storage Interface，容器存储的接口规范，如PV、PVC OCI：Open Container Initiative，容器运行时和镜像操作规范，镜像规范规定高层级运行时会下载一个OCI镜像，并把它解压称OCI运行时文件系统包；运行时规范描述如何从OCI运行时文件系统包运行容器程序，并且定义其配置、运行环境和生命周期。定义新容器的namespaces、cgroups和根文件系统；它的一个参考实现是runC，称为底层级运行时。 CRD：Custom Resource Definition，自定义的资源对象，即yaml文件中的Kind，如Operator就是实现CRD的控制器，之后直接使用Operator创建的CRD声明对象即可使用 Master节点作用：编排、管理、调度用户提交的作业 Scheduler：编排和调度Pod，基本原理是通过监听api-server获取待调度的pod，然后基于一系列筛选和评优，为pod分配最佳的node节点。 APIServer：提供集群对外访问的API接口实现对集群资源的CRUD以及watch，是集群中各个组件数据交互和通信的枢纽，当收到一个创建pod的请求时会进行认证、限速、授权、准入机制等检查后，写入etcd。 Controller Manager：管理控制器的，比如Deployment、Job、CronbJob、RC、StatefulSet、Daemon等，核心思想是监听、比较资源实际状态与期望状态是否一致，否则进行协调。 Device Plugin：管理节点上的硬件设备，比如GPU Kube-Proxy：作为daemonset部署在每个节点上，主要用于为Pod创建代理服务，从API-Server获取所有service信息，创建Endpoints，转发service到Pod间的请求，默认使用iptables模式，但当service数量变多时有性能问题，1.8版本后使用IPVS模式提升性能 coreDNS：低版本的kubernetes使用kube-dns，1.12后默认使用coreDNS，用于实现域名查找功能 调度器Scheduler 主要职责就是为新创建的Pod寻找合适的节点，默认调度器会先调用一组叫Predicate的调度算法检查每个Node，再调用一组叫Priority的调度算法为上一步结果里的每个Node打分，将新创建的Pod调度到得分最高的Node上。
 原理
 第一个控制循环叫Informer Path，它会启动一系列Informer，监听etcd中的Pod、Node、Service等与调度相关的API对象的变化，将新创建的Pod添加进调度队列，默认的调度队列是优先级队列；
 此外，还会对调度器缓存进行更新，因为需要尽最大可能将集群信息Cache化，以提高两个调度算法组的执行效率，调度器只有在操作Cache时，才会加锁。
-第二个控制循环叫Scheduling Path，是负责Pod调度的主循环，它会不断从调度队列里出队一个Pod，调用Predicate算法进行过滤，得到可用的Node，Predicate算法需要的Node信息，都是从Cache里直接拿到；</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+第二个控制循环叫Scheduling Path，是负责Pod调度的主循环，它会不断从调度队列里出队一个Pod，调用Predicate算法进行过滤，得到可用的Node，Predicate算法需要的Node信息，都是从Cache里直接拿到；</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 特点 分布式数据库，Json数据模型，面向对象数据模型，不强制表的scheme 当应用场景不清晰时，可以直接以对象模型直接存储，无需关心字段，表结构灵活，动态增加新字段 不用太过关注表间的关系，可直接嵌套存储，将多种关系存储在同一张表上，同时也加快查表，因为它可以减少磁盘定位次数，如果是关系型数据库，同时查多张表就需要定位多次 原生支持高可用，一般的部署方式是部署三个节点replica set，最多50个；多replica set可以实现自恢复（当主节点挂点后会选出从节点），异地容灾，数据库滚动更新 原生支持横向扩展，通过水平扩展分片实现，外部并不感知有多少个分片，只会当成一个分片使用 支持字段级加密，针对隐私数据，比如身份证、电话等，在入库时可以进行加密，查询时解密 支持地理位置经纬度查询 强大的聚合查询，适合报表、时序数据 NoSQL语句 客户端使用驱动时连接的执行流程
 客户端执行流程
 数据库端执行流程
@@ -127,12 +127,12 @@ MySQL中的SELECTdepartment,count(null)asemp_QTYFROMUserWHEREgender=&amp;#39;fem
 $unwind：将查询到的数组展开
 $grouphLookup：图搜索
 $facet/$bucket: 分面搜索，根据不同范围条件，多个维度一次性进行分组输出
-优化 查询时，尽量使用索引，为经常做查询的条件添加索引 查询时，只查询需要的字段，而不是查询全部，减少网络资源的浪费 更新时，只更新必要的字段，而不是每次更新都把整个json文档发送过去，减少网络资源的浪费 插入时，尽可能直接批量插入，而不是一条一条插 通过mongodb提供的TTL索引，可以实现过期自删数据 建表时，文档嵌套不超过3层 尽量少用count()来计算总页数，而是使用limit 尽量少用skip/limit形式分页，而是通过id来定位起始的位置，这点跟aws dynamoDB很像，不过至少有提供这种功能 尽量少用事务，跨分片事务，避免过大事务，控制更新的文档(行)数量 使用aggregate时，前一个stage计算得到的数据会传递到下个stage，如果前一个stage没有该数据，则下一个stage无法获取到（尽管表中有该字段） 使用aggregate时，pipeline最开始时的match sort可以使用到索引，一旦发生过project投射，group分组，lookup表关联，unwind打散等操作后，则无法使用索引。 分析 在查询语句中使用explain()方法分析查询语句，有三种分析模式，通过传参的方式使用，比如：db.getCollection(&amp;quot;order&amp;quot;).explain('executionStats').find({条件}) queryPlanner：默认，只会输出被查询优化器选择出来的查询计划winningPlane executionStats：除了输出被查询优化器选择出来的查询计划winningPlane，并执行语句（如果是写操作，不会真正操作数据库），给出分析结果，比如扫描的行数，使用什么索引，耗时，返回的条数等 allPlansExecution：列出所有可能的查询计划并执行，给出所有方案的结果，mongo支持这种分析模式，但aws的documentDB不支持 # 常见的stage枚举： COLLSCAN：全表扫描 IXSCAN：索引扫描 FETCH：根据前面扫描到的位置抓取完整文档，相当于回表 IDHACK：针对_id进行查询 SHARD_MERGE 合并分片中结果 SHARDING_FILTER 分片中过滤掉孤立文档 SORT：进行内存排序，最终返回结果 SORT_KEY_GENERATOR：获取每一个文档排序所用的键值 LIMIT：使用limit限制返回数 SKIP：使用skip进行跳过 IDHACK：针对_id进行查询 COUNTSCAN：count不使用用Index进行count时的stage返回 COUNT_SCAN：count使用了Index进行count时的stage返回 TEXT：使用全文索引进行查询时候的stage返回 SUBPLA：未使用到索引的$or查询的stage返回 PROJECTION：限定返回字段时候stage的返回 # 一个executionStats例子 { &amp;quot;queryPlanner&amp;quot; : { &amp;quot;plannerVersion&amp;quot; : 1.</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>ORM 普通JDBC使用sql的prepareStatement + sql + 占位符 + 参数的方式执行sql语句
+优化 查询时，尽量使用索引，为经常做查询的条件添加索引 查询时，只查询需要的字段，而不是查询全部，减少网络资源的浪费 更新时，只更新必要的字段，而不是每次更新都把整个json文档发送过去，减少网络资源的浪费 插入时，尽可能直接批量插入，而不是一条一条插 通过mongodb提供的TTL索引，可以实现过期自删数据 建表时，文档嵌套不超过3层 尽量少用count()来计算总页数，而是使用limit 尽量少用skip/limit形式分页，而是通过id来定位起始的位置，这点跟aws dynamoDB很像，不过至少有提供这种功能 尽量少用事务，跨分片事务，避免过大事务，控制更新的文档(行)数量 使用aggregate时，前一个stage计算得到的数据会传递到下个stage，如果前一个stage没有该数据，则下一个stage无法获取到（尽管表中有该字段） 使用aggregate时，pipeline最开始时的match sort可以使用到索引，一旦发生过project投射，group分组，lookup表关联，unwind打散等操作后，则无法使用索引。 分析 在查询语句中使用explain()方法分析查询语句，有三种分析模式，通过传参的方式使用，比如：db.getCollection(&amp;quot;order&amp;quot;).explain('executionStats').find({条件}) queryPlanner：默认，只会输出被查询优化器选择出来的查询计划winningPlane executionStats：除了输出被查询优化器选择出来的查询计划winningPlane，并执行语句（如果是写操作，不会真正操作数据库），给出分析结果，比如扫描的行数，使用什么索引，耗时，返回的条数等 allPlansExecution：列出所有可能的查询计划并执行，给出所有方案的结果，mongo支持这种分析模式，但aws的documentDB不支持 # 常见的stage枚举： COLLSCAN：全表扫描 IXSCAN：索引扫描 FETCH：根据前面扫描到的位置抓取完整文档，相当于回表 IDHACK：针对_id进行查询 SHARD_MERGE 合并分片中结果 SHARDING_FILTER 分片中过滤掉孤立文档 SORT：进行内存排序，最终返回结果 SORT_KEY_GENERATOR：获取每一个文档排序所用的键值 LIMIT：使用limit限制返回数 SKIP：使用skip进行跳过 IDHACK：针对_id进行查询 COUNTSCAN：count不使用用Index进行count时的stage返回 COUNT_SCAN：count使用了Index进行count时的stage返回 TEXT：使用全文索引进行查询时候的stage返回 SUBPLA：未使用到索引的$or查询的stage返回 PROJECTION：限定返回字段时候stage的返回 # 一个executionStats例子 { &amp;quot;queryPlanner&amp;quot; : { &amp;quot;plannerVersion&amp;quot; : 1.</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>ORM 普通JDBC使用sql的prepareStatement + sql + 占位符 + 参数的方式执行sql语句
 ORM其实就是在先编写类与数据库表字段的映射，可以是xml配置，也可以是注解配置，之后再使用JDBC执行sql时，通过对类的反射获得其属性的值和对应的字段名，拼接sql+占位符+属性值，执行sql语句
 MyBatis #{}和${}区别
 #{}：预编译，底层是PrepareStatement ，可防止SQL注入
 ${}：参数替换，不能防止SQL注入
-dao接口与mapper的映射 通过动态代理实现 实际上XML在定义Mapper的时候就相当于在编写dao类了，dao接口类相当于编写调用入口 XML中的配置信息会被存放在Configuration类中，SqlSessionFactoryBuilder会读取Configuration类中的信息创建SqlSessionFactory，之后由SqlSessionFactory创建sqlSession 在启动时先扫描并加载所有定义Mapper的XML，解析XML，根据XML中的namespace找到对应的接口，为这些接口生成对应的代理工厂MapperProxyFactory。 sqlSession.getMapper时，会通过传入的类/接口名（即被代理类）找到对应的MapperProxyFactory，生成代理类MapperProxy，并注入sqlSession，MapperProxy实现InvocationHandler接口进行代理，通过MapperMethod执行SQL，MapperMethod使用注入的sqlSession和解析XML中配置的SQL语句得到的参数，调用对应的executor执行SQL 缓存 一级缓存的作用域是同一个SqlSession，在同一个sqlSession中两次执行相同的sql语句，第一次执行完毕会将数据库中查询的数据写到缓存（内存），第二次会从缓存中获取数据将不再从数据库查询，从而提高查询效率。当一个sqlSession结束后该sqlSession中的一级缓存也就不存在了。Mybatis默认开启一级缓存。 二级缓存是mapper级别的缓存，多个SqlSession去操作同一个Mapper的sql语句，多个SqlSession去操作数据库得到数据会存在二级缓存区域，多个SqlSession可以共用二级缓存，二级缓存是跨SqlSession的。不同的sqlSession两次执行相同namespace下的sql语句且向sql中传递参数也相同即最终执行相同的sql语句，第一次执行完毕会将数据库中查询的数据写到缓存（内存），第二次会从缓存中获取数据将不再从数据库查询，从而提高查询效率。Mybatis默认没有开启二级缓存需要在setting全局参数中配置开启二级缓存 参考 MyBatis的通俗理解：SqlSession.getMapper()源码分析</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+dao接口与mapper的映射 通过动态代理实现 实际上XML在定义Mapper的时候就相当于在编写dao类了，dao接口类相当于编写调用入口 XML中的配置信息会被存放在Configuration类中，SqlSessionFactoryBuilder会读取Configuration类中的信息创建SqlSessionFactory，之后由SqlSessionFactory创建sqlSession 在启动时先扫描并加载所有定义Mapper的XML，解析XML，根据XML中的namespace找到对应的接口，为这些接口生成对应的代理工厂MapperProxyFactory。 sqlSession.getMapper时，会通过传入的类/接口名（即被代理类）找到对应的MapperProxyFactory，生成代理类MapperProxy，并注入sqlSession，MapperProxy实现InvocationHandler接口进行代理，通过MapperMethod执行SQL，MapperMethod使用注入的sqlSession和解析XML中配置的SQL语句得到的参数，调用对应的executor执行SQL 缓存 一级缓存的作用域是同一个SqlSession，在同一个sqlSession中两次执行相同的sql语句，第一次执行完毕会将数据库中查询的数据写到缓存（内存），第二次会从缓存中获取数据将不再从数据库查询，从而提高查询效率。当一个sqlSession结束后该sqlSession中的一级缓存也就不存在了。Mybatis默认开启一级缓存。 二级缓存是mapper级别的缓存，多个SqlSession去操作同一个Mapper的sql语句，多个SqlSession去操作数据库得到数据会存在二级缓存区域，多个SqlSession可以共用二级缓存，二级缓存是跨SqlSession的。不同的sqlSession两次执行相同namespace下的sql语句且向sql中传递参数也相同即最终执行相同的sql语句，第一次执行完毕会将数据库中查询的数据写到缓存（内存），第二次会从缓存中获取数据将不再从数据库查询，从而提高查询效率。Mybatis默认没有开启二级缓存需要在setting全局参数中配置开启二级缓存 参考 MyBatis的通俗理解：SqlSession.getMapper()源码分析</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 基础架构 MySQL逻辑架构图
 连接器：负责跟客户端建立连接、获取权限、维持和管理连接。登录进去后修改权限，默认是将在下一次登录后生效 查询缓存：MySQL接收到查询请求后会先查询缓存，key是查询语句，value是查询结果，之后经过执行器的权限判断再返回，如果查不到则往后走。不建议使用，因为若有更新操作，会删除对应表的缓存，可能导致缓存命中低，可以设置query_cache_type=demand，默认不使用缓存，需要在查询时显示指定。MySQL8.0删除此功能 分析器：对SQL语句进行分析，词法分析判断各个字符串代表的含义（包括列是否存在），语法分析判断SQL的语法是否正确，这一层操作之后，MySQL就知道你要做什么了 优化器：决定是否要使用索引，使用哪个索引，决定表的连接顺序 执行器：先判断是否有对该表的操作权限，之后判断要使用哪个引擎提供的接口 引擎：对数据进行具体操作的执行者，事务和索引都是在这层做的，但具体需要引擎支持，例如MyISAM不支持事务，InnoDB支持 日志系统 redo log重做日志：InnoDB独有，物理日志，记录这个页做了什么改动，使用二阶段提交保证两份日志逻辑一致。记录写入到redo log后状态是prepare，binlog写入磁盘，事务提交，redo log改为commit状态，在写的时候是先写进redo log buffer，commit后才写进redo log(磁盘)
 当有记录要更新的时候，InnoDB会先把记录(包含数据变更和change buffer的变更)写到redo log里，并更新内存，再在恰当的时候更到磁盘里，redo log prepare、commit 的XID对应bin log的XID实现关联。
@@ -145,7 +145,7 @@ bin log归档日志：属于server层的日志，逻辑日志，记录所有逻�
 undo log回滚日志：InnoDB独有，逻辑日志，主要用于事务失败时的回滚，以及MVCC中版本数据查看。当事务被提交后，并不会马上被删除，而是放到待清理链中，=到没有事务用到该版本信息时才可以清理。 参考：MySQL中的日志机制
 常用SQL Count(*)、Count(1)、Count([列])区别 在count(*)不带条件在MyISAM里查询比较快，因为MyISAM会存储总条数，不带条件查询的时候直接用就行，而InnoDB带了事务，支持MVCC，因此每次count(*)时都会扫表
 以下归纳基于InnoDB，count会返回满足条件的结果集的总行数，它会使用存储引擎进行全表扫描获取结果，比如count(1)会直接返回1，count(主键)会获取主键，返回给server层，由server层进行计数，因此按效率排序是：count(字段) &amp;lt; count( 主键id) &amp;lt; count(1) ≈ count(*)
-count（列）会计算列或这列的组合不为空的计数 count(*) 跟 count(1) 的结果一样，都包括对NULL的统计，而count([列名]) 是不包括NULL的统计 对于计数，也可以通过创建列为表名、total的表进行计数，利用事务能力，一般是先insert在update，理由是并发进行total值的更新时，是会上行锁的，如果先update total值可能会导致事务处理时间过长 having的使用 having一般需要搭配 group by 使用，在group by之后，order by之前</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+count（列）会计算列或这列的组合不为空的计数 count(*) 跟 count(1) 的结果一样，都包括对NULL的统计，而count([列名]) 是不包括NULL的统计 对于计数，也可以通过创建列为表名、total的表进行计数，利用事务能力，一般是先insert在update，理由是并发进行total值的更新时，是会上行锁的，如果先update total值可能会导致事务处理时间过长 having的使用 having一般需要搭配 group by 使用，在group by之后，order by之前</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 数据类型及结构 数据类型 String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet
 String类型下还有一种扩展类型：Bitmap。原理：String类型会保存二进制字节数组，对于这个字节数组的每个bit来表示一个元素的二值状态。
 此外还有扩展类型：HyperLogLog、Geo
@@ -165,7 +165,7 @@ rehash触发条件 装载因子：哈希表中所有entry的个数除以哈希�
 当装载因子&amp;gt;= 5，因为此时数据量已远远大于哈希桶的个数了，此时会立马进行rehash
 rehash过程 默认使用哈希表1，此时哈希表2还没有被分配空间
 当数据增多至需要rehash时，为哈希表2分配空间，大小会比哈希表1大，比如大两倍
-把哈希表1中的数据重新映射并拷贝到哈希表2中</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>RPC
+把哈希表1中的数据重新映射并拷贝到哈希表2中</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>RPC
 一个RPC框架的基本实现，高性能网络传输、序列化和反序列化、服务注册和发现，如果是实现客户端级别的服务注册和发现，还可以在SDK中提供容错、负载均衡、熔断、降级等功能。
 客户端发起RPC调用，实际上是调用该RPC方法的桩，它和服务端提供的RPC方法有相同的方法签名，或者说实现了相同的接口，只是这个桩在客户端承担的是请求转发的功能，向客户端屏蔽调用细节（比如向发现与注册中心查询要请求的服务方的url），使其像在使用本地方法一样；服务端在收到请求后，由其RPC框架解析出服务名和请求参数，调用在RPC框架中注册的该接口的真正实现者，最后将结果返回给客户端。
 一个简单的RPC实现可以由三部分组成：规定远程的接口和其实现，服务端提供接口注册和IO连接，客户端IO连接和接口代理
@@ -183,7 +183,7 @@ RPC原理及RPC实例分析
 同理在于服务内部的异步回调，也是如此，只是把url换成了callback方法，比如Java中的Future类+Callable类。
 发布订阅 主要靠消息队列实现，不过比较适合发送方不太care处理结果的，如果care处理结果，可以再通过一条队列将结果传递下去，执行后面的处理。
 事件驱动 + 状态机 可以依靠消息队列，本质还是发布订阅那一套，只是将触发的条件换成事件，消费者根据不同的事件触发不同的逻辑，然后再通过状态机保证处理事件顺序。
-比较常见的场景是电商业务中围绕订单服务的一系列业务处理，比如订单创建完成后，订单服务发出订单创建的事件，对应库存服务，收到该事件，就会进行锁库操作等</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+比较常见的场景是电商业务中围绕订单服务的一系列业务处理，比如订单创建完成后，订单服务发出订单创建的事件，对应库存服务，收到该事件，就会进行锁库操作等</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 SpringBoot Spring 和 Spring Boot区别 Spring Boot实现了自动配置，降低了项目搭建的复杂度。它主要是为了解决使用Spring框架需要进行大量的配置太麻烦的问题，所以它并不是用来替代Spring的解决方案，而是和Spring框架紧密结合用于提升Spring开发者体验的工具。同时它集成了大量常用的第三方库配置(例如Jackson, JDBC, Mongo, Redis, Mail等等)，做到零配置即用。内置Tomcat作为Web服务器，不像之前还要把服务部署到Tomcat在进行启动。
 SpringBoot整个启动流程 构建SpringApplication对象，执行其run方法 加载properties/yaml等配置文件 创建ApplicationContext（也可以称为Bean、IOC容器） 将扫描到的Bean或者xml中的bean，先解析成BeanDefinition，注册到ApplicationContext中的BeanFactory中（即自动配置过程，也是IOC容器的refresh方法执行过程） 实例化Bean，进行依赖注入，（AOP也是在此处实现，创建代理实例加入IOC容器） SpringBoot启动流程
 参考SpringBoot启动流程解析
@@ -201,7 +201,7 @@ EnableAutoConfigurationImportSelector类里有个SpringFactoriesLoader工厂加�
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=[自定义配置类的全限定名称] 自定义Starter可以理解为一个Jar包，该Jar包在Maven或Gradle注册后，服务启动时，IOC容器会去自动加载。
 自定义Starter内也可以使用配置文件，设定默认配置的key-value，当本项目里有配置的key与starter里定义的配置key重复时可以被替换
 ContextLoaderListener 【Spring】浅谈ContextLoaderListener及其上下文与DispatcherServlet的区别
-作为Spring启动入口 实现了ServletContextListener 接口，监听ServletContext，如果 ServletContext 发生变化（如服务器启动时ServletContext 被创建，服务器关闭时 ServletContext 将要被销毁）时，执行监听器里的方法 为IOC容器提供环境，扫描包，将带有注解的Bean加入到容器用于依赖注入，或者加载xml文件，将xml注册的bean加入容器用于依赖注入 常用注解 @Controller与@RestController @Controller 默认是返回视图，即方法的return返回的是视图层的路径，只有+@ResponseBody才会返回Json格式的数据 @RestController实际上是@Controller + @ResponseBody组合，默认返回json格式的数据 @Autowired与@Resource @Autowired 注解，修饰类成员变量、方法及构造方法，完成自动装配的工作，默认按 byType 自动注入。只有一个required属性，默认是true，表示必须注入，不能为null</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>SpringMVC工作原理 SpringMVC工作原理详解
+作为Spring启动入口 实现了ServletContextListener 接口，监听ServletContext，如果 ServletContext 发生变化（如服务器启动时ServletContext 被创建，服务器关闭时 ServletContext 将要被销毁）时，执行监听器里的方法 为IOC容器提供环境，扫描包，将带有注解的Bean加入到容器用于依赖注入，或者加载xml文件，将xml注册的bean加入容器用于依赖注入 常用注解 @Controller与@RestController @Controller 默认是返回视图，即方法的return返回的是视图层的路径，只有+@ResponseBody才会返回Json格式的数据 @RestController实际上是@Controller + @ResponseBody组合，默认返回json格式的数据 @Autowired与@Resource @Autowired 注解，修饰类成员变量、方法及构造方法，完成自动装配的工作，默认按 byType 自动注入。只有一个required属性，默认是true，表示必须注入，不能为null</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>SpringMVC工作原理 SpringMVC工作原理详解
 流程图看链接里的即可
 简单来说各个组件的作用
 前端控制器DispatcherServlet：请求的入口，可以看成是中央处理器、转发器，负责调度其他组件，接收请求，完成响应 处理器映射器HandlerMapping：根据请求的url查找Handler，找到url对应的controller类，返回一条执行链，其中就包含拦截器和处理器（具体的controller类）；有配置文件方式，实现接口方式，注解方式等方式实现映射 处理器适配器HandlerAdapter：HandlerMapping找到对应的controller类后，再根据url找到对应的执行方法 处理器Handler：具体的处理方法，也就是我们所写具体的Controller类 视图解析器View resolver：根据逻辑View名称，找到对应的View，根据处理器返回的ModelAndView，将数据渲染到View上 视图View：例如jsp，freemarker之类的视图模板 拦截器在什么时候执行？
@@ -212,7 +212,7 @@ preHandle() 方法：该方法会在控制器方法前执行，其返回值表�
 postHandle()方法：该方法会在控制器方法调用之后，且解析视图之前执行。可以通过此方法对请求域中的模型和视图做出进一步的修改。
 afterCompletion()方法：该方法会在整个请求完成，即视图渲染结束之后执行。可以通过此方法实现一些资源清理、记录日志信息等工作。
 Spring Security 简单工作流程
-请求(包含用户名，密码之类)——&amp;gt;登陆信息封装成一个Authentication对象——&amp;gt;AuthenticationManager，调用authenticate ()方法处理——&amp;gt;该方法会将对象传递给一系列AuthenticationAdapter（一系列Filter），每一个AuthenticationAdapter会调用它们配置的UserDetailsService处理</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+请求(包含用户名，密码之类)——&amp;gt;登陆信息封装成一个Authentication对象——&amp;gt;AuthenticationManager，调用authenticate ()方法处理——&amp;gt;该方法会将对象传递给一系列AuthenticationAdapter（一系列Filter），每一个AuthenticationAdapter会调用它们配置的UserDetailsService处理</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 类图 类图中的关系其实有多种版本的表示方法，这里仅总结自己常用的画法
 访问作用域 + : public
 - : private
@@ -227,7 +227,7 @@ A use B
 A ——————&amp;gt; B ： A has B （实心线 + 箭头）
 A has B
 3. 聚合（Aggregation） 聚合是关联的一种特殊形式，暗含整体/部分关系，但是对方却不是唯一属于自己的那种关系。 用来表示集体与个体之间的关联关系，例如班级与学生之间存在聚合关系。
-A &amp;lt;&amp;gt;—————— B : A是集体，B是个体 （实线 + 空心菱形）</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+A &amp;lt;&amp;gt;—————— B : A是集体，B是个体 （实线 + 空心菱形）</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 Quartz 分为三个部分：e
 Job&amp;amp;Detial(任务)：定时任务的执行方法，与Trigger配套的 Trigger(触发器)：规定什么时候触发，与Job&amp;amp;Detail配套的 Scheduler(调度器)：单例，把Trigger丢里面由调度器调度，只需要一个Scheduler，配置不同的Trigger；可以理解成类似线程池的东西 原理：ScheduledThreadPoolExecutor线程池 + 通过Object类的wait()和notify()或者Condition类的await()\signal()进行等待和唤醒、锁保证线程安全 来进行调度
 Scheduler有两个调度线程：regular Scheduler Thread（执行常规调度）和Misfire Scheduler Thread（执行错失的任务），Regular Thread 轮询所有Trigger，如果有将要触发的Trigger（用wait和notifyAll实现），则从任务线程池中获取一个空闲线程，然后执行与改Trigger关联的job；Misfire Thraed则是扫描所有的trigger，查看是否有错失的，如果有的话，根据一定的策略进行处理
@@ -249,7 +249,7 @@ CORS 浏览器的同源政策的同源指的是：协议相同、域名相同、
 详情见 跨域资源共享 CORS 详解
 对于跨域产生的问题，如CSRF跨域请求攻击的解决方案，可参考：美团:如何防止csrf
 session和cookie 首先Http是无状态的，因此需要通过session、cookie来达到记录用户状态的目的。
-传统的session、cookie：session存用户信息，保存在服务端中，cookie里存session对应的sessionId，保存在客户端中，用于找到对应的session，每次请求都会带上该cookie来表示此用户。</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+传统的session、cookie：session存用户信息，保存在服务端中，cookie里存session对应的sessionId，保存在客户端中，用于找到对应的session，每次请求都会带上该cookie来表示此用户。</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 分布式理论 一个分布式系统最多只能满足 C、A、P 这三项中的两项。
 CAP理论 CAP特性
 C：Consistency，一致性，数据状态转化一致，写操作完成后的读操作，可以获取到最新的值 A：Availability，可用性，指的是服务一直可用，可以正常响应 P：Partition tolerance，分区容错，指的是当有节点故障不连通时，就会分区，但仍然能对外提供服务 矛盾在于这三个特性不能同时满足，比如
@@ -269,7 +269,7 @@ Basically Available（基本可用）: 允许暂时不可用，比如访问时�
 MTBF（Mean Time Between Failure）：即平均无故障时间，是指从新的产品在规定的工作环境条件下开始工作到出现第一个故障的时间的平均值。MTBF越长表示可靠性越高，正确工作能力越强 。
 MTTR（Mean Time To Repair）：即平均修复时间，是指可修复产品的平均修复时间，就是从出现故障到修复中间的这段时间。MTTR越短表示易恢复性越好。
 MTTF（Mean Time To Failure）：即平均失效时间。系统平均能够正常运行多长时间，才发生一次故障。系统的可靠性越高，平均无故障时间越长。
-与可用性的关系：Availability = UpTime/(UpTime+DownTime) = MTBF / (MTBF + MTTR)</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+与可用性的关系：Availability = UpTime/(UpTime+DownTime) = MTBF / (MTBF + MTTR)</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 底层原理 容器技术的核心功能，就是通过约束和修改进程的动态表现，从而为其创造出一个边界。
 Namespace - 隔离 进程只能看到被规定的视图，即 隔离，比如通过docker启动一个/bin/sh，再在容器里通过ps命令查看该/bin/sh进程的pid，会发现它的pid是1，但是实际上它在外部的宿主机里的pid是10，使得让在容器里运行的进程以为自己就在一个独立的空间里，实际上只是进行了逻辑的划分，本质还是依赖宿主机。
 作用：在同一台宿主机上运行多个用户的容器，充分利用系统资源；不同用户之间不能访问对方的资源，保证安全。
@@ -285,13 +285,13 @@ v2针对此做了改进，使各个子系统可以协调统一管理资源。
 Mount Namespace与rootfs(根文件系统) 挂载在容器根目录上、用来为容器进程提供隔离后执行环境的文件系统，即容器镜像，也是容器的根文件系统。Mount Namespace保证每个容器都有自己独立的文件目录结构。
 镜像可以理解为是容器的文件系统（一个操作系统的所有文件和目录），它是只读的，挂载在宿主机的一个目录上。同一台机器上的所有容器，都共享宿主机操作系统的内核，如果容器内应用修改了内核参数，会影响到所有依赖的应用。而虚拟机则都是独立的内核和文件系统，共享宿主机的硬件资源。
 上面的读写层通常也称为容器层，下面的只读层称为镜像层，所有的增删查改操作都只会作用在容器层，相同的文件上层会覆盖掉下层。知道这一点，就不难理解镜像文件的修改，比如修改一个文件的时候，首先会从上到下查找有没有这个文件，找到，就复制到容器层中，修改，修改的结果就会作用到下层的文件，这种方式也被称为copy-on-write。
-注意点 容器是“单进程模型”，单进程模型并不是指容器只能运行一个进程，而是指容器没有管理多个进程的能力，它只能管理一个进程，即如果在容器里启动了一个Web 应用和一个nginx，如果nginx挂了，你是不知道的。</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+注意点 容器是“单进程模型”，单进程模型并不是指容器只能运行一个进程，而是指容器没有管理多个进程的能力，它只能管理一个进程，即如果在容器里启动了一个Web 应用和一个nginx，如果nginx挂了，你是不知道的。</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 对微服务的理解 http://dockone.io/article/3687
 限流 下面的方案都是单机版本的，在分布式环境下可以把限流的实例放到Redis里，或者直接使用Lua脚本实现，保证并发安全。
 固定窗口 规定单位时间内可访问的次数，比如规定接口一分钟内只能访问10次，以第一次请求为起始，计数1，一分钟内计数超过10后，后续的请求直接拒绝，只能等到这一分钟结束后，重置计数，重新开始计数。
 但是这样有个问题，如果在大部分请求集中在第一个窗口的后10s内，和第二个窗口的前10s内，虽然他们都符合限流策略，但是在临界的20s内，请求还是有可能压垮系统。
 算法Demo：
-type fixWinLimiter struct { lock *sync.Mutex maxLimitCount int64 // 最大限制数 currentCount int64 // 当前计数 fixInterval int64 // 为了简化，单位设置为秒 lastReqStartAt int64 // 秒级时间戳 } func NewFixWinLimit(fixInterval int64, maxLimitCount int64) *fixWinLimiter { return &amp;amp;fixWinLimiter{ lock: new(sync.Mutex), maxLimitCount: maxLimitCount, fixInterval: fixInterval, } } func (f *fixWinLimiter) IsPass() bool { f.lock.Lock() defer f.lock.Unlock() now := time.Now().Unix() if now - f.lastReqStartAt &amp;gt; f.fixInterval { f.</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+type fixWinLimiter struct { lock *sync.Mutex maxLimitCount int64 // 最大限制数 currentCount int64 // 当前计数 fixInterval int64 // 为了简化，单位设置为秒 lastReqStartAt int64 // 秒级时间戳 } func NewFixWinLimit(fixInterval int64, maxLimitCount int64) *fixWinLimiter { return &amp;amp;fixWinLimiter{ lock: new(sync.Mutex), maxLimitCount: maxLimitCount, fixInterval: fixInterval, } } func (f *fixWinLimiter) IsPass() bool { f.lock.Lock() defer f.lock.Unlock() now := time.Now().Unix() if now - f.lastReqStartAt &amp;gt; f.fixInterval { f.</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 内核 PC机启动流程 以Ubuntu Linux + GRUB引导程序为例：
 PC机加电后，加载BIOS固件， 触发PC机BIOS固件发送指令 检测和初始化CPU、内存及主板平台，加载引导设备(比如硬盘)中的第一个扇区数据到0x7c00地址开始的内存空间，再接着跳转到0x7c00处执行指令，加载GRUB引导程序，加载硬盘分区中的OS文件，启动操作系统。
 内核结构分类 内核：计算机资源的管理者。计算资源分为硬件资源和软件资源
@@ -313,10 +313,10 @@ Linux高清全结构图：https://makelinux.github.io/kernel/map/
 缺点：进程间消息依赖微内核进行消息传递，会频繁进行服务进程切换，模式切换，导致性能较差。
 分离硬件的相关性 分离硬件的相关性其实就是屏蔽底层硬件操作细节，形成一个独立的软件抽象层，对外提供接口，方便应用层接入。
 是内核设计的一种指导思想，所以在设计操作系统内核的时候，就可以分为
-内核接口层：向应用层提供系统接口函数； 内核功能层：系统函数的主要实现，实现进程管理、内存管理、中断管理、设备管理、驱动、文件系统等； 内核硬件层：对硬件资源的操作，比如初始化CPU、内存、中断控制、其他IO设备 混合内核 混合内核在微内核的基础上进行改进，层次分明，动态加载模块到内核，兼具宏内核和微内核的优点。</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+内核接口层：向应用层提供系统接口函数； 内核功能层：系统函数的主要实现，实现进程管理、内存管理、中断管理、设备管理、驱动、文件系统等； 内核硬件层：对硬件资源的操作，比如初始化CPU、内存、中断控制、其他IO设备 混合内核 混合内核在微内核的基础上进行改进，层次分明，动态加载模块到内核，兼具宏内核和微内核的优点。</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 使用场景 秒杀系统，一般秒杀系统处理包含几个步骤：风险控制、库存锁定、生成订单、短信通知、更新统计数据灯，而决定秒杀是否成功只在前两个步骤，后续的操作就可以通过消息队列异步处理完成，加快整个流程的处理，减少等待时间，提升并发量。 隔离网关和后端服务，实现流量控制，保护后端服务，但会增加系统调用链，导致总体响应变长，异步增加系统复杂性。 令牌桶，目的也是进行流量控制。 服务解耦，数据同步，比如订单系统在订单状态发生变化时发出消息通知，其他服务订阅后做相应处理。 连接流计算任务和数据，比如集群日志处理，大数据统计 将消息广播给其他接收者 好处 流量削峰和流量控制、异步处理、解耦、广播、最终一致性
 缺点 可用性降低、复杂度提高、一致性问题、消息延迟
-常见消息队列 特性 ActiveMQ RabbitMQ RocketMQ Kafaka 单机吞吐量 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 10万级，RocketMQ也是可以支撑高吞吐的一种MQ 10万级别，这是kafka最大的优点，就是吞吐量高。一般配合大数据类的系统来进行实时数据计算、日志采集等场景 topic数量对吞吐量的影响 使用队列模型，通过Exchange模块实现发布-订阅模型，Exchange位于生产者和队列之间，由Exchange决定将详细投递到哪个队列。 topic可以达到几百，几千个的级别，吞吐量会有较小幅度的下降这是RocketMQ的一大优势，在同等机器下，可以支撑大量的topic topic从几十个到几百个的时候，吞吐量会大幅度下降。所以在同等机器下，kafka尽量保证topic数量不要过多。如果要支撑大规模topic，需要增加更多的机器资源 可用性 高，基于主从架构实现高可用性 高，基于主从架构实现高可用性 非常高，分布式架构 非常高，kafka是分布式的，一个数据多个副本，少数机器宕机，不会丢失数据，不会导致不可用 消息可靠性 有较低的概率丢失数据 经过参数优化配置，可以做到0丢失 经过参数优化配置，消息可以做到0丢失 时效性 ms级 微秒级，这是rabbitmq的一大特点，延迟是最低的 ms级 延迟在ms级以内 功能支持 MQ领域的功能极其完备 基于erlang开发，所以并发能力很强，性能极其好，延时很低 MQ功能较为完善，还是分布式的，扩展性好 功能较为简单，主要支持简单的MQ功能，在大数据领域的实时计算以及日志采集被大规模使用，是事实上的标准 优劣势总结 非常成熟，功能强大，在业内大量的公司以及项目中都有应用。偶尔会有较低概率丢失消息，而且现在社区以及国内应用都越来越少，官方社区现在对ActiveMQ 5.</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+常见消息队列 特性 ActiveMQ RabbitMQ RocketMQ Kafaka 单机吞吐量 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 10万级，RocketMQ也是可以支撑高吞吐的一种MQ 10万级别，这是kafka最大的优点，就是吞吐量高。一般配合大数据类的系统来进行实时数据计算、日志采集等场景 topic数量对吞吐量的影响 使用队列模型，通过Exchange模块实现发布-订阅模型，Exchange位于生产者和队列之间，由Exchange决定将详细投递到哪个队列。 topic可以达到几百，几千个的级别，吞吐量会有较小幅度的下降这是RocketMQ的一大优势，在同等机器下，可以支撑大量的topic topic从几十个到几百个的时候，吞吐量会大幅度下降。所以在同等机器下，kafka尽量保证topic数量不要过多。如果要支撑大规模topic，需要增加更多的机器资源 可用性 高，基于主从架构实现高可用性 高，基于主从架构实现高可用性 非常高，分布式架构 非常高，kafka是分布式的，一个数据多个副本，少数机器宕机，不会丢失数据，不会导致不可用 消息可靠性 有较低的概率丢失数据 经过参数优化配置，可以做到0丢失 经过参数优化配置，消息可以做到0丢失 时效性 ms级 微秒级，这是rabbitmq的一大特点，延迟是最低的 ms级 延迟在ms级以内 功能支持 MQ领域的功能极其完备 基于erlang开发，所以并发能力很强，性能极其好，延时很低 MQ功能较为完善，还是分布式的，扩展性好 功能较为简单，主要支持简单的MQ功能，在大数据领域的实时计算以及日志采集被大规模使用，是事实上的标准 优劣势总结 非常成熟，功能强大，在业内大量的公司以及项目中都有应用。偶尔会有较低概率丢失消息，而且现在社区以及国内应用都越来越少，官方社区现在对ActiveMQ 5.</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 从浏览器输入URL之后都发生了什么 浏览器输入URL，按回车，
 浏览器根据输入内容，匹配对应的URL和关键词，校验URL的合法性，补全URL，使其符合通用URI的语法。 请求发出前，如果当前的URL被访问过，会先进入缓存中查询是否有要请求的文件，有则直接返回；如果没有，则跳过缓存，进入网络操作。缓存会存在于路由缓存、DNS缓存、浏览器缓存、ServiceWorker、MemoryCache、DiskCache、PushCache、系统缓存等。 从URL中解析出域名，依次经过浏览器缓存、系统缓存、hosts 文件、路由器缓存、 递归搜索DNS服务器，找到对应的IP地址。 应用层程序准备好数据后，委托给操作系统，复制应用层数据到内核的内存空间中，交给网络协议栈（将其打包为tcp包(传输层)，帧(数据链路层)，并数据其从内核拷贝到网卡，后续由网卡负责数据的发送）建立 TCP/IP 连接（三次握手具体过程）。 HTTP 请求经过路由器的转发，通过服务器（CDN、反向代理之类的）的防火墙，该 HTTP 请求到达了服务器 服务器处理该 HTTP 请求，返回一个 HTML 文件 浏览器解析该 HTML 文件，解析HTML文件后，构建dom树 -》构建render树 -》布局render树 -》绘制 render树，自上而下加载，边加载边解析渲染，显示在浏览器端，对于图片音频等则是异步加载 本质上是OSI七层模型 + 相应协议、组件实现
 HTTP方法 菜鸟HTTP教程/HTTP请求方法
@@ -334,7 +334,7 @@ GET在浏览器回退时是无害的，而POST会再次提交请求
 具有幂等性的方法：GET、HEAD、OPTIONS、DELETE、PUT
 没有幂等性的方法：POST
 安全性：安全的 HTTP 方法不会改变服务器状态，也就是说它只是可读的。
-常见状态码 参考HTTP状态码</description></item><item><title/><link>/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/p/</guid><description>[TOC]
+常见状态码 参考HTTP状态码</description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>[TOC]
 只记录常用设计模式
 设计模式六大原则 单一职责原则(SRP)：一个类只负责一个功能领域中的相应职责，就一个类而言，应该只有一个引起它变化的原因。 开闭原则(OCP)：一个软件实体应当对扩展开放，对修改关闭。即软件实体应尽量在不修改原有代码的情况下进行扩展。 里氏代换原则(LSP)：所有引用基类（父类）的地方必须能透明地使用其子类的对象。 依赖倒转原则(DIP)：抽象不应该依赖于细节，细节应当依赖于抽象。换言之，要针对接口编程，而不是针对实现编程。如 控制反转和依赖注入 接口隔离原则(ISP)：使用多个专门的接口，而不使用单一的总接口，即客户端不应该依赖那些它不需要的接口。 迪米特法则(LoD)：一个软件实体应当尽可能少地与其他实体发生相互作用。 常见设计模式 创建型模式是将创建和使用代码解耦
 结构型模式是将不同功能代码解耦
