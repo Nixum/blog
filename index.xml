@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Nixum Blog</title><link>https://nixum.github.io/blog/</link><description>Recent content on Nixum Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 28 May 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://nixum.github.io/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>PlaceHolder</title><link>https://nixum.github.io/blog/p/placeholder/</link><pubDate>Mon, 25 Feb 2019 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/placeholder/</guid><description>&lt;h1 id="content">Content&lt;/h1>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Nixum Blog</title><link>https://nixum.github.io/</link><description>Recent content on Nixum Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 28 May 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://nixum.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>PlaceHolder</title><link>https://nixum.github.io/p/placeholder/</link><pubDate>Mon, 25 Feb 2019 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/placeholder/</guid><description>&lt;h1 id="content">Content&lt;/h1>
 &lt;p>个人是后端开发，以Go和Java为主要开发语言，该Repository主要记录已使用或者感兴趣的技术的知识点，以及一些工作中的感受之类。&lt;/p>
 &lt;p>emmm有时间再好好美化首页README。&lt;/p>
 &lt;p>阅读的时候可以直接看对应的gitbook即可，&lt;a class="link" href="https://nixum.gitbook.io/note" target="_blank" rel="noopener"
 >gitbook入口&lt;/a>、&lt;a class="link" href="https://github.com/Nixum/Note" target="_blank" rel="noopener"
->github入口&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+>github入口&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="zookeeper">ZooKeeper&lt;/h1>
 &lt;p>ZooKeeper保证的是CP，不保证每次服务请求的可用性，在极端环境下，ZooKeeper可能会丢弃一些请求，消费者程序需要重新请求才能获得结果。另外在进行leader选举时集群都是不可用，所以说，ZooKeeper不能保证服务可用性。&lt;/p>
 &lt;h2 id="使用场景">使用场景&lt;/h2>
@@ -379,7 +379,7 @@ loading="lazy"
 &lt;/li>
 &lt;/ul>
 &lt;h1 id="参考">参考&lt;/h1>
-&lt;p>极客时间 - etcd实战课&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>&lt;figure
+&lt;p>极客时间 - etcd实战课&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>&lt;figure
 >
 &lt;a href="https://github.com/Nixum/Java-Note/raw/master/picture/git_flow.jpg" >
 &lt;img src="https://github.com/Nixum/Java-Note/raw/master/picture/git_flow.jpg"
@@ -482,7 +482,7 @@ alt="git命令">
 &lt;/figure>&lt;/p>
 &lt;h2 id="参考">参考&lt;/h2>
 &lt;p>&lt;a class="link" href="https://www.liaoxuefeng.com/wiki/0013739516305929606dd18361248578c67b8067c8c017b000" target="_blank" rel="noopener"
->廖雪峰 git教程&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+>廖雪峰 git教程&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="内存模型">内存模型&lt;/h1>
 &lt;p>这里的内存模型不是指内存分配、整理回收的规范，而是在并发环境下多goroutine读取共享变量时变量的可见性条件。&lt;/p>
 &lt;p>由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。&lt;/p>
@@ -1206,7 +1206,7 @@ alt="git命令">
 &lt;ul>
 &lt;li>go race detector：主要用于检测多个goroutine对共享变量的访问是否存在协程安全问题。编译器通过探测所有内存的访问，加入代码监视对内存地址的访问，在程序运行时，监控共享变量的非同步访问，出现race时，打印告警信息。比如在运行时加入race参数&lt;code>go run -race main.go&lt;/code>，当执行到一些并发操作时，才会检测运行时是否有并发问题&lt;/li>
 &lt;li>命令&lt;code>go vet xxx.go&lt;/code>可以进行死锁检测&lt;/li>
-&lt;/ul></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;/ul></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;p>&lt;strong>以下基于go.1.14&lt;/strong>&lt;/p>
 &lt;h1 id="函数内联优化">函数内联优化&lt;/h1>
 &lt;p>函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开&lt;/p>
@@ -1993,7 +1993,7 @@ alt="go yuasa删除写屏障">
 >Golang调度器GMP原理&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="https://segmentfault.com/a/1190000023869478" target="_blank" rel="noopener"
 >【golang】GMP调度详解&lt;/a>&lt;/p>
-&lt;p>极客时间 - Go并发编程实战&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>极客时间 - Go并发编程实战&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="bio">BIO&lt;/h1>
 &lt;p>特点&lt;/p>
 &lt;ul>
@@ -2555,7 +2555,7 @@ alt="Netty线程模型">
 >Java NIO：IO与NIO的区别&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="https://www.bilibili.com/video/BV1DJ411m7NR" target="_blank" rel="noopener"
 >尚硅谷Netty教程&lt;/a>&lt;/p>
-&lt;p>&lt;a class="link" href="" >netty in action&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>&lt;a class="link" href="" >netty in action&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;p>以下笔记如没指定版本，都是基于JDK1.8&lt;/p>
 &lt;h1 id="collection">Collection&lt;/h1>
 &lt;p>&lt;figure
@@ -2942,7 +2942,7 @@ alt="1.7concurrentHashMap">
 &lt;p>&lt;a class="link" href="https://www.cnblogs.com/leesf456/p/5547853.html" target="_blank" rel="noopener"
 >【JUC】JDK1.8源码分析之CopyOnWriteArrayList（六）&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="http://www.cnblogs.com/skywang12345/p/3624343.html" target="_blank" rel="noopener"
->红黑树(一)之 原理和算法详细介绍&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+>红黑树(一)之 原理和算法详细介绍&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="一面向对象">一、面向对象&lt;/h1>
 &lt;p>面向对象的特征：
 抽象(注意与当前目标有关的，选择一部分，暂时不用部分细节，分为过程抽象、数据抽象)
@@ -3443,7 +3443,7 @@ alt="1.7concurrentHashMap">
 &lt;a class="link" href="https://github.com/CyC2018/CS-Notes/blob/master/docs/notes/Java%20%E5%9F%BA%E7%A1%80.md" target="_blank" rel="noopener"
 >CyC2018/CS-Notes/java基础.md&lt;/a>
 &lt;a class="link" href="https://www.cnblogs.com/xiaoxi/p/6036701.html" target="_blank" rel="noopener"
->深入理解Java中的String&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+>深入理解Java中的String&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="线程进程协程">线程、进程、协程&lt;/h1>
 &lt;ul>
 &lt;li>
@@ -4028,7 +4028,7 @@ TERMINATED：terminated()方法执行过后变成这个
 &lt;p>&lt;a class="link" href="http://www.cnblogs.com/chenpi/p/5614290.html" target="_blank" rel="noopener"
 >Java并发编程JUC总结&lt;/a>&lt;/p>
 &lt;p>阿里巴巴Java开发手册1.40&lt;/p>
-&lt;p>Java并发编程实战&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>Java并发编程实战&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="jvm内存模型">JVM内存模型&lt;/h1>
 &lt;p>&lt;figure
 >
@@ -4426,7 +4426,7 @@ jinfo -flag [[+代表打开，-代表关闭，都不写代表查看][JVM参数][
 &lt;p>&lt;a class="link" href="https://tech.meituan.com/2017/12/29/jvm-optimize.html" target="_blank" rel="noopener"
 >从实际案例聊聊Java应用的GC优化&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="https://www.cnblogs.com/langtianya/p/3898760.html" target="_blank" rel="noopener"
->JVM -XX: 参数介绍&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+>JVM -XX: 参数介绍&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="kubernetes">Kubernetes&lt;/h1>
 &lt;h2 id="基本">基本&lt;/h2>
 &lt;p>&lt;figure
@@ -5586,7 +5586,7 @@ loading="lazy"
 &lt;/ul>
 &lt;h1 id="参考">参考&lt;/h1>
 &lt;p>极客时间-深入剖析k8s-张磊&lt;/p>
-&lt;p>极客时间-ServiceMesh实战-马若飞&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>极客时间-ServiceMesh实战-马若飞&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="特点">特点&lt;/h1>
 &lt;ol>
 &lt;li>分布式数据库，Json数据模型，面向对象数据模型，不强制表的scheme&lt;/li>
@@ -5999,7 +5999,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li>metrics：一系列指标统计信息&lt;/li>
 &lt;/ul>
 &lt;h1 id="参考">参考&lt;/h1>
-&lt;p>极客时间 - mongodb高手课&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;h1 id="orm">ORM&lt;/h1>
+&lt;p>极客时间 - mongodb高手课&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;h1 id="orm">ORM&lt;/h1>
 &lt;p>普通JDBC使用sql的prepareStatement + sql + 占位符 + 参数的方式执行sql语句&lt;/p>
 &lt;p>ORM其实就是在先编写类与数据库表字段的映射，可以是xml配置，也可以是注解配置，之后再使用JDBC执行sql时，通过对类的反射获得其属性的值和对应的字段名，拼接sql+占位符+属性值，执行sql语句&lt;/p>
 &lt;h1 id="mybatis">MyBatis&lt;/h1>
@@ -6021,7 +6021,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul>
 &lt;h1 id="参考">参考&lt;/h1>
 &lt;p>&lt;a class="link" href="https://blog.csdn.net/qq_40645822/article/details/101844675" target="_blank" rel="noopener"
->MyBatis的通俗理解：SqlSession.getMapper()源码分析&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+>MyBatis的通俗理解：SqlSession.getMapper()源码分析&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="基础架构">基础架构&lt;/h1>
 &lt;h2 id="mysql逻辑架构图">MySQL逻辑架构图&lt;/h2>
 &lt;p>&lt;figure
@@ -6985,7 +6985,7 @@ alt="MySQL主从复制">
 >Innodb中的事务隔离级别和锁的关系&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="" >极客时间 - MySQL实战45讲&lt;/a>&lt;/p>
 &lt;p>后记&lt;/p>
-&lt;p>极客时间 - MySQL实战45讲真的是质量很高的讲MySQL的课程，非常推荐&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>极客时间 - MySQL实战45讲真的是质量很高的讲MySQL的课程，非常推荐&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="数据类型及结构">数据类型及结构&lt;/h1>
 &lt;h2 id="数据类型">数据类型&lt;/h2>
 &lt;p>String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet&lt;/p>
@@ -7548,7 +7548,7 @@ alt="Redis缓存方案操作 - 极客时间Redis核心技术与实战">
 &lt;/ul>
 &lt;h1 id="参考">参考&lt;/h1>
 &lt;p>极客时间 - Redis核心技术与实战：讲得很不错，推荐。&lt;/p>
-&lt;p>还有其他看过的别人博客，但是当时忘记把链接贴下来。&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;h1 id="rpc">RPC&lt;/h1>
+&lt;p>还有其他看过的别人博客，但是当时忘记把链接贴下来。&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;h1 id="rpc">RPC&lt;/h1>
 &lt;p>&lt;figure
 >
 &lt;a href="https://github.com/Nixum/Java-Note/raw/master/picture/RPC%e7%ae%80%e5%8d%95%e6%a1%86%e6%9e%b6.png" >
@@ -7589,7 +7589,7 @@ loading="lazy"
 &lt;p>主要靠消息队列实现，不过比较适合发送方不太care处理结果的，如果care处理结果，可以再通过一条队列将结果传递下去，执行后面的处理。&lt;/p>
 &lt;h2 id="事件驱动--状态机">事件驱动 + 状态机&lt;/h2>
 &lt;p>可以依靠消息队列，本质还是发布订阅那一套，只是将触发的条件换成事件，消费者根据不同的事件触发不同的逻辑，然后再通过状态机保证处理事件顺序。&lt;/p>
-&lt;p>比较常见的场景是电商业务中围绕订单服务的一系列业务处理，比如订单创建完成后，订单服务发出订单创建的事件，对应库存服务，收到该事件，就会进行锁库操作等&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>比较常见的场景是电商业务中围绕订单服务的一系列业务处理，比如订单创建完成后，订单服务发出订单创建的事件，对应库存服务，收到该事件，就会进行锁库操作等&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="springboot">SpringBoot&lt;/h1>
 &lt;h2 id="spring-和-spring-boot区别">Spring 和 Spring Boot区别&lt;/h2>
 &lt;p>Spring Boot实现了自动配置，降低了项目搭建的复杂度。它主要是为了解决使用Spring框架需要进行大量的配置太麻烦的问题，所以它并不是用来替代Spring的解决方案，而是和Spring框架紧密结合用于提升Spring开发者体验的工具。同时它集成了大量常用的第三方库配置(例如Jackson, JDBC, Mongo, Redis, Mail等等)，做到零配置即用。内置Tomcat作为Web服务器，不像之前还要把服务部署到Tomcat在进行启动。&lt;/p>
@@ -7978,7 +7978,7 @@ alt="SpringBoot启动流程">
 &lt;li>PROPAGATION_REQUIRES_NEW：当前方法必须运行在事务中，如果当前存在事务，则该事务在方法运行期间被挂起&lt;/li>
 &lt;li>PROPAGATION_SUPPORTS：当前方法不需要运行在事务中，但如果存在事务，也可运行在事务中&lt;/li>
 &lt;li>PROPAGATION_NOT_SUPPORTED：当前方法不能运行在事务中，如果存在事务，则挂起该方法&lt;/li>
-&lt;/ul></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;h1 id="springmvc工作原理">SpringMVC工作原理&lt;/h1>
+&lt;/ul></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;h1 id="springmvc工作原理">SpringMVC工作原理&lt;/h1>
 &lt;p>&lt;a class="link" href="https://github.com/Nixum/JavaGuide/blob/master/%E4%B8%BB%E6%B5%81%E6%A1%86%E6%9E%B6/SpringMVC%20%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E8%AF%A6%E8%A7%A3.md" target="_blank" rel="noopener"
 >SpringMVC工作原理详解&lt;/a>&lt;/p>
 &lt;p>流程图看链接里的即可&lt;/p>
@@ -8008,7 +8008,7 @@ alt="SpringBoot启动流程">
 &lt;/ul>
 &lt;h1 id="spring-security">Spring Security&lt;/h1>
 &lt;p>简单工作流程&lt;/p>
-&lt;p>请求(包含用户名，密码之类)——&amp;gt;登陆信息封装成一个Authentication对象——&amp;gt;AuthenticationManager，调用authenticate ()方法处理——&amp;gt;该方法会将对象传递给一系列AuthenticationAdapter（一系列Filter），每一个AuthenticationAdapter会调用它们配置的UserDetailsService处理&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>请求(包含用户名，密码之类)——&amp;gt;登陆信息封装成一个Authentication对象——&amp;gt;AuthenticationManager，调用authenticate ()方法处理——&amp;gt;该方法会将对象传递给一系列AuthenticationAdapter（一系列Filter），每一个AuthenticationAdapter会调用它们配置的UserDetailsService处理&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="类图">类图&lt;/h1>
 &lt;p>类图中的关系其实有多种版本的表示方法，这里仅总结自己常用的画法&lt;/p>
 &lt;h2 id="访问作用域">访问作用域&lt;/h2>
@@ -8098,7 +8098,7 @@ alt="A实现了接口B">
 &lt;/a>
 &lt;figcaption>A实现了接口B&lt;/figcaption>
 &lt;/figure>&lt;/p>
-&lt;p>PS：为了方便，继承和接口实现也都可以用实线加空心三角箭头&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>PS：为了方便，继承和接口实现也都可以用实线加空心三角箭头&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="quartz">Quartz&lt;/h1>
 &lt;ul>
 &lt;li>
@@ -8503,7 +8503,7 @@ alt="基于OAuth2的第三方登录">
 &lt;li>加入版本控制，加在URL上，或者请求头有个字段标识；&lt;/li>
 &lt;/ul>
 &lt;h1 id="参考">参考&lt;/h1>
-&lt;p>极客时间 - 后端存储实战&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>极客时间 - 后端存储实战&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="分布式理论">分布式理论&lt;/h1>
 &lt;p>一个分布式系统最多只能满足 C、A、P 这三项中的两项。&lt;/p>
 &lt;h2 id="cap理论">CAP理论&lt;/h2>
@@ -8835,7 +8835,7 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 >Raft动画演示&lt;/a>&lt;/p>
 &lt;h2 id="gossip协议">Gossip协议&lt;/h2>
 &lt;p>简单来讲，就是一个节点会周期、随机的将事件广播给其他节点，其他节点收到后也会周期性的广播给其他节点，最终集群上所有节点都能收到消息，是一种去中心化，最终一致性的算法，压力不在来自主节点，而是所有节点都均衡负载，扩展性很好，即使有新节点加入，最终也会被广播到。&lt;/p>
-&lt;p>当会有个拜占庭问题，就是如果有一个恶意传播节点，将会打乱原本的传播&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>当会有个拜占庭问题，就是如果有一个恶意传播节点，将会打乱原本的传播&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="底层原理">底层原理&lt;/h1>
 &lt;p>容器技术的核心功能，就是通过约束和修改进程的动态表现，从而为其创造出一个边界。&lt;/p>
 &lt;h2 id="namespace---隔离">Namespace - 隔离&lt;/h2>
@@ -9162,7 +9162,7 @@ loading="lazy"
 &lt;p>要注意CMD只允许有一条，如果有多条只有最后一条会生效&lt;/p>
 &lt;h1 id="参考">参考&lt;/h1>
 &lt;p>极客时间-深入剖析k8s-张磊&lt;/p>
-&lt;p>极客时间-容器实战高手课&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>极客时间-容器实战高手课&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="对微服务的理解">对微服务的理解&lt;/h1>
 &lt;p>&lt;a class="link" href="http://dockone.io/article/3687" target="_blank" rel="noopener"
 >http://dockone.io/article/3687&lt;/a>&lt;/p>
@@ -9630,7 +9630,7 @@ Trying &lt;span class="s2">&amp;#34;cn.bing.com.cluster.local&amp;#34;&lt;/span>
 Trying &lt;span class="s2">&amp;#34;cn.bing.com.us-west-2.compute.internal&amp;#34;&lt;/span>
 Trying &lt;span class="s2">&amp;#34;cn.bing.com&amp;#34;&lt;/span>
 ...
-&lt;/code>&lt;/pre>&lt;/div>&lt;h1 id="heading">&lt;/h1></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h1 id="heading">&lt;/h1></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="内核">内核&lt;/h1>
 &lt;h2 id="pc机启动流程">PC机启动流程&lt;/h2>
 &lt;p>以Ubuntu Linux + GRUB引导程序为例：&lt;/p>
@@ -9883,7 +9883,7 @@ alt="Linux初始化要点">
 &lt;p>Unix网络中的5种 I/O 模型&lt;/p>
 &lt;p>参考：https://zhuanlan.zhihu.com/p/121826927、https://segmentfault.com/a/1190000022653305&lt;/p>
 &lt;h1 id="参考">参考&lt;/h1>
-&lt;p>极客时间 - 操作系统实战45讲&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>极客时间 - 操作系统实战45讲&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="使用场景">使用场景&lt;/h1>
 &lt;ul>
 &lt;li>秒杀系统，一般秒杀系统处理包含几个步骤：风险控制、库存锁定、生成订单、短信通知、更新统计数据灯，而决定秒杀是否成功只在前两个步骤，后续的操作就可以通过消息队列&lt;strong>异步&lt;/strong>处理完成，加快整个流程的处理，&lt;strong>减少等待时间，提升并发量&lt;/strong>。&lt;/li>
@@ -10156,7 +10156,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 >架构文摘：消息队列设计精要&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="https://tech.meituan.com/2016/07/01/mq-design.html" target="_blank" rel="noopener"
 >消息队列设计精要&lt;/a>，这个讲的不错&lt;/p>
-&lt;p>极客时间 - 消息队列高手课 - 李玥&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+&lt;p>极客时间 - 消息队列高手课 - 李玥&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;h1 id="从浏览器输入url之后都发生了什么">从浏览器输入URL之后都发生了什么&lt;/h1>
 &lt;p>浏览器输入URL，按回车，&lt;/p>
 &lt;ol>
@@ -10661,7 +10661,7 @@ alt="基于UDP的Socket">
 >TCP/IP参考2&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="" >极客时间 - 趣谈网络协议&lt;/a>&lt;/p>
 &lt;p>&lt;a class="link" href="https://coolshell.cn/articles/11564.html" target="_blank" rel="noopener"
->TCP 的那些事儿&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/blog/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/blog/p/</guid><description>&lt;p>[TOC]&lt;/p>
+>TCP 的那些事儿&lt;/a>&lt;/p></description></item><item><title/><link>https://nixum.github.io/p/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://nixum.github.io/p/</guid><description>&lt;p>[TOC]&lt;/p>
 &lt;p>只记录常用设计模式&lt;/p>
 &lt;h1 id="设计模式六大原则">设计模式六大原则&lt;/h1>
 &lt;ol>
