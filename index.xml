@@ -2,16 +2,16 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
         <title>Nixum Blog</title>
-        <link>/</link>
+        <link>https://nixum.github.io/blog/</link>
         <description>Recent content on Nixum Blog</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en-us</language>
-        <lastBuildDate>Tue, 28 May 2019 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Tue, 28 May 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://nixum.github.io/blog/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>PlaceHolder</title>
-        <link>/p/placeholder/</link>
+        <link>https://nixum.github.io/blog/p/placeholder/</link>
         <pubDate>Mon, 25 Feb 2019 00:00:00 +0000</pubDate>
         
-        <guid>/p/placeholder/</guid>
+        <guid>https://nixum.github.io/blog/p/placeholder/</guid>
         <description>&lt;h1 id=&#34;content&#34;&gt;Content&lt;/h1&gt;
 &lt;p&gt;个人是后端开发，以Go和Java为主要开发语言，该Repository主要记录已使用或者感兴趣的技术的知识点，以及一些工作中的感受之类。&lt;/p&gt;
 &lt;p&gt;emmm有时间再好好美化首页README。&lt;/p&gt;
@@ -22,10 +22,10 @@
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;zookeeper&#34;&gt;ZooKeeper&lt;/h1&gt;
 &lt;p&gt;ZooKeeper保证的是CP，不保证每次服务请求的可用性，在极端环境下，ZooKeeper可能会丢弃一些请求，消费者程序需要重新请求才能获得结果。另外在进行leader选举时集群都是不可用，所以说，ZooKeeper不能保证服务可用性。&lt;/p&gt;
@@ -99,8 +99,8 @@
 &lt;p&gt;使用场景：配置存储、服务发现、主备选举，读多写少的场景&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/ETCD%e6%9e%b6%e6%9e%84.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/ETCD%e6%9e%b6%e6%9e%84.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/ETCD%e6%9e%b6%e6%9e%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/ETCD%e6%9e%b6%e6%9e%84.png&#34;
 			
 			
 			
@@ -355,8 +355,8 @@ Data ----------- 提案内容
 &lt;h3 id=&#34;事件推送机制&#34;&gt;事件推送机制&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/etcd%e4%ba%8b%e4%bb%b6%e6%8e%a8%e9%80%81%e6%9e%b6%e6%9e%84.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/etcd%e4%ba%8b%e4%bb%b6%e6%8e%a8%e9%80%81%e6%9e%b6%e6%9e%84.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/etcd%e4%ba%8b%e4%bb%b6%e6%8e%a8%e9%80%81%e6%9e%b6%e6%9e%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/etcd%e4%ba%8b%e4%bb%b6%e6%8e%a8%e9%80%81%e6%9e%b6%e6%9e%84.png&#34;
 			
 			
 			
@@ -418,14 +418,14 @@ Data ----------- 提案内容
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/git_flow.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/git_flow.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/git_flow.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/git_flow.jpg&#34;
 			
 			
 			
@@ -521,8 +521,8 @@ Data ----------- 提案内容
 &lt;h3 id=&#34;其他常用命令&#34;&gt;其他常用命令&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/git_command.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/git_command.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/git_command.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/git_command.png&#34;
 			
 			
 			
@@ -540,10 +540,10 @@ Data ----------- 提案内容
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;内存模型&#34;&gt;内存模型&lt;/h1&gt;
 &lt;p&gt;这里的内存模型不是指内存分配、整理回收的规范，而是在并发环境下多goroutine读取共享变量时变量的可见性条件。&lt;/p&gt;
@@ -1287,10 +1287,10 @@ Data ----------- 提案内容
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;以下基于go.1.14&lt;/strong&gt;&lt;/p&gt;
 &lt;h1 id=&#34;函数内联优化&#34;&gt;函数内联优化&lt;/h1&gt;
@@ -1458,8 +1458,8 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_map_struct.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_map_struct.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_map_struct.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_map_struct.png&#34;
 			
 			
 			
@@ -1590,8 +1590,8 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;span class=&#34;nx&#34;&gt;val&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Pointer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;dataOffset&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;+&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;bucketCnt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;uintptr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;keysize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;+&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;uintptr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;valuesize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_map_get.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_map_get.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_map_get.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_map_get.png&#34;
 			
 			
 			
@@ -1727,8 +1727,8 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;h2 id=&#34;早期调度模型-mg模型&#34;&gt;早期调度模型-MG模型&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go%e6%97%a9%e6%9c%9f%e8%b0%83%e5%ba%a6%e6%a8%a1%e5%9e%8b.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go%e6%97%a9%e6%9c%9f%e8%b0%83%e5%ba%a6%e6%a8%a1%e5%9e%8b.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go%e6%97%a9%e6%9c%9f%e8%b0%83%e5%ba%a6%e6%a8%a1%e5%9e%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go%e6%97%a9%e6%9c%9f%e8%b0%83%e5%ba%a6%e6%a8%a1%e5%9e%8b.png&#34;
 			
 			
 			
@@ -1809,8 +1809,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h2 id=&#34;总的调度流程&#34;&gt;总的调度流程&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/GMP%e6%a8%a1%e5%9e%8b%e6%95%b4%e4%bd%93%e8%b0%83%e5%ba%a6.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/GMP%e6%a8%a1%e5%9e%8b%e6%95%b4%e4%bd%93%e8%b0%83%e5%ba%a6.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/GMP%e6%a8%a1%e5%9e%8b%e6%95%b4%e4%bd%93%e8%b0%83%e5%ba%a6.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/GMP%e6%a8%a1%e5%9e%8b%e6%95%b4%e4%bd%93%e8%b0%83%e5%ba%a6.png&#34;
 			
 			
 			
@@ -1828,8 +1828,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;p&gt;如果G0短时间处理完，P就会从LRQ取出G1进行处理，LRQ从GRQ取出G4进行分配；&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime1.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime1.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime1.png&#34;
 			
 			
 			
@@ -1845,8 +1845,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;p&gt;如果G1处理得很快，则继续获取LRQ里的下一个G；待LRQ里的G都执行完了，切回M0，继续处理G0。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime2.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime2.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime2.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime2.png&#34;
 			
 			
 			
@@ -1862,8 +1862,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;p&gt;&lt;strong&gt;由sysmon协程进行协作式抢占&lt;/strong&gt;，对goroutine进行标记，执行goroutine时如果有标记就会让出CPU，对于syscall过久的P，会进行M和P的分配，防止P被占用过久影响调度。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_sysmon_goroutine.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_sysmon_goroutine.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_sysmon_goroutine.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_sysmon_goroutine.png&#34;
 			
 			
 			
@@ -1886,8 +1886,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h2 id=&#34;ggoroutine的状态&#34;&gt;G：Goroutine的状态&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_state.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_state.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_state.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_state.png&#34;
 			
 			
 			
@@ -1953,8 +1953,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h2 id=&#34;pprocessor的状态&#34;&gt;P：Processor的状态&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_processor_state.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_processor_state.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_processor_state.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_processor_state.png&#34;
 			
 			
 			
@@ -2013,8 +2013,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_gc.gif&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_gc.gif&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_gc.gif&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_gc.gif&#34;
 			
 			
 			
@@ -2051,8 +2051,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h3 id=&#34;dijkstra的插入写屏障&#34;&gt;Dijkstra的插入写屏障&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_dijkstra_%e6%8f%92%e5%85%a5%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_dijkstra_%e6%8f%92%e5%85%a5%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_dijkstra_%e6%8f%92%e5%85%a5%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_dijkstra_%e6%8f%92%e5%85%a5%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34;
 			
 			
 			
@@ -2069,8 +2069,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h3 id=&#34;yuasa的删除写屏障&#34;&gt;Yuasa的删除写屏障&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_yuasa_%e5%88%a0%e9%99%a4%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/go_yuasa_%e5%88%a0%e9%99%a4%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_yuasa_%e5%88%a0%e9%99%a4%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_yuasa_%e5%88%a0%e9%99%a4%e5%86%99%e5%b1%8f%e9%9a%9c.png&#34;
 			
 			
 			
@@ -2149,10 +2149,10 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;bio&#34;&gt;BIO&lt;/h1&gt;
 &lt;p&gt;特点&lt;/p&gt;
@@ -2454,8 +2454,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h3 id=&#34;1-单reactor单线程&#34;&gt;1. 单Reactor单线程&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%8d%95%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%8d%95%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%8d%95%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%8d%95%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
 			
 			
 			
@@ -2477,8 +2477,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h3 id=&#34;2-单reactor多线程&#34;&gt;2. 单Reactor多线程&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
 			
 			
 			
@@ -2498,8 +2498,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h3 id=&#34;3-主从reactor多线程&#34;&gt;3. 主从Reactor多线程&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9aReactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9aReactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9aReactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9aReactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
 			
 			
 			
@@ -2519,8 +2519,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h2 id=&#34;server端线程模型&#34;&gt;Server端线程模型&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/netty%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/netty%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/netty%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/netty%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg&#34;
 			
 			
 			
@@ -2784,17 +2784,17 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;p&gt;以下笔记如没指定版本，都是基于JDK1.8&lt;/p&gt;
 &lt;h1 id=&#34;collection&#34;&gt;Collection&lt;/h1&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/collection%e7%b1%bb%e5%9b%be.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/collection%e7%b1%bb%e5%9b%be.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/collection%e7%b1%bb%e5%9b%be.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/collection%e7%b1%bb%e5%9b%be.png&#34;
 			
 			
 			
@@ -2960,8 +2960,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h1 id=&#34;map&#34;&gt;Map&lt;/h1&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Map%e7%b1%bb%e5%9b%be.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Map%e7%b1%bb%e5%9b%be.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Map%e7%b1%bb%e5%9b%be.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Map%e7%b1%bb%e5%9b%be.png&#34;
 			
 			
 			
@@ -3018,8 +3018,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;p&gt;1.8之前，数组的每一个元素中存放一条链表：&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/1.7HashMap.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/1.7HashMap.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/1.7HashMap.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/1.7HashMap.jpg&#34;
 			
 			
 			
@@ -3033,8 +3033,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;p&gt;1.8，数组中的每一个元素存放一条链表，当链表的长度超过8（默认）之后，将链表转换成红黑树，以减少搜索时间&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/1.8HashMap.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/1.8HashMap.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/1.8HashMap.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/1.8HashMap.jpg&#34;
 			
 			
 			
@@ -3157,8 +3157,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/1.7concurrentHashMap.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/1.7concurrentHashMap.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/1.7concurrentHashMap.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/1.7concurrentHashMap.jpg&#34;
 			
 			
 			
@@ -3213,10 +3213,10 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;一面向对象&#34;&gt;一、面向对象&lt;/h1&gt;
 &lt;p&gt;面向对象的特征：
@@ -3728,10 +3728,10 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;线程进程协程&#34;&gt;线程、进程、协程&lt;/h1&gt;
 &lt;ul&gt;
@@ -3803,8 +3803,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h2 id=&#34;1状态转换&#34;&gt;1.状态转换&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e7%ba%bf%e7%a8%8b%e7%8a%b6%e6%80%81%e8%bd%ac%e6%8d%a2.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e7%ba%bf%e7%a8%8b%e7%8a%b6%e6%80%81%e8%bd%ac%e6%8d%a2.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e7%ba%bf%e7%a8%8b%e7%8a%b6%e6%80%81%e8%bd%ac%e6%8d%a2.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e7%ba%bf%e7%a8%8b%e7%8a%b6%e6%80%81%e8%bd%ac%e6%8d%a2.png&#34;
 			
 			
 			
@@ -4012,8 +4012,8 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
 &lt;h1 id=&#34;一些锁的概念&#34;&gt;一些锁的概念&lt;/h1&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/java-%e9%94%81.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/java-%e9%94%81.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/java-%e9%94%81.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/java-%e9%94%81.png&#34;
 			
 			
 			
@@ -4335,16 +4335,16 @@ TERMINATED：terminated()方法执行过后变成这个
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;jvm内存模型&#34;&gt;JVM内存模型&lt;/h1&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/JVM%e5%86%85%e5%ad%98%e6%a8%a1%e5%9e%8b.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/JVM%e5%86%85%e5%ad%98%e6%a8%a1%e5%9e%8b.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/JVM%e5%86%85%e5%ad%98%e6%a8%a1%e5%9e%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/JVM%e5%86%85%e5%ad%98%e6%a8%a1%e5%9e%8b.png&#34;
 			
 			
 			
@@ -4747,17 +4747,17 @@ jinfo -flag [[+代表打开，-代表关闭，都不写代表查看][JVM参数][
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;kubernetes&#34;&gt;Kubernetes&lt;/h1&gt;
 &lt;h2 id=&#34;基本&#34;&gt;基本&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%a1%b9%e7%9b%ae%e6%9e%b6%e6%9e%84.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%a1%b9%e7%9b%ae%e6%9e%b6%e6%9e%84.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%a1%b9%e7%9b%ae%e6%9e%b6%e6%9e%84.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%a1%b9%e7%9b%ae%e6%9e%b6%e6%9e%84.jpg&#34;
 			
 			
 			
@@ -4792,8 +4792,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;h3 id=&#34;原理&#34;&gt;原理&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%bb%98%e8%ae%a4%e8%b0%83%e5%ba%a6%e5%8e%9f%e7%90%86.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%bb%98%e8%ae%a4%e8%b0%83%e5%ba%a6%e5%8e%9f%e7%90%86.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%bb%98%e8%ae%a4%e8%b0%83%e5%ba%a6%e5%8e%9f%e7%90%86.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%bb%98%e8%ae%a4%e8%b0%83%e5%ba%a6%e5%8e%9f%e7%90%86.png&#34;
 			
 			
 			
@@ -4906,8 +4906,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/ol&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/CRI_work_flow.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/CRI_work_flow.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/CRI_work_flow.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/CRI_work_flow.png&#34;
 			
 			
 			
@@ -5172,8 +5172,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;通过节点上的网桥和Pod上的 Veth Pair 实现，整体跟同一节点上容器间的通信 很像，只不过 Veth Pair 是挂在Pod的共享网络空间上的。Veth Pair将节点上的网桥和Pod上的共享网络空间进行连接，再通过网桥，连接不同的Pod的共享网络空间，实现不同Pod间网络通信。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8bPod%e9%97%b4%e9%80%9a%e4%bf%a1.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8bPod%e9%97%b4%e9%80%9a%e4%bf%a1.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8bPod%e9%97%b4%e9%80%9a%e4%bf%a1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8bPod%e9%97%b4%e9%80%9a%e4%bf%a1.png&#34;
 			
 			
 			
@@ -5195,8 +5195,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/ol&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/flannel_udp%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/flannel_udp%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/flannel_udp%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/flannel_udp%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
 			
 			
 			
@@ -5220,8 +5220,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;原理是通过在二层网络上再设置一个VTEP设备，该设备是Linux内核中一个模块，可以在内核态完成数据的封装和解封。flannel.1设备（VTEP）既有IP地址又有MAC地址，在数据包发往flannel.1设备时，通过二层数据帧，将原数据包加上目标节点的MVC地址，再加上VTEP标识，封装成一个二层数据帧，然后再封装成宿主机网络里的普通UDP数据包，发送给目标节点，目标节点在内核网络栈中发现了VTEP标识，就知道可以在内核态处理了。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/flannel_vxlan%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/flannel_vxlan%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/flannel_vxlan%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/flannel_vxlan%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
 			
 			
 			
@@ -5236,8 +5236,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;将每个Flannel子网的下一跳设置成该子网对应的宿主机的IP地址，用这台宿主机充当网关，Flannel子网和主机信息都保存在ETCD中，由flanneld进程WATCH这些数据的变化，实时更新路由表，这种方案的性能最好。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/flannel_host_gw%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/flannel_host_gw%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/flannel_host_gw%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/flannel_host_gw%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
 			
 			
 			
@@ -5252,8 +5252,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;但这种方案会遇到路由表的规模问题，且最优情况是集群节点在同一个子网。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/calico%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/calico%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/calico%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/calico%e8%b7%a8%e4%b8%bb%e6%9c%ba%e9%80%9a%e4%bf%a1.png&#34;
 			
 			
 			
@@ -5646,8 +5646,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;k8s根据我们提交的yaml文件创建出一个API对象，一个API对象在etcd里的完整资源路径是由Group（API 组）、Version（API 版本）和 Resource（API 资源类型）三个部分组成的&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/API%e5%af%b9%e8%b1%a1%e6%a0%91%e5%bd%a2%e7%bb%93%e6%9e%84.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/API%e5%af%b9%e8%b1%a1%e6%a0%91%e5%bd%a2%e7%bb%93%e6%9e%84.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/API%e5%af%b9%e8%b1%a1%e6%a0%91%e5%bd%a2%e7%bb%93%e6%9e%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/API%e5%af%b9%e8%b1%a1%e6%a0%91%e5%bd%a2%e7%bb%93%e6%9e%84.png&#34;
 			
 			
 			
@@ -5695,8 +5695,8 @@ spec:
 &lt;p&gt;控制器的原理：&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png&#34;
 			
 			
 			
@@ -5857,8 +5857,8 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 &lt;p&gt;&lt;strong&gt;数据平面&lt;/strong&gt;：Pod中的每个Envoy容器，即istio-proxy；Envoy会以side car的方式运行在Pod中，利用Pod中的所有容器共享同一个Network Namespace的特性，通过配置Pod里的iptables规则，管理进出Pod的流量。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Istio-%e6%9e%b6%e6%9e%84.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Istio-%e6%9e%b6%e6%9e%84.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Istio-%e6%9e%b6%e6%9e%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Istio-%e6%9e%b6%e6%9e%84.png&#34;
 			
 			
 			
@@ -5982,10 +5982,10 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;特点&#34;&gt;特点&lt;/h1&gt;
 &lt;ol&gt;
@@ -6002,8 +6002,8 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 &lt;p&gt;客户端使用驱动时连接的执行流程&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e5%ae%a2%e6%88%b7%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e5%ae%a2%e6%88%b7%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e5%ae%a2%e6%88%b7%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e5%ae%a2%e6%88%b7%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34;
 			
 			
 			
@@ -6017,8 +6017,8 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 &lt;p&gt;数据库端执行流程&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e6%95%b0%e6%8d%ae%e5%ba%93%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e6%95%b0%e6%8d%ae%e5%ba%93%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e6%95%b0%e6%8d%ae%e5%ba%93%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB%e6%95%b0%e6%8d%ae%e5%ba%93%e7%ab%af%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.jpg&#34;
 			
 			
 			
@@ -6415,10 +6415,10 @@ PROJECTION：限定返回字段时候stage的返回
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;h1 id=&#34;orm&#34;&gt;ORM&lt;/h1&gt;
 &lt;p&gt;普通JDBC使用sql的prepareStatement + sql + 占位符 + 参数的方式执行sql语句&lt;/p&gt;
 &lt;p&gt;ORM其实就是在先编写类与数据库表字段的映射，可以是xml配置，也可以是注解配置，之后再使用JDBC执行sql时，通过对类的反射获得其属性的值和对应的字段名，拼接sql+占位符+属性值，执行sql语句&lt;/p&gt;
@@ -6446,17 +6446,17 @@ PROJECTION：限定返回字段时候stage的返回
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;基础架构&#34;&gt;基础架构&lt;/h1&gt;
 &lt;h2 id=&#34;mysql逻辑架构图&#34;&gt;MySQL逻辑架构图&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MySQL%e9%80%bb%e8%be%91%e7%bb%93%e6%9e%84%e5%9b%be.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MySQL%e9%80%bb%e8%be%91%e7%bb%93%e6%9e%84%e5%9b%be.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MySQL%e9%80%bb%e8%be%91%e7%bb%93%e6%9e%84%e5%9b%be.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MySQL%e9%80%bb%e8%be%91%e7%bb%93%e6%9e%84%e5%9b%be.jpg&#34;
 			
 			
 			
@@ -6685,8 +6685,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;注意&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/B&amp;#43;%e6%a0%91.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/B&amp;#43;%e6%a0%91.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/B&amp;#43;%e6%a0%91.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/B&amp;#43;%e6%a0%91.png&#34;
 			
 			
 			
@@ -6708,8 +6708,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;&lt;strong&gt;b-树&lt;/strong&gt;：在b树的基础上，不限制出度的个数，所有节点为表的数据，只有一条路，从根节点开始&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/B%e6%a0%91.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/B%e6%a0%91.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/B%e6%a0%91.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/B%e6%a0%91.png&#34;
 			
 			
 			
@@ -7276,8 +7276,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MySQL%e4%b8%bb%e4%bb%8e%e5%a4%8d%e5%88%b6.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/MySQL%e4%b8%bb%e4%bb%8e%e5%a4%8d%e5%88%b6.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MySQL%e4%b8%bb%e4%bb%8e%e5%a4%8d%e5%88%b6.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MySQL%e4%b8%bb%e4%bb%8e%e5%a4%8d%e5%88%b6.png&#34;
 			
 			
 			
@@ -7440,10 +7440,10 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;数据类型及结构&#34;&gt;数据类型及结构&lt;/h1&gt;
 &lt;h2 id=&#34;数据类型&#34;&gt;数据类型&lt;/h2&gt;
@@ -7762,8 +7762,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;/ol&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Redis%e5%93%a8%e5%85%b5%e4%b8%8b%e7%ba%bf%e4%b8%bb%e5%ba%93%e5%92%8cLeader%e9%80%89%e4%b8%be.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Redis%e5%93%a8%e5%85%b5%e4%b8%8b%e7%ba%bf%e4%b8%bb%e5%ba%93%e5%92%8cLeader%e9%80%89%e4%b8%be.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Redis%e5%93%a8%e5%85%b5%e4%b8%8b%e7%ba%bf%e4%b8%bb%e5%ba%93%e5%92%8cLeader%e9%80%89%e4%b8%be.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Redis%e5%93%a8%e5%85%b5%e4%b8%8b%e7%ba%bf%e4%b8%bb%e5%ba%93%e5%92%8cLeader%e9%80%89%e4%b8%be.png&#34;
 			
 			
 			
@@ -7995,8 +7995,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;/ol&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Redis%e7%bc%93%e5%ad%98%e6%96%b9%e6%a1%88%e6%93%8d%e4%bd%9c.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Redis%e7%bc%93%e5%ad%98%e6%96%b9%e6%a1%88%e6%93%8d%e4%bd%9c.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Redis%e7%bc%93%e5%ad%98%e6%96%b9%e6%a1%88%e6%93%8d%e4%bd%9c.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Redis%e7%bc%93%e5%ad%98%e6%96%b9%e6%a1%88%e6%93%8d%e4%bd%9c.png&#34;
 			
 			
 			
@@ -8023,15 +8023,15 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;h1 id=&#34;rpc&#34;&gt;RPC&lt;/h1&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/RPC%e7%ae%80%e5%8d%95%e6%a1%86%e6%9e%b6.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/RPC%e7%ae%80%e5%8d%95%e6%a1%86%e6%9e%b6.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/RPC%e7%ae%80%e5%8d%95%e6%a1%86%e6%9e%b6.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/RPC%e7%ae%80%e5%8d%95%e6%a1%86%e6%9e%b6.png&#34;
 			
 			
 			
@@ -8077,10 +8077,10 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;springboot&#34;&gt;SpringBoot&lt;/h1&gt;
 &lt;h2 id=&#34;spring-和-spring-boot区别&#34;&gt;Spring 和 Spring Boot区别&lt;/h2&gt;
@@ -8095,8 +8095,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;/ol&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/SpringBoot%e5%90%af%e5%8a%a8%e6%b5%81%e7%a8%8b.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/SpringBoot%e5%90%af%e5%8a%a8%e6%b5%81%e7%a8%8b.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/SpringBoot%e5%90%af%e5%8a%a8%e6%b5%81%e7%a8%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/SpringBoot%e5%90%af%e5%8a%a8%e6%b5%81%e7%a8%8b.png&#34;
 			
 			
 			
@@ -8489,10 +8489,10 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;h1 id=&#34;springmvc工作原理&#34;&gt;SpringMVC工作原理&lt;/h1&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://github.com/Nixum/JavaGuide/blob/master/%E4%B8%BB%E6%B5%81%E6%A1%86%E6%9E%B6/SpringMVC%20%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E8%AF%A6%E8%A7%A3.md&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;SpringMVC工作原理详解&lt;/a&gt;&lt;/p&gt;
@@ -8528,10 +8528,10 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;类图&#34;&gt;类图&lt;/h1&gt;
 &lt;p&gt;类图中的关系其实有多种版本的表示方法，这里仅总结自己常用的画法&lt;/p&gt;
@@ -8554,8 +8554,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;A &amp;mdash;-&amp;gt; B ： A use B （虚线+箭头）&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-use.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-use.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-use.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-use.png&#34;
 			
 			
 			
@@ -8573,8 +8573,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;A ——————&amp;gt; B ： A has B （实心线 + 箭头）&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-association.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-association.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-association.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-association.png&#34;
 			
 			
 			
@@ -8590,8 +8590,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;A &amp;lt;&amp;gt;—————— B :   A是集体，B是个体 （实线 + 空心菱形）&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-aggregation.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-aggregation.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-aggregation.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-aggregation.png&#34;
 			
 			
 			
@@ -8607,8 +8607,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;A &amp;lt;#&amp;gt;———— B： A是整体，B是部分  （实线线 + 实心菱形）&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-composition.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-composition.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-composition.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-composition.png&#34;
 			
 			
 			
@@ -8624,8 +8624,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;A ——————|&amp;gt; B : A继承了B  （实心线 + 空心三角箭头），A is B&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-generalization.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-generalization.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-generalization.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-generalization.png&#34;
 			
 			
 			
@@ -8640,8 +8640,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;A &amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;|&amp;gt; B : A实现了接口B （虚心线 + 空心三角箭头）， A like B&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-implementation.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UML-implementation.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-implementation.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UML-implementation.png&#34;
 			
 			
 			
@@ -8657,10 +8657,10 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;quartz&#34;&gt;Quartz&lt;/h1&gt;
 &lt;ul&gt;
@@ -8762,8 +8762,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/sso-first-access.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/sso-first-access.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/sso-first-access.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/sso-first-access.png&#34;
 			
 			
 			
@@ -8784,8 +8784,8 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/sso-second-access.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/sso-second-access.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/sso-second-access.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/sso-second-access.png&#34;
 			
 			
 			
@@ -8832,8 +8832,8 @@ value：无
     &gt;理解OAuth 2.0&lt;/a&gt;，这样基本就入门了，这里是总结项目中如何接入，一般在集成facebook和google的第三方登录也是类似的流程机制，这里只用到了access_token，对于refresh_token，是用来延长access_token的过期时间的，减少短时间内的重复登录，这里就没有涉及到了&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eoauth2%e7%9a%84%e7%ac%ac%e4%b8%89%e6%96%b9%e7%99%bb%e5%bd%95%e6%b5%81%e7%a8%8b.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eoauth2%e7%9a%84%e7%ac%ac%e4%b8%89%e6%96%b9%e7%99%bb%e5%bd%95%e6%b5%81%e7%a8%8b.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eoauth2%e7%9a%84%e7%ac%ac%e4%b8%89%e6%96%b9%e7%99%bb%e5%bd%95%e6%b5%81%e7%a8%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eoauth2%e7%9a%84%e7%ac%ac%e4%b8%89%e6%96%b9%e7%99%bb%e5%bd%95%e6%b5%81%e7%a8%8b.png&#34;
 			
 			
 			
@@ -9089,10 +9089,10 @@ value：无
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;分布式理论&#34;&gt;分布式理论&lt;/h1&gt;
 &lt;p&gt;一个分布式系统最多只能满足 C、A、P 这三项中的两项。&lt;/p&gt;
@@ -9435,10 +9435,10 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;底层原理&#34;&gt;底层原理&lt;/h1&gt;
 &lt;p&gt;容器技术的核心功能，就是通过约束和修改进程的动态表现，从而为其创造出一个边界。&lt;/p&gt;
@@ -9482,8 +9482,8 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;p&gt;Linux中的进程状态&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux%e8%bf%9b%e7%a8%8b%e7%8a%b6%e6%80%81.jpeg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux%e8%bf%9b%e7%a8%8b%e7%8a%b6%e6%80%81.jpeg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux%e8%bf%9b%e7%a8%8b%e7%8a%b6%e6%80%81.jpeg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux%e8%bf%9b%e7%a8%8b%e7%8a%b6%e6%80%81.jpeg&#34;
 			
 			
 			
@@ -9534,8 +9534,8 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;h1 id=&#34;cpu&#34;&gt;CPU&lt;/h1&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux_CPU%e4%bd%bf%e7%94%a8%e5%88%86%e7%b1%bb.jpeg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux_CPU%e4%bd%bf%e7%94%a8%e5%88%86%e7%b1%bb.jpeg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux_CPU%e4%bd%bf%e7%94%a8%e5%88%86%e7%b1%bb.jpeg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux_CPU%e4%bd%bf%e7%94%a8%e5%88%86%e7%b1%bb.jpeg&#34;
 			
 			
 			
@@ -9675,8 +9675,8 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;p&gt;关于容器缺省使用的peer veth方案，由于从容器的veth0到宿主机的veth0会有一次软中断，带来了额外的开销，时延会高一些，可以使用 ipvlan/macvlan的网络接口替代，ipvlan/macvlan 直接在物理网络接口上虚拟出接口，容器发送网络数据包时直接从容器的eth0发送给宿主机的eth0，减少了转发次数，实延就降低了。但是该方案无法使用iptables规则，Kubernetes的service就无法使用该方案。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8b%e7%9a%84%e5%ae%b9%e5%99%a8%e9%80%9a%e4%bf%a1.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8b%e7%9a%84%e5%ae%b9%e5%99%a8%e9%80%9a%e4%bf%a1.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8b%e7%9a%84%e5%ae%b9%e5%99%a8%e9%80%9a%e4%bf%a1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%90%8c%e4%b8%80%e8%8a%82%e7%82%b9%e4%b8%8b%e7%9a%84%e5%ae%b9%e5%99%a8%e9%80%9a%e4%bf%a1.png&#34;
 			
 			
 			
@@ -9691,8 +9691,8 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;p&gt;所以当容器无法访问外网时，就可以检查docker0网桥是否能ping通，查看docker0和Veth Pair设备的iptables规则是否有异常。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e8%ae%bf%e9%97%ae%e5%8f%a6%e4%b8%80%e8%8a%82%e7%82%b9.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e8%ae%bf%e9%97%ae%e5%8f%a6%e4%b8%80%e8%8a%82%e7%82%b9.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e8%ae%bf%e9%97%ae%e5%8f%a6%e4%b8%80%e8%8a%82%e7%82%b9.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e8%ae%bf%e9%97%ae%e5%8f%a6%e4%b8%80%e8%8a%82%e7%82%b9.png&#34;
 			
 			
 			
@@ -9706,8 +9706,8 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;p&gt;常见的解决方案是Flannel、Calico等。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e7%bd%91%e7%bb%9c.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e7%bd%91%e7%bb%9c.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e7%bd%91%e7%bb%9c.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%b9%e5%99%a8%e7%bd%91%e7%bb%9c.png&#34;
 			
 			
 			
@@ -9791,10 +9791,10 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;对微服务的理解&#34;&gt;对微服务的理解&lt;/h1&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;http://dockone.io/article/3687&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
@@ -10280,10 +10280,10 @@ Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com&amp;#34;&lt;/span&gt;
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;内核&#34;&gt;内核&lt;/h1&gt;
 &lt;h2 id=&#34;pc机启动流程&#34;&gt;PC机启动流程&lt;/h2&gt;
@@ -10317,8 +10317,8 @@ Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com&amp;#34;&lt;/span&gt;
 &lt;p&gt;Linux 的基本思想是一切都是文件：每个文件都有确定的用途，包括用户数据、命令、配置参数、硬件设备等对于操作系统内核而言，都被视为各种类型的文件。Linux 支持多用户，各个用户对于自己的文件有自己特殊的权利，保证了各用户之间互不影响。多任务则是现代操作系统最重要的一个特点，Linux 可以使多个程序同时并独立地运行。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%9e%81%e5%ae%a2%e6%97%b6%e9%97%b4-%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f45%e8%ae%b2-Linux.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%9e%81%e5%ae%a2%e6%97%b6%e9%97%b4-%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f45%e8%ae%b2-Linux.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%9e%81%e5%ae%a2%e6%97%b6%e9%97%b4-%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f45%e8%ae%b2-Linux.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%9e%81%e5%ae%a2%e6%97%b6%e9%97%b4-%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f45%e8%ae%b2-Linux.png&#34;
 			
 			
 			
@@ -10451,8 +10451,8 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/blockquote&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux%e5%88%9d%e5%a7%8b%e5%8c%96%e8%a6%81%e7%82%b9.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux%e5%88%9d%e5%a7%8b%e5%8c%96%e8%a6%81%e7%82%b9.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux%e5%88%9d%e5%a7%8b%e5%8c%96%e8%a6%81%e7%82%b9.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux%e5%88%9d%e5%a7%8b%e5%8c%96%e8%a6%81%e7%82%b9.png&#34;
 			
 			
 			
@@ -10552,10 +10552,10 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;使用场景&#34;&gt;使用场景&lt;/h1&gt;
 &lt;ul&gt;
@@ -10649,8 +10649,8 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e6%9e%b6%e6%9e%84.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e6%9e%b6%e6%9e%84.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e6%9e%b6%e6%9e%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e6%9e%b6%e6%9e%84.png&#34;
 			
 			
 			
@@ -10691,8 +10691,8 @@ User |    z h a n g s a n         | 23 | true
 &lt;h2 id=&#34;案例一---异步消息的处理&#34;&gt;案例一 - 异步消息的处理&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/JD_JMQ%e6%b6%88%e6%81%af%e6%8e%a5%e6%94%b6%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/JD_JMQ%e6%b6%88%e6%81%af%e6%8e%a5%e6%94%b6%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/JD_JMQ%e6%b6%88%e6%81%af%e6%8e%a5%e6%94%b6%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/JD_JMQ%e6%b6%88%e6%81%af%e6%8e%a5%e6%94%b6%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.png&#34;
 			
 			
 			
@@ -10843,10 +10843,10 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;h1 id=&#34;从浏览器输入url之后都发生了什么&#34;&gt;从浏览器输入URL之后都发生了什么&lt;/h1&gt;
 &lt;p&gt;浏览器输入URL，按回车，&lt;/p&gt;
@@ -11070,8 +11070,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;h3 id=&#34;三次握手&#34;&gt;三次握手&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%b8%89%e6%ac%a1%e6%8f%a1%e6%89%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%b8%89%e6%ac%a1%e6%8f%a1%e6%89%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e4%b8%89%e6%ac%a1%e6%8f%a1%e6%89%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e4%b8%89%e6%ac%a1%e6%8f%a1%e6%89%8b.jpg&#34;
 			
 			
 			
@@ -11101,8 +11101,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;h3 id=&#34;四次挥手&#34;&gt;四次挥手&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9b%9b%e6%ac%a1%e6%8c%a5%e6%89%8b.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9b%9b%e6%ac%a1%e6%8c%a5%e6%89%8b.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9b%9b%e6%ac%a1%e6%8c%a5%e6%89%8b.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9b%9b%e6%ac%a1%e6%8c%a5%e6%89%8b.jpg&#34;
 			
 			
 			
@@ -11156,8 +11156,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;h2 id=&#34;包头&#34;&gt;包头&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34;
 			
 			
 			
@@ -11232,8 +11232,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;比如：接收端中间漏收了Seq2，后面又接收到了Seq3、4、5，那就会在接收时重复发送ACK2，发送端收到重复的ACK后就会重新发送Seq2了&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34;
 			
 			
 			
@@ -11246,8 +11246,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;另外，还有个D-SACK，使用SACK来告诉发送方有哪些数据被重复接收了，其使用SACK的第一个段来做标志，如果SAKC的第一个段范围被ACK覆盖，就是D-SACK，如果SACK的第一个段的范围被SACK的第二个段覆盖，就是D-SACK。引入D-SACK可以让发送方知道是发出去的包丢了，还是回来的ACK包丢了；还是发送方的超时太短，导致重传；还是先发出去的包后到的情况，还是数据包被复制了。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux-SACK%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/Linux-SACK%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux-SACK%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Linux-SACK%e5%bf%ab%e9%80%9f%e9%87%8d%e4%bc%a0%e6%9c%ba%e5%88%b6.jpeg&#34;
 			
 			
 			
@@ -11309,8 +11309,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;h2 id=&#34;包头-1&#34;&gt;包头&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UDP%e5%8c%85%e5%a4%b4.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/UDP%e5%8c%85%e5%a4%b4.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UDP%e5%8c%85%e5%a4%b4.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/UDP%e5%8c%85%e5%a4%b4.jpg&#34;
 			
 			
 			
@@ -11348,8 +11348,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eTCP%e7%9a%84Socket.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eTCP%e7%9a%84Socket.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eTCP%e7%9a%84Socket.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eTCP%e7%9a%84Socket.jpg&#34;
 			
 			
 			
@@ -11365,8 +11365,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eUDP%e7%9a%84Socket.jpg&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eUDP%e7%9a%84Socket.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eUDP%e7%9a%84Socket.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eUDP%e7%9a%84Socket.jpg&#34;
 			
 			
 			
@@ -11395,10 +11395,10 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
         </item>
         <item>
         <title></title>
-        <link>/p/</link>
+        <link>https://nixum.github.io/blog/p/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         
-        <guid>/p/</guid>
+        <guid>https://nixum.github.io/blog/p/</guid>
         <description>&lt;p&gt;[TOC]&lt;/p&gt;
 &lt;p&gt;只记录常用设计模式&lt;/p&gt;
 &lt;h1 id=&#34;设计模式六大原则&#34;&gt;设计模式六大原则&lt;/h1&gt;
@@ -11539,8 +11539,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -11716,8 +11716,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -11804,8 +11804,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -11890,8 +11890,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -12137,8 +12137,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;JDBC的做法是提供Driver接口，数据库厂商实现该接口提供不同的数据库能力，并调用DriverManager进行注册，后续通过DriverManager获取connection并进行CRUD操作，都由DriverManager委派给具体的Driver做&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -12232,8 +12232,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -12343,8 +12343,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -12443,8 +12443,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png&#34;
 			
 			
 			
@@ -12535,8 +12535,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png&#34;
 			
 			
 			
@@ -12622,8 +12622,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;实际上是使用了观察者模式和状态模式来实现的，比较直观的例子就是android的EventBus，chrome的V8引擎都有用到此模型，这里仅总结并进行简单介绍&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png&#34; &gt;
-		&lt;img src=&#34;/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png&#34;
 			
 			
 			
