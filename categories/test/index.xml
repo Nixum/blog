@@ -24,24 +24,6 @@
     </item>
     
     <item>
-      <title>Placeholder Text</title>
-      <link>https://nixum.github.io/blog/p/placeholder-text/</link>
-      <pubDate>Sat, 09 Mar 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://nixum.github.io/blog/p/placeholder-text/</guid>
-      <description>&lt;p&gt;Lorem est tota propiore conpellat pectoribus de pectora summo.&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Emoji Support</title>
-      <link>https://nixum.github.io/blog/p/emoji-support/</link>
-      <pubDate>Tue, 05 Mar 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://nixum.github.io/blog/p/emoji-support/</guid>
-      <description>&lt;p&gt;Emoji can be enabled in a Hugo project in a number of ways.&lt;/p&gt;</description>
-    </item>
-    
-    <item>
       <title>Test Content</title>
       <link>https://nixum.github.io/blog/p/test-test/</link>
       <pubDate>Mon, 25 Feb 2019 00:00:00 +0000</pubDate>
