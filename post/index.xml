@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Nixum Blog</title>
-    <link>https://nixum.github.io/blog/post/</link>
+    <link>http://nixum.cc/post/</link>
     <description>Recent content in Posts on Nixum Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 09 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://nixum.github.io/blog/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 09 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Chinese Test</title>
-      <link>https://nixum.github.io/blog/p/test-chinese/</link>
+      <link>http://nixum.cc/p/test-chinese/</link>
       <pubDate>Wed, 09 Sep 2020 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/test-chinese/</guid>
+      <guid>http://nixum.cc/p/test-chinese/</guid>
       <description>正文测试 而这些并不是完全重要，更加重要的问题是， 带着这些问题，我们来审视一下学生会退会。 既然如何， 对我个人而言，学生会退会不仅仅是一个重大的事件，还可能会改变我的人生。 我们不得不面对一个非常尴尬的事实，那就是， 可是，即使是这样，学生会退会的出现仍然代表了一定的意义。 学生会退会，发生了会如何，不发生又会如何。 经过上述讨论， 生活中，若学生会退会出现了，我们就不得不考虑它出现了的事实。 学生会退会，到底应该如何实现。 这样看来， 在这种困难的抉择下，本人思来想去，寝食难安。 对我个人而言，学生会退会不仅仅是一个重大的事件，还可能会改变我的人生。 就我个人来说，学生会退会对我的意义，不能不说非常重大。 莎士比亚曾经提到过，人的一生是短的，但如果卑劣地过这一生，就太长了。这似乎解答了我的疑惑。 莫扎特说过一句富有哲理的话，谁和我一样用功，谁就会和我一样成功。这启发了我， 对我个人而言，学生会退会不仅仅是一个重大的事件，还可能会改变我的人生。 学生会退会，到底应该如何实现。 一般来说， 从这个角度来看， 这种事实对本人来说意义重大，相信对这个世界也是有一定意义的。 在这种困难的抉择下，本人思来想去，寝食难安。 了解清楚学生会退会到底是一种怎么样的存在，是解决一切问题的关键。 一般来说， 生活中，若学生会退会出现了，我们就不得不考虑它出现了的事实。 问题的关键究竟为何？ 而这些并不是完全重要，更加重要的问题是。
 奥斯特洛夫斯基曾经说过，共同的事业，共同的斗争，可以使人们产生忍受一切的力量。　带着这句话，我们还要更加慎重的审视这个问题： 一般来讲，我们都必须务必慎重的考虑考虑。 既然如此， 这种事实对本人来说意义重大，相信对这个世界也是有一定意义的。 带着这些问题，我们来审视一下学生会退会。 我认为， 我认为， 在这种困难的抉择下，本人思来想去，寝食难安。 问题的关键究竟为何？ 每个人都不得不面对这些问题。 在面对这种问题时， 要想清楚，学生会退会，到底是一种怎么样的存在。 我认为， 既然如此， 每个人都不得不面对这些问题。 在面对这种问题时， 那么， 我认为， 学生会退会因何而发生。
 引用  思念是最暖的忧伤像一双翅膀
@@ -25,10 +25,10 @@
     
     <item>
       <title>Test Content</title>
-      <link>https://nixum.github.io/blog/p/test-test/</link>
+      <link>http://nixum.cc/p/test-test/</link>
       <pubDate>Mon, 25 Feb 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/test-test/</guid>
+      <guid>http://nixum.cc/p/test-test/</guid>
       <description>&lt;h1 id=&#34;content&#34;&gt;Content&lt;/h1&gt;
 &lt;p&gt;个人是后端开发，以Go和Java为主要开发语言，该Repository主要记录已使用或者感兴趣的技术的知识点，以及一些工作中的感受之类。&lt;/p&gt;
 &lt;p&gt;emmm有时间再好好美化首页README。&lt;/p&gt;
@@ -40,10 +40,10 @@
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，在极端环境下，ZooKeeper可能会丢弃一些请求，消费者程序需要重新请求才能获得结果。另外在进行leader选举时集群都是不可用，所以说，ZooKeeper不能保证服务可用性。
 使用场景  集群管理，监控节点存活状态 主节点选举，当服务以master-salve模式进行部署，当主节点挂掉后选出新的主节点 服务发现 分布式锁，提供独占锁、共享锁 分布式自增id 搭配Kafka、dubbo等使用  特点  顺序一致性：同一客户端发起的事务请求，最终将会严格地按照顺序被应用到 ZooKeeper 中去。 原子性：所有事务请求的处理结果在整个集群中所有机器上的应用情况是一致的，也就是说，要么整个集群中所有的机器都成功应用了某一个事务，要么都没有应用。 单一系统映像：无论客户端连到哪一个 ZooKeeper 服务器上，其看到的服务端数据模型都是一致的。 可靠性：一旦一次更改请求被应用，更改的结果就会被持久化，直到被下一次更改覆盖。  数据模型 类似文件系统，根节点为 / ，每创建一个节点会从根节点开始挂，树形结构，每个数据节点称为znode，可以存储数据，每个znode还有自己所属的节点类型和节点状态
@@ -56,10 +56,10 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>git流程 
 常用命令   git init
 将一个普通文件夹变成git仓库，此时文件夹下多出.git文件夹，表示可以使用git管理，此时这个文件夹称为git工作区
@@ -81,10 +81,10 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 内存模型 这里的内存模型不是指内存分配、整理回收的规范，而是在并发环境下多goroutine读取共享变量时变量的可见性条件。
 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
@@ -100,10 +100,10 @@ init函数也是如此，当init函数引用了全局变量a，运行main函数�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 以下基于go.1.14
 函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
@@ -119,10 +119,10 @@ type Slice struct { ptr unsafe.Pointer // 指向数组的指针 	len int // 切�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 BIO 特点
  BIO是同步阻塞的，以流的形式处理，基于字节流和字符流 每个请求都需要创建独立的线程，处理Read和Write 并发数较大时，就算是使用了线程池，也需要创建大量的线程来处理 连接建立后，如果处理线程被读操作阻塞了，那就阻塞了，只能等到读完才能进行其他操作  以基于TCP协议的Socket，编写服务端Demo
@@ -131,10 +131,10 @@ package com.nixum.bio; import java.io.InputStream; import java.io.PrintWriter; i
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 以下笔记如没指定版本，都是基于JDK1.8
 Collection  javaCollection类图简版 
@@ -150,10 +150,10 @@ public ArrayList(Collection&amp;lt;? extends E&amp;gt; c) 其中要注意的是�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 一、面向对象 面向对象的特征： 抽象(注意与当前目标有关的，选择一部分，暂时不用部分细节，分为过程抽象、数据抽象) 继承：联结类的层次模型、允许和鼓励类的重用，派生类可以从它的基类那里继承方法和实例变量，进行修改和新增使其更适合 封装：封装是把过程和数据包围起来，对数据的访问只能通过已定义的界面，这些对象通过一个受保护的接口访问其他对象 多态：允许不同类的对象对同一消息作出响应，包括参数化多态性和包含多态性，灵活、抽象、行为共享、代码共享，解决程序函数同名问题
 二、基础类型及其包装类型    基本类型 boolean byte char short int float long double     包装类型 Boolean Byte Character Short Integer Float Long Double   位数 1 8 16 16 32 32 64 64   字节数  1 2 2 4 4 8 8      字符集
@@ -168,10 +168,10 @@ java的字节码文件(.class)文件采用的是UTF-8编码，但是在java 运�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 线程、进程、协程   进程：可以简单理解为一个应用程序，进程是资源分配的基本单位。比如一个进程拥有自己的堆、栈、虚存空间、文件描述符等。
 涉及到用户态和内核态的切换。
@@ -196,10 +196,10 @@ Golang 的 goroutine 是如何实现的？
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 JVM内存模型  JVM内存模型 
 方法区也叫永久代，持久代，非堆，不算在堆里面
@@ -227,10 +227,10 @@ GC Roots包括：
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 Kubernetes 基本  
 容器的本质是进程，Kubernetes相当于操作系统，管理这些进程组。
@@ -243,10 +243,10 @@ Kubernetes 基本
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 特点  分布式数据库，Json数据模型，面向对象数据模型，不强制表的scheme 当应用场景不清晰时，可以直接以对象模型直接存储，无需关心字段，表结构灵活，动态增加新字段 不用太过关注表间的关系，可直接嵌套存储，将多种关系存储在同一张表上，同时也加快查表，因为它可以减少磁盘定位次数，如果是关系型数据库，同时查多张表就需要定位多次 原生支持高可用，一般的部署方式是部署三个节点replica set，最多50个；多replica set可以实现自恢复（当主节点挂点后会选出从节点），异地容灾，数据库滚动更新 原生支持横向扩展，通过水平扩展分片实现，外部并不感知有多少个分片，只会当成一个分片使用 支持字段级加密，针对隐私数据，比如身份证、电话等，在入库时可以进行加密，查询时解密 支持地理位置经纬度查询 强大的聚合查询，适合报表、时序数据  NoSQL语句 客户端使用驱动时连接的执行流程
  客户端执行流程 
@@ -266,10 +266,10 @@ $facet/$bucket: 分面搜索，根据不同范围条件，多个维度一次性�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>ORM 普通JDBC使用sql的prepareStatement + sql + 占位符 + 参数的方式执行sql语句
 ORM其实就是在先编写类与数据库表字段的映射，可以是xml配置，也可以是注解配置，之后再使用JDBC执行sql时，通过对类的反射获得其属性的值和对应的字段名，拼接sql+占位符+属性值，执行sql语句
 MyBatis #{}和${}区别
@@ -280,10 +280,10 @@ dao接口与mapper的映射  通过动态代理实现 实际上XML在定义Mappe
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 基础架构 MySQL逻辑架构图  
  连接器：负责跟客户端建立连接、获取权限、维持和管理连接。登录进去后修改权限，默认是将在下一次登录后生效 查询缓存：MySQL接收到查询请求后会先查询缓存，key是查询语句，value是查询结果，之后经过执行器的权限判断再返回，如果查不到则往后走。不建议使用，因为若有更新操作，会删除对应表的缓存，可能导致缓存命中低，可以设置query_cache_type=demand，默认不使用缓存，需要在查询时显示指定。MySQL8.0删除此功能 分析器：对SQL语句进行分析，词法分析判断各个字符串代表的含义（包括列是否存在），语法分析判断SQL的语法是否正确，这一层操作之后，MySQL就知道你要做什么了 优化器：决定是否要使用索引，使用哪个索引，决定表的连接顺序 执行器：先判断是否有对该表的操作权限，之后判断要使用哪个引擎提供的接口 引擎：对数据进行具体操作的执行者，事务和索引都是在这层做的，但具体需要引擎支持，例如MyISAM不支持事务，InnoDB支持  日志系统   redo log重做日志：InnoDB独有，物理日志，记录这个页做了什么改动，使用二阶段提交保证两份日志逻辑一致。记录写入到redo log后状态是prepare，binlog写入磁盘，事务提交，redo log改为commit状态，在写的时候是先写进redo log buffer，commit后才写进redo log(磁盘)
@@ -302,10 +302,10 @@ InnoDB的redo log是固定大小的，比如有一组4个文件组成的“环�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 数据类型及结构 数据类型 String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet
 String类型下还有一种扩展类型：Bitmap。原理：String类型会保存二进制字节数组，对于这个字节数组的每个bit来表示一个元素的二值状态。
@@ -331,10 +331,10 @@ rehash触发条件 装载因子：哈希表中所有entry的个数除以哈希�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>RPC  
 一个RPC框架的基本实现，高性能网络传输、序列化和反序列化、服务注册和发现，如果是实现客户端级别的服务注册和发现，还可以在SDK中提供容错、负载均衡、熔断、降级等功能。
 客户端发起RPC调用，实际上是调用该RPC方法的桩，它和服务端提供的RPC方法有相同的方法签名，或者说实现了相同的接口，只是这个桩在客户端承担的是请求转发的功能，向客户端屏蔽调用细节（比如向发现与注册中心查询要请求的服务方的url），使其像在使用本地方法一样；服务端在收到请求后，由其RPC框架解析出服务名和请求参数，调用在RPC框架中注册的该接口的真正实现者，最后将结果返回给客户端。
@@ -358,10 +358,10 @@ RPC原理及RPC实例分析
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 SpringBoot Spring 和 Spring Boot区别 Spring Boot实现了自动配置，降低了项目搭建的复杂度。它主要是为了解决使用Spring框架需要进行大量的配置太麻烦的问题，所以它并不是用来替代Spring的解决方案，而是和Spring框架紧密结合用于提升Spring开发者体验的工具。同时它集成了大量常用的第三方库配置(例如Jackson, JDBC, Mongo, Redis, Mail等等)，做到零配置即用。内置Tomcat作为Web服务器，不像之前还要把服务部署到Tomcat在进行启动。
 SpringBoot整个启动流程  构建SpringApplication对象，执行其run方法 加载properties/yaml等配置文件 创建ApplicationContext（也可以称为Bean、IOC容器） 将扫描到的Bean或者xml中的bean，先解析成BeanDefinition，注册到ApplicationContext中的BeanFactory中（即自动配置过程，也是IOC容器的refresh方法执行过程） 实例化Bean，进行依赖注入，（AOP也是在此处实现，创建代理实例加入IOC容器）   SpringBoot启动流程 
@@ -385,10 +385,10 @@ ContextLoaderListener 【Spring】浅谈ContextLoaderListener及其上下文与D
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>SpringMVC工作原理 SpringMVC工作原理详解
 流程图看链接里的即可
 简单来说各个组件的作用
@@ -405,10 +405,10 @@ ContextLoaderListener 【Spring】浅谈ContextLoaderListener及其上下文与D
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 类图 类图中的关系其实有多种版本的表示方法，这里仅总结自己常用的画法
 访问作用域   + : public
@@ -429,10 +429,10 @@ A &amp;lt;&amp;gt;—————— B : A是集体，B是个体 （实线 + 空
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 Quartz   分为三个部分：e
  Job&amp;amp;Detial(任务)：定时任务的执行方法，与Trigger配套的 Trigger(触发器)：规定什么时候触发，与Job&amp;amp;Detail配套的 Scheduler(调度器)：单例，把Trigger丢里面由调度器调度，只需要一个Scheduler，配置不同的Trigger；可以理解成类似线程池的东西    原理：ScheduledThreadPoolExecutor线程池 + 通过Object类的wait()和notify()或者Condition类的await()\signal()进行等待和唤醒、锁保证线程安全 来进行调度
@@ -460,10 +460,10 @@ session和cookie   首先Http是无状态的，因此需要通过session、cooki
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 分布式理论 一个分布式系统最多只能满足 C、A、P 这三项中的两项。
 CAP理论 CAP特性
@@ -489,10 +489,10 @@ BASE理论 BASE理论是对CAP三者均衡的结果，基于CAP理论演化而�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 底层原理 容器技术的核心功能，就是通过约束和修改进程的动态表现，从而为其创造出一个边界。
 Namespace - 隔离 进程只能看到被规定的视图，即 隔离，比如通过docker启动一个/bin/sh，再在容器里通过ps命令查看该/bin/sh进程的pid，会发现它的pid是1，但是实际上它在外部的宿主机里的pid是10，使得让在容器里运行的进程以为自己就在一个独立的空间里，实际上只是进行了逻辑的划分，本质还是依赖宿主机。
@@ -514,10 +514,10 @@ Mount Namespace与rootfs(根文件系统) 挂载在容器根目录上、用来�
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 对微服务的理解 http://dockone.io/article/3687
 限流 下面的方案都是单机版本的，在分布式环境下可以把限流的实例放到Redis里，或者直接使用Lua脚本实现，保证并发安全。
@@ -529,10 +529,10 @@ type fixWinLimiter struct { lock *sync.Mutex maxLimitCount int64 // 最大限制
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 内核 PC机启动流程 以Ubuntu Linux + GRUB引导程序为例：
 PC机加电后，加载BIOS固件， 触发PC机BIOS固件发送指令 检测和初始化CPU、内存及主板平台，加载引导设备(比如硬盘)中的第一个扇区数据到0x7c00地址开始的内存空间，再接着跳转到0x7c00处执行指令，加载GRUB引导程序，加载硬盘分区中的OS文件，启动操作系统。
@@ -560,10 +560,10 @@ Linux高清全结构图：https://makelinux.github.io/kernel/map/
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 使用场景  秒杀系统，一般秒杀系统处理包含几个步骤：风险控制、库存锁定、生成订单、短信通知、更新统计数据灯，而决定秒杀是否成功只在前两个步骤，后续的操作就可以通过消息队列异步处理完成，加快整个流程的处理，减少等待时间，提升并发量。 隔离网关和后端服务，实现流量控制，保护后端服务，但会增加系统调用链，导致总体响应变长，异步增加系统复杂性。 令牌桶，目的也是进行流量控制。 服务解耦，数据同步，比如订单系统在订单状态发生变化时发出消息通知，其他服务订阅后做相应处理。 连接流计算任务和数据，比如集群日志处理，大数据统计 将消息广播给其他接收者  好处 流量削峰和流量控制、异步处理、解耦、广播、最终一致性
 缺点 可用性降低、复杂度提高、一致性问题、消息延迟
@@ -572,10 +572,10 @@ Linux高清全结构图：https://makelinux.github.io/kernel/map/
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 从浏览器输入URL之后都发生了什么 浏览器输入URL，按回车，
  浏览器根据输入内容，匹配对应的URL和关键词，校验URL的合法性，补全URL，使其符合通用URI的语法。 请求发出前，如果当前的URL被访问过，会先进入缓存中查询是否有要请求的文件，有则直接返回；如果没有，则跳过缓存，进入网络操作。缓存会存在于路由缓存、DNS缓存、浏览器缓存、ServiceWorker、MemoryCache、DiskCache、PushCache、系统缓存等。 从URL中解析出域名，依次经过浏览器缓存、系统缓存、hosts 文件、路由器缓存、 递归搜索DNS服务器，找到对应的IP地址。 应用层程序准备好数据后，委托给操作系统，复制应用层数据到内核的内存空间中，交给网络协议栈（将其打包为tcp包(传输层)，帧(数据链路层)，并数据其从内核拷贝到网卡，后续由网卡负责数据的发送）建立 TCP/IP 连接（三次握手具体过程）。 HTTP 请求经过路由器的转发，通过服务器（CDN、反向代理之类的）的防火墙，该 HTTP 请求到达了服务器 服务器处理该 HTTP 请求，返回一个 HTML 文件 浏览器解析该 HTML 文件，解析HTML文件后，构建dom树 -》构建render树 -》布局render树 -》绘制 render树，自上而下加载，边加载边解析渲染，显示在浏览器端，对于图片音频等则是异步加载  本质上是OSI七层模型 + 相应协议、组件实现
@@ -599,10 +599,10 @@ Post参数放在request body里，支持多种编码
     
     <item>
       <title></title>
-      <link>https://nixum.github.io/blog/p/</link>
+      <link>http://nixum.cc/p/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nixum.github.io/blog/p/</guid>
+      <guid>http://nixum.cc/p/</guid>
       <description>[TOC]
 只记录常用设计模式
 设计模式六大原则  单一职责原则(SRP)：一个类只负责一个功能领域中的相应职责，就一个类而言，应该只有一个引起它变化的原因。 开闭原则(OCP)：一个软件实体应当对扩展开放，对修改关闭。即软件实体应尽量在不修改原有代码的情况下进行扩展。 里氏代换原则(LSP)：所有引用基类（父类）的地方必须能透明地使用其子类的对象。 依赖倒转原则(DIP)：抽象不应该依赖于细节，细节应当依赖于抽象。换言之，要针对接口编程，而不是针对实现编程。如 控制反转和依赖注入 接口隔离原则(ISP)：使用多个专门的接口，而不使用单一的总接口，即客户端不应该依赖那些它不需要的接口。 迪米特法则(LoD)：一个软件实体应当尽可能少地与其他实体发生相互作用。  常见设计模式 创建型模式是将创建和使用代码解耦
