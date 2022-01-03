@@ -10,9 +10,9 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
   消息广播
 当集群中超过半数机器与该 Leader 服务器完成数据同步之后，退出恢复模式进入消息广播模式，Leader 服务器开始接收客户端的事务请求生成事物提案（超过半数同意）来进行事务请求处理。'><title></title>
 
-<link rel='canonical' href='https://nixum.github.io/blog/p/'>
+<link rel='canonical' href='/p/'>
 
-<link rel="stylesheet" href="/blog/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content=''>
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content=''>
 <meta property='og:description' content='[TOC]
 ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，在极端环境下，ZooKeeper可能会丢弃一些请求，消费者程序需要重新请求才能获得结果。另外在进行leader选举时集群都是不可用，所以说，ZooKeeper不能保证服务可用性。
 使用场景  集群管理，监控节点存活状态 主节点选举，当服务以master-salve模式进行部署，当主节点挂掉后选出新的主节点 服务发现 分布式锁，提供独占锁、共享锁 分布式自增id 搭配Kafka、dubbo等使用  特点  顺序一致性：同一客户端发起的事务请求，最终将会严格地按照顺序被应用到 ZooKeeper 中去。 原子性：所有事务请求的处理结果在整个集群中所有机器上的应用情况是一致的，也就是说，要么整个集群中所有的机器都成功应用了某一个事务，要么都没有应用。 单一系统映像：无论客户端连到哪一个 ZooKeeper 服务器上，其看到的服务端数据模型都是一致的。 可靠性：一旦一次更改请求被应用，更改的结果就会被持久化，直到被下一次更改覆盖。  数据模型 类似文件系统，根节点为 / ，每创建一个节点会从根节点开始挂，树形结构，每个数据节点称为znode，可以存储数据，每个znode还有自己所属的节点类型和节点状态
@@ -21,7 +21,7 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 当整个 Zookeeper 集群刚刚启动或者Leader服务器宕机、重启或者网络故障导致不存在过半的服务器与 Leader 服务器保持正常通信时，所有服务器进入崩溃恢复模式，首先选举产生新的 Leader 服务器，然后集群中 Follower 服务器开始与新的 Leader 服务器进行数据同步。
   消息广播
 当集群中超过半数机器与该 Leader 服务器完成数据同步之后，退出恢复模式进入消息广播模式，Leader 服务器开始接收客户端的事务请求生成事物提案（超过半数同意）来进行事务请求处理。'>
-<meta property='og:url' content='https://nixum.github.io/blog/p/'>
+<meta property='og:url' content='/p/'>
 <meta property='og:site_name' content='Nixum Blog'>
 <meta property='og:type' content='article'><meta property='article:section' content='Post' />
 <meta name="twitter:title" content="">
@@ -66,7 +66,7 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 ">
     
         <div id="article-toolbar">
-            <a href="/blog" class="back-home">
+            <a href="/" class="back-home">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
   <path stroke="none" d="M0 0h24v24H0z"/>
   <polyline points="15 6 9 12 15 18" />
@@ -95,7 +95,7 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
     
 
     <h2 class="article-title">
-        <a href="/blog/p/"></a>
+        <a href="/p/"></a>
     </h2>
 
     
@@ -265,8 +265,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -442,8 +442,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -530,8 +530,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a3%85%e9%a5%b0%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -616,8 +616,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -863,8 +863,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 <p>JDBC的做法是提供Driver接口，数据库厂商实现该接口提供不同的数据库能力，并调用DriverManager进行注册，后续通过DriverManager获取connection并进行CRUD操作，都由DriverManager委派给具体的Driver做</p>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -958,8 +958,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -1069,8 +1069,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%bf%ad%e4%bb%a3%e5%99%a8%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -1169,8 +1169,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f.png"
 			
 			
 			
@@ -1261,8 +1261,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 </ul>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95.png"
 			
 			
 			
@@ -1348,8 +1348,8 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
 <p>实际上是使用了观察者模式和状态模式来实现的，比较直观的例子就是android的EventBus，chrome的V8引擎都有用到此模型，这里仅总结并进行简单介绍</p>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png"
+	<a href="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png" >
+		<img src="/https:/github.com/Nixum/Java-Note/raw/master/picture/%e4%ba%8b%e4%bb%b6%e9%a9%b1%e5%8a%a8%e5%9f%ba%e6%9c%ac%e6%a1%86%e6%9e%b6.png"
 			
 			
 			
@@ -1557,7 +1557,7 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
         <aside class="sidebar right-sidebar sticky">
 
             <section class="widget archives">
-                <form action="/blog/search/" class="search-form widget" >
+                <form action="/search/" class="search-form widget" >
         <p>
             <label>Search</label>
             <input name="keyword" required placeholder="Type something..." />
@@ -1644,7 +1644,7 @@ ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，�
                 src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
                 defer="false"
                 >
-            </script><script type="text/javascript" src="/blog/ts/main.js" defer></script>
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <script>
     (function () {
         const customFont = document.createElement('link');
