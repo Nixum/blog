@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>go集合类原理 on Nixum Blog</title>
+    <link>http://nixum.cc/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/</link>
+    <description>Recent content in go集合类原理 on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 07 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>go</title>
+      <link>http://nixum.cc/p/go/</link>
+      <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go/</guid>
+      <description>[TOC]
+以下基于go.1.14
+函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
+go在编译时会自动判断函数是否可以内联，当函数内包含以下内容时不会被内联：闭包调用，select，for，defer，go关键字创建的协程等。
+内联的好处：因为函数调用被内联了，可以减少栈帧的创建，减少读写寄存器的读取，减少参数和函数的拷贝，提升性能
+缺点：堆栈panic显示的行数可能不准确、增加编译出来的包的大小
+编译时使用go build -gcflags=&amp;quot;-m -m&amp;quot; main.go可以知道编译器的内联优化策略，
+go编译时默认会使用内联优化，使用go build --gcflags=&amp;quot;-l&amp;quot; main.go可禁掉全局内联，如果传递两个或以上-l，则会打开内联
+数组  声明时必须指定固定长度，因为编译时需要知道数组长度以便分配内存，如var arr1 [5]int，或者var arr2 = [5]int{1,2,3}, 其余数字为0 数组长度最大是2Gb 当数组类型是整形时，所有元素都会被自动初始化为0，即声明完数组，数组会被设置类型的默认值 可以使用new()来创建，如var arr3 = new([3]int)，arr3的类型是*[3]int，arr1、arr2的类型是[5]int 函数的参数可以是[5]int, 表明入参是数组，如果是[]int，表明入参是slice。类型[3]int和[5]int是两种不同的类型。 数组是值类型，赋值和传参会进行拷贝，函数内部的修改不会影响原始数组。 如果数组中的元素个数小于或等于4个，所有变量会直接在栈上初始化；当数组元素大于4个，变量就会在静态存储区初始化然后拷贝到栈上。  切片Slice 数据结构 slice本质是一个结构体，所以它是值类型是不难理解的，它仅仅只是对数组的一种包装，且该结构体不包含任何函数，任何对slice的处理都是go的内置函数来处理的。
+type Slice struct { ptr unsafe.Pointer // 指向数组的指针 	len int // 切片长度 	cap int // 切片容量 } 基本   创建时无需指定长度，如 slice1 := []int{1,2,3}, 此时长度和容量均为3
+  从数组上截取arr1 := [5]int; var slice2 []int = arr1[1:3], 此时长度2，容量5，且对slice2的修改会影响arr1。</description>
+    </item>
+    
+  </channel>
+</rss>

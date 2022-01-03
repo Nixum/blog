@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='Spring和SpringBoot常见问题、IOC、AOP原理'><title>Spring和SpringBoot</title>
+
+<link rel='canonical' href='http://nixum.cc/p/spring%E5%92%8Cspringboot/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='Spring和SpringBoot'>
+<meta property='og:description' content='Spring和SpringBoot常见问题、IOC、AOP原理'>
+<meta property='og:url' content='http://nixum.cc/p/spring%E5%92%8Cspringboot/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Spring' /><meta property='article:tag' content='SpringBoot' /><meta property='article:tag' content='IOC和AOP' /><meta property='article:published_time' content='2019-04-17T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2020-06-03T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="Spring和SpringBoot">
+<meta name="twitter:description" content="Spring和SpringBoot常见问题、IOC、AOP原理">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E6%A1%86%E6%9E%B6/" >
+                框架
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/spring%E5%92%8Cspringboot/">Spring和SpringBoot</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        Spring和SpringBoot常见问题、IOC、AOP原理
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 17, 2019</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    3 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="springboot">SpringBoot</h1>
+<h2 id="spring-和-spring-boot区别">Spring 和 Spring Boot区别</h2>
+<p>Spring Boot实现了自动配置，降低了项目搭建的复杂度。它主要是为了解决使用Spring框架需要进行大量的配置太麻烦的问题，所以它并不是用来替代Spring的解决方案，而是和Spring框架紧密结合用于提升Spring开发者体验的工具。同时它集成了大量常用的第三方库配置(例如Jackson, JDBC, Mongo, Redis, Mail等等)，做到零配置即用。内置Tomcat作为Web服务器，不像之前还要把服务部署到Tomcat在进行启动。</p>
+<h2 id="springboot整个启动流程">SpringBoot整个启动流程</h2>
+<ol>
+<li>构建SpringApplication对象，执行其run方法</li>
+<li>加载properties/yaml等配置文件</li>
+<li>创建ApplicationContext（也可以称为Bean、IOC容器）</li>
+<li>将扫描到的Bean或者xml中的bean，先解析成BeanDefinition，注册到ApplicationContext中的BeanFactory中（即自动配置过程，也是IOC容器的refresh方法执行过程）</li>
+<li>实例化Bean，进行依赖注入，（AOP也是在此处实现，创建代理实例加入IOC容器）</li>
+</ol>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/SpringBoot%e5%90%af%e5%8a%a8%e6%b5%81%e7%a8%8b.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/SpringBoot%e5%90%af%e5%8a%a8%e6%b5%81%e7%a8%8b.png"
+			
+			
+			
+			loading="lazy"
+			alt="SpringBoot启动流程">
+	</a>
+	
+	<figcaption>SpringBoot启动流程</figcaption>
+	
+</figure></p>
+<p>参考<a class="link" href="https://www.cnblogs.com/trgl/p/7353782.html"  target="_blank" rel="noopener"
+    >SpringBoot启动流程解析</a></p>
+<p><a class="link" href="https://www.cnblogs.com/lay2017/p/11478237.html"  target="_blank" rel="noopener"
+    >SpringBoot启动流程</a></p>
+<h2 id="springboot自动配置流程">SpringBoot自动配置流程</h2>
+<p><strong>自动配置流程只是SpringBoot启动中的一个环节，该环节只是在告诉Spring要在哪里找到Bean的声明。</strong></p>
+<p>启动类main方法为入口，main方法所在的类会被**@SpringBootApplication**修饰， 通过main方法里执行**SpringApplication.run(Application.class, args)**进行启动，Spring启动时会解析出@SpringBootApplication注解，进行Bean的加载和注入。</p>
+<ul>
+<li>
+<p>@SpringBootApplication里包含了</p>
+<ul>
+<li>
+<p><strong>@SpringBootConfiguration</strong>：作用类似于**@Configuration**，JavaConfig配置类，相当一个xml文件，配合@Bean注解让IOC容器管理声明的Bean</p>
+</li>
+<li>
+<p><strong>@ComponentScan</strong>：配上包路径，用于扫描指定包及其子包下所有类，如扫描@Component、@Server、@Controller等，并注入到IOC容器中</p>
+</li>
+<li>
+<p><strong>@EnableAutoConfiguration</strong>：自动配置的核心注解，主要用于找出所有自动配置类。该注解会使用**@Import(EnableAutoConfigurationImportSelector.class**)帮助SpringBoot应用将所有符合条件的@Configuration配置都加载到当前SpringBoot创建并使用的IoC容器。</p>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>EnableAutoConfigurationImportSelector</strong>类里有个SpringFactoriesLoader工厂加载器，通过里面的loadFactoryNames方法，传入<strong>工厂类名称</strong>和<strong>对应的类加载器</strong>，加载该类加载器搜索路径下的指定文件<strong>spring.factories文件</strong>，传入的工厂类为接口，而文件中对应的类则是接口的实现类，或最终作为实现类，得到这些类名集合后，通过<strong>反射</strong>获取这些类的类对象、构造方法，最终生成实例。</p>
+<p>因此只要在maven中加入了所需依赖，根据<strong>spring.factories</strong>文件里的key-value，能够在类路径下找到对应的class文件，就会触发自动配置</p>
+</li>
+</ul>
+<h2 id="自定义starter">自定义starter</h2>
+<p>实际上就是编写自动配置类，会使用到一系列配置注解，如@Configuration、@EnableConfigurationProperties、@Component、@Bean、@ConditionOnXX、@AutoConfigureOrder等，让IOC容器加载我们自定义的Bean进去；</p>
+<p>另外就是必须在META-INF文件夹下创建spring.factories，告知Spring在哪找到配置类。</p>
+<pre tabindex="0"><code>org.springframework.boot.autoconfigure.EnableAutoConfiguration=[自定义配置类的全限定名称]
+</code></pre><p>自定义Starter可以理解为一个Jar包，该Jar包在Maven或Gradle注册后，服务启动时，IOC容器会去自动加载。</p>
+<p>自定义Starter内也可以使用配置文件，设定默认配置的key-value，当本项目里有配置的key与starter里定义的配置key重复时可以被替换</p>
+<h2 id="contextloaderlistener">ContextLoaderListener</h2>
+<p><a class="link" href="https://www.cnblogs.com/weknow619/p/6341395.html"  target="_blank" rel="noopener"
+    >【Spring】浅谈ContextLoaderListener及其上下文与DispatcherServlet的区别</a></p>
+<ul>
+<li>作为Spring启动入口</li>
+<li>实现了ServletContextListener 接口，监听ServletContext，如果 ServletContext 发生变化（如服务器启动时ServletContext 被创建，服务器关闭时 ServletContext 将要被销毁）时，执行监听器里的方法</li>
+<li>为IOC容器提供环境，扫描包，将带有注解的Bean加入到容器用于依赖注入，或者加载xml文件，将xml注册的bean加入容器用于依赖注入</li>
+</ul>
+<h1 id="常用注解">常用注解</h1>
+<h2 id="controller与restcontroller">@Controller与@RestController</h2>
+<ul>
+<li>@Controller 默认是返回视图，即方法的return返回的是视图层的路径，只有+@ResponseBody才会返回Json格式的数据</li>
+<li>@RestController实际上是@Controller + @ResponseBody组合，默认返回json格式的数据</li>
+</ul>
+<h2 id="autowired与resource">@Autowired与@Resource</h2>
+<ul>
+<li>
+<p>@Autowired 注解，修饰类成员变量、方法及构造方法，完成自动装配的工作，默认按 byType 自动注入。只有一个required属性，默认是true，表示必须注入，不能为null</p>
+<p>@Autowired 自动注入时，Spring 容器中匹配的候选 Bean 数目必须有且仅有一个。因为它是按类型注入的，如果有多个同类型的Bean会导致出错，此时可以配合@Qualifier来规避这种情况，通过 @Qualifier(&ldquo;实例名称&rdquo;) 指定注入bean的名称，消除歧义，此时与 @Resource指定name属性作用相同。</p>
+</li>
+<li>
+<p>@Resource 的作用相当于 @Autowired，只不过 @Autowired 按 byType 自动注入，面@Resource 默认按 byName 自动注入，该注解有两个属性，name和type，分别代表通过名称查找bean和通过类型查找bean。</p>
+<p>此外@Resource还有其他属性，如lookup、shareable、mappedName等</p>
+</li>
+</ul>
+<h2 id="component与bean">@Component与@Bean</h2>
+<p>两者都是用于标记，被标记的实例会被Spring管理</p>
+<ul>
+<li>
+<p>@Component只能作用类，配合@ComponentScan注解让Spring启动时进行扫描，当扫描到@Component修饰的类时会进行实例化和依赖注入</p>
+<p>@Component是一个比较通用的语义，@Service、@Repository的作用与@Component相同的，只是语义不同，修饰的类所在的层次不同</p>
+</li>
+<li>
+<p>@Bean只能作用于方法，通过方法来实例化Bean，Bean的名称为方法的名称（如果有前缀get会自动忽略），交由IOC容器管理，通常与@Configuration配合使用，等价于xml文件中的<!-- raw HTML omitted -->配置，方法名相当于<!-- raw HTML omitted -->中的id，需要唯一</p>
+<p>@Bean的方式初始化bean会更加灵活，因为可以在方法内部进行逻辑处理，比如利用配置文件 + 工厂模式实例化不同的bean</p>
+</li>
+</ul>
+<h2 id="configuration与configurationproperties">@Configuration与@ConfigurationProperties</h2>
+<ul>
+<li>@Configuration作用于类，相当于加载bean的xml文件，一般配合@Bean注解使用，让IOC容器管理我们声明的bean</li>
+<li>@ConfigurationProperties用于读取key-value的那种配置文件，如properties、yaml等，类似于@Value，主要用于配置文件的字段注入，有属性prefix表示前缀，key为属性名称，将配置文件里的配置绑定到类的属性上。</li>
+</ul>
+<h2 id="springbootapplication与componentscan与import">@SpringBootApplication与@ComponentScan与@Import</h2>
+<p>两者都用于告知Spring在哪里找到bean，只是扫描的路径不同</p>
+<ul>
+<li>
+<p>@SpringBootApplication作用与main方法所在的类，用于启动IOC容器，默认会扫描该类所在包及其子包下，进行Bean的实例化和管理</p>
+<p>@SpringBootApplication实际上包含了三个注解，@ComponentScan、@EnableAutoConfiguration、@SpringBootConfiguration，详情见上面SpringBoot启动流程。</p>
+</li>
+<li>
+<p>@ComponentScan(&ldquo;包路径&rdquo;)，用于扫描指定包及其子包下的类，哪些需要交由IOC容器管理，一般用于扫描@SpringBootApplication扫描不到的包。在非SpringBoot项目下，必须使用。</p>
+</li>
+<li>
+<p>@Import，相当于xml中的<!-- raw HTML omitted -->，主要是导入Configuration类，作用类似@ComponentScan，只不过@ComponentScan是通过扫描找到，范围广，@Import是直接指定某个Config类</p>
+</li>
+<li>
+<p>@ImportResource(&ldquo;classpath*:xml文件&rdquo;)，则是直接导入指定的xml文件</p>
+</li>
+</ul>
+<h1 id="ioc和di">IOC和DI</h1>
+<p><strong>控制反转</strong>：实际上就是把开发人员对程序执行流程的控制，反转到由程序自己来执行，代表性的例子就是 模板方法设计模式，实际上是一种设计思想，就像spring把依赖注入给抽成框架，由框架来自动创建对象、管理对象生命周期、注入等，开发者只需要关注类间的关系即可</p>
+<p><strong>依赖注入</strong>：实际上就是对类成员初始化，并不在类内部进行，而是在外部初始化后通过构造方法、参数等方式才传递给类，就像spring那几种注入方式：构造器注入、set方法注入、注解注入</p>
+<h2 id="bean的作用域">Bean的作用域</h2>
+<p>Spring中的bean默认都是单例的，对于一些公共属性，在多线程下并不安全，spring支持将bean设置为其他作用域</p>
+<ul>
+<li>prototype：多例，使用时才创建，每次获取的bean都不是同一个</li>
+<li>request：每次请求创建新bean，request结束，bean销毁</li>
+<li>session：每次请求创建新bean，仅在当前HTTP session内有效</li>
+<li>globalSession：基于 portlet 的 web 应用，现在很少用了</li>
+</ul>
+<h2 id="注入方式">注入方式</h2>
+<ul>
+<li>
+<p>setter注入</p>
+</li>
+<li>
+<p>构造器注入，无法解决循环依赖问题</p>
+</li>
+<li>
+<p>自动装配：xml下使用“autowire”属性，有no、byName、byType、constructor、autodetect方式可选</p>
+<p>注解注入：@Resource默认是使用byName进行装配，@Autowired默认使用byType。</p>
+<p>byName和byType指的是依赖注入时寻找bean的方式。@Resource和@Autowired都可以修饰属性、setter方法、构造器，此时表示的是以哪种方式进行注入</p>
+</li>
+</ul>
+<h2 id="bean加载流程">Bean加载流程</h2>
+<p>初始化IOC容器（工厂入货）</p>
+<ul>
+<li>读取xml文件 / 扫描包类上的注解</li>
+<li>解析成BeanDefinition，创建了Bean的定义类</li>
+<li>注册到BeanFactory，此时的工厂里只保存了类创建所需要的各种信息还没有真正的实例化Bean对象</li>
+</ul>
+<p>依赖注入（工厂出货）</p>
+<ul>
+<li>初始化IOC容器</li>
+<li>初始化Bean（没有设置Lazy-init）</li>
+<li>反射创建Bean实例</li>
+<li>注入</li>
+</ul>
+<p>详细源码分析，参考<a class="link" href="https://www.cnblogs.com/ITtangtang/p/3978349.html"  target="_blank" rel="noopener"
+    >Spring: 源码解读Spring IOC</a></p>
+<p><a class="link" href="https://segmentfault.com/a/1190000015221968"  target="_blank" rel="noopener"
+    >Spring  IOC源码分析</a></p>
+<p>具体例子，参考<a class="link" href="https://yikun.github.io/2015/05/29/Spring-IOC%E6%A0%B8%E5%BF%83%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/"  target="_blank" rel="noopener"
+    >Spring IOC核心源码学习</a></p>
+<h2 id="三级缓存解决循环依赖">三级缓存解决循环依赖</h2>
+<ol>
+<li>第一级缓存：单例缓存池singletonObjects，存放完全初始化完的实例或者AOP实例对象，此时已经完成注入，直接可用了。</li>
+<li>第二级缓存：早期提前暴露的对象缓存earlySingletonObjects，用于检测循环引用，与singletonFactories互斥，如果一级缓存获取不到，则在此层获取实例，如果获取不到，且允许去三级缓存获取，则从三级缓存中获取，并remove加入二级缓存。一般用于存放完成了部分依赖注入的Bean。</li>
+<li>第三级缓存：singletonFactories单例对象工厂缓存，存放初始化不完全的实例（还有依赖没注入），如果到了三级缓存都获取不到，就会进行初始化，并加入。</li>
+</ol>
+<p>当出现循环依赖的对象注入时，会利用这三级缓存来解决问题，但是Spring只能解决Setter方法的注入，无法解决构造器注入，原因是如果通过构造器注入，需要先准备好需要注入的属性</p>
+<p>假如现在有类A，持有属性B，类B，持有属性A</p>
+<p>通过构造器注入：初始化A，此时需要B，那初始化B，此时需要A，但是A因为构造器注入需要先有B，此时无法完成初始化。</p>
+<p>通过Setter方法注入：</p>
+<ol>
+<li>初始化A，会先依次从三级缓存中获取A实例，获取不到，说明A还未初始化，初始化A产生实例，将实例A加入singletonFactories中。</li>
+<li>对A进行依赖注入，发现需要注入B，依次从三级缓存里获取B实例，到了第三层都获取不到，说明还未初始化，初始化B产生实例，加入singletonFactories，对B进行依赖注入，发现需要注入A，依次从三级缓存里获取A实例，在singletonFactories获取到还未初始化完全的实例A，从singletonFactories中remove，加入到earlySingletonObjects，注入到B中，此时B完全初始化完成，从earlySingletonObjects中remove，将B加入到singletonObjects中。</li>
+<li>回到对A进行依赖注入部分，由于B刚刚初始化完成加入了singletonObjects，所以A获取到B，进行注入，A初始化完全，加入singletonObjects中</li>
+</ol>
+<p><strong>总结</strong>：Spring在实例化一个bean的时候，先实例化该bean，然后递归的实例化其所依赖的所有bean，直到某个bean没有依赖其他bean，此时就会将该实例返回，然后反递归的将获取到的bean设置为各个上层bean的属性中。</p>
+<p>实际上，看起来earlySingletonObjects会有点多余，这一层的缓存主要是扩展时使用。</p>
+<h2 id="bean的生命周期">Bean的生命周期</h2>
+<ul>
+<li>
+<p>Spring 容器可以管理 singleton 作用域下 bean 的生命周期，在此作用域下，Spring 能够精确地知道bean何时被创建，何时初始化完成，以及何时被销毁；prototype 作用域的bean，Spring只负责创建，之后就不再管理，只能由开发人员通过代码控制</p>
+</li>
+<li>
+<p>关于xxxAware类型的接口，Aware之前的名字表示IOC容器可以获得什么资源，Aware方法都是在初始化阶段前被调用。</p>
+</li>
+<li>
+<p>生命周期执行过程，<strong>总结为：实例化 -&gt; 属性赋值 -&gt; 初始化 -&gt; 销毁</strong></p>
+<p><strong>实例化</strong></p>
+<ul>
+<li>Bean容器找到配置文件中Spring Bean的定义。</li>
+<li>Bean容器利用反射创建一个Bean的实例（对scope为singleton且非懒加载的bean实例化，此处会<strong>触发AOPCreator解析@Aspect类</strong>）</li>
+</ul>
+<p><strong>属性赋值</strong> - 依赖注入</p>
+<ul>
+<li>如果涉及到一些属性值 利用set方法设置一些属性值。</li>
+<li>如果Bean实现了BeanNameAware接口，调用setBeanName()方法，传入Bean的名字，相当于xml中<!-- raw HTML omitted -->中的id或name。</li>
+<li>如果Bean实现了BeanClassLoaderAware接口，调用setBeanClassLoader()方法，传入ClassLoader对象的实例。</li>
+<li>如果Bean实现了BeanFactoryAware接口，调用setBeanFactory()方法，传入beanFactory对象的实例，可以通过beanFactory获取其他Bean。</li>
+<li>与上面的类似，如果实现了其他*Aware接口，就调用相应的方法，比如实现了ApplicationContextAware接口，就可以获取上下文，作用同BeanFactory，只是能获取到其他数据。</li>
+<li>如果Bean实现了BeanPostProcessor接口，执行postProcessBeforeInitialization()方法（需手动实现该方法，<strong>利用该方法实现AOP，在此处创建代理类</strong>）</li>
+</ul>
+<p><strong>初始化</strong></p>
+<ul>
+<li>如果Bean实现了InitializingBean接口，执行afterPropertiesSet()方法。作用同xml配置中的init-method配置一样，用于指定初始化方法，但是先于init-method方法执行。</li>
+<li>如果Bean在xml配置文件中<!-- raw HTML omitted -->的init-method属性，执行指定的方法进行初始化。</li>
+<li>如果Bean实现了BeanPostProcessor接口，执行postProcessAfterInitialization()方法（需手动实现该方法，<strong>利用该方法实现AOP，在此处创建代理类</strong>）</li>
+<li>此时bean已经准备就绪，可以被应用程序使用了，他们将一直驻留在应用上下文中，直到该应用上下文被销毁</li>
+</ul>
+<p><strong>销毁</strong></p>
+<ul>
+<li>当要销毁Bean的时候，如果Bean实现了DisposableBean接口，执行destroy()方法。</li>
+<li>当要销毁Bean的时候，如果Bean在xml配置文件中的<!-- raw HTML omitted -->的destroy-method属性，执行指定的方法进行销毁。</li>
+</ul>
+</li>
+</ul>
+<p>参考：<a class="link" href="https://www.jianshu.com/p/3944792a5fff"  target="_blank" rel="noopener"
+    >Spring Bean生命周期</a></p>
+<p><a class="link" href="https://www.jianshu.com/p/1dec08d290c1"  target="_blank" rel="noopener"
+    >Spring Bean生命周期</a>：这篇写得不错</p>
+<h2 id="applicationcontext与beanfactory的区别">ApplicationContext与BeanFactory的区别</h2>
+<ul>
+<li>ApplicationContext与BeanFactory类似，BeanFactory只提供最基本的Bean对象创建与获取，ApplicationContext指的是上下文，包含BeanFactory的功能（实现了BeanFactory接口），同时也提供了其他额外的功能，比如事件机制、监听、拦截器、资源访问等。</li>
+<li>BeanFactory采用延迟加载来注入Bean，只有在使用到某个Bean的时候才会实例化，ApplicationContext则在容器启动时，就实例化Bean，常驻在容器内，也可以为Bean配置Lazy-init=true来让Bean延迟实例化。</li>
+</ul>
+<h2 id="ioc模拟">IOC模拟</h2>
+<p><a class="link" href="https://www.cnblogs.com/weilu2/p/spring_ioc_analysis_principle_bsici_on_reflection_annotation.html"  target="_blank" rel="noopener"
+    >Spring——原理解析-利用反射和注解模拟IoC的自动装配</a></p>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/144627581"  target="_blank" rel="noopener"
+    >根据 Spring 源码写一个带有三级缓存的 IOC</a></p>
+<h1 id="aop">AOP</h1>
+<ul>
+<li>切面Aspect：指代理类，声明切点和通知</li>
+<li>切点PointCut：指要把切面的通知在被代理类的方法的位置，即表达式execution（值的格式为 [方法的访问修饰符] [被代理类的全限定名称]和其方法名(方法参数)]），切点可以有多个，配合通知使用</li>
+<li>通知Advice：代理类的增强方法，通知分为前置通知、环绕通知、后置通知、后置返回通知、后置异常通知</li>
+<li>连接点JoinPoint：被代理类的方法</li>
+</ul>
+<h2 id="基本原理">基本原理</h2>
+<p>AOP基于代理模式，代理分为三种代理：静态代理，JDK动态代理，CGLib代理</p>
+<h3 id="静态代理">静态代理</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 接口
+</span><span class="c1"></span><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">A</span> <span class="o">{</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">method</span><span class="o">();}</span>
+
+<span class="c1">// 代理类
+</span><span class="c1"></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">BProxy</span> <span class="kd">implements</span> <span class="n">A</span> <span class="o">{</span>
+    
+    <span class="kd">public</span> <span class="n">B</span> <span class="n">b</span><span class="o">;</span>
+    
+    <span class="kd">public</span> <span class="nf">BProxy</span><span class="o">()</span> <span class="o">{}</span>
+    
+    <span class="kd">public</span> <span class="nf">BProxy</span><span class="o">(</span><span class="n">B</span> <span class="n">b</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">b</span> <span class="o">=</span> <span class="n">b</span><span class="o">;</span>
+    <span class="o">}</span>
+    
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">method</span><span class="o">(){</span>
+        <span class="c1">// 为被代理类进行一系列前置操作
+</span><span class="c1"></span>        <span class="n">b</span><span class="o">.</span><span class="na">method</span><span class="o">();</span>
+        <span class="c1">// 为被代理类进行一系列后置操作
+</span><span class="c1"></span>    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="c1">// 被代理类
+</span><span class="c1"></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">B</span> <span class="kd">implements</span> <span class="n">A</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">method</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// 具体的处理逻辑
+</span><span class="c1"></span>    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">B</span> <span class="n">b</span> <span class="o">=</span> <span class="k">new</span> <span class="n">B</span><span class="o">();</span>
+    <span class="n">BProxy</span> <span class="n">bProxy</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BProxy</span><span class="o">(</span><span class="n">b</span><span class="o">);</span>
+    <span class="n">bProxy</span><span class="o">.</span><span class="na">method</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></div><p>好处：在不修改目标对象的功能的前提下，增添新方法
+缺点：每个对象都需要有代理对象，导致有很多代理类；接口增加方法，所有的实现类都要改</p>
+<h3 id="jdk动态代理">JDK动态代理</h3>
+<p>动态代理是为了解决上述问题，通过反射 + 多态的方式，动态为一个一个类设置代理，只有知道那个类的接口才可以。利用 JDK java.lang.reflect包里的InvocationHandler接口，代理方法具体逻辑写在invoke方法里</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">代理对象的执行方法</span><span class="err">！</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">InvocationHandler</span> <span class="o">{</span>
+    <span class="c1">// proxy：动态产生的代理对象，method：被代理类要执行的方法，args：方法所需参数
+</span><span class="c1"></span>    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="n">Object</span> <span class="n">proxy</span><span class="o">,</span> <span class="n">Method</span> <span class="n">method</span><span class="o">,</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">Throwable</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div><p>还有java.lang.reflect包中的Proxy类的newProxyInstance方法,，他是静态的，作用是为被代理类构建代理类，并返回，在这个动态生成的代理类中已经织入了InvocationHandler，而它又持有被代理类，对代理对象的所有接口方法调用都会转发到InvocationHandler.invoke()方法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">该方法将会为被代理类生成代理类</span><span class="err">，</span><span class="n">代理类执行与被代理类的接口时</span><span class="err">，</span><span class="n">会执行invocationHandler的方法</span><span class="err">！</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="n">Object</span> <span class="nf">newProxyInstance</span><span class="o">(</span><span class="n">ClassLoader</span> <span class="n">loader</span><span class="o">,</span>	<span class="c1">// 被代理类的类加载器，如上面B类的类加载器
+</span><span class="c1"></span>                                      <span class="n">Class</span><span class="o">&lt;?&gt;[]</span> <span class="n">interfaces</span><span class="o">,</span><span class="c1">// 被代理类的接口数组
+</span><span class="c1"></span>                                      <span class="n">InvocationHandler</span> <span class="n">h</span><span class="o">)</span>	<span class="c1">// 上面实现了InvocationHandler接口的实例
+</span><span class="c1"></span>    <span class="kd">throws</span> <span class="n">IllegalArgumentException</span>
+</code></pre></div><p>具体例子</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ProxyFactory</span> <span class="o">{</span>
+
+    <span class="c1">// 被代理类
+</span><span class="c1"></span>	<span class="kd">private</span> <span class="n">Object</span> <span class="n">target</span><span class="o">;</span>
+	<span class="kd">public</span> <span class="nf">ProxyFactory</span><span class="o">(</span><span class="n">Object</span> <span class="n">target</span><span class="o">){</span>
+		<span class="k">this</span><span class="o">.</span><span class="na">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">;</span>
+	<span class="o">}</span>
+	<span class="c1">// 匿名内部类的方式重写invoke方法
+</span><span class="c1"></span>	<span class="kd">public</span> <span class="n">Object</span> <span class="nf">getProxyInstance</span><span class="o">(){</span>
+        <span class="c1">// 返回代理类
+</span><span class="c1"></span>		<span class="k">return</span> <span class="n">Proxy</span><span class="o">.</span><span class="na">newProxyInstance</span><span class="o">(</span><span class="n">target</span><span class="o">.</span><span class="na">getClass</span><span class="o">().</span><span class="na">getClassLoader</span><span class="o">(),</span>
+				<span class="n">target</span><span class="o">.</span><span class="na">getClass</span><span class="o">().</span><span class="na">getInterfaces</span><span class="o">(),</span>
+				<span class="k">new</span> <span class="n">InvocationHandler</span><span class="o">()</span> <span class="o">{</span>
+					<span class="nd">@Override</span>
+					<span class="c1">//当代理者(接口)执行接口里的方法的时候就会调用此方法
+</span><span class="c1"></span>					<span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="n">Object</span> <span class="n">proxy</span><span class="o">,</span> <span class="n">Method</span> <span class="n">method</span><span class="o">,</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span>
+							<span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+						<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;为被代理类进行一系列前置操作&#34;</span><span class="o">);</span>
+						<span class="c1">//执行实现了该接口的类中的方法，被代理类的方法
+</span><span class="c1"></span>						<span class="n">Object</span> <span class="n">returnValue</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="n">target</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+						<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;为被代理类进行一系列后置操作&#34;</span><span class="o">);</span>
+						<span class="k">return</span> <span class="n">returnValue</span><span class="o">;</span>  <span class="c1">//返回的是调用方法后的结果
+</span><span class="c1"></span>					<span class="o">}</span>
+				<span class="o">});</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">A</span> <span class="n">b</span> <span class="o">=</span> <span class="k">new</span> <span class="n">B</span><span class="o">();</span>	<span class="c1">// B b = new B();也是可以的
+</span><span class="c1"></span>    <span class="n">A</span> <span class="n">bProxy</span> <span class="o">=</span> <span class="o">(</span><span class="n">A</span><span class="o">)</span> <span class="k">new</span> <span class="n">ProxyFactory</span><span class="o">(</span><span class="n">b</span><span class="o">).</span><span class="na">getProxyInstance</span><span class="o">();</span>	<span class="c1">// 必须转接口类型
+</span><span class="c1"></span>    <span class="c1">// 调用该接口里的方法都会被代理
+</span><span class="c1"></span>    <span class="n">bProxy</span><span class="o">.</span><span class="na">method</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></div><p>好处：只需写一次该接口的代理类就可以为以后许多实现了此接口的被代理类进行代理，一次编写，处处使用
+缺点：只针对一个接口实现的代理，只能针对接口写代理类</p>
+<h3 id="cglib代理">CGLIB代理</h3>
+<p>CGLIB代理就可以直接代理普通类，不需要接口了</p>
+<p>原理：直接读取被代理类的字节码，通过继承的方式实现，在内存中<strong>构建被代理类的子类对象</strong>从而实现对目标对象的功能扩展</p>
+<p>具体例子：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ProxyFactory</span> <span class="kd">implements</span> <span class="n">MethodInterceptor</span><span class="o">{</span>
+	<span class="kd">private</span> <span class="n">Object</span> <span class="n">target</span><span class="o">;</span>
+	<span class="kd">public</span> <span class="nf">ProxyFactory</span><span class="o">(</span><span class="n">Object</span> <span class="n">target</span><span class="o">){</span>
+		<span class="k">this</span><span class="o">.</span><span class="na">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">;</span>
+	<span class="o">}</span>
+	<span class="c1">//给目标对象创建代理对象
+</span><span class="c1"></span>	<span class="kd">public</span> <span class="n">Object</span> <span class="nf">getProxyInstance</span><span class="o">(){</span>
+		<span class="n">Enhancer</span> <span class="n">en</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Enhancer</span><span class="o">();</span>
+		<span class="c1">//设置父类
+</span><span class="c1"></span>		<span class="n">en</span><span class="o">.</span><span class="na">setSuperclass</span><span class="o">(</span><span class="n">target</span><span class="o">.</span><span class="na">getClass</span><span class="o">());</span>
+		<span class="c1">//设置回调函数
+</span><span class="c1"></span>		<span class="n">en</span><span class="o">.</span><span class="na">setCallback</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+		<span class="c1">//创建子类代理
+</span><span class="c1"></span>		<span class="k">return</span> <span class="n">en</span><span class="o">.</span><span class="na">create</span><span class="o">();</span>
+	<span class="o">}</span>
+	<span class="nd">@Override</span>
+	<span class="c1">//object 为CGLib动态生成的代理实例
+</span><span class="c1"></span>	<span class="c1">//Method 为上文实体类所调用的被代理的方法引用
+</span><span class="c1"></span>	<span class="c1">//Object[] 方法的参数列表
+</span><span class="c1"></span>	<span class="c1">//MethodProxy 为生成的代理类对方法的代理引用
+</span><span class="c1"></span>	<span class="kd">public</span> <span class="n">Object</span> <span class="nf">intercept</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="n">Method</span> <span class="n">method</span><span class="o">,</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">,</span> <span class="n">MethodProxy</span> <span class="n">proxy</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span><span class="o">{</span>
+		<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;为被代理类进行一系列前置操作&#34;</span><span class="o">);</span>
+		<span class="n">Object</span> <span class="n">returnValue</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="n">target</span><span class="o">,</span><span class="n">args</span><span class="o">);</span>
+		<span class="c1">//或者写成 Object returnValue1 = proxy.invokeSuper(obj, args);
+</span><span class="c1"></span>		<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;为被代理类进行一系列后置操作&#34;</span><span class="o">);</span>
+		<span class="k">return</span> <span class="n">returnValue</span><span class="o">;</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">B</span> <span class="n">b</span> <span class="o">=</span> <span class="k">new</span> <span class="n">B</span><span class="o">();</span>
+    <span class="c1">// B类的所有非final方法，包括它的父类都会被代理
+</span><span class="c1"></span>    <span class="n">B</span> <span class="n">bProxy</span> <span class="o">=</span> <span class="o">(</span><span class="n">B</span><span class="o">)</span> <span class="k">new</span> <span class="n">CGlibProxy</span><span class="o">(</span><span class="n">b</span><span class="o">).</span><span class="na">getProxyInstance</span><span class="o">();</span>
+    <span class="n">bProxy</span><span class="o">.</span><span class="na">method</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></div><h2 id="springboot中的实现">SpringBoot中的实现</h2>
+<ul>
+<li>
+<p>SpringBoot中提供@EnableAspectJAutoProxy开启对AOP的支持，其中属性proxyTargetClass=true时使用cglib，为false使用JDK的动态代理，默认为false</p>
+</li>
+<li>
+<p>@EnableAspectJAutoProxy注解主要是使用AspectJAutoProxyRegistrar类将AOP处理工具注册到Bean中。</p>
+</li>
+<li>
+<p>在这个AOP处理工具中有一个AnnotationAwareAspectJAutoProxyCreator类，该类</p>
+<ul>
+<li>实现了一系列Aware接口，使用BeanFactory：使得Bean可以管理</li>
+<li>实现了order接口：用于设置切面的优先级</li>
+<li>继承了ProxyConfig：该类封装了代理的通用逻辑，cglib或JDK动态代理开关配置等</li>
+</ul>
+</li>
+<li>
+<p>Bean加载完AnnotationAwareAspectJAutoProxyCreator类后，会解析开发者定义的切面类、切点、通知，在BeanFactory中找到被代理类，结合通知进行封装，创建出代理类。由于被代理类可被设置多重代理，在创建代理类时，会根据切面的优先级，不断套在被代理类上，形成拦截器链。</p>
+</li>
+<li>
+<p>执行代理类的方法时，就会调用方法拦截器链，进行方法增强。</p>
+</li>
+</ul>
+<p>AOP的实现会在创建Bean实例对象前触发@Aspect切面对象，获得Advisor。生成Bean实例对象之后，才会再次触发对该Bean实例对象做代理增强，增强的Advisor来自之前的解析结果。</p>
+<p><a class="link" href="https://blog.csdn.net/JinXYan/article/details/89302126"  target="_blank" rel="noopener"
+    >SpringAOP详细介绍</a></p>
+<p><a class="link" href="https://blog.csdn.net/fighterandknight/article/details/51209822"  target="_blank" rel="noopener"
+    >Spring 源码分析Aop</a></p>
+<h1 id="事务">事务</h1>
+<h2 id="spring事务传播行为">Spring事务传播行为</h2>
+<ul>
+<li>PROPERGATION_MANDATORY：方法必须运行在事务中，如果当前事务不存在，抛异常</li>
+<li>PROPAGATION_NESTED：当前事务存在，则该方法运行在嵌套事务中</li>
+<li>PROPAGATION_NEVER：方法不能运行事务中，否则抛异常</li>
+<li>PROPAGATION_REQUIRED：当前方法必须运行在事务中，如果当前存在事务，该方法运行其中，否则创建新事务</li>
+<li>PROPAGATION_REQUIRES_NEW：当前方法必须运行在事务中，如果当前存在事务，则该事务在方法运行期间被挂起</li>
+<li>PROPAGATION_SUPPORTS：当前方法不需要运行在事务中，但如果存在事务，也可运行在事务中</li>
+<li>PROPAGATION_NOT_SUPPORTED：当前方法不能运行在事务中，如果存在事务，则挂起该方法</li>
+</ul>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/spring/">Spring</a>
+        
+            <a href="/tags/springboot/">SpringBoot</a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/">IOC和AOP</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Jun 03, 2020 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+        <h2 class="section-title">Related contents</h2>
+        <div class="related-contents">
+            <div class="flex article-list--tile">
+                
+                    
+<article class="">
+    <a href="/p/springmvc/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">SpringMVC</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/mybatis/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MyBatis</h2>
+        </div>
+    </a>
+</article>
+                
+            </div>
+        </div>
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#spring-和-spring-boot区别">Spring 和 Spring Boot区别</a></li>
+    <li><a href="#springboot整个启动流程">SpringBoot整个启动流程</a></li>
+    <li><a href="#springboot自动配置流程">SpringBoot自动配置流程</a></li>
+    <li><a href="#自定义starter">自定义starter</a></li>
+    <li><a href="#contextloaderlistener">ContextLoaderListener</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#controller与restcontroller">@Controller与@RestController</a></li>
+    <li><a href="#autowired与resource">@Autowired与@Resource</a></li>
+    <li><a href="#component与bean">@Component与@Bean</a></li>
+    <li><a href="#configuration与configurationproperties">@Configuration与@ConfigurationProperties</a></li>
+    <li><a href="#springbootapplication与componentscan与import">@SpringBootApplication与@ComponentScan与@Import</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#bean的作用域">Bean的作用域</a></li>
+    <li><a href="#注入方式">注入方式</a></li>
+    <li><a href="#bean加载流程">Bean加载流程</a></li>
+    <li><a href="#三级缓存解决循环依赖">三级缓存解决循环依赖</a></li>
+    <li><a href="#bean的生命周期">Bean的生命周期</a></li>
+    <li><a href="#applicationcontext与beanfactory的区别">ApplicationContext与BeanFactory的区别</a></li>
+    <li><a href="#ioc模拟">IOC模拟</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#基本原理">基本原理</a>
+      <ol>
+        <li><a href="#静态代理">静态代理</a></li>
+        <li><a href="#jdk动态代理">JDK动态代理</a></li>
+        <li><a href="#cglib代理">CGLIB代理</a></li>
+      </ol>
+    </li>
+    <li><a href="#springboot中的实现">SpringBoot中的实现</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#spring事务传播行为">Spring事务传播行为</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

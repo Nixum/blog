@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>设计模式 on Nixum Blog</title>
+    <link>http://nixum.cc/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/</link>
+    <description>Recent content in 设计模式 on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 22 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>设计模式</title>
+      <link>http://nixum.cc/p/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/</link>
+      <pubDate>Tue, 22 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/</guid>
+      <description>[TOC]
+只记录常用设计模式
+设计模式六大原则  单一职责原则(SRP)：一个类只负责一个功能领域中的相应职责，就一个类而言，应该只有一个引起它变化的原因。 开闭原则(OCP)：一个软件实体应当对扩展开放，对修改关闭。即软件实体应尽量在不修改原有代码的情况下进行扩展。 里氏代换原则(LSP)：所有引用基类（父类）的地方必须能透明地使用其子类的对象。 依赖倒转原则(DIP)：抽象不应该依赖于细节，细节应当依赖于抽象。换言之，要针对接口编程，而不是针对实现编程。如 控制反转和依赖注入 接口隔离原则(ISP)：使用多个专门的接口，而不使用单一的总接口，即客户端不应该依赖那些它不需要的接口。 迪米特法则(LoD)：一个软件实体应当尽可能少地与其他实体发生相互作用。  常见设计模式 创建型模式是将创建和使用代码解耦
+结构型模式是将不同功能代码解耦
+行为型模式是将不同的行为代码解耦
+创建型 单例模式 数据在应用上只保持一份，解决资源访问冲突的问题，就可以使用单例模式
+/** 1. * 懒汉模式,线程不安全，只有在调用方法的时候才实例化,好处是没用到该类时就不实例化，节约资源 */ class LazyInstance { private static LazyInstance singleton; private LazyInstance() { // if (singleton != null) // throw new RuntimeException();  } /** 1.1 * 想要线程安全只需在方法上加上synchronized关键字，缺点是，多线程访问时锁的操作耗时 */ public static LazyInstance getInstance() { if (singleton == null) { singleton = new LazyInstance(); } return singleton; } } /** 2.</description>
+    </item>
+    
+  </channel>
+</rss>

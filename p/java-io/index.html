@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='Java BIO、NIO、线程模型、Netty相关原理'><title>Java IO</title>
+
+<link rel='canonical' href='http://nixum.cc/p/java-io/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='Java IO'>
+<meta property='og:description' content='Java BIO、NIO、线程模型、Netty相关原理'>
+<meta property='og:url' content='http://nixum.cc/p/java-io/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Java BIO' /><meta property='article:tag' content='Java NIO' /><meta property='article:tag' content='线程模型' /><meta property='article:tag' content='Netty' /><meta property='article:published_time' content='2020-09-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-10-23T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="Java IO">
+<meta name="twitter:description" content="Java BIO、NIO、线程模型、Netty相关原理">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/java/" >
+                Java
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/java-io/">Java IO</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        Java BIO、NIO、线程模型、Netty相关原理
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Sep 22, 2020</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    6 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="bio">BIO</h1>
+<p>特点</p>
+<ul>
+<li>BIO是同步阻塞的，以流的形式处理，基于字节流和字符流</li>
+<li>每个请求都需要创建独立的线程，处理Read和Write</li>
+<li>并发数较大时，就算是使用了线程池，也需要创建大量的线程来处理</li>
+<li>连接建立后，如果处理线程被读操作阻塞了，那就阻塞了，只能等到读完才能进行其他操作</li>
+</ul>
+<p>以基于TCP协议的Socket，编写服务端Demo</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.bio</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.io.InputStream</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.PrintWriter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.net.ServerSocket</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.net.Socket</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Date</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.concurrent.ExecutorService</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.concurrent.Executors</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">BIOServer</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">ExecutorService</span> <span class="n">newCachedThreadPool</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newCachedThreadPool</span><span class="o">();</span>
+    <span class="c1">//创建ServerSocket
+</span><span class="c1"></span>    <span class="n">ServerSocket</span> <span class="n">serverSocket</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ServerSocket</span><span class="o">(</span><span class="n">8080</span><span class="o">);</span>
+    <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">// 主线程负责处理监听
+</span><span class="c1"></span>      <span class="kd">final</span> <span class="n">Socket</span> <span class="n">socket</span> <span class="o">=</span> <span class="n">serverSocket</span><span class="o">.</span><span class="na">accept</span><span class="o">();</span>
+      <span class="c1">// 创建线程处理请求
+</span><span class="c1"></span>      <span class="n">newCachedThreadPool</span><span class="o">.</span><span class="na">execute</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">handler</span><span class="o">(</span><span class="n">socket</span><span class="o">);</span>
+      <span class="o">});</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">handler</span><span class="o">(</span><span class="n">Socket</span> <span class="n">socket</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="kt">byte</span><span class="o">[]</span> <span class="n">bytes</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="n">1024</span><span class="o">];</span>
+      <span class="c1">//通过socket获取输入流
+</span><span class="c1"></span>      <span class="n">InputStream</span> <span class="n">inputStream</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="na">getInputStream</span><span class="o">();</span>
+      <span class="c1">//循环的读取客户端发送的数据
+</span><span class="c1"></span>      <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">read</span> <span class="o">=</span>  <span class="n">inputStream</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">bytes</span><span class="o">);</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">read</span> <span class="o">!=</span> <span class="o">-</span><span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;接收到的请求是：&#34;</span> <span class="o">+</span> <span class="k">new</span> <span class="n">String</span><span class="o">(</span><span class="n">bytes</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">read</span><span class="o">));</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+          <span class="k">break</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="c1">// 响应给客户端
+</span><span class="c1"></span>        <span class="n">PrintWriter</span> <span class="n">out</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PrintWriter</span><span class="o">(</span><span class="n">socket</span><span class="o">.</span><span class="na">getOutputStream</span><span class="o">());</span>
+        <span class="n">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;服务端接收到请求了，响应时间：&#34;</span> <span class="o">+</span> <span class="k">new</span> <span class="n">Date</span><span class="o">());</span>
+        <span class="n">out</span><span class="o">.</span><span class="na">flush</span><span class="o">();</span>
+      <span class="o">}</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+      <span class="k">try</span> <span class="o">{</span>
+        <span class="c1">// 关闭连接
+</span><span class="c1"></span>        <span class="n">socket</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+      <span class="o">}</span><span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div><p>客户端Demo：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.atguigu.bio</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.io.BufferedReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.InputStreamReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.PrintStream</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.net.Socket</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Scanner</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">BIOClient</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">Socket</span> <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Socket</span><span class="o">(</span><span class="s">&#34;127.0.0.1&#34;</span><span class="o">,</span> <span class="n">8080</span><span class="o">);</span>
+    <span class="n">Scanner</span> <span class="n">scan</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Scanner</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">in</span><span class="o">);</span>
+    <span class="n">PrintStream</span> <span class="n">out</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PrintStream</span><span class="o">(</span><span class="n">client</span><span class="o">.</span><span class="na">getOutputStream</span><span class="o">());</span>
+    <span class="n">BufferedReader</span> <span class="n">bufferReader</span> <span class="o">=</span>
+      <span class="k">new</span> <span class="n">BufferedReader</span><span class="o">(</span><span class="k">new</span> <span class="n">InputStreamReader</span><span class="o">(</span><span class="n">client</span><span class="o">.</span><span class="na">getInputStream</span><span class="o">()));</span>
+    <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">scan</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+        <span class="c1">// 键盘输入，并发送请求
+</span><span class="c1"></span>        <span class="n">String</span> <span class="n">str</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="s">&#34;exit&#34;</span><span class="o">.</span><span class="na">equalsIgnoreCase</span><span class="o">(</span><span class="n">str</span><span class="o">))</span> <span class="o">{</span>
+          <span class="k">break</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">str</span><span class="o">);</span>
+        <span class="n">out</span><span class="o">.</span><span class="na">flush</span><span class="o">();</span>
+        <span class="c1">// 接收服务端的响应
+</span><span class="c1"></span>        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">bufferReader</span><span class="o">.</span><span class="na">readLine</span><span class="o">());</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="n">client</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></div><h1 id="nio">NIO</h1>
+<p>特点：</p>
+<ul>
+<li>
+<p>同步非阻塞，通过缓冲区进行缓冲增加处理的灵活性，当某一线程里<strong>没有数据可用</strong>时，则去处理其他事情，保证线程不阻塞</p>
+</li>
+<li>
+<p>由三个部分组成：Channel、Buffer、Selector</p>
+</li>
+<li>
+<p>数据总是从Channel读到Buffer中，或从Buffer写到Channel中，事件 + Selector监听Channel，实现一个线程处理多个操作。每一个Channel会对应一个Buffer、一个Selector对应多个Channel，Selector通过事件决定使用哪个Channel</p>
+</li>
+</ul>
+<h2 id="buffer">Buffer</h2>
+<ul>
+<li>存储数据时使用，本质是一个数组</li>
+<li>清除时本质只是把下列各个属性恢复到初始状态，数据没有被正常的擦除，而是由后面的数据覆盖</li>
+<li>将数据读入Buffer后，需要调用flip方法进行反转后才能将Buffer里的数据写出来</li>
+<li>可以put各种类型的数据进byteBuffer后，flip后，需要按顺序和类型进行get操作，否则会抛异常</li>
+</ul>
+<h3 id="重要属性">重要属性</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 下一个要读或写的位置索引
+</span><span class="c1"></span><span class="kd">private</span> <span class="kt">int</span> <span class="n">position</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+<span class="c1">// 缓冲区的当前终点，&lt;= limit，读写时位置索引不能超出limit
+</span><span class="c1"></span><span class="kd">private</span> <span class="kt">int</span> <span class="n">limit</span><span class="o">;</span>
+<span class="c1">// 缓冲区容量
+</span><span class="c1"></span><span class="kd">private</span> <span class="kt">int</span> <span class="n">capacity</span><span class="o">;</span>
+<span class="c1">// 标记，标记后用于重新恢复到的位置
+</span><span class="c1"></span><span class="kd">private</span> <span class="kt">int</span> <span class="n">mark</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+</code></pre></div><h3 id="常用子类">常用子类</h3>
+<p>每个基本类型都有对应的Buffer，比如CharBuffer、IntBuffer、DoubleBuffer、ByteBuffer（最常用）</p>
+<h2 id="channel">Channel</h2>
+<ul>
+<li>作用类似流，但流是单线的，只能读或只能写，而Channel是双向的，可以同时进行读写</li>
+<li>可异步</li>
+<li>通常与Buffer配合使用，也可以使用Buffer数组，当一个buffer存满时会取下一个buffer取处理</li>
+</ul>
+<h3 id="常用子类-1">常用子类</h3>
+<ul>
+<li>
+<p>FileChannel专门处理文件相关的数据（从FileIn/OutputStream的getChannel()方法得到）</p>
+</li>
+<li>
+<p>ServerSocketChannel和SocketChannel用于处理TCP连接的数据</p>
+</li>
+<li>
+<p>DatagramChannel用于处理UDP连接的数据</p>
+</li>
+</ul>
+<p>读写文件的Demo，比如从一个文件里读出数据并写入另一个文件</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.nio</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.io.FileInputStream</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.io.FileOutputStream</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.ByteBuffer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.channels.FileChannel</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">CopyFileAToB</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">FileInputStream</span> <span class="n">fileInputStream</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="s">&#34;first.txt&#34;</span><span class="o">);</span>
+    <span class="n">FileChannel</span> <span class="n">readFileChannel</span> <span class="o">=</span> <span class="n">fileInputStream</span><span class="o">.</span><span class="na">getChannel</span><span class="o">();</span>
+
+    <span class="n">FileOutputStream</span> <span class="n">fileOutputStream</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileOutputStream</span><span class="o">(</span><span class="s">&#34;second.txt&#34;</span><span class="o">);</span>
+    <span class="n">FileChannel</span> <span class="n">writeFileChannel</span> <span class="o">=</span> <span class="n">fileOutputStream</span><span class="o">.</span><span class="na">getChannel</span><span class="o">();</span>
+
+    <span class="c1">// 只设置成1024的容量，通过循环 + clear覆盖重写
+</span><span class="c1"></span>    <span class="n">ByteBuffer</span> <span class="n">byteBuffer</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">allocate</span><span class="o">(</span><span class="n">1024</span><span class="o">);</span>
+    <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">byteBuffer</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+      <span class="kt">int</span> <span class="n">read</span> <span class="o">=</span> <span class="n">readFileChannel</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">byteBuffer</span><span class="o">);</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">read</span> <span class="o">==</span> <span class="o">-</span><span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">break</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="c1">// 写操作前需要先flip
+</span><span class="c1"></span>      <span class="n">byteBuffer</span><span class="o">.</span><span class="na">flip</span><span class="o">();</span>
+      <span class="n">writeFileChannel</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">byteBuffer</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="c1">// close
+</span><span class="c1"></span>    <span class="n">fileInputStream</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+    <span class="n">fileOutputStream</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div><h2 id="selector">Selector</h2>
+<ul>
+<li>一个线程处理多个连接，就是靠Selector，Channel需要事先注册到Selector上，Selector根据事件选择Channel进行处理。实际上是一个发布订阅模型，通过事件触发</li>
+<li>只有真正有读写事件时才会进行读写，就不用为每个连接都创建一个线程了</li>
+<li>避免多线程上下文切换的开销</li>
+<li>selectionKey，可以理解为触发selector的事件，有4种，OP_ACCEPT：有新连接产生，一般用于服务端建立连接、OP_CONNECT：连接已建立，一般用于客户端建立连接、OP_READ：读操作、OP_WRITE：写操作</li>
+</ul>
+<p>NIO基本使用Demo，服务端，也可以不使用Selector，但这样就跟BIO没什么差别了</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.nio</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.net.InetSocketAddress</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.ByteBuffer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.channels.*</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Iterator</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Set</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">NIOServer</span> <span class="o">{</span>
+  <span class="kd">private</span> <span class="n">ServerSocketChannel</span> <span class="n">serverSocketChannel</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="n">Selector</span> <span class="n">selector</span><span class="o">;</span>
+
+  <span class="kd">public</span> <span class="nf">NIOServer</span><span class="o">(</span><span class="kt">int</span> <span class="n">port</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="n">serverSocketChannel</span> <span class="o">=</span> <span class="n">ServerSocketChannel</span><span class="o">.</span><span class="na">open</span><span class="o">();</span>
+      <span class="n">selector</span> <span class="o">=</span> <span class="n">Selector</span><span class="o">.</span><span class="na">open</span><span class="o">();</span>
+      <span class="n">serverSocketChannel</span><span class="o">.</span><span class="na">socket</span><span class="o">().</span><span class="na">bind</span><span class="o">(</span><span class="k">new</span> <span class="n">InetSocketAddress</span><span class="o">(</span><span class="n">port</span><span class="o">));</span>
+      <span class="c1">// 需要显式设置为非阻塞
+</span><span class="c1"></span>      <span class="n">serverSocketChannel</span><span class="o">.</span><span class="na">configureBlocking</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+      <span class="c1">// 注册serverSocketChannel，触发事件为 OP_ACCEPT，用于建立连接
+</span><span class="c1"></span>      <span class="n">serverSocketChannel</span><span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="n">selector</span><span class="o">,</span> <span class="n">SelectionKey</span><span class="o">.</span><span class="na">OP_ACCEPT</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">// 等待1s获取事件，这样一次性可以获取多个事件进行处理，如果没有则继续
+</span><span class="c1"></span>      <span class="k">if</span><span class="o">(</span><span class="n">selector</span><span class="o">.</span><span class="na">select</span><span class="o">(</span><span class="n">1000</span><span class="o">)</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;这1秒内没有收到数据&#34;</span><span class="o">);</span>
+        <span class="k">continue</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="c1">// 监听到事件发生， 获取发生的事件集合
+</span><span class="c1"></span>      <span class="n">Set</span><span class="o">&lt;</span><span class="n">SelectionKey</span><span class="o">&gt;</span> <span class="n">selectionKeys</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="na">selectedKeys</span><span class="o">();</span>
+      <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">SelectionKey</span><span class="o">&gt;</span> <span class="n">keyIterator</span> <span class="o">=</span> <span class="n">selectionKeys</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span>
+
+      <span class="c1">// 判断事件的类型
+</span><span class="c1"></span>      <span class="k">while</span> <span class="o">(</span><span class="n">keyIterator</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">SelectionKey</span> <span class="n">key</span> <span class="o">=</span> <span class="n">keyIterator</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+        <span class="c1">// 触发的是OP_ACCEPT事件
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">key</span><span class="o">.</span><span class="na">isAcceptable</span><span class="o">())</span> <span class="o">{</span>
+          <span class="n">connectionHandler</span><span class="o">(</span><span class="n">selector</span><span class="o">,</span> <span class="n">serverSocketChannel</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="c1">// 触发OP_READ事件
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">key</span><span class="o">.</span><span class="na">isReadable</span><span class="o">())</span> <span class="o">{</span>
+          <span class="n">readHandler</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="c1">// 将处理完的事件集合移除，防止重复操作
+</span><span class="c1"></span>        <span class="n">keyIterator</span><span class="o">.</span><span class="na">remove</span><span class="o">();</span>
+      <span class="o">}</span>
+      <span class="c1">// 处理完事件集合
+</span><span class="c1"></span>    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">connectionHandler</span><span class="o">(</span><span class="n">Selector</span> <span class="n">selector</span><span class="o">,</span> <span class="n">ServerSocketChannel</span> <span class="n">serverSocketChannel</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="c1">// 建立连接
+</span><span class="c1"></span>    <span class="n">SocketChannel</span> <span class="n">socketChannel</span> <span class="o">=</span> <span class="n">serverSocketChannel</span><span class="o">.</span><span class="na">accept</span><span class="o">();</span>
+    <span class="c1">// 将SocketChannel 设置为非阻塞
+</span><span class="c1"></span>    <span class="n">socketChannel</span><span class="o">.</span><span class="na">configureBlocking</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="c1">// 建立连接后，将socketChannel注册到selector，初始化一个Buffer用来装数据，发送OP_READ给selector，当selector收到OP_READ事件后，就会使用该socketChannel处理该Buffer
+</span><span class="c1"></span>    <span class="n">socketChannel</span><span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="n">selector</span><span class="o">,</span> <span class="n">SelectionKey</span><span class="o">.</span><span class="na">OP_READ</span><span class="o">,</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">allocate</span><span class="o">(</span><span class="n">1024</span><span class="o">));</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">readHandler</span><span class="o">(</span><span class="n">SelectionKey</span> <span class="n">key</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="c1">// 获取处理该事件的channel
+</span><span class="c1"></span>    <span class="n">SocketChannel</span> <span class="n">channel</span> <span class="o">=</span> <span class="o">(</span><span class="n">SocketChannel</span><span class="o">)</span> <span class="n">key</span><span class="o">.</span><span class="na">channel</span><span class="o">();</span>
+    <span class="c1">// 获取该channel关联的Buffer
+</span><span class="c1"></span>    <span class="n">ByteBuffer</span> <span class="n">buffer</span> <span class="o">=</span> <span class="o">(</span><span class="n">ByteBuffer</span><span class="o">)</span> <span class="n">key</span><span class="o">.</span><span class="na">attachment</span><span class="o">();</span>
+    <span class="c1">// 将channel里的数据读到buffer里
+</span><span class="c1"></span>    <span class="n">channel</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">buffer</span><span class="o">);</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;接收到请求是：&#34;</span> <span class="o">+</span> <span class="k">new</span> <span class="n">String</span><span class="o">(</span><span class="n">buffer</span><span class="o">.</span><span class="na">array</span><span class="o">()));</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">PORT</span> <span class="o">=</span> <span class="n">8080</span><span class="o">;</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span><span class="o">{</span>
+    <span class="n">NIOServer</span> <span class="n">server</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NIOServer</span><span class="o">(</span><span class="n">PORT</span><span class="o">);</span>
+    <span class="n">server</span><span class="o">.</span><span class="na">run</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div><p>客户端，这里没有使用selector，直接使用socketChannel连接：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.nio</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.net.InetSocketAddress</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.ByteBuffer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.nio.channels.SocketChannel</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">NIOClient</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">SocketChannel</span> <span class="n">socketChannel</span> <span class="o">=</span> <span class="n">SocketChannel</span><span class="o">.</span><span class="na">open</span><span class="o">();</span>
+    <span class="n">socketChannel</span><span class="o">.</span><span class="na">configureBlocking</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="n">InetSocketAddress</span> <span class="n">inetSocketAddress</span> <span class="o">=</span> <span class="k">new</span> <span class="n">InetSocketAddress</span><span class="o">(</span><span class="s">&#34;127.0.0.1&#34;</span><span class="o">,</span> <span class="n">8080</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(!</span><span class="n">socketChannel</span><span class="o">.</span><span class="na">connect</span><span class="o">(</span><span class="n">inetSocketAddress</span><span class="o">))</span> <span class="o">{</span>
+      <span class="c1">// 这里的例子是为了说明如果连接和处理是异步的，非阻塞的
+</span><span class="c1"></span>      <span class="k">while</span> <span class="o">(!</span><span class="n">socketChannel</span><span class="o">.</span><span class="na">finishConnect</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;当连接还没完成时，会循环打印，但此时也在执行连接，请稍等&#34;</span><span class="o">);</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="c1">// 如果要使用selector，则在此处将socketChannel注册进selector，剩下处理跟上面类似
+</span><span class="c1"></span>    <span class="n">String</span> <span class="n">str</span> <span class="o">=</span> <span class="s">&#34;hello, world&#34;</span><span class="o">;</span>
+    <span class="n">ByteBuffer</span> <span class="n">buffer</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">wrap</span><span class="o">(</span><span class="n">str</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>  <span class="c1">// 根据str的大小wrap一个buffer
+</span><span class="c1"></span>    <span class="c1">// 发送请求
+</span><span class="c1"></span>    <span class="n">socketChannel</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">buffer</span><span class="o">);</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div><h1 id="线程模型">线程模型</h1>
+<h2 id="传统阻塞io模型">传统阻塞IO模型</h2>
+<p>典型的BIO例子，有一个ServiceSocket在监听端口，一个线程处理一个连接，监听端口、建立连接，read操作、业务处理、write操作这一整个过程都是阻塞的</p>
+<h2 id="reactor模型">Reactor模型</h2>
+<p>reactor其实就是针对传统阻塞IO模型的缺点，将上述操作拆分出来异步处理，通过事件通知，由一个中心进行分发，本质就算IO复用 + 线程池，甚至单线程 + 消息队列也可以</p>
+<h3 id="1-单reactor单线程">1. 单Reactor单线程</h3>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%8d%95%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%8d%95%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg"
+			
+			
+			
+			loading="lazy"
+			alt="单Reactor单线程模型">
+	</a>
+	
+	<figcaption>单Reactor单线程模型</figcaption>
+	
+</figure></p>
+<ul>
+<li>Acceptor实际上也是一个Handler，只是处理的事件不同，当Reactor收到(select)连接事件时调用</li>
+<li>当Reactor收到(select)非连接事件，比如读事件、写事件、处理其他业务的事件等，会起一个handler来处理</li>
+<li>当Handler处理完当前事件后，将下一次要处理的事件和相关参数丢给Reactor进行select和dispatch</li>
+<li>单线程模型，天然是线程安全的，但是当handler处理过慢时就会造成事件堆积，阻塞主线程(Reactor)，处理能力下降，因此要求handler处理尽可能的快。</li>
+<li>异常处理要小心，否则会导致整个线程垮掉</li>
+<li>比如上面NIO的例子就是这个模型，当业务复杂时，也可将handler抽出。不同的Handler类实现不同的业务处理，再配合对象池实现复用</li>
+</ul>
+<h3 id="2-单reactor多线程">2. 单Reactor多线程</h3>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8d%95Reactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg"
+			
+			
+			
+			loading="lazy"
+			alt="单Reactor多线程模型">
+	</a>
+	
+	<figcaption>单Reactor多线程模型</figcaption>
+	
+</figure></p>
+<ul>
+<li>在单Reactor单线程模型的基础上，因为Handler的处理流程相对固定，就将比较耗时的业务处理包装成任务交由线程池处理，加快Handler的处理速度</li>
+<li>实际上如果只是在Handler处将业务逻辑交给线程池去做，在同步等待结果，只是一种伪异步，本质上Handler还是要等任务执行完才能执行send操作。优化的方法是先将Handler存起来，把业务处理提交给线程池后，就结束handler的执行了，这样就能把主线程释放出来，处理其他事件。当线程池里的任务执行完，只需将结果、handlerId、事件交由Reactor，Reactor根据事件和HandlerId找到对应的Handler去响应结果就可以了。</li>
+<li>由于业务处理使用了多线程，需要注意共享数据的问题，处理起来会比较复杂，线程安全只存在于Reactor所在的线程</li>
+<li>Reactor需要处理的事件变多，高并发下容易出现性能瓶颈</li>
+</ul>
+<h3 id="3-主从reactor多线程">3. 主从Reactor多线程</h3>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9aReactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9aReactor%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg"
+			
+			
+			
+			loading="lazy"
+			alt="多Reactor多线程模型">
+	</a>
+	
+	<figcaption>多Reactor多线程模型</figcaption>
+	
+</figure></p>
+<ul>
+<li>在单Reactor多线程模型的基础上，将Handler下沉处理，通过子Reactor来提高并发处理能力。Acceptor处理连接事件后，将连接分配给SubReactor处理，例如一个连接对应一个SubReactor，SubReactor负责处理连接后的业务处理，可以把这层理解为单Reactor多线程模型的Reactor</li>
+<li>由于又多了一层，线程处理更加复杂，同一Reactor下才能保证线程安全，不同Reactor间要注意数据共享问题</li>
+</ul>
+<h1 id="netty">Netty</h1>
+<p>对NIO的包装，简化NIO的使用；实现客户端重连、闪断、半包读写、失败缓冲、网络拥塞和异常流处理；基于主从Reactor多线程模型，事件驱动</p>
+<h2 id="server端线程模型">Server端线程模型</h2>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/netty%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/netty%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.jpg"
+			
+			
+			
+			loading="lazy"
+			alt="Netty线程模型">
+	</a>
+	
+	<figcaption>Netty线程模型</figcaption>
+	
+</figure></p>
+<h2 id="demo">Demo</h2>
+<ul>
+<li>BossGroup专门处理连接，WorkerGroup专门处理读写</li>
+<li>NioEventLoop是一个无限循环的线程，不断的处理事件，每一个NioEventLoop有一个selector，用于监听事件</li>
+<li>NioEventLoop内部串行化设计，负责消息的读取 -&gt; 解码 -&gt; 处理 -&gt; 编码 -&gt; 发送</li>
+<li>一个NioEventLoopGroup包含多个NioEventLoop，每个NioEventLoop包含一个Selector，一个taskQueue</li>
+<li>Selector可以注册监听多个NioChannel，每个NioChannel只会绑定在唯一的NioEventLoop上，每个NioChannel都绑定有一个自己的ChannelPipeline</li>
+<li>注意如果在一次连接中多次调用ChannelHandlerContext的writeAndFlush响应数据回去时，每次writeAndFlush写出去的数据会整合在一起后才响应回去，即TCP的粘包，接收端只会接收到合并后的数据包，需要特殊处理去拆包</li>
+<li>netty中的I/O操作是异步的，如 bind、wirte、connect方法都是返回一个ChannelFeture，可以使用ChannelFeture的sync方法将异步改为同步，或者调用其他方法来判断其状态和结果</li>
+</ul>
+<p>服务端</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.netty</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">io.netty.bootstrap.ServerBootstrap</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelFuture</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelFutureListener</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelInitializer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelOption</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.EventLoopGroup</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.nio.NioEventLoopGroup</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.socket.SocketChannel</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.socket.nio.NioServerSocketChannel</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">NettyServer</span> <span class="o">{</span>
+    
+  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">PORT</span> <span class="o">=</span> <span class="n">8080</span><span class="o">;</span>
+
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+  
+    <span class="c1">// 一个BossGroup线程池处理连接请求，设置了一个线程
+</span><span class="c1"></span>    <span class="n">EventLoopGroup</span> <span class="n">bossGroup</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NioEventLoopGroup</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+    <span class="c1">// 一个WorkerGroup线程池进行业务处理，默认设置的线程数是 CPU核数 * 2
+</span><span class="c1"></span>    <span class="n">EventLoopGroup</span> <span class="n">workerGroup</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NioEventLoopGroup</span><span class="o">();</span>
+
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="c1">// 创建服务端的启动对象，配置参数
+</span><span class="c1"></span>      <span class="n">ServerBootstrap</span> <span class="n">bootstrap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ServerBootstrap</span><span class="o">();</span>
+
+      <span class="c1">// 初始化设置
+</span><span class="c1"></span>      <span class="n">bootstrap</span><span class="o">.</span><span class="na">group</span><span class="o">(</span><span class="n">bossGroup</span><span class="o">,</span> <span class="n">workerGroup</span><span class="o">)</span> <span class="c1">// 设置两个线程组
+</span><span class="c1"></span>               <span class="o">.</span><span class="na">channel</span><span class="o">(</span><span class="n">NioServerSocketChannel</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="c1">// 指定NioSocketChannel为传输channel
+</span><span class="c1"></span>               <span class="c1">// .localAddress(new InetSocketAddress(PORT)) // 可以在这里设置监听端口或者设置初始化配置后使用bind()方法设置
+</span><span class="c1"></span>               <span class="o">.</span><span class="na">option</span><span class="o">(</span><span class="n">ChannelOption</span><span class="o">.</span><span class="na">SO_BACKLOG</span><span class="o">,</span> <span class="n">128</span><span class="o">)</span> <span class="c1">// 设置线程队列得到连接个数
+</span><span class="c1"></span>               <span class="o">.</span><span class="na">childOption</span><span class="o">(</span><span class="n">ChannelOption</span><span class="o">.</span><span class="na">SO_KEEPALIVE</span><span class="o">,</span> <span class="kc">true</span><span class="o">)</span> <span class="c1">//设置保持活动连接状态
+</span><span class="c1"></span>               <span class="o">.</span><span class="na">handler</span><span class="o">(</span><span class="kc">null</span><span class="o">)</span> <span class="c1">// 该handler对应bossGroup, childHandler对应 workerGroup
+</span><span class="c1"></span>               <span class="o">.</span><span class="na">childHandler</span><span class="o">(</span><span class="k">new</span> <span class="n">ChannelInitializer</span><span class="o">&lt;</span><span class="n">SocketChannel</span><span class="o">&gt;()</span> <span class="o">{</span>
+                 <span class="c1">// 当一个连接被接收时，给channelPipeline添加一个Handler
+</span><span class="c1"></span>                 <span class="nd">@Override</span>
+                 <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">initChannel</span><span class="o">(</span><span class="n">SocketChannel</span> <span class="n">ch</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+                   <span class="c1">// 可以使用一个集合管理 SocketChannel，在推送消息时，可以将业务加入到各个channel 对应的 NIOEventLoop 的 taskQueue 或者 scheduleTaskQueue
+</span><span class="c1"></span>                   <span class="c1">// 给workGroup的eventLoop对应的channel设置handler
+</span><span class="c1"></span>                   <span class="n">ch</span><span class="o">.</span><span class="na">pipeline</span><span class="o">().</span><span class="na">addLast</span><span class="o">(</span><span class="k">new</span> <span class="n">NettyServerHandler</span><span class="o">());</span>
+                 <span class="o">}</span>
+               <span class="o">});</span>
+      <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;服务器 is ready...&#34;</span><span class="o">);</span>
+      <span class="c1">// 同步阻塞等待直到绑定完成，并监听端口
+</span><span class="c1"></span>      <span class="n">ChannelFuture</span> <span class="n">cf</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">PORT</span><span class="o">).</span><span class="na">sync</span><span class="o">();</span>
+      <span class="c1">// 设置监听器，监听连接事件
+</span><span class="c1"></span>      <span class="n">cf</span><span class="o">.</span><span class="na">addListener</span><span class="o">(</span><span class="k">new</span> <span class="n">ChannelFutureListener</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">operationComplete</span><span class="o">(</span><span class="n">ChannelFuture</span> <span class="n">future</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">cf</span><span class="o">.</span><span class="na">isSuccess</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;监听端口 &#34;</span> <span class="o">+</span> <span class="n">PORT</span> <span class="o">+</span> <span class="s">&#34; 成功&#34;</span><span class="o">);</span>
+          <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;监听端口 &#34;</span> <span class="o">+</span> <span class="n">PORT</span> <span class="o">+</span> <span class="s">&#34; 成功&#34;</span><span class="o">);</span>
+          <span class="o">}</span>
+        <span class="o">}</span>
+      <span class="o">});</span>
+      <span class="c1">// 获取cfChannel的CloseFuture，并阻塞当前线程直到其完成
+</span><span class="c1"></span>      <span class="n">cf</span><span class="o">.</span><span class="na">channel</span><span class="o">().</span><span class="na">closeFuture</span><span class="o">().</span><span class="na">sync</span><span class="o">();</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+      <span class="n">bossGroup</span><span class="o">.</span><span class="na">shutdownGracefully</span><span class="o">();</span>
+      <span class="n">workerGroup</span><span class="o">.</span><span class="na">shutdownGracefully</span><span class="o">();</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div><p>服务端业务处理器NettyServerHandler</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.netty</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">io.netty.buffer.ByteBuf</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.buffer.Unpooled</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.Channel</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelHandlerContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelInboundHandlerAdapter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelPipeline</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.util.CharsetUtil</span><span class="o">;</span>
+
+<span class="c1">// netty通过一系列的Handler来实现业务处理，用户自定义Handler需要继承ChannelInboundHandlerAdapter才能使用
+</span><span class="c1"></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NettyServerHandler</span> <span class="kd">extends</span> <span class="n">ChannelInboundHandlerAdapter</span> <span class="o">{</span>
+  <span class="cm">/*
+</span><span class="cm">    读取客户端发送的请求
+</span><span class="cm">    ChannelHandlerContext ctx: 上下文对象, 含有管道pipeline, 通道channel, 地址
+</span><span class="cm">    Object msg: 就是客户端发送的数据 默认Object
+</span><span class="cm">  */</span>
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelRead</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+	<span class="c1">// 这里假设有需要执行一个非常耗时的任务
+</span><span class="c1"></span>	<span class="cm">/*
+</span><span class="cm">    // 解决方案1: 用户程序自定义的普通任务
+</span><span class="cm">    ctx.channel().eventLoop().execute(() -&gt; {
+</span><span class="cm">      try {
+</span><span class="cm">        Thread.sleep(5 * 1000);
+</span><span class="cm">        ctx.writeAndFlush(Unpooled.copiedBuffer(&#34;hello, 客户端2&#34;, CharsetUtil.UTF_8));
+</span><span class="cm">      } catch (Exception e) {
+</span><span class="cm">        System.out.println(&#34;发生异常&#34; + e.getMessage());
+</span><span class="cm">      }
+</span><span class="cm">    });
+</span><span class="cm">
+</span><span class="cm">    // 解决方案2: 用户自定义定时任务 -&gt; 该任务是提交到 scheduleTaskQueue中
+</span><span class="cm">    ctx.channel().eventLoop().schedule(() -&gt; {
+</span><span class="cm">      try {
+</span><span class="cm">        Thread.sleep(5 * 1000);
+</span><span class="cm">        ctx.writeAndFlush(Unpooled.copiedBuffer(&#34;hello, 客户端~(&gt;^ω^&lt;)喵4&#34;, CharsetUtil.UTF_8));
+</span><span class="cm">      } catch (Exception e) {
+</span><span class="cm">        System.out.println(&#34;发生异常&#34; + e.getMessage());
+</span><span class="cm">      }
+</span><span class="cm">    }, 5, TimeUnit.SECONDS);
+</span><span class="cm">	*/</span>
+
+    <span class="n">Channel</span> <span class="n">channel</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">channel</span><span class="o">();</span>
+    <span class="c1">// 将 msg对象转成一个ByteBuf，这里ByteBuf是Netty提供的，不是NIO的ByteBuffer.
+</span><span class="c1"></span>    <span class="n">ByteBuf</span> <span class="n">buf</span> <span class="o">=</span> <span class="o">(</span><span class="n">ByteBuf</span><span class="o">)</span> <span class="n">msg</span><span class="o">;</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;客户端发送消息是: &#34;</span> <span class="o">+</span> <span class="n">buf</span><span class="o">.</span><span class="na">toString</span><span class="o">(</span><span class="n">CharsetUtil</span><span class="o">.</span><span class="na">UTF_8</span><span class="o">));</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;客户端地址: &#34;</span> <span class="o">+</span> <span class="n">channel</span><span class="o">.</span><span class="na">remoteAddress</span><span class="o">());</span>
+  <span class="o">}</span>
+
+  <span class="c1">//数据读取完毕，一般在这里需要对要发送的数据进行编码
+</span><span class="c1"></span>  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelReadComplete</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="c1">// 将数据写入到缓存，并刷新, 响应给客户端
+</span><span class="c1"></span>    <span class="n">ctx</span><span class="o">.</span><span class="na">writeAndFlush</span><span class="o">(</span><span class="n">Unpooled</span><span class="o">.</span><span class="na">copiedBuffer</span><span class="o">(</span><span class="s">&#34;hello, 客户端&#34;</span><span class="o">,</span> <span class="n">CharsetUtil</span><span class="o">.</span><span class="na">UTF_8</span><span class="o">));</span>
+  <span class="o">}</span>
+
+  <span class="c1">//处理异常, 一般是需要关闭通道
+</span><span class="c1"></span>  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">exceptionCaught</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></div><p>客户端：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.netty</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">io.netty.bootstrap.Bootstrap</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelFuture</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelInitializer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.EventLoopGroup</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.nio.NioEventLoopGroup</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.socket.SocketChannel</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.socket.nio.NioSocketChannel</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">NettyClient</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+
+    <span class="n">EventLoopGroup</span> <span class="n">group</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NioEventLoopGroup</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="c1">// 创建客户端启动对象，这里使用的是BootStrap
+</span><span class="c1"></span>      <span class="n">Bootstrap</span> <span class="n">bootstrap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Bootstrap</span><span class="o">();</span>
+
+      <span class="c1">// 初始化设置
+</span><span class="c1"></span>      <span class="n">bootstrap</span><span class="o">.</span><span class="na">group</span><span class="o">(</span><span class="n">group</span><span class="o">)</span> <span class="c1">//设置线程组
+</span><span class="c1"></span>               <span class="o">.</span><span class="na">channel</span><span class="o">(</span><span class="n">NioSocketChannel</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="c1">// 设置客户端通道的实现类
+</span><span class="c1"></span>               <span class="o">.</span><span class="na">handler</span><span class="o">(</span><span class="k">new</span> <span class="n">ChannelInitializer</span><span class="o">&lt;</span><span class="n">SocketChannel</span><span class="o">&gt;()</span> <span class="o">{</span>
+                 <span class="nd">@Override</span>
+                 <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">initChannel</span><span class="o">(</span><span class="n">SocketChannel</span> <span class="n">ch</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+                   <span class="c1">// 添加Handler
+</span><span class="c1"></span>                   <span class="n">ch</span><span class="o">.</span><span class="na">pipeline</span><span class="o">().</span><span class="na">addLast</span><span class="o">(</span><span class="k">new</span> <span class="n">NettyClientHandler</span><span class="o">());</span>
+                 <span class="o">}</span>
+               <span class="o">});</span>
+
+      <span class="c1">// 启动客户端去连接服务器端阻塞直至成功
+</span><span class="c1"></span>      <span class="n">ChannelFuture</span> <span class="n">channelFuture</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="o">.</span><span class="na">connect</span><span class="o">(</span><span class="s">&#34;127.0.0.1&#34;</span><span class="o">,</span> <span class="n">8080</span><span class="o">).</span><span class="na">sync</span><span class="o">();</span>
+      <span class="c1">// 同上
+</span><span class="c1"></span>      <span class="n">channelFuture</span><span class="o">.</span><span class="na">channel</span><span class="o">().</span><span class="na">closeFuture</span><span class="o">().</span><span class="na">sync</span><span class="o">();</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+      <span class="n">group</span><span class="o">.</span><span class="na">shutdownGracefully</span><span class="o">();</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></div><p>客户端业务处理Handler</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">com.nixum.netty</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">io.netty.buffer.ByteBuf</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.buffer.Unpooled</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelHandlerContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.channel.ChannelInboundHandlerAdapter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.netty.util.CharsetUtil</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">NettyClientHandler</span> <span class="kd">extends</span> <span class="n">ChannelInboundHandlerAdapter</span> <span class="o">{</span>
+
+  <span class="c1">// 当通道就绪就会触发该方法
+</span><span class="c1"></span>  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelActive</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="na">writeAndFlush</span><span class="o">(</span><span class="n">Unpooled</span><span class="o">.</span><span class="na">copiedBuffer</span><span class="o">(</span><span class="s">&#34;hello, server&#34;</span><span class="o">,</span> <span class="n">CharsetUtil</span><span class="o">.</span><span class="na">UTF_8</span><span class="o">));</span>
+  <span class="o">}</span>
+
+  <span class="c1">//当通道有读取事件时，会触发
+</span><span class="c1"></span>  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelRead</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">ByteBuf</span> <span class="n">buf</span> <span class="o">=</span> <span class="o">(</span><span class="n">ByteBuf</span><span class="o">)</span> <span class="n">msg</span><span class="o">;</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;服务器回复的消息: &#34;</span> <span class="o">+</span> <span class="n">buf</span><span class="o">.</span><span class="na">toString</span><span class="o">(</span><span class="n">CharsetUtil</span><span class="o">.</span><span class="na">UTF_8</span><span class="o">));</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;服务器的地址: &#34;</span> <span class="o">+</span> <span class="n">ctx</span><span class="o">.</span><span class="na">channel</span><span class="o">().</span><span class="na">remoteAddress</span><span class="o">());</span>
+  <span class="o">}</span>
+
+  <span class="c1">// 异常时的处理
+</span><span class="c1"></span>  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">exceptionCaught</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">cause</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div><h2 id="核心组件">核心组件</h2>
+<h3 id="serverbootstrap和bootstrap">ServerBootstrap和Bootstrap</h3>
+<p>服务引导类，通过它设置配置（链式调用）和启动服务，ServerBootstrap用于服务端，Bootstap用于客户端</p>
+<h3 id="channelchannelpipelinechannelhandlercontext和channelhandler">Channel、ChannelPipeline、ChannelHandlerContext和ChannelHandler</h3>
+<ul>
+<li>Channel：网络通信的组件，提供异步网络I/O操作，操作都是异步的，会返回一个ChannelFuture实例，通过注册在ChannelFuture上的监听器进行回调操作。NioServerSocketChannel用于TCP服务端、NioSocketChannel用于TCP客户端，NioDatagramChannel用于UDP连接</li>
+<li>ChannelHandler：是一个接口，通过实现该接口来注册到ChannelPipeline上进行使用。一般使用其出站和入站的两个适配器如ChannelOutboundHandlerAdapter和ChannelInboundHandlerAdapter或者SimpleChannelInboundHandler和SimpleChannelOutboundHandler</li>
+<li>ChannelPipeline：保存ChannelHandler的队列，像是责任链模式
+<ul>
+<li>每一个Channel对应一个ChannelPipeline，一个ChannelPipeline维护了一个由ChannelHandlerContext组成的双向链表，每一个ChannelHandlerContext关联一个ChannelHandler</li>
+<li>入站事件会从链表的head往后传递到最后一个入站handler，出站事件会从链表tail往前传递到最前一个出战handler，两种类型的handler互不干扰</li>
+</ul>
+</li>
+<li>ChannelHandlerContext：上下文，包含一个ChannelHandler，绑定ChannelPipeline和Channel的信息</li>
+</ul>
+<h3 id="eventloopgroup">EventLoopGroup</h3>
+<p>包含一组EventLoop，默认设置的EventLoop线程数是 CPU核数 * 2，每个EventLoop维护一个Selector</p>
+<h2 id="一般流程">一般流程</h2>
+<ol>
+<li>BossGrop本质上是一个NioEventGroup，只包含一个NioEventLoop事件循环的线程。WorkGroup本质上也是一个NioEventGroup，但它包含了 CPU*2 个NioEventEventLoop来处理连接后的业务逻辑。</li>
+<li>NioEventLoop是一个死循环，不断的处理事件和消息队列的任务。</li>
+<li>初始化时将BossGrop和WorkGroup注册到ServerBootstrap并进行相应的配置(如Channel、ChannelHandler)，之后通过bind()方法绑定端口和ServerSocketChannel后启动。</li>
+<li>BossGroup轮询Accept事件，获取事件后接受连接，创建一个新的NioSocketChannel，绑定ChannelPipeline，为ChannelPipeline添加ChannelHandler，注册到WorkGroup上，发送Read事件。</li>
+<li>WorkGroup中一个EventLoop轮询Read事件，调用Channel的ChannelPipeline进行处理。</li>
+<li>ChannelPipeline中每个节点是一个Context，用Context包装Handler，由Context组成双向链表，节点间通过AbstractChannelHandlerContext 类内部的 fire 系列方法 进行传递，入站方法叫inbound，从head节点开始，出站方法叫outbound，由tail节点开始。</li>
+<li>对于耗时的方法，一般丢给线程池处理，如上面Demo中的例子</li>
+</ol>
+<h1 id="参考">参考：</h1>
+<p><a class="link" href="https://segmentfault.com/a/1190000006824196"  target="_blank" rel="noopener"
+    >Java NIO 的前生今世 之四 NIO Selector 详解</a></p>
+<p><a class="link" href="https://www.jianshu.com/p/052035037297"  target="_blank" rel="noopener"
+    >深入浅出NIO之Channel、Buffer</a></p>
+<p><a class="link" href="https://www.cnblogs.com/aspirant/p/8630283.html"  target="_blank" rel="noopener"
+    >Java NIO：IO与NIO的区别</a></p>
+<p><a class="link" href="https://www.bilibili.com/video/BV1DJ411m7NR"  target="_blank" rel="noopener"
+    >尚硅谷Netty教程</a></p>
+<p><a class="link" href="" >netty in action</a></p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/java-bio/">Java BIO</a>
+        
+            <a href="/tags/java-nio/">Java NIO</a>
+        
+            <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/">线程模型</a>
+        
+            <a href="/tags/netty/">Netty</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Oct 23, 2021 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+        <h2 class="section-title">Related contents</h2>
+        <div class="related-contents">
+            <div class="flex article-list--tile">
+                
+                    
+<article class="">
+    <a href="/p/jvm/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">JVM</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/java%E5%B9%B6%E5%8F%91/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java并发</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/java-list-map/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java List Map</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/java-se/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java SE</h2>
+        </div>
+    </a>
+</article>
+                
+            </div>
+        </div>
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#buffer">Buffer</a>
+      <ol>
+        <li><a href="#重要属性">重要属性</a></li>
+        <li><a href="#常用子类">常用子类</a></li>
+      </ol>
+    </li>
+    <li><a href="#channel">Channel</a>
+      <ol>
+        <li><a href="#常用子类-1">常用子类</a></li>
+      </ol>
+    </li>
+    <li><a href="#selector">Selector</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#传统阻塞io模型">传统阻塞IO模型</a></li>
+    <li><a href="#reactor模型">Reactor模型</a>
+      <ol>
+        <li><a href="#1-单reactor单线程">1. 单Reactor单线程</a></li>
+        <li><a href="#2-单reactor多线程">2. 单Reactor多线程</a></li>
+        <li><a href="#3-主从reactor多线程">3. 主从Reactor多线程</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#server端线程模型">Server端线程模型</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#核心组件">核心组件</a>
+      <ol>
+        <li><a href="#serverbootstrap和bootstrap">ServerBootstrap和Bootstrap</a></li>
+        <li><a href="#channelchannelpipelinechannelhandlercontext和channelhandler">Channel、ChannelPipeline、ChannelHandlerContext和ChannelHandler</a></li>
+        <li><a href="#eventloopgroup">EventLoopGroup</a></li>
+      </ol>
+    </li>
+    <li><a href="#一般流程">一般流程</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

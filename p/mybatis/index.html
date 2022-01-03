@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='MyBatis基本知识'><title>MyBatis</title>
+
+<link rel='canonical' href='http://nixum.cc/p/mybatis/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='MyBatis'>
+<meta property='og:description' content='MyBatis基本知识'>
+<meta property='og:url' content='http://nixum.cc/p/mybatis/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='ORM' /><meta property='article:published_time' content='2019-02-12T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2020-10-25T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="MyBatis">
+<meta name="twitter:description" content="MyBatis基本知识">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E6%A1%86%E6%9E%B6/" >
+                框架
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/mybatis/">MyBatis</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        MyBatis基本知识
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 12, 2019</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    1 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="orm">ORM</h1>
+<p>普通JDBC使用sql的prepareStatement + sql + 占位符 + 参数的方式执行sql语句</p>
+<p>ORM其实就是在先编写类与数据库表字段的映射，可以是xml配置，也可以是注解配置，之后再使用JDBC执行sql时，通过对类的反射获得其属性的值和对应的字段名，拼接sql+占位符+属性值，执行sql语句</p>
+<h1 id="mybatis">MyBatis</h1>
+<p>#{}和${}区别</p>
+<p>#{}：预编译，底层是PrepareStatement ，可防止SQL注入</p>
+<p>${}：参数替换，不能防止SQL注入</p>
+<h2 id="dao接口与mapper的映射">dao接口与mapper的映射</h2>
+<ul>
+<li>通过动态代理实现</li>
+<li>实际上XML在定义Mapper的时候就相当于在编写dao类了，dao接口类相当于编写调用入口</li>
+<li>XML中的配置信息会被存放在Configuration类中，SqlSessionFactoryBuilder会读取Configuration类中的信息创建SqlSessionFactory，之后由SqlSessionFactory创建sqlSession</li>
+<li>在启动时先扫描并加载所有定义Mapper的XML，解析XML，根据XML中的namespace找到对应的接口，为这些接口生成对应的代理工厂MapperProxyFactory。</li>
+<li>sqlSession.getMapper时，会通过传入的类/接口名（即被代理类）找到对应的MapperProxyFactory，生成代理类MapperProxy，并注入sqlSession，MapperProxy实现InvocationHandler接口进行代理，通过MapperMethod执行SQL，MapperMethod使用注入的sqlSession和解析XML中配置的SQL语句得到的参数，调用对应的executor执行SQL</li>
+</ul>
+<h2 id="缓存">缓存</h2>
+<ul>
+<li><strong>一级缓存的作用域是同一个SqlSession</strong>，在同一个sqlSession中两次执行相同的sql语句，第一次执行完毕会将数据库中查询的数据写到缓存（内存），第二次会从缓存中获取数据将不再从数据库查询，从而提高查询效率。当一个sqlSession结束后该sqlSession中的一级缓存也就不存在了。Mybatis<strong>默认开启一级缓存</strong>。</li>
+<li><strong>二级缓存是mapper级别的缓存</strong>，多个SqlSession去操作同一个Mapper的sql语句，多个SqlSession去操作数据库得到数据会存在二级缓存区域，多个SqlSession可以共用二级缓存，二级缓存是跨SqlSession的。不同的sqlSession两次执行相同namespace下的sql语句且向sql中传递参数也相同即最终执行相同的sql语句，第一次执行完毕会将数据库中查询的数据写到缓存（内存），第二次会从缓存中获取数据将不再从数据库查询，从而提高查询效率。Mybatis默认没有开启二级缓存需要在setting全局参数中配置开启二级缓存</li>
+</ul>
+<h1 id="参考">参考</h1>
+<p><a class="link" href="https://blog.csdn.net/qq_40645822/article/details/101844675"  target="_blank" rel="noopener"
+    >MyBatis的通俗理解：SqlSession.getMapper()源码分析</a></p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/orm/">ORM</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Oct 25, 2020 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+        <h2 class="section-title">Related contents</h2>
+        <div class="related-contents">
+            <div class="flex article-list--tile">
+                
+                    
+<article class="">
+    <a href="/p/spring%E5%92%8Cspringboot/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Spring和SpringBoot</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/springmvc/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">SpringMVC</h2>
+        </div>
+    </a>
+</article>
+                
+            </div>
+        </div>
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#dao接口与mapper的映射">dao接口与mapper的映射</a></li>
+    <li><a href="#缓存">缓存</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

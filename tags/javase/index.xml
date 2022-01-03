@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>JavaSE on Nixum Blog</title>
+    <link>http://nixum.cc/tags/javase/</link>
+    <description>Recent content in JavaSE on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 18 Feb 2019 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/javase/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Java List Map</title>
+      <link>http://nixum.cc/p/java-list-map/</link>
+      <pubDate>Mon, 18 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/java-list-map/</guid>
+      <description>[TOC]
+以下笔记如没指定版本，都是基于JDK1.8
+Collection  javaCollection类图简版 
+Set HashSet 1.基本   底层是HashMap，因此初始容量，默认负载因子、扩容倍数这些都和HashMap一样
+  由于HashSet只需要key，因此value统一使用静态不可变的Object对象来装，即所有key共享这一个对象
+  private transient HashMap&amp;lt;E,Object&amp;gt; map; private static final Object PRESENT = new Object();  HashSet允许存入null 不是线程安全的 不保证插入元素的顺序  List ArrayList 1.基本   底层：Object数组
+  默认大小：10 （调用空参构造方法时）
+最大是Integer.MAX_VALUE - 8（2^31 - 1，一些虚拟器需要在数组前加个头标签，所以减去 8 ）
+调用此构造方法时，
+public ArrayList(Collection&amp;lt;? extends E&amp;gt; c) 其中要注意的是，里面有这样一句话
+// c.toArray might (incorrectly) not return Object[] (see 6260652) if (elementData.getClass() != Object[].</description>
+    </item>
+    
+    <item>
+      <title>Java SE</title>
+      <link>http://nixum.cc/p/java-se/</link>
+      <pubDate>Mon, 18 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/java-se/</guid>
+      <description>[TOC]
+一、面向对象 面向对象的特征： 抽象(注意与当前目标有关的，选择一部分，暂时不用部分细节，分为过程抽象、数据抽象) 继承：联结类的层次模型、允许和鼓励类的重用，派生类可以从它的基类那里继承方法和实例变量，进行修改和新增使其更适合 封装：封装是把过程和数据包围起来，对数据的访问只能通过已定义的界面，这些对象通过一个受保护的接口访问其他对象 多态：允许不同类的对象对同一消息作出响应，包括参数化多态性和包含多态性，灵活、抽象、行为共享、代码共享，解决程序函数同名问题
+二、基础类型及其包装类型    基本类型 boolean byte char short int float long double     包装类型 Boolean Byte Character Short Integer Float Long Double   位数 1 8 16 16 32 32 64 64   字节数  1 2 2 4 4 8 8      字符集
+unicode是字符集，一种标准，UTF-8、UTF-16、GBK之类的是编码方式，是字符集的具体实现
+UTF-16：定长,固定2字节， UTF-8：变长,中文占3字节,英文占1字节
+char可以保存一个中文字符
+java中采用unicode编码，无论中文、英文都是占2个字节
+java虚拟机中使用UTF-16编码方式
+java的字节码文件(.class)文件采用的是UTF-8编码，但是在java 运行时会使用UTF-16编码。
+参考Java中的UTF-8、UTF-16编码字符所占字节数</description>
+    </item>
+    
+  </channel>
+</rss>

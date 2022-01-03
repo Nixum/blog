@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='简单记录操作系统原理，如内核、CPU、内存、Linux等，太难啦，以后再慢慢啃细一点'><title>操作系统</title>
+
+<link rel='canonical' href='http://nixum.cc/p/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='操作系统'>
+<meta property='og:description' content='简单记录操作系统原理，如内核、CPU、内存、Linux等，太难啦，以后再慢慢啃细一点'>
+<meta property='og:url' content='http://nixum.cc/p/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='操作系统' /><meta property='article:tag' content='Linux' /><meta property='article:published_time' content='2021-07-09T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-09-03T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="操作系统">
+<meta name="twitter:description" content="简单记录操作系统原理，如内核、CPU、内存、Linux等，太难啦，以后再慢慢啃细一点">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" >
+                操作系统
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        简单记录操作系统原理，如内核、CPU、内存、Linux等，太难啦，以后再慢慢啃细一点
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jul 09, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    2 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="内核">内核</h1>
+<h2 id="pc机启动流程">PC机启动流程</h2>
+<p>以Ubuntu Linux + GRUB引导程序为例：</p>
+<p>PC机加电后，加载BIOS固件， 触发PC机BIOS固件发送指令 检测和初始化CPU、内存及主板平台，加载引导设备(比如硬盘)中的第一个扇区数据到<a class="link" href="http://www.ruanyifeng.com/blog/2015/09/0x7c00.html"  target="_blank" rel="noopener"
+    >0x7c00地址开始</a>的内存空间，再接着跳转到0x7c00处执行指令，加载GRUB引导程序，加载硬盘分区中的OS文件，启动操作系统。</p>
+<h2 id="内核结构分类">内核结构分类</h2>
+<p>内核：计算机资源的管理者。计算资源分为硬件资源和软件资源</p>
+<ul>
+<li>
+<p>硬件资源：CPU、内存、硬盘、网卡、显卡、IO设备、总线，他们之间通过总线进行联系；</p>
+</li>
+<li>
+<p>软件资源：对上述各种硬件资源的管理程序、设备的驱动程序</p>
+</li>
+</ul>
+<h3 id="宏内核结构---类似单体服务">宏内核结构 - 类似单体服务</h3>
+<p>将上述所有软件资源进行整合，链接在一起，形成一个大的可执行程序，控制所有硬件资源。这个大程序会在处理器的特权模式下运行，对外提供系统调用函数，供其他程序、进程调用。</p>
+<p>当应用层有程序要调用进行内存分配时，就会调用宏内核进行内存分配</p>
+<ol>
+<li>应用程序调用内核内存分配API函数</li>
+<li>处理器切换到特权模式，开始运行内核代码</li>
+<li>内核的内存管理代码按照特定的算法，分配内存</li>
+<li>内存分配函数把分配的内存块的首地址返回给应用程序</li>
+<li>应用程序接收到返回后，处理器开始运行用户模式下的应用程序，应用程序使用得到的内存首地址，开始使用这块内存</li>
+</ol>
+<p>优点：由于所有硬件管理程序都整合在一起，相互调用时性能极高</p>
+<p>缺点：所有硬件管理程序都整合在一起，没有模块化，扩展性差，移植性差，牵一发而动全身，每次修改都需要重新安装，其中一个模块有问题就会影响其他模块。</p>
+<p><strong>Linux就属于宏内核</strong></p>
+<blockquote>
+<p>Linux 的基本思想是一切都是文件：每个文件都有确定的用途，包括用户数据、命令、配置参数、硬件设备等对于操作系统内核而言，都被视为各种类型的文件。Linux 支持多用户，各个用户对于自己的文件有自己特殊的权利，保证了各用户之间互不影响。多任务则是现代操作系统最重要的一个特点，Linux 可以使多个程序同时并独立地运行。</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%9e%81%e5%ae%a2%e6%97%b6%e9%97%b4-%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f45%e8%ae%b2-Linux.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%9e%81%e5%ae%a2%e6%97%b6%e9%97%b4-%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f45%e8%ae%b2-Linux.png"
+			
+			
+			
+			loading="lazy"
+			alt="第一次访问">
+	</a>
+	
+	<figcaption>第一次访问</figcaption>
+	
+</figure></p>
+<p>Linux使用宏内核架构，主要分为上述五大模块，模块间的通信通过函数调用，函数间的调用没有层次关系，所以函数的调用路径纵横交错，如果有函数出问题，那就会影响到调用它的模块，存在安全隐患，但优点是存内核调用，性能极高</p>
+<p>Linux高清全结构图：https://makelinux.github.io/kernel/map/</p>
+</blockquote>
+<h3 id="微内核结构---类似微服务">微内核结构 - 类似微服务</h3>
+<p>内核仅处理进程调度、中断、内存空间映射、进程间通信等，控制硬件资源的软件资源，转成一个个服务进程，比如进程管理、内存管理、设备管理、文件管理等，和用户进程一样，只是它们提供了宏内核的那些功能。</p>
+<p>微内核内，进程间通过消息进行通信，应用程序每次要申请资源都需要发送消息到微内核，微内核再把这条消息转发给相关服务进程，直到完成这次调用。</p>
+<p>当应用层有程序要调用进行内存分配时</p>
+<ol>
+<li>应用程序发送内存分配的消息（发送消息这个函数由微内核提供）</li>
+<li>处理器切换到特权模式，执行内核代码</li>
+<li>微内核让当前进程停止运行，并根据消息包中的数据，推送给对应的消息接收者，比如这里是内存管理服务进程。</li>
+<li>内存管理服务进程收到消息，分配一块内存</li>
+<li>内存管理服务进程，处理完成后，通过消息的形式返回分配内存块的地址给内核，然后继续等待下一条消息。</li>
+<li>微内核把包含内存地址的消息返回发送给内存分配消息的应用程序</li>
+<li>处理器开始运行用户模式下的应用程序，应用程序收到这条消息，得到内存首地址，开始使用这块内存。</li>
+</ol>
+<p>优点：系统结构清晰，移植性、伸缩性、扩展性强，微内核代码少，容易替换，各种系统服务进程可随时替换</p>
+<p>缺点：进程间消息依赖微内核进行消息传递，会频繁进行服务进程切换，模式切换，导致性能较差。</p>
+<h3 id="分离硬件的相关性">分离硬件的相关性</h3>
+<p>分离硬件的相关性其实就是屏蔽底层硬件操作细节，形成一个独立的软件抽象层，对外提供接口，方便应用层接入。</p>
+<p>是内核设计的一种指导思想，所以在设计操作系统内核的时候，就可以分为</p>
+<ul>
+<li>内核接口层：向应用层提供系统接口函数；</li>
+<li>内核功能层：系统函数的主要实现，实现进程管理、内存管理、中断管理、设备管理、驱动、文件系统等；</li>
+<li>内核硬件层：对硬件资源的操作，比如初始化CPU、内存、中断控制、其他IO设备</li>
+</ul>
+<h3 id="混合内核">混合内核</h3>
+<p>混合内核在微内核的基础上进行改进，层次分明，动态加载模块到内核，兼具宏内核和微内核的优点。</p>
+<p>Windows就属于混合内核。</p>
+<h1 id="cpu">CPU</h1>
+<p>中断：中断即中止执行当前程序，转而跳转到另一个特定的地址上，去运行特定的代码，响应外部事件。</p>
+<p>硬件中断：中断控制器给CPU发送了一个电子信号，CPU对这个信号作出应答，随后中断控制器将中断号发给CPU。</p>
+<p>软件中断：CPU执行INT指令，指令后带一个常数，该常数为软中断号。</p>
+<h2 id="工作模式">工作模式</h2>
+<h3 id="实模式">实模式</h3>
+<p>又称实地址模式，运行真正的指令，对指令的动作不作区分，直接执行指令的真实功能，另外，发往内存的地址是真实的，对任何地址不加限制地发往内存。</p>
+<p>访问内存 - 分段内存管理模式：内存地址由段寄存器左移4位，再加上一个通用寄存器中的值或者常数形成地址，然后由这个地址去访问内存。仅支持16位地址空间，对指令不加限制地运行，对内存没有保护隔离作用。</p>
+<p>中断实现，内存中存放一个中断向量表，该表的地址和长度由CPU的特定寄存器IDTR指向，一个条目由代码段地址和段内偏移组成，当出现中断号后，CPU就根据IDTR寄存器中的信息，计算出中断向量中的条目，进而装载CS（代码段基地址）、IP（代码段内偏移）寄存器，响应中断。</p>
+<h3 id="保护模式">保护模式</h3>
+<p>保护模式是为了应对更高的计算量和内存量，CPU寄存器扩展为32位宽，使其能够寻址32位内存地址空间和32位的数据，还实现指令区分和访问内存地址限制。</p>
+<p>为了区分哪些指令(如in、out、cli)和哪些资源(如寄存器、IO端口、内存地址)可以被访问，实现了特权级。特权级分为4级，R0~R3，R0最大，可以指向所有指令，之后依次递减，下一层是上一层的子集。内存访问则靠段描述符和特权级相互配合实现。</p>
+<p>访问内存时使用平坦模型：为了应对分段模型的缺陷，在分段模型的基础上套多一层，简化分段模型，对内存段与段之间的访问严格检查，没有权限不会放行。</p>
+<p>中断时由于要进行权限检测和特权级切换，需要扩展中断向量表的信息，每个中断用一个中断门描述符来表示，存于中断向量表中</p>
+<h3 id="长模式">长模式</h3>
+<p>又名AMD64模式，在保护模式的基础上，增加一些通用寄存器，扩展通用寄存器的位宽，所有的通用寄存器都是64位，还可单独使用低32位。低32位可以拆分成一个低16位寄存器，低16位又可以拆分为两个8位寄存器。</p>
+<p>访问内存时需要开启分页模式，弱化段模式管理，仅保留权限级别的检查，忽略段基址和段长度，地址检查交给MMU。</p>
+<p>中断时的中断向量表中的条目，中断描述符需要扩展，将其32位段内偏移扩展成支持64位</p>
+<blockquote>
+<p>1、x86 CPU的位数越来越高，从16到32到64，每次进步都尽量的去兼容了之前的CPU架构，所以：
+A、16位时寻址能力不足，所以要借助额外的寄存器进行1M空间的寻址；32位时，每个程序都有自己独立的4G寻址空间，操作系统用低位的1G-2G，其余留给用户程序；64位后，暂时就遇不到寻址能力不足的事情了；
+B、前一代的寄存器尽量保留，不够用就扩展新的
+C、寄存器的长度升级后，其低位可以兼容上一代的寄存器</p>
+<p>2、CPU同时在安全性上也要提升，从只有实模式【可以随意执行全部CPU指令，内存可以直接通过物理地址访问，随意访问随意读写】，到了32的保护模式【将指令划分为ring0到ring3，CPU指令不是你想调用就能调用；内存不是你想访问就能访问，首先CPU要允许，而且操作系统允许】，而64的长模式在安全方面与32并没有本至区别；</p>
+<p>3、从实模式到保护模式，访问内存时，需要访问的地址变大了，需要控制的内容变多了，于是引入了段描述符，所有的段描述符组成了描述符表，包括唯一的全局描述符GDT和多个局部描述符号LDT。GDT是操作系统特供，要重点关注。CPU寻址的时候，要通过段寄存器+GDTR寄存器定位到的内存中的描述符，判断是否允许访问。然后，再根据段描述符中地址进行访问。</p>
+<p>4、同时内存中内存管理有段、页、段页三种常用模式。一般在应用层，程序员感受不太到，操作系统全给咱们做完了。</p>
+<p>5、中断，其实是通过硬件或软件方式告诉CPU，来执行一段特殊的代码。比如咱们键盘输入，就是通过硬件中断的方式，告知操作系统的。在实模式下，中断是直接执行的。但到了保护模式和长模式下，就要特权级别校验通过才能执行，所以引入了中断门进行控制。在ring3调用中断一般是要通过操作系统切换到内核态ring0进行的，与内存类似，要通过中断向量表，确认中断门中权限是否允许，然后定位到指定代码执行。</p>
+<p>6、BIOS引导后，系统直接进入最简单、特权最大的实模式；而后告知CPU，切换到保护模式，并运行在ring0。后续的用户进程，一般就在ring3，想执行特权指令要通过操作系统来执行</p>
+</blockquote>
+<h1 id="内存">内存</h1>
+<h2 id="虚拟地址">虚拟地址</h2>
+<p>由于各个应用程序由不同的公司开发，且每台计算机的内存容量都不一样，如果应用程序在运行时使用的是真实地址，将会导致各个应用程序在使用内存地址时产生冲突。为了解耦内存真实地址和应用使用的内存地址，对不同的应用程序使用的内存进行隔离和保护，引出虚拟地址概念。</p>
+<p>虚拟地址：让每个应用程序都各自享有一个从0开始到最大地址的空间，在每个应用程序独立且私有，其他应用程序无法观察到，再由操作系统将虚拟地址映射成真实的物理地址，实现内存的使用。</p>
+<p>虚拟地址由链接器产生，应用程序经过编译后通过链接器的处理变成可执行文件，链接器会处理程序代码间的地址引用，形成程序运行的静态内存空间视图。</p>
+<p>实模式下，多个进程共享所有地址空间太过危险，因此有了保护模式，保护模式下为了让各个应用程序能正确使用内存，使用了虚拟地址映射，让各个应用程序都有自己的地址空间，因此访问内存时不用考虑其他问题，访问时再经过MMU翻译得到对应的页表，不同的应用程序由于不同的页表，产生了进程地址空间隔离，但多个应用程序也可以共享某个页表，此时就涉及进程间的通信了。</p>
+<p>关于内存对齐：因为cpu总是以多个字节的块为单位访问内存的，不与它的访问块地址边界对齐cpu就要多次访问</p>
+<h2 id="mmu">MMU</h2>
+<p>虚拟地址转换为物理地址通过MMU(内存管理单元)实现，只能在保护模式或者长模式下开启。</p>
+<p>MMU使用分页模型，即把虚拟地址空间和物理地址空间都分成同等大小的页，按照虚拟页和物理页进行转换，一个虚拟地址对应一个物理地址，一个虚拟页对应一个物理页，页大小一经配置就是固定，通过内存中存储的一个地址关系转换表（页表）实现转换。</p>
+<blockquote>
+<p>为了增加灵活性和节约物理内存空间（因为页表是放在物理内存中的），所以页表中并不存放虚拟地址和物理地址的对应关系，只存放物理页面的地址，MMU 以虚拟地址为索引去查表返回物理页面地址，而且页表是分级的，总体分为三个部分：一个顶级页目录，多个中级页目录，最后才是页表。</p>
+</blockquote>
+<p>分层的结构是根据页大小决定。</p>
+<h2 id="cache">Cache</h2>
+<p>程序局部性原理：程序一旦编译完装载进内存中，它的地址就确定了，CPU大多数时间在执行相同的指令或者相邻的指令。</p>
+<p>内存，从逻辑上看，是一个巨大的字节数组，内存地址就是这个数组的下标。相比与CPU，内存的数据量吞吐是很慢的，当CPU需要内存数据时，内存一时间给不了，CPU就只能等，让总线插入等待时钟周期，直到内存准备好。因此内存才是决定系统整体性能的关键。为了不让CPU每次都要等，因此利用程序局部性原理，引入了Cache。</p>
+<p>Cache主要由高速的静态存储器、地址转换模块和Cache行替换模块组成。</p>
+<p>Cache会把自己的高速静态存储器和内存分成大小相同的行，一行大小通常为32字节或64字节。Cache和内存交换数据的最小单位是一行，多个行又会形成一组。除了存储数据，还有标志位，如脏位、回写位、访问位等。</p>
+<blockquote>
+<p>1.CPU 发出的地址由 Cache 的地址转换模块分成 3 段：组号，行号，行内偏移。</p>
+<p>2.Cache 会根据组号、行号查找高速静态储存器中对应的行。如果找到即命中，用行内偏移读取并返回数据给 CPU，否则就分配一个新行并访问内存，把内存中对应的数据加载到 Cache 行并返回给 CPU。写入操作则比较直接，分为回写和直通写，回写是写入对应的 Cache 行就结束了，直通写则是在写入 Cache 行的同时写入内存。</p>
+<p>3.如果没有新行了，就要进入行替换逻辑，即找出一个 Cache 行写回内存，腾出空间，替换行有相关的算法，替换算法是为了让替换的代价最小化。例如，找出一个没有修改的 Cache 行，这样就不用把它其中的数据回写到内存中了，还有找出存在时间最久远的那个 Cache 行，因为它大概率不会再访问了。</p>
+<p>以上这些逻辑都由 Cache 硬件独立实现，软件不用做任何工作，对软件是透明的。</p>
+</blockquote>
+<p>Cache虽提升了性能，但会产生数据一致性问题。Cache可以是一个独立硬件，也可以集成在CPU中，Cache通常有多级，每一级间都有可能产生数据一致性问题。解决一致性问题就需要数据同步协议，如MESI和MOESI。</p>
+<blockquote>
+<p>MESI：M（Modified修改）、E（Exclusive独占）、S（Shared共享）、I（Invalida无效）</p>
+<p>最开始只有一个核读取了A数据，此时状态为E独占，数据是干净的，
+后来另一个核又读取了A数据，此时状态为S共享，数据还是干净的，
+接着其中一个核修改了数据A，此时会向其他核广播数据已被修改，让其他核的数据状态变为I失效，而本核的数据还没回写内存，状态则变为M已修改，等待后续刷新缓存后，数据变回E独占，其他核由于数据已失效，读数据A时需要重新从内存读到高速缓存，此时数据又共享了</p>
+</blockquote>
+<h1 id="同步原语">同步原语</h1>
+<p>常见的有：原子操作、控制中断、自旋锁、信号量。底层原子操作都是依靠支持原子操作的机器指令的硬件实现。</p>
+<ul>
+<li>
+<p>原子操作是对单一变量。</p>
+</li>
+<li>
+<p>控制中断：可以作用复杂变量，一般用在单核CPU，同一时刻只有一个代码执行流，响应中断会导致代码执行流切换，此时如果两个代码执行流操作到同一个全局变量就会导致数据不一致，所以需要在操作全局变量时关闭中断，处理完开启进行控制。</p>
+</li>
+<li>
+<p>自旋锁还有一个作用就是可以在多核CPU下处理全局变量，因为控制中断只能控制本地CPU的中断，无法控制其他CPU核心的中断，此时其他CPU是可以操作到该全局变量的。自旋需要保证读取锁变量和判断并加锁操作是原子的，且会导致CPU空转一段时间。</p>
+</li>
+<li>
+<p>信号量的一个作用就是解决自旋锁空转造成CPU资源浪费的缺点。</p>
+</li>
+</ul>
+<h1 id="linux初始化">Linux初始化</h1>
+<h2 id="引导-boot">引导 boot</h2>
+<p>也是机器加电，BIOS自检，BIOS加载引导扇区，加载GRUB引导程序，最后由GRUB加载Linux内核镜像vmlinuz。</p>
+<p>CPU被设计成只能运行内存中的程序，无法直接运行存储在硬盘或U盘中的操作系统程序，因为硬盘U盘等外部存储并不和CPU直接相连，访问机制和寻址方式与内存不一样。如果要运行硬盘或U盘中的程序，就必须先加载到内存。</p>
+<p>由于内存RAM断电会丢失数据，BIOS不是存储在普通的内存中的，而是存储在主板上特定的一块ROM内存中，在硬件设计上规定加电瞬间，强制将CS寄存器的值设置位0xF000，IP寄存器的值设置为0xFFF0，该地址就是BIOS的启动地址了。</p>
+<p>BIOS在初始化CPU和内存后进行检查，完了之后将自己的一部分复制到内存，最后跳转到内存中运行。之后枚举本地设备进行检查和初始化，调用设备的固件程序。当设备完成检查和初始化后，BIOS就会在内存中划定一个地址范围，存放和建立中断表和中断服务程序。</p>
+<p>一般我们会把Linux镜像放在硬盘的第一个扇区中（MBR主启动记录，包含基本的GRUB启动程序和分区表），然后让硬盘作为BIOS启动后搜索到的第一个设备，当MBR被BIOS装载到0x7c00地址开始的内存空间中，BIOS会把控制权交给MBR，即GRUB。</p>
+<p>GRUB所在的第一个扇区，只有512个字节，不足以装下GRUB这种大型的通用引导器，因此GRUB的加载被分成了多个步骤和多个文件，在启动时动态加载，先加载diskboot.img，然后读取剩下的core.img，识别出文件系统，使其能够访问/boot/grub目录，最后加载vmlinuz内核文件。</p>
+<h2 id="启动-startup">启动 startup</h2>
+<blockquote>
+<p>1.GRUB 加载 vmlinuz 文件之后，会把控制权交给 vmlinuz 文件的 setup.bin 的部分中 _start，它会设置好栈，清空 bss，设置好 setup_header 结构，调用 16 位 main ，调用BIOS中断，进行初始化设置，包括console、堆、CPU模式、内存、键盘、APM、显卡模式等，然后切换到保护模式，最后跳转到 1MB 处的 vmlinux.bin 文件中。</p>
+<p>2.从 vmlinux.bin 文件中 startup32、startup64 函数开始建立新的全局段描述符表和 MMU 页表，切换到长模式下解压 vmlinux.bin.gz。释放出 vmlinux 文件之后，由解析 elf 格式的函数进行解析，释放 vmlinux 中的代码段和数据段到指定的内存。然后调用其中的 startup_64 函数，在这个函数的最后调用 Linux 内核的第一个 C 函数。
+3.Linux 内核第一个 C 函数重新设置 MMU 页表，随后便调用 start_kernel 函数， start_kernel 函数中调用了大多数 Linux 内核功能性初始化函数，在最后调用 rest_init 函数建立了两个内核线程，在其中的 kernel_init 线程建立了第一个用户态进程</p>
+</blockquote>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/Linux%e5%88%9d%e5%a7%8b%e5%8c%96%e8%a6%81%e7%82%b9.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/Linux%e5%88%9d%e5%a7%8b%e5%8c%96%e8%a6%81%e7%82%b9.png"
+			
+			
+			
+			loading="lazy"
+			alt="Linux初始化要点">
+	</a>
+	
+	<figcaption>Linux初始化要点</figcaption>
+	
+</figure></p>
+<h1 id="内存管理">内存管理</h1>
+<h2 id="内存划分与组织">内存划分与组织</h2>
+<h3 id="分段">分段</h3>
+<ol>
+<li>段的长度大小不一，不便于用一个统一的数据结构表示</li>
+<li>段的长度大小不一，容易产生内存碎片</li>
+<li>内存不足时，内存数据会写回硬盘来释放内存，由于段的长度大小不一，每段的读写时间就会不一样，导致性能抖动</li>
+</ol>
+<h3 id="分页">分页</h3>
+<ol>
+<li>页的大小固定，可以用位图表示页的分配和释放</li>
+<li>页的大小固定，分配的最小单位是页，页也会产生内存碎片，但是可以通过修改页表的方式，让连续的虚拟页面映射到非连续的物理页面，比如有1，2，3是空闲，4已被分配，5是空闲，可以通过映射让5接上3</li>
+<li>内存不足时，内存数据会写回硬盘来释放内存，由于每页大小一致，每页的读写时间也会一致</li>
+</ol>
+<p>所以现代操作系统基本都用分页模式管理内存，比如x86 CPU长模式下MMU 4KB的分页。</p>
+<p>操作系统在对内存管理时，使用一个数据结构描述一个内存页，每个数据结构包含相邻页的指针，多个内存页形成一个链表。</p>
+<h3 id="分页再分区">分页再分区</h3>
+<p>此外，可以将多个页划分为多个区，形成内存区，内存区只是一个逻辑概念，将内存划分方便管理，比如地址范围为多少多少的内存区域就给硬件用，多少多少的给内核区，多少多少给应用区等。同理，使用一个数据结构描述一个内存区，表示内存区的开始地址和结束地址，物理页的数量、已分配的物理页的数量、剩余数量等。</p>
+<h3 id="组织内存页">组织内存页</h3>
+<p>为了能高效的分配内存，需要把内存区数据结构和内存页面数据结构关联起来，组织成一个内存分割合并的数据结构。妈的，真难。</p>
+<blockquote>
+<p>以2的N次方为页面数组织页面的原因：</p>
+<p>1、内存对齐，提升CPU寻址速度
+2、内存分配时，根据需求大小快速定位至少从哪一部分开始
+3、内存分配时，并发加锁，分组可以提升效率
+4、内存分配回收时，很多计算也更简单</p>
+</blockquote>
+<h2 id="linux内存管理">Linux内存管理</h2>
+<h3 id="伙伴系统">伙伴系统</h3>
+<p>Linux使用分页机制管理物理内存系统，把物理内存分成4KB大小的页面进行管理，通过一个Page结构体表示一个物理内存页面。</p>
+<p>因为硬件的限制，Linux把属性相同的物理内存页面，归结到一个区，不同的硬件，划分不同的区。在32位的x86平台中，将0~16MB划分位DMA区，高内存区适用于要访问的物理地址空间大于虚拟地址空间，Linux内核不能建立直接映射的情况。物理内存中剩余的页面就划分位常规内存区，64位的x86平台则没有高内存区。</p>
+<blockquote>
+<p>在很多服务器和大型计算机上，如果物理内存是分布式的，由多个计算节点组成，那么每个 CPU 核都会有自己的本地内存，CPU 在访问它的本地内存的时候就比较快，访问其他 CPU 核内存的时候就比较慢，这种体系结构被称为 Non-Uniform Memory Access（NUMA）</p>
+</blockquote>
+<p>在内存区的上层，通过定义节点pglist_data，来包含多个区</p>
+<p>连续且相同大小的Page组成伙伴，Linux在分配物理内存页面时，首先找到内存节点，接着找到内存区，然后是合适的空闲链表，最后在其中找到页的Page结构，完成物理内存页面的分配。</p>
+<blockquote>
+<p>内存压缩不是指压缩内存中的数据，而是指移动内存页面，进行内存碎片整理，腾出更大的连续的内存空间。如果内存碎片整理了，还是不能成功分配内存，就要杀死进程以便释放更多内存页面</p>
+</blockquote>
+<p>分配算法：关键字：快速分配路径、慢速分配路径，只有在快速分配路径失败之后，才会进入慢速分配路径，慢速分配路径中会进行内存回收相关的工作。最后，通过 expand 函数分割伙伴，完成页面分配。</p>
+<h3 id="slab">SLAB</h3>
+<p>Linux使用SLAB来分配比页更小的内存对象。</p>
+<p>SLAB分配器会把一个内存页面或者一组连续的内存页面，划分成大小相同的块，每一小块内存就是SLAB对象，在这一组连续的内存页面中除了SLAB对象，还有SLAB管理头和着色区。</p>
+<p>着色区是一块动态的内存块，建立SLAB时才会设置它的大小，目的是为了错开不同的SLAB对象地址，降低硬件Cache行中地址的争用，避免抖动产生的性能下降。</p>
+<p>Linux使用kmen_cache结构管理page对应内存页面上的小块内存对象，然后让该 page 指向 kmem_cache，由 kmem_cache_node 结构管理多个 page。</p>
+<h1 id="进程">进程</h1>
+<p>进程是一个应用程序运行时刻的实例，是应用程序运行时所需资源的容器，是一堆数据结构。操作系统记录这个应用程序使用了多少内存，打开什么文件，控制资源不可用时进行睡眠，进程运行到哪了等等这些统计信息，放到内存中，抽象成进程。</p>
+<p>进程为了让操作系统管理，需要有一个地址空间，该地址空间至少包含两部分内容：内核和用户的应用程序。</p>
+<blockquote>
+<p>当 CPU 在 R0 特权级运行时，就运行在内核的地址空间中，当 CPU 在 R3 特权级时，就运行在应用程序地址空间中。各进程的虚拟地址空间是相同的，它们之间物理地址不同，是由 MMU 页表进行隔离的，所以每个进程的应用程序的代码绝对不能随意访问内核的代码和数据。</p>
+<p>每个进程都有一个内核栈，指向同一个块内核内存区域，共享一份内核代码和内核数据。内核进程使用一份页表，用户进程两份页表，用户进程多了一份用户空间页表，与其它用户进程互不干扰。</p>
+</blockquote>
+<p>由于应用程序需要内核提供资源，而内核需要控制应用程序的运行，让其能随时中断或恢复执行，因此需要保存应用程序的机器上下文和它运行时刻的栈。使用内核的功能时，会先停止应用程序代码的运行，进入内核地址空间运行内核代码，然后返回结果。</p>
+<blockquote>
+<p>进程的机器上下文分为几个部分，一部分是 CPU 寄存器，一部分是内核函数调用路径。CPU 的通用寄存器，是中断发生进入内核时，压入内核栈中的，从中断入口处开始调用的函数，都是属于内核的函数。函数的调用路径就在内核栈中，整个过程是这样的：进程调度器函数会调用进程切换函数，完成切换进程这个操作，而在进程切换函数中会保存栈寄存器的值。</p>
+</blockquote>
+<p>建立进程，其实就是创建进程结构体，分配进程的内核栈于应用程序栈，并对进程的内核栈进行初始化，最后将进程加入调度系统，以便投入运行。</p>
+<h2 id="调度">调度</h2>
+<p>CPU同一时刻只能运行一个进程，当一个进程不能获取某种资源导致它不能继续运行时，就应该让出CPU，因此面对多进程就需要一个合理的调度。</p>
+<p>进程的等待和唤醒可以通过信号量实现。</p>
+<p>每一个CPU都有一个空转进程，作为进程调度器最后的选择。空转进程会调用进程调度函数，在系统没有其他进程可以运行时又会调用空转进程，形成闭环。</p>
+<h2 id="linux进程调度">Linux进程调度</h2>
+<p>Linux进程调度支持多种调度算法：基于优先级的调度算法、实时调度算法、完全公平调度算法CFQ；也支持多种不同的进程调度器：RT调度器、Deadline调度器、CFS调度器、Idle调度器。</p>
+<p>进程优先级越高，占有CPU时间越长；调度优先级越高，调度系统选中它的概率就越大。</p>
+<p>Linux的CFS调度器没有时间片概念，它是直接分配CPU使用时间的比例。CFS会按权重比例分配CPU时间，权重表示进程优先级，<code>进程时间 = CPU总时间 * 进程权重 / 就绪队列所有进程权重之和</code>。对外接口提供一个nice值，范围为-20~19，数值越小，权重越大，每降低一个nice值，就能多获得10%的CPU时间。</p>
+<h1 id="设备io">设备I/O</h1>
+<p>操作系统本身会对设备进行分类，定义一套对应设备的操作接口，由设备的驱动程序实现，而驱动程序实现对应设备的操作，从而达到操作系统与设备解耦的目的。</p>
+<p>设备和设备驱动的信息会抽象成对应的数据结构，再通过设备表结构组织驱动和设备的数据结构。</p>
+<p>总线是设备的基础，表示CPU与设备的连接，总线本身也是一个数据结构。</p>
+<p>一个驱动程序开始是由内核加载运行，然后调用由内核提供的接口建立设备，最后向内核注册设备和驱动，完成驱动和内核的握手动作。</p>
+<p>内核要求设备执行某项动作，就会调用设备的驱动程序函数，把相关参数传递给设备的驱动程序，由于参数很多，各种操作所需的参数又不相同，就会把这些需要的参数封装在一个数据结构中，称为I/O包。</p>
+<p>在Linux中，各种设备时一个个文件，只是并不对应磁盘上的数据文件，而是对应着存在内存当中的设备文件，对这些文件的操作等同于对设备的操作。在目录 <code>/sys/bus</code>目录下能看到所有总线下的所有设备，总线目录下有设备目录，设备目录下是设备文件。</p>
+<h1 id="文件系统">文件系统</h1>
+<p>文件系统是操作系统为了兼容不同的物理存储设备而存在。文件系统会把文件数据定义成一个动态的线性字节数组，将一段范围的字节数组整合成一个文件数据逻辑块，再映射成对应存储设备的物理存储块，从而解决不同物理存储设备有不同的物理存储块的问题。即 线性字节数组 -&gt; 文件数据逻辑存储块 -&gt; 物理存储块</p>
+<p>可以通过位图来标识哪些逻辑存储块是空闲，哪些是已被分配占用。</p>
+<p>通过一个包含文件系统标识、版本、状态、存储介质大小、文件系统逻辑存储块大小、位图所在存储块、根目录等信息的数据结构，作为文件系统的超级块或文件系统描述块。</p>
+<p>文件系统的格式化，指的是在存储设备上重建文件系统的数据结构，一般是先设置文件系统的超级快、位图、根目录，三者是强顺序的。</p>
+<p>Linux使用VFS虚拟文件系统作为中间层，抽象了文件系统共有的数据结构和操作函数集合，一个物理存储设备的驱动只要实现了这些函数就可以插入VFS中，从而可以同时支持各种不同的文件系统。</p>
+<p>VFS包含四大数据结构：超级块结构super_block、目录结构dentry、文件索引节点结构inode、进程打开文件实例结构file。Liunx 挂载文件系统时，会读取文件系统超级块，从超级块出发读取并构造全部目录结构，目录结构指向存储设备文件时，是一个个文件索引节点结构。</p>
+<h1 id="网络">网络</h1>
+<p>在Linux中，替代传输层以上协议实体的标准接口，称为套接字，负责实现传输层以上的所有功能，即套接字是一套通用的网络API，下层由多个协议栈实现</p>
+<p>Unix网络中的5种 I/O 模型</p>
+<p>参考：https://zhuanlan.zhihu.com/p/121826927、https://segmentfault.com/a/1190000022653305</p>
+<h1 id="参考">参考</h1>
+<p>极客时间 - 操作系统实战45讲</p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a>
+        
+            <a href="/tags/linux/">Linux</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Sep 03, 2021 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#pc机启动流程">PC机启动流程</a></li>
+    <li><a href="#内核结构分类">内核结构分类</a>
+      <ol>
+        <li><a href="#宏内核结构---类似单体服务">宏内核结构 - 类似单体服务</a></li>
+        <li><a href="#微内核结构---类似微服务">微内核结构 - 类似微服务</a></li>
+        <li><a href="#分离硬件的相关性">分离硬件的相关性</a></li>
+        <li><a href="#混合内核">混合内核</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#工作模式">工作模式</a>
+      <ol>
+        <li><a href="#实模式">实模式</a></li>
+        <li><a href="#保护模式">保护模式</a></li>
+        <li><a href="#长模式">长模式</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#虚拟地址">虚拟地址</a></li>
+    <li><a href="#mmu">MMU</a></li>
+    <li><a href="#cache">Cache</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#引导-boot">引导 boot</a></li>
+    <li><a href="#启动-startup">启动 startup</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#内存划分与组织">内存划分与组织</a>
+      <ol>
+        <li><a href="#分段">分段</a></li>
+        <li><a href="#分页">分页</a></li>
+        <li><a href="#分页再分区">分页再分区</a></li>
+        <li><a href="#组织内存页">组织内存页</a></li>
+      </ol>
+    </li>
+    <li><a href="#linux内存管理">Linux内存管理</a>
+      <ol>
+        <li><a href="#伙伴系统">伙伴系统</a></li>
+        <li><a href="#slab">SLAB</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#调度">调度</a></li>
+    <li><a href="#linux进程调度">Linux进程调度</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

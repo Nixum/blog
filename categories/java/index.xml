@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Java on Nixum Blog</title>
+    <link>http://nixum.cc/categories/java/</link>
+    <description>Recent content in Java on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 22 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/categories/java/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Java IO</title>
+      <link>http://nixum.cc/p/java-io/</link>
+      <pubDate>Tue, 22 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/java-io/</guid>
+      <description>[TOC]
+BIO 特点
+ BIO是同步阻塞的，以流的形式处理，基于字节流和字符流 每个请求都需要创建独立的线程，处理Read和Write 并发数较大时，就算是使用了线程池，也需要创建大量的线程来处理 连接建立后，如果处理线程被读操作阻塞了，那就阻塞了，只能等到读完才能进行其他操作  以基于TCP协议的Socket，编写服务端Demo
+package com.nixum.bio; import java.io.InputStream; import java.io.PrintWriter; import java.net.ServerSocket; import java.net.Socket; import java.util.Date; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; public class BIOServer { public static void main(String[] args) throws Exception { ExecutorService newCachedThreadPool = Executors.newCachedThreadPool(); //创建ServerSocket  ServerSocket serverSocket = new ServerSocket(8080); while (true) { // 主线程负责处理监听  final Socket socket = serverSocket.accept(); // 创建线程处理请求  newCachedThreadPool.execute(() -&amp;gt; { handler(socket); }); } } public static void handler(Socket socket) { try { byte[] bytes = new byte[1024]; //通过socket获取输入流  InputStream inputStream = socket.</description>
+    </item>
+    
+    <item>
+      <title>JVM</title>
+      <link>http://nixum.cc/p/jvm/</link>
+      <pubDate>Tue, 18 Jun 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/jvm/</guid>
+      <description>[TOC]
+JVM内存模型  JVM内存模型 
+方法区也叫永久代，持久代，非堆，不算在堆里面
+年轻代也叫新生代
+注意区别于Java内存模型
+JVM内存模型描述的是线程运行时的数据在内存的分布
+Java内存模型是多线程情况下数据的分布
+引用类型  强引用：通过new的方式创建，不会被轻易回收 软引用（SoftReference）：被软引用关联的对象只有在内存不够时才会被回收 弱引用（WeakReference）：被弱引用关联的对象一定会被回收，只能存活至下次垃圾回收发生之前 虚引用（PhantomReference）：比如将对象引用设置为null，该引用指向的对象就会被回收，相当于告知JVM可以回收该对象  软引用、弱引用、虚引用均可以搭配引用队列使用，且虚引用必须搭配引用队列使用。使用引用队列时，这些引用对象被垃圾收集器回收之后会进入引用队列，等待二次回收。引用队列一般用于与GC交互的场景，比如，垃圾回收时进行通知。
+引用计数法 为对象添加一个引用计数器，当对象增加一个引用时，计数器加 1，引用失效时，计数器减 1。引用计数为 0 的对象可被回收。
+比较轻便，效率较高，不需要STW，可以很快进行回收，但维护引用计数也有一定的成本
+但有可能出现循环引用，JVM没有使用该判断算法，可能因为编译的时候并不会检测对象是否存在循环引用？go的话会在编译期检测是否存在循环引用，但是它垃圾回收使用三色标记法，本质是标记清除
+可达性分析 以 GC Roots 为起始点进行搜索，可达的对象都是存活的，不可达的对象可被回收，不可达指的是游离在GC Root外的对象。
+GC Roots包括：
+  java虚拟机栈中引用的对象
+方法执行时，JVM会创建一个相应的栈帧进入java虚拟机栈，栈帧中包括操作数栈、局部变量表、运行时常量池的引用、方法内部产生的对象的引用，当方法执行结束后，栈帧出栈，方法内部产生的对象的引用就不存在了，此时这些对象就是不可达对象，因为无法从GC Roots找到，这些对象将在下次GC时回收。
+比如，方法内部创建一个对象A，并持有另一个对象B，对象B引用也同时被其他线程持有，然后在方法里设置对象A=null或者方法结束后，个人认为对象A会被回收，对象B不会被回收，如果是方法外有一个对象C引用了对象A，设置对象A=null或方法结束后，对象A不会被回收
+  方法区中类静态属性引用的对象、常量引用的对象
+静态属性或者静态变量，是class的属性，不属于任何实例，该属性会作为GC Roots，只要该class存在，该引用指向的对象也会一直存在，只有该class被卸载时，才会被回收。对于常量池里的字面量，当没有其他地方引用这个字面量时，也会被清除。
+  本地方法栈中Native方法引用的对象
+这部分属于其他语言写的方法所使用到的对象，道理跟上面是java虚拟机栈是类似的
+  上面两种更像是判断什么对象该被回收，至于要怎么回收，回收有什么策略，就有下面这几种了。
+复制 标记-清理 标记 - 整理 三色标记   把所有对象放到白色的集合中 从根节点开始遍历对象，遍历到的白色对象从白色集合中放到灰色集合中 遍历灰色集合对象，把灰色对象引用的白色集合的对象放入到灰色集合中，同时把遍历过的灰色集合中的对象放到黑色集合中 循环步骤3，直到灰色集合中没有对象 步骤4结束后，白色集合中的对象为不可达对象，进行回收   参考：深入理解Go-垃圾回收机制
+垃圾收集器 CMS 执行过程   初始标记(STW initial mark)：这个过程从垃圾回收的&amp;quot;根对象&amp;quot;开始，只扫描到能够和&amp;quot;根对象&amp;quot;直接关联的对象，并作标记。所以这个过程虽然暂停了整个JVM，但是很快就完成了。 并发标记(Concurrent marking)：这个阶段紧随初始标记阶段，在初始标记的基础上继续向下追溯标记。并发标记阶段，应用程序的线程和并发标记的线程并发执行，所以用户不会感受到停顿。 并发预清理(Concurrent precleaning)：并发预清理阶段仍然是并发的。在这个阶段，虚拟机查找在执行并发标记阶段新进入老年代的对象(可能会有一些对象从新生代晋升到老年代， 或者有一些对象被分配到老年代)。通过重新扫描，减少下一个阶段&amp;quot;重新标记&amp;quot;的工作，因为下一个阶段会Stop The World。 重新标记(STW remark)：这个阶段会暂停虚拟机，收集器线程扫描在CMS堆中剩余的对象。扫描从&amp;quot;跟对象&amp;quot;开始向下追溯，并处理对象关联。 并发清理(Concurrent sweeping)：清理垃圾对象，这个阶段收集器线程和应用程序线程并发执行。 并发重置(Concurrent reset)：这个阶段，重置CMS收集器的数据结构状态，等待下一次垃圾回收。   G1 执行过程   标记阶段：首先是初始标记(Initial-Mark),这个阶段也是停顿的(stop-the-word)，并且会稍带触发一次yong GC。 并发标记：这个过程在整个堆中进行，并且和应用程序并发运行。并发标记过程可能被yong GC中断。在并发标记阶段，如果发现区域对象中的所有对象都是垃圾，那个这个区域会被立即回收(图中打X)。同时，并发标记过程中，每个区域的对象活性(区域中存活对象的比例)被计算。 再标记：这个阶段是用来补充收集并发标记阶段产新的新垃圾。与之不同的是，G1中采用了更快的算法:SATB。 清理阶段：选择活性低的区域(同时考虑停顿时间)，等待下次yong GC一起收集，对应GC log: [GC pause (mixed)]，这个过程也会有停顿(STW)。 回收/完成：新的yong GC清理被计算好的区域。但是有一些区域还是可能存在垃圾对象，可能是这些区域中对象活性较高，回收不划算，也肯能是为了迎合用户设置的时间，不得不舍弃一些区域的收集。   内存分配和回收策略  1.</description>
+    </item>
+    
+    <item>
+      <title>Java并发</title>
+      <link>http://nixum.cc/p/java%E5%B9%B6%E5%8F%91/</link>
+      <pubDate>Sat, 02 Mar 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/java%E5%B9%B6%E5%8F%91/</guid>
+      <description>[TOC]
+线程、进程、协程   进程：可以简单理解为一个应用程序，进程是资源分配的基本单位。比如一个进程拥有自己的堆、栈、虚存空间、文件描述符等。
+涉及到用户态和内核态的切换。
+进程间的通信：
+ 匿名管道：半双工，数据只能向一个方向流动，双方需要通信时，需要建立起两个管道；且只能用于有亲缘关系的进程；本质是一个内核缓冲区，可以看成是内存中的文件，但不属于某种文件系统，无需显示打开，创建时直接返回文件描述符，读写时需要确定对方的存在，否则将退出；以先进先出的方式存取数据，通信的双方需制定好数据的格式； 有名管道：主要解决匿名管道只能作用与有亲缘关系的进程的问题，通过一个路径名关联，以文件形式存在于文件系统中，即使没有亲缘关系的进程也能通过访问路径实现通信；管道名字存在于文件系统中，内容存在内存中；打开时就得确定对方是否存在，否则将阻塞； 信号：操作系统提供的一种机制，可以在任何时候发给某一进程，而无需指定该进程的状态，如果该进程当前处于未执行状态，该信号就由内核保存起来，直到进程回复执行并传递为止；信号接收可以被阻塞，直到阻塞解除；本质是对中断机制的模拟，异步通信，在用户态和内核态之间交互；能携带的信息较少。 消息队列：存放在内核中的消息链表，只有在内核重启或显示地删除时，才会被真正的删除，与管道不同的是消息队列不需要确定接收进程是否存在；一般是FIFO，但也可以实现成随机查询；对消息格式，缓冲区大小等都能进行控制，比管道灵活； 共享内存：没什么好说的，只是在访问共享内存时要依靠一些同步或互斥机制保证并发访问安全； 信号量：计数器，一般用于多进程对共享内存访问的保护，内核中实现，保证原子操作 套接字：通信机制，可用在本机或者跨网络，由域、端口号、协议类型三个属性确定；域分为AF_INET，即网络，另一个是AF_UNIX，即文件系统    线程：线程是独立调度的基本单位，由CPU进行调度和执行的实体。一个进程中可以有多个线程，线程之间共享进程资源，是进程中的实际运作单位。
+涉及到用户态和内核态的切换。
+  协程：GoLang中的协程
+ 在用户态层面，由线程控制，即用户应用层面自己控制，很难像抢占式调度那样强制CPU切换到其他线程/进程，只能是协作式调度，但同时也避免了上下文切换 内存消耗比线程小，比如go开启协程是几kb，java开启一个线程至少1MB 实现原理：在一个运行的线程上，起多个协程，每个协程会加入到调度队列中，线程会从调度队列里取出协程进行运行。队列个数默认取决于CPU的个数，协程间的切换会线程使用go提供的io函数进行控制。当有协程执行较慢时，会先将其挂起，然后唤醒其他线程，将未处理的协程队列转移到该线程，消费队列里的协程，当队列消费完成后，再切回原来的线程，继续执行刚刚挂起的协程。    参考：图解Go协程调度原理，小白都能理解 
+Golang 的 goroutine 是如何实现的？
+进程与线程的区别   拥有资源
+进程是资源分配的基本单位，但是线程不拥有资源，线程可以访问隶属进程的资源。
+  调度
+线程是独立调度的基本单位，在同一进程中，线程的切换不会引起进程切换，从一个进程中的线程切换到另一个进程中的线程时，会引起进程切换。
+  系统开销
+由于创建或撤销进程时，系统都要为之分配或回收资源，如内存空间、I/O 设备等，所付出的开销远大于创建或撤销线程时的开销。类似地，在进行进程切换时，涉及当前执行进程 CPU 环境的保存及新调度进程 CPU 环境的设置，而线程切换时只需保存和设置少量寄存器内容，开销很小。
+  通信方面
+线程间可以通过直接读写同一进程中的数据进行通信，在java中如使用共享变量、wait/notify机制、阻塞队列；但是进程通信需要借助管道、消息队列、共享存储、信号量、信号、套接字socket
+  上下文切换的开销
+当CPU从执行一个线程切换到执行另外一个线程的时候，它需要先存储当前线程的本地的数据，程序指针等，然后载入另一个线程的本地数据，程序指针等，最后才开始执行。这种切换称为“上下文切换”(“context switch”)。CPU会在一个上下文中执行一个线程，然后切换到另外一个上下文中执行另外一个线程。
+调度方式  非抢占式：系统一旦开始执行某一进程，就会让该线程就会一直执行下去，直至完成，或者发生了其他事件导致系统放弃对该进程的执行后，才会去执行另外一个进程。 抢占式：系统执行某一进程，在其执行期间，系统可以立即停止当前进程，转而执行另外一个进程，待处理完后，重新回来继续执行之前停止的进程  调度原理 用户空间线程和内核空间线程之间的映射关系</description>
+    </item>
+    
+    <item>
+      <title>Java List Map</title>
+      <link>http://nixum.cc/p/java-list-map/</link>
+      <pubDate>Mon, 18 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/java-list-map/</guid>
+      <description>[TOC]
+以下笔记如没指定版本，都是基于JDK1.8
+Collection  javaCollection类图简版 
+Set HashSet 1.基本   底层是HashMap，因此初始容量，默认负载因子、扩容倍数这些都和HashMap一样
+  由于HashSet只需要key，因此value统一使用静态不可变的Object对象来装，即所有key共享这一个对象
+  private transient HashMap&amp;lt;E,Object&amp;gt; map; private static final Object PRESENT = new Object();  HashSet允许存入null 不是线程安全的 不保证插入元素的顺序  List ArrayList 1.基本   底层：Object数组
+  默认大小：10 （调用空参构造方法时）
+最大是Integer.MAX_VALUE - 8（2^31 - 1，一些虚拟器需要在数组前加个头标签，所以减去 8 ）
+调用此构造方法时，
+public ArrayList(Collection&amp;lt;? extends E&amp;gt; c) 其中要注意的是，里面有这样一句话
+// c.toArray might (incorrectly) not return Object[] (see 6260652) if (elementData.getClass() != Object[].</description>
+    </item>
+    
+    <item>
+      <title>Java SE</title>
+      <link>http://nixum.cc/p/java-se/</link>
+      <pubDate>Mon, 18 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/java-se/</guid>
+      <description>[TOC]
+一、面向对象 面向对象的特征： 抽象(注意与当前目标有关的，选择一部分，暂时不用部分细节，分为过程抽象、数据抽象) 继承：联结类的层次模型、允许和鼓励类的重用，派生类可以从它的基类那里继承方法和实例变量，进行修改和新增使其更适合 封装：封装是把过程和数据包围起来，对数据的访问只能通过已定义的界面，这些对象通过一个受保护的接口访问其他对象 多态：允许不同类的对象对同一消息作出响应，包括参数化多态性和包含多态性，灵活、抽象、行为共享、代码共享，解决程序函数同名问题
+二、基础类型及其包装类型    基本类型 boolean byte char short int float long double     包装类型 Boolean Byte Character Short Integer Float Long Double   位数 1 8 16 16 32 32 64 64   字节数  1 2 2 4 4 8 8      字符集
+unicode是字符集，一种标准，UTF-8、UTF-16、GBK之类的是编码方式，是字符集的具体实现
+UTF-16：定长,固定2字节， UTF-8：变长,中文占3字节,英文占1字节
+char可以保存一个中文字符
+java中采用unicode编码，无论中文、英文都是占2个字节
+java虚拟机中使用UTF-16编码方式
+java的字节码文件(.class)文件采用的是UTF-8编码，但是在java 运行时会使用UTF-16编码。
+参考Java中的UTF-8、UTF-16编码字符所占字节数</description>
+    </item>
+    
+  </channel>
+</rss>

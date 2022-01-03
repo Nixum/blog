@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='主要是消息队列原理以及消息队列常见问题，不涉及具体某一款消息队列'><title>消息队列</title>
+
+<link rel='canonical' href='http://nixum.cc/p/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='消息队列'>
+<meta property='og:description' content='主要是消息队列原理以及消息队列常见问题，不涉及具体某一款消息队列'>
+<meta property='og:url' content='http://nixum.cc/p/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='消息队列' /><meta property='article:published_time' content='2020-09-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-06T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="消息队列">
+<meta name="twitter:description" content="主要是消息队列原理以及消息队列常见问题，不涉及具体某一款消息队列">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" >
+                消息队列
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        主要是消息队列原理以及消息队列常见问题，不涉及具体某一款消息队列
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Sep 22, 2020</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    2 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="使用场景">使用场景</h1>
+<ul>
+<li>秒杀系统，一般秒杀系统处理包含几个步骤：风险控制、库存锁定、生成订单、短信通知、更新统计数据灯，而决定秒杀是否成功只在前两个步骤，后续的操作就可以通过消息队列<strong>异步</strong>处理完成，加快整个流程的处理，<strong>减少等待时间，提升并发量</strong>。</li>
+<li>隔离网关和后端服务，实现<strong>流量控制，保护</strong>后端服务，但会增加系统调用链，导致总体响应变长，异步增加系统复杂性。</li>
+<li>令牌桶，目的也是进行流量控制。</li>
+<li>服务解耦，数据同步，比如订单系统在订单状态发生变化时发出消息通知，其他服务订阅后做相应处理。</li>
+<li>连接流计算任务和数据，比如集群日志处理，大数据统计</li>
+<li>将消息广播给其他接收者</li>
+</ul>
+<h2 id="好处">好处</h2>
+<p>流量削峰和流量控制、异步处理、解耦、广播、最终一致性</p>
+<h2 id="缺点">缺点</h2>
+<p>可用性降低、复杂度提高、一致性问题、消息延迟</p>
+<h1 id="常见消息队列">常见消息队列</h1>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>ActiveMQ</th>
+<th>RabbitMQ</th>
+<th>RocketMQ</th>
+<th>Kafaka</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单机吞吐量</td>
+<td>万级，吞吐量比RocketMQ和Kafka要低了一个数量级</td>
+<td>万级，吞吐量比RocketMQ和Kafka要低了一个数量级</td>
+<td>10万级，RocketMQ也是可以支撑高吞吐的一种MQ</td>
+<td>10万级别，这是kafka最大的优点，就是吞吐量高。一般配合大数据类的系统来进行实时数据计算、日志采集等场景</td>
+</tr>
+<tr>
+<td>topic数量对吞吐量的影响</td>
+<td></td>
+<td>使用队列模型，通过Exchange模块实现发布-订阅模型，Exchange位于生产者和队列之间，由Exchange决定将详细投递到哪个队列。</td>
+<td>topic可以达到几百，几千个的级别，吞吐量会有较小幅度的下降这是RocketMQ的一大优势，在同等机器下，可以支撑大量的topic</td>
+<td>topic从几十个到几百个的时候，吞吐量会大幅度下降。所以在同等机器下，kafka尽量保证topic数量不要过多。如果要支撑大规模topic，需要增加更多的机器资源</td>
+</tr>
+<tr>
+<td>可用性</td>
+<td>高，基于主从架构实现高可用性</td>
+<td>高，基于主从架构实现高可用性</td>
+<td>非常高，分布式架构</td>
+<td>非常高，kafka是分布式的，一个数据多个副本，少数机器宕机，不会丢失数据，不会导致不可用</td>
+</tr>
+<tr>
+<td>消息可靠性</td>
+<td>有较低的概率丢失数据</td>
+<td></td>
+<td>经过参数优化配置，可以做到0丢失</td>
+<td>经过参数优化配置，消息可以做到0丢失</td>
+</tr>
+<tr>
+<td>时效性</td>
+<td>ms级</td>
+<td>微秒级，这是rabbitmq的一大特点，延迟是最低的</td>
+<td>ms级</td>
+<td>延迟在ms级以内</td>
+</tr>
+<tr>
+<td>功能支持</td>
+<td>MQ领域的功能极其完备</td>
+<td>基于erlang开发，所以并发能力很强，性能极其好，延时很低</td>
+<td>MQ功能较为完善，还是分布式的，扩展性好</td>
+<td>功能较为简单，主要支持简单的MQ功能，在大数据领域的实时计算以及日志采集被大规模使用，是事实上的标准</td>
+</tr>
+<tr>
+<td>优劣势总结</td>
+<td>非常成熟，功能强大，在业内大量的公司以及项目中都有应用。偶尔会有较低概率丢失消息，而且现在社区以及国内应用都越来越少，官方社区现在对ActiveMQ 5.x维护越来越少，几个月才发布一个版本而且确实主要是基于解耦和异步来用的，较少在大规模吞吐的场景中使用</td>
+<td>erlang语言开发，性能极其好，延时很低；吞吐量到万级；拥有灵活的路由配置；MQ功能比较完备而且开源提供的管理界面非常棒，用起来很好用；社区相对比较活跃；RabbitMQ确实吞吐量与其他几个相比会低一些，这是因为他做的实现机制比较重；对消息的堆积支持不是很好，当有大量消息积压时，会导致RabbitMQ性能急剧下降；erlang开发，比较小众，很难读源码，很难定制和掌控。</td>
+<td>接口简单易用，日处理消息上百亿之多，可以做到大规模吞吐，性能也非常好，分布式扩展也很方便，社区维护还可以，可靠性和可用性都是ok的，还可以支撑大规模的topic数量，支持复杂MQ业务场景。java实现，源码易读；中文社区活跃度，文档相对来说简单，接口这块不是按照标准JMS规范走的有些系统要迁移需要修改大量代码。</td>
+<td>kafka的特点其实很明显，就是仅仅提供较少的核心功能，但是提供超高的吞吐量，ms级的延迟，极高的可用性以及可靠性，而且分布式可以任意扩展。同时kafka最好是支撑较少的topic数量即可，保证其超高吞吐量。而且kafka唯一的一点劣势是有可能消息重复消费，那么对数据准确性会造成极其轻微的影响，在大数据领域中以及日志采集中，这点轻微影响可以忽略这个特性天然适合大数据实时计算以及日志收集。异步批量操作性能极佳，但是同步收发信息因为要攒一批消息才进行处理会导致响应延时比较高。</td>
+</tr>
+</tbody>
+</table>
+<h1 id="消息模型">消息模型</h1>
+<p>1.点对点：队列、监听器</p>
+<p>2.发布订阅：监听器、监听器、观察者模式</p>
+<h2 id="一般消息队列架构">一般消息队列架构</h2>
+<ul>
+<li>主要是设计中间的消息转发，将一次RPC转化成两次RPC；</li>
+<li>选择通信协议；</li>
+<li>消息的可靠性确认；</li>
+<li>消息持久化；</li>
+<li>消息模型；</li>
+<li>事务特性；</li>
+<li>分布式集群特性；</li>
+<li>消息队列一般有两种模式，pull模式（消费方主动向队列拉取数据），比如kafka，push模式（由队列向消费方推送数据）</li>
+</ul>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e6%9e%b6%e6%9e%84.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e6%9e%b6%e6%9e%84.png"
+			
+			
+			
+			loading="lazy"
+			alt="消息队列架构">
+	</a>
+	
+	<figcaption>消息队列架构</figcaption>
+	
+</figure></p>
+<p>一般来说，一个主题可以分配给多个Broker，每个Broker可以有多个队列；</p>
+<p>多个生产者对于同一个主题的消息，可以发送到不同的队列（轮询发，随机挑一个发，只往某个一个发）；</p>
+<p>消费组订阅的是主题，消费主题里的所有队列的消息，消费消息时，可以只是去读队列里的消息，不一定会删掉；</p>
+<p>多个消费组在消费同一主题时，消费组之间互不影响，即消息可以同时被多个消费组消费；</p>
+<p>消费组内部可以包含多个消费者，同一消费组内，每个队列只能被一个消费者占用，一个消息只会被组内一个消费者消费；</p>
+<p>每个消费组内部维护自己的消费位置，记录消费某一队列中消息的位置，消费位置与消费者无关</p>
+<h2 id="关于消息的序列化和反序列化">关于消息的序列化和反序列化</h2>
+<p>除了常见的json、XML、protobuf、Kryo、Hession等方案，还能自主设计</p>
+<p>客户端和服务端维护一份字段顺序，在序列化时只存对应对象的值，从而减少序列化对象的长度，比如</p>
+<pre tabindex="0"><code>03   | 08 7a 68 61 6e 67 73 61 6e | 17 | 01
+User |    z h a n g s a n         | 23 | true
+03表示对象类型，08表示名字的长度，然后字段值以名字、年龄、是否yi'wei
+</code></pre><h2 id="关于消息的断句">关于消息的断句</h2>
+<p>数据传输过程中，收到的分段不一定是发出去的分段，因此需要合理的分段，来让数据语义明确。比如在每个分段前加数据的长度</p>
+<pre tabindex="0"><code>03下雨天 03留客天 02天留 03我不留
+</code></pre><h2 id="关于消息的存储">关于消息的存储</h2>
+<p>消息队列的存储一般比较简单，每个主题包含若干分区，每个分区(队列)都是WAL，写入时尾部追加，不允许修改，读取的时候，根据一个索引序号进行查询，连续顺序往下读。</p>
+<h3 id="kafka">Kafka</h3>
+<p>以分区为单位，每个分区包含一组消息文件和一组索引文件，消息文件和索引文件一一对应，具有相同的文件名，但文件扩展名不一样，文件名就是这个文件中第一条消息的索引序号；每个索引中保存索引序号（表示这条消息是这个分区中的第几条消息），和 对应的消息在消息文件中的绝对位置。</p>
+<p>以分区为单位，粒度更细，比较灵活，容易进行数据迁移和扩容。</p>
+<p>Kafka为了节省存储空间，采用稀疏索引，每隔几条消息创建一条索引。</p>
+<p>写入消息时，在文件尾部追加写入，一个文件满了再写下一个文件；查找消息时，先根据文件名找到所在索引的索引文件，然后二分法遍历索引文件内的索引，找到离目标最近的索引，再去消息文件中找到这条索引对应的位置，顺序遍历消息文件，找到目标消息。</p>
+<h3 id="rocketmq">RocketMQ</h3>
+<p>以Broker为单位，每个Broker只包含一组消息文件和索引文件，在该Broker上的所有主题的消息都存放在这一组消息文件中，索引文件则按照主题和队列分别建立，每个队列对应一组索引文件。</p>
+<p>以Broker为单位，粒度较粗，但在写入时文件更少，有更好的批量和顺序写入。</p>
+<p>索引采用定长稠密索引，为每条消息都创建索引，每个索引的长度固定20个字节。</p>
+<p>写入消息时，Broker上所有主题、所有队列的消息都按照自然顺序追加写入同一个消息文件中，一个文件满了再写下一个；查找消息时，直接根据队列的消息序号，计算出索引的全局位置（索引序号 乘 固定长度20），直接读取索引，再根据索引在消息文件中找到对应的消息，查找速度比Kafka快，但耗存储。</p>
+<h2 id="案例一---异步消息的处理">案例一 - 异步消息的处理</h2>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/JD_JMQ%e6%b6%88%e6%81%af%e6%8e%a5%e6%94%b6%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/JD_JMQ%e6%b6%88%e6%81%af%e6%8e%a5%e6%94%b6%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<blockquote>
+<ol>
+<li>收到请求后，我们在Handler中不做过多的处理，执行必要的检查后，将请求放到一个内存队列中，也就是图中的RequestsQueue。请求被放入队列后，Handler的方法就结束了。可以看到，在Handler中只是把请求放到了队列中，没有太多的业务逻辑，这个执行过程是非常快的，所以即使是处理海量的请求，也不会过多的占用IO线程。</li>
+<li>由于要保证消息的有序性，整个流程的大部分过程是不能并发的，只能单线程执行。所以，接下来我们使用一个线程WriteThread从请求队列中按照顺序来获取请求，依次进行解析请求等其他的处理逻辑，最后将消息序列化并写入存储。序列化后的消息会被写入到一个内存缓存中，就是图中的JournalCache，等待后续的处理。</li>
+<li>执行到这里，一条一条的消息已经被转换成一个连续的字节流，每一条消息都在这个字节流中有一个全局唯一起止位置，也就是这条消息的Offset。后续的处理就不用关心字节流中的内容了，只要确保这个字节流能快速正确的被保存和复制就可以了。</li>
+<li>这里面还有一个工作需要完成，就是给生产者回响应，但在这一步，消息既没有落盘，也没有完成复制，还不能给客户端返回响应，所以我们把待返回的响应按照顺序放到一个内存的链表PendingCallbacks中，并记录每个请求中的消息对应的Offset。</li>
+<li>然后，我们有2个线程，FlushThread和ReplicationThread，这两个线程是并行执行的，分别负责批量异步进行刷盘和复制，刷盘和复制又分别是2个比较复杂的流程，我们暂时不展开讲。刷盘线程不停地将新写入JournalCache的字节流写到磁盘上，完成一批数据的刷盘，它就会更新一个刷盘位置的内存变量，确保这个刷盘位置之前数据都已经安全的写入磁盘中。复制线程的逻辑也是类似的，同样维护了一个复制位置的内存变量。</li>
+<li>最后，我们设计了一组专门用于发送响应的线程ReponseThreads，在刷盘位置或者复制位置更新后，去检查待返回的响应链表PendingCallbacks，根据QOS级别的设置（因为不同QOS基本对发送成功的定义不一样，有的设置需要消息写入磁盘才算成功，有的需要复制完成才算成功），将刷盘位置或者复制位置之前所有响应，以及已经超时的响应，利用这组线程ReponseThreads异步并行的发送给各个客户端。</li>
+<li>这样就完成了消息生产这个流程。整个流程中，除了JournalCache的加载和卸载需要对文件加锁以外，没有用到其他的锁。每个小流程都不会等待其他流程的共享资源，也就不用互相等待资源（没有数据需要处理时等待上游流程提供数据的情况除外），并且只要有数据就能第一时间处理。</li>
+<li>这个流程中，最核心的部分在于WriteThread执行处理的这个步骤，对每条消息进行处理的这些业务逻辑，都只能在WriteThread中单线程执行，虽然这里面干了很多的事儿，但是我们确保这些逻辑中，没有缓慢的磁盘和网络IO，也没有使用任何的锁来等待资源，全部都是内存操作，这样即使单线程可以非常快速地执行所有的业务逻辑。</li>
+</ol>
+<p>这个里面有很重要的几点优化：</p>
+<p>第一是使用异步设计，把刷盘和复制这两部分比较慢的操作从这个流程中分离出去异步执行；</p>
+<p>第二是使用了一个写缓存JournalCache将一个写磁盘的操作，转换成了一个写内存的操作，来提升数据写入的性能，关于如何使用缓存，后面我会专门用一节课来讲；</p>
+<p>第三是这个处理的全流程是近乎无锁的设计，避免了线程因为等待锁导致的阻塞；</p>
+<p>第四是把回复响应这个需要等待资源的操作，也异步放到其他的线程中去执行。</p>
+</blockquote>
+<h2 id="案例二---kafka高性能io">案例二 - Kafka高性能IO</h2>
+<ul>
+<li>Kafka的SDK，生产者调用SDK发送消息时，看起来只发了一条，但是SDK处理时不是一条一条发的，而是先把消息放到内存中缓存起来，攒一批，异步一块发给broker，broker会把这一批消息当成一条处理，消费者pull消息，也是一次性拉取这一批消息进行处理，从而减少Broker处理请求的次数，减轻压力。</li>
+<li>顺序读写，Broker收到消息后，顺序写入对应的log文件，一个文件写满就开启新文件顺序写下去，消费时也是从log文件的某一位置开始，顺序的读出来</li>
+<li>利用PageCache加速读写，数据写入文件时，先写入PageCache，再一批一批写入磁盘，读取文件时，也是先从PageCache中读取数据，当PageCache中没有数据，会引发os的缺页中断，读取先从会被阻塞，直到数据从文件中复制到PageCache，再从PageCache中读取数据。</li>
+<li>零拷贝提升消费性能：一般来说，Broker处理消费时，会先从文件复制数据到PageCache，从PageCache复制数据到应用内存，从应用内存复制到Socket的缓冲区，发送数据。如果文件中的数据无需其他处理，可以使用零拷贝，直接将数据从PageCache复制到socket缓冲区，减少复制次数</li>
+</ul>
+<h1 id="常见问题">常见问题</h1>
+<p>以下问题都是需要分具体的MQ的，这里简单说下通用方法。一般异常会出现的场景：</p>
+<ul>
+<li>生产者：网络或内部问题导致消息发送失败，没发出去；或者是发出去了，但是没有接受成功响应导致重复发送。</li>
+<li>消费者：消费者获取了消息，处理消息的过程中宕机，恢复时消息如何处理。</li>
+<li>消息队列：宕机重启时会丢数据</li>
+</ul>
+<h2 id="如何利用事务消息实现分布式事务">如何利用事务消息实现分布式事务</h2>
+<p>以RocketMQ为例，生产者先发送一个半消息给MQ，此时的半消息对消费者不可见，完成之后执行本地事务，根据本地事务的执行结果，对刚刚发送的半消息进行commit或rollback，只有commit之后，消费者才能消费此消息。如果生产者本地事务提交成功后宕机，MQ会调用生产者提供的反查方法确认半消息的之后的执行状态，反查方法会有三个结果：提交、回滚、不确定，如果查询结果是不确定，MQ则会进行重试，直到查到确定的结果或者超重试次数。这种场景其实是默认消费者一定会消费成功的，如果要让消费者消费不成功时，生产者也回滚，那就不能用这种方案了。</p>
+<h2 id="如何保证高可用性">如何保证高可用性</h2>
+<p>集群 + zookeeper + 负载均衡</p>
+<p>以ActiveMQ为例（因为是主从架构）</p>
+<p>使用ZooKeeper（集群）注册所有的ActiveMQ Broker。只有其中的一个Broker可以提供服务，被视为 Master，其他的 Broker 处于待机状态，被视为Slave。如果Master因故障而不能提供服务，Zookeeper会从Slave中选举出一个Broker充当Master。
+Slave连接Master并同步他们的存储状态，Slave不接受客户端连接。所有的存储操作都将被复制到 连接至 Master的Slaves。如果Master挂了，得到了最新更新的Slave会成为 Master。故障节点在恢复后会重新加入到集群中并连接Master进入Slave模式</p>
+<p>消息数据可以持久化或非持久化，在集群内共享，当有节点挂掉后，其他节点也可以通过这些共享的数据顶上。另外，也可通过定时任务定时对失败的消息进行补偿。</p>
+<p>数据的持久化存储可以存储在文件系统 &gt; 分布式KV &gt; 分布式文件系统 &gt; 数据库（速度上的排列，但可靠性就要反过来了）</p>
+<h2 id="如何解决消息重复问题保证消息幂等性">如何解决消息重复问题，保证消息幂等性</h2>
+<p>消息幂等，可以保证即使消息被重复消费也无所谓，一般来讲，重复发送总是存在的，要避免的是即使重复消费也能保证业务正确。要保证消息重复发送，除非允许消息丢失</p>
+<p><strong>常见实现幂等性方法</strong>：</p>
+<ul>
+<li>保证消息幂等一般是在消费者做，消费者处理消息的时候将消息入库记录，利用数据库的唯一键约束实现，比如通过消息id + redis/MySQL/Mongo来判重。</li>
+<li>更新数据时设置前置条件，如果满足该条件则更新数据，否则拒绝更新数据，在更新数据的同时，变更前置条件中需要判断的数据，这样当重复执行这个操作时，由于第一次更新已经修改了前置条件，不满足前置条件时，则不会重复执行更新数据的操作，比如给数据增加一个版本号，每次更新数据前，比较当前数据的版本号是否和消息中的版本号一致，如果不一致就拒绝更新数据，更新数据的同时，版本号+1，实现幂等更新。</li>
+<li>在发送消息时，给消息指定一个全局唯一的ID，消费时，先根据这个ID检查这条消息是否被消费过，如果没消费过，才更新数据，然后标记消息为已消费。但该方案在分布式系统中比较复杂，高可用，高性能都有一定的影响，需要使用分布式锁或者分布式事务</li>
+<li>对于无法处理的消息导致MQ重复发送，可以设置重复次数，过了重复次数将消息持久化到其他地方，比如死信队列，以后处理。</li>
+</ul>
+<h2 id="如何保证消息顺序">如何保证消息顺序</h2>
+<p>100%的顺序消息的条件比较苛刻，需要允许消息丢失且生成者到消费者到接收者都是单点单线程，一般是保证在不丢消息的前提下，尽量减少重复消息，不保证投递顺序。。</p>
+<p>允许重复消息时，可以通过<strong>版本号</strong>或者<strong>状态机</strong>来解决消息幂等处理和消息顺序的问题</p>
+<ul>
+<li><strong>版本号</strong>：消费者接收消息时，只接收比最新版本号大的消息，重复消息因为版本号比当前版本号小，所以可以抛弃，比如消息顺序是123，消费者当前也收到123了，再收到123其中一个就可以不进行处理了；如果消息顺序不一致，比如消息顺序是123，但先接收到的是3，1和2还没收到，那就只能先把3存起来，等待12的到来，具体可以参考TCP协议的通信机制。</li>
+<li><strong>状态机</strong>：将业务流程设定成一系列的状态扭转，不同的状态只能处理不同的消息，就可以依靠状态流的扭转来实现顺序消息</li>
+</ul>
+<p><strong>减少重复消息的处理</strong></p>
+<p>消息队列收到消费者的确认信号后，将消息id清除或进行标记；</p>
+<p>发送方要进行重发前对消费者进行询问请求</p>
+<h2 id="如何保证消息的可靠性传输">如何保证消息的可靠性传输</h2>
+<p>消息传输有3个阶段：</p>
+<ol>
+<li>消息的传输包括生产者发送消息给消息队列</li>
+<li>消息在Broker端存储，如果是集群，消息会复制到其他副本</li>
+<li>消费者通过pull模式拉取数据 或者 消息队列通过push模式向消费者发送消息</li>
+</ol>
+<p>保证消息可靠，一般是使用 <strong>持久化机制 或 事务 + ack机制</strong></p>
+<p>持久化不一定带有事务特性，比如直接日志落地，如果持久化要实现事务特性，可以使用分布式事务或者本地数据库事务。</p>
+<p>消息的确认机制（ack机制），消息发送完成后，需要收到接收方的确认信号，确认信号的返回可以是收到后消息后就立即返回，比如默认auto ack机制，或者是接收方法接收到消息，处理完该消息后才发送确认信号。另外，当接收方无法处理消息，比如消费能力不够，网络不佳等情况，接收方也可以直接拒绝消息，等待发送方重新发送，所以这里就涉及到消息的重复发送了，通过直接拒绝消息来减少业务负担。</p>
+<blockquote>
+<p>ACK模式描述了Consumer与broker确认消息的方式(时机),比如当消息被Consumer接收之后,Consumer将在何时确认消息。对于broker而言，只有接收到ACK指令,才会认为消息被正确的接收或者处理成功了,通过ACK，可以在consumer（producer）与Broker之间建立一种简单的“担保”机制.</p>
+</blockquote>
+<ol>
+<li>
+<p>消息发送阶段：生产者往Broker发送消息前，可以做一次消息持久化，收到Broker的ack响应后，要正确处理，以此保证消息在生产阶段不会丢失。在此阶段，Broker并不关心生产者是否收到ack响应，因为在生产者的角度，消息已经持久化后成功发出了，如果没有收到ack，最多就重复发送，那就会收到重复的ack，保证消息一定落到了Broker，当然前提是Broker能幂等处理。</p>
+<p>发送方只有在消息入库成功，事务提交后，才会发送消息，如果发送失败，可以靠定时任务重试。注意本地事务做的是业务落地和消息落地的事务。</p>
+</li>
+<li>
+<p>消息到达Broker阶段：对于单节点Broker，在收到消息后，将消息持久化到磁盘，再给生产者返回ack响应；对于集群Broker，在收到消息后，至少要把消息发送到两个以上节点，再给生产者返回ack响应。</p>
+</li>
+<li>
+<p>消息消费阶段：对于pull模式，消费者拉取消息后，先成功执行完业务逻辑后，才给Broker发送消费ack响应，如果Broker没有收到消费者的确认响应，下次拉取的仍然是同一条消息。</p>
+<p>支持广播的消息队列需要对每个待发送的endpoint，持久化一个发送状态，直到所有endpoint状态都OK才可删除消息。</p>
+<p>无论是pull模式还是push模式，在允许重复消息的情况下，还可通过定时任务轮询未消费消息发送给消费者处理来保证最终一致性。</p>
+</li>
+</ol>
+<p>保证消息从生产者到MQ或者MQ到消费者的过程在同一个会话中，保证原子性；在事务性会话中，当一个事务被提交的时候，确认自动发生；事务回滚，消息再次传送；一个事务提交才能进行下个事务，效率较差。</p>
+<p>在非事务性会话中，消息何时被确认取决于创建会话时的应答模式ACK模式，分为自动确认(onMessage方法成功返回，如果抛异常会交由异常消息监听器，或者重复次数发送)、手动确认、不必须确认,批量(重复有标记)。</p>
+<p><strong>检测消息丢失的方法</strong></p>
+<p>通过消息队列的有序性来验证是否有消息丢失。生产者发出消息时附加一个连续递增的序号，由消费者来检查这个序号的连续性。在分布式系统上，在发送消息时必须指定分区，消费者在每个分区单独检查消息序号的连续性。</p>
+<p><strong>消息的丢失处理</strong></p>
+<p>生产者消息丢失处理：发送消息时产生一个id，MQ接收到消息后回传id，超过一定时间没收到则重发</p>
+<p>MQ消息丢失处理：开启消息队列持久化 和 消息持久化，持久化后才回传id给生产者</p>
+<p>消费者消息丢失处理：取消自动ack，在方法处理完之后调用方法，发送确认ack给MQ，如果消息处理的时间太长，但可能导致重复发送</p>
+<h2 id="关于pull模式和push模式">关于pull模式和push模式</h2>
+<ul>
+<li>push模式的弊端，如果消费者消费能力不够，就会导致消息在消息队列中堆积，消息队列也需要保存这些消息，记录这些消息的状态；而pull模式是消费者按能力消费，所以没有这样问题。</li>
+<li>push模式下要保证顺序消息也比较麻烦，需要等待消费者确认一个消息后才能发送下一个，吞吐量就不太行了</li>
+<li>pull模式的弊端，因为消费者拉取消息的时间间隔比较难把握，间隔时间不合理就会导致消息消费存在延迟和忙等，常见的作法是消费者建立连接后hold住一段时间，保存一个长连接，设置等待时间进行断开，在这段时间内进行消息消费</li>
+</ul>
+<h2 id="如何解决消息队列的延时以及过期失效问题">如何解决消息队列的延时以及过期失效问题？</h2>
+<p>手动查询丢失消息，重新导入</p>
+<p>对于activeMQ，可以设置死信队列，过期或者重复多次为被消费的消息会进入死信队列，activeMQ有提供方法处理死信队列</p>
+<h2 id="如何解决消息积压问题">如何解决消息积压问题？</h2>
+<p>一般消息积压，要不就是发送快了，要不就是消费慢了，一般先查MQ监控，判断生产速度和消费速度是否异常。</p>
+<ul>
+<li>
+<p>生产者发送消息太慢也会导致积压，比如，生产者在一个事务内先发送半消息，处理业务逻辑，提交事务，事务成功后才会提交半消息，此时该消息才会被消费者所见，如果事务处理得太慢，也会造成消息堆积。</p>
+<p>so 生产者最好可以支持批量发送或者并行发送两种发送方式；对于实时性不强的业务，生产者可以积累一定量的消息才发送给MQ；对于批量发送的消息，消费时也要批量消费</p>
+</li>
+<li>
+<p>修复消费者，检查消费者是不是对某一消息进行重复消费，恢复消费速度；</p>
+</li>
+<li>
+<p>扩充原来的数量，消费之后再恢复原来架构。比如新键一个topic，建立比原先多n倍的队列，多n倍的消费者处理，每批消费者对应一个队列（分区），确保消费者的实例数和队列(分区)数相等。</p>
+</li>
+<li>
+<p>如果可以持久化消息，耶可以先丢弃消息，之后再将持久化消息导入队列再处理</p>
+</li>
+<li>
+<p>服务降级，减少生产者的发送消息的数量</p>
+</li>
+</ul>
+<h1 id="延迟队列">延迟队列</h1>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/266156267"  target="_blank" rel="noopener"
+    >几种延迟队列实现</a></p>
+<h1 id="参考">参考</h1>
+<p><a class="link" href="http://xuyangyang.club/articles/2018/07/23/1532348839398.html"  target="_blank" rel="noopener"
+    >消息队列常见问题和解决方案</a></p>
+<p><a class="link" href="http://youzhixueyuan.com/design-the-message-queue.html"  target="_blank" rel="noopener"
+    >如何从0到1设计一个MQ消息队列</a></p>
+<p><a class="link" href="https://shift-alt-ctrl.iteye.com/blog/2020182"  target="_blank" rel="noopener"
+    >ActiveMQ消息传送机制以及ACK机制详解</a></p>
+<p><a class="link" href="https://blog.csdn.net/zhaobryant/article/details/80557103"  target="_blank" rel="noopener"
+    >架构文摘：消息队列设计精要</a></p>
+<p><a class="link" href="https://tech.meituan.com/2016/07/01/mq-design.html"  target="_blank" rel="noopener"
+    >消息队列设计精要</a>，这个讲的不错</p>
+<p>极客时间 - 消息队列高手课 - 李玥</p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Nov 06, 2021 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#好处">好处</a></li>
+    <li><a href="#缺点">缺点</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#一般消息队列架构">一般消息队列架构</a></li>
+    <li><a href="#关于消息的序列化和反序列化">关于消息的序列化和反序列化</a></li>
+    <li><a href="#关于消息的断句">关于消息的断句</a></li>
+    <li><a href="#关于消息的存储">关于消息的存储</a>
+      <ol>
+        <li><a href="#kafka">Kafka</a></li>
+        <li><a href="#rocketmq">RocketMQ</a></li>
+      </ol>
+    </li>
+    <li><a href="#案例一---异步消息的处理">案例一 - 异步消息的处理</a></li>
+    <li><a href="#案例二---kafka高性能io">案例二 - Kafka高性能IO</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#如何利用事务消息实现分布式事务">如何利用事务消息实现分布式事务</a></li>
+    <li><a href="#如何保证高可用性">如何保证高可用性</a></li>
+    <li><a href="#如何解决消息重复问题保证消息幂等性">如何解决消息重复问题，保证消息幂等性</a></li>
+    <li><a href="#如何保证消息顺序">如何保证消息顺序</a></li>
+    <li><a href="#如何保证消息的可靠性传输">如何保证消息的可靠性传输</a></li>
+    <li><a href="#关于pull模式和push模式">关于pull模式和push模式</a></li>
+    <li><a href="#如何解决消息队列的延时以及过期失效问题">如何解决消息队列的延时以及过期失效问题？</a></li>
+    <li><a href="#如何解决消息积压问题">如何解决消息积压问题？</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='不好归类的算在这一part'><title>其他</title>
+
+<link rel='canonical' href='http://nixum.cc/p/%E5%85%B6%E4%BB%96/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='其他'>
+<meta property='og:description' content='不好归类的算在这一part'>
+<meta property='og:url' content='http://nixum.cc/p/%E5%85%B6%E4%BB%96/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='定时任务' /><meta property='article:tag' content='session和cookie' /><meta property='article:tag' content='JWT' /><meta property='article:tag' content='压测调优' /><meta property='article:tag' content='常见业务方案' /><meta property='article:published_time' content='2020-09-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-09-03T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="其他">
+<meta name="twitter:description" content="不好归类的算在这一part">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E5%85%B6%E4%BB%96/" >
+                其他
+            </a>
+        
+            <a href="/categories/%E6%96%B9%E6%A1%88/" >
+                方案
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/%E5%85%B6%E4%BB%96/">其他</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        不好归类的算在这一part
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Sep 22, 2020</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    3 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="quartz">Quartz</h1>
+<ul>
+<li>
+<p>分为三个部分：e</p>
+<ul>
+<li>Job&amp;Detial(任务)：定时任务的执行方法，与Trigger配套的</li>
+<li>Trigger(触发器)：规定什么时候触发，与Job&amp;Detail配套的</li>
+<li>Scheduler(调度器)：单例，把Trigger丢里面由调度器调度，只需要一个Scheduler，配置不同的Trigger；可以理解成类似线程池的东西</li>
+</ul>
+</li>
+<li>
+<p>原理：ScheduledThreadPoolExecutor线程池 + 通过Object类的wait()和notify()或者Condition类的await()\signal()进行等待和唤醒、锁保证线程安全 来进行调度</p>
+<p>Scheduler有两个调度线程：regular Scheduler Thread（执行常规调度）和Misfire Scheduler Thread（执行错失的任务），Regular Thread 轮询所有Trigger，如果有将要触发的Trigger（用wait和notifyAll实现），则从任务线程池中获取一个空闲线程，然后执行与改Trigger关联的job；Misfire Thraed则是扫描所有的trigger，查看是否有错失的，如果有的话，根据一定的策略进行处理</p>
+</li>
+<li>
+<p>默认是并发的，即如果当前任务没有完成，会自动开一个任务执行</p>
+</li>
+<li>
+<p>注意在分布式集群的情况下，多台机子有相同的定时任务，会出错，此时通过共享数据库的方式实现</p>
+<p>Quartz的解决方案：</p>
+<p>quartz集群分为水平集群和垂直集群，水平集群即将定时任务节点部署在不同的服务器，其最大的问题就是时钟同步问题，若时钟不能同步，则会导致集群中各个节点状态紊乱，造成不可预知的后果；垂直集群则是集群各节点部署在同一台服务器，时钟同步自然不是问题，但存在单点故障问题，服务器宕机会严重影响服务的可用性</p>
+<p>在各个节点会上报任务，存到数据库中，执行时会从数据库中取出触发器来执行，如果触发器的名称和执行时间相同，则只有一个节点去执行此任务。</p>
+<p>如果此节点执行失败，则此任务则会被分派到另一节点执行，中途也会自动检查失效的定时调度，发现不成功的，其他节点立马接过来继续完成定时任务。Quartz有11个定时任务调度表</p>
+</li>
+</ul>
+<p>参考</p>
+<p><a class="link" href="https://www.cnblogs.com/Dorae/p/9357180.html"  target="_blank" rel="noopener"
+    >Quartz原理解密</a></p>
+<p><a class="link" href="https://blog.csdn.net/scgyus/article/details/79360316"  target="_blank" rel="noopener"
+    >深入解读Quartz的原理</a></p>
+<p><a class="link" href="https://blog.csdn.net/xlxxcc/article/details/52104463"  target="_blank" rel="noopener"
+    >Quartz 2.2 的实现原理和运行过程</a></p>
+<h2 id="其他定时器">其他定时器</h2>
+<ul>
+<li>Timer：这是java自带的java.util.Timer类，这个类允许你调度一个java.util.TimerTask任务。使用这种方式可以让你的程序按照某一个频度执行，但不能在指定时间运行。一般用的较少。单线程，任务一多会阻塞；一个任务出异常其他任务都受影响；受系统时间影响</li>
+<li>ScheduledExecutorService：也jdk自带的一个类；是基于线程池设计的定时任务类,每个调度任务都会分配到线程池中的一个线程去执行,也就是说,任务是并发执行,互不影响。线程池+延时队列DelayedQueue(数组、最小堆, 最近要执行的任务放在堆顶) 实现，如果堆顶任务时间未到就阻塞（通过自旋+condition.await\signal实现）。不受系统时间影响</li>
+<li>Spring 中的 @Schedule  注解</li>
+</ul>
+<p>参考：<a class="link" href="https://blog.csdn.net/u013332124/article/details/79603943"  target="_blank" rel="noopener"
+    >Java 定时任务实现原理详解</a></p>
+<p><a class="link" href="https://www.jianshu.com/p/587901245c95"  target="_blank" rel="noopener"
+    >Java优先级队列DelayedWorkQueue原理分析</a></p>
+<h1 id="cors">CORS</h1>
+<p>浏览器的同源政策的同源指的是：协议相同、域名相同、端口相同，如果非同源，有三种行为会受到限制：Cookie、LocalStorage和IndexDB无法读取；DOM无法获得、AJAX请求不能发送。</p>
+<p>前后端分离的场景下，由于浏览器的同源策略，导致浏览器内的请求不同的源的后端是会失败，常见的解决跨域方法是使用CORS，现在常见的web框架都支持CORS，开启即可。</p>
+<p>解决跨域的方法除了CORS，还有jsonp，不过已经很少使用了，jsonp本质是利用浏览器允许加载不同源的js文件即<!-- raw HTML omitted -->标签等，将跨域请求<!-- raw HTML omitted -->标签里，返回一段可执行的js代码，其中包含了请求结果，通常是json格式，前端通过返回的js代码执行回调获取结果。</p>
+<p>详情见 <a class="link" href="http://www.ruanyifeng.com/blog/2016/04/cors.html"  target="_blank" rel="noopener"
+    >跨域资源共享 CORS 详解</a></p>
+<p>对于跨域产生的问题，如CSRF跨域请求攻击的解决方案，可参考：<a class="link" href="https://tech.meituan.com/2018/10/11/fe-security-csrf.html"  target="_blank" rel="noopener"
+    >美团:如何防止csrf</a></p>
+<h1 id="session和cookie">session和cookie</h1>
+<ul>
+<li>
+<p>首先Http是无状态的，因此需要通过session、cookie来达到记录用户状态的目的。</p>
+</li>
+<li>
+<p>传统的session、cookie：session存用户信息，保存在服务端中，cookie里存session对应的sessionId，保存在客户端中，用于找到对应的session，每次请求都会带上该cookie来表示此用户。</p>
+</li>
+<li>
+<p>由于现在实例的部署不可能只部署一个，一般都是集群部署，因此session不可以只存在一个实例的内存中，因此引入Redis来存用户的登录信息</p>
+</li>
+<li>
+<p>现在一般使用 token + Redis来实现 cookie - session 机制，本质上差不多，前端的cookie更多的是存token的信息而已，token也可以存在LocalStorage或sessionStorage中，发送请求时一般是把token的值放在请求头中，而不会把cookie发给后端，这样可以避免当用户禁用cookie导致功能不可用，还有CSRF问题。</p>
+</li>
+</ul>
+<h1 id="jwt">JWT</h1>
+<p>JWT = JSON WEB TOKEN</p>
+<h2 id="原理">原理</h2>
+<p>JWT实际上是一个token(令牌)，分为三部分：Header(头部)、Payload(负载)、Signature(签名)。</p>
+<p>Header(头部) ：两部分组成，记录令牌类型和JWT的签名算法，一般是HMACSHA256。</p>
+<p>Payload(负载)： 记录用户登录信息(官方规范默认是不加密的，分为官方字段和私有字段）。</p>
+<p>Signature(签名) ：记录将 Header、Payload和服务端的密钥组合起来，使用Header(头部)里规定的方式加密。</p>
+<p>比如header里保存的加密方式是HMACSHA256，<code>签名 Signature = HMACSHA256(base64URL(header) + &quot;.&quot; + base64URL(payload) + &quot;.&quot; + 保存在后端的密钥)</code></p>
+<p>最后的JWT = <code>base64URL(Header) + &quot;.&quot; + base64URL(Payload) + &quot;.&quot; + Signature</code>，后端收到该JWT后验证该签名是否正确，来判断JWT里的用户信息是否可靠。</p>
+<p><strong>base64</strong>：64指的是A-Z,a-z，0-9，+，/，将待转换的字符串转成二进制流，每3个8位转成4个6位，6位的二进制数转成十进制，根据码表找到对应的字符，以=号做后缀，凑齐位数</p>
+<p>一般是为了解决一些字符编码的问题，将非ASCII字符转化为ASCII字符，还有就是可以对数据做简单加密，base64URL在base64的基础上增加对一些符号的编解码，比如把&quot;-&ldquo;替换成&rdquo;+&quot;，使得它可以出现在url中。</p>
+<p><strong>HMACSHA256</strong>：摘要算法，一般用于验证签名是否一致</p>
+<h2 id="使用">使用</h2>
+<p>可以存储在浏览器的本地缓存localStorage或者cookie中，发送请求的时候放在cookie里，或者放在请求头中</p>
+<ul>
+<li>JWT的目的是让服务器不保存任何session数据，让后端变成无状态的，因此没办法主动废弃某个token，一旦签发了JWT，在到期之前就会始终有效，如果想要实现这种功能，必然需要在后端保存JWT，就违背了JWT的设计初衷了。</li>
+<li>要让JWT实现 续签 和 主动过期功能，必定需要在后端保存JWT
+<ul>
+<li>jwt主动过期问题，使用黑名单即可；分成两点，客户端要求失效，服务端记录token到黑名单；用户重置密码，服务端记录uid-time键值对，在此之前的token全部失效；客户端把保存的jwt删掉是没用的，此时的jwt依然有效，只是客户端没记录而已</li>
+<li>jwt续签问题，一种解决方式是jwt中存储过期时间，服务端设置刷新时间，请求时判断是否在过期时间或刷新时间，在刷新时间内进行token刷新，失效token记入黑名单；</li>
+<li>而黑名单过大问题，可以采用记录UID-刷新时间方式解决，判断jwt签发时间，jwt签发时间小于UID-刷新时间的记为失效</li>
+</ul>
+</li>
+<li>个人认为JWT的生成方式本身是有一套规范的，在实际使用过程中也可以对他进行改动，本质上还是一个签名校验而已，一般会对JWT进行魔改，比如使用Header(头部)里的加密方式加密Signature(签名)，Signature(签名)加密Header(头部) 和Payload(负载) 这两部分，服务器里的私钥解密Payload(负载)，得到需要的登录信息，不通过简单的base64URL编码，不对外暴露，签名算法或者签名里的密钥的方式可以改成其他等。</li>
+</ul>
+<p>JWT参考：<a class="link" href="https://learnku.com/articles/17883"  target="_blank" rel="noopener"
+    >JWT 超详细分析</a></p>
+<h1 id="cas模型---sso单点登录">CAS模型 - SSO(单点登录)</h1>
+<p>可参考：<a class="link" href="https://blog.csdn.net/javaloveiphone/article/details/52439613"  target="_blank" rel="noopener"
+    >CAS实现单点登录SSO执行原理探究</a>，讲得算是比较明白，这里是总结基于CAS模式改的单点登录模式</p>
+<ul>
+<li>第一次访问时，由于没有访问的token，会引导至登录</li>
+</ul>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/sso-first-access.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/sso-first-access.png"
+			
+			
+			
+			loading="lazy"
+			alt="第一次访问">
+	</a>
+	
+	<figcaption>第一次访问</figcaption>
+	
+</figure></p>
+<ul>
+<li>
+<p>再次访问Web-1时，由于前端已存了token，直接使用token进行请求即可</p>
+</li>
+<li>
+<p>已登录Web-1时去访问Web-2，会通过后端认证中心实现单点登录</p>
+</li>
+</ul>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/sso-second-access.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/sso-second-access.png"
+			
+			
+			
+			loading="lazy"
+			alt="第二次访问">
+	</a>
+	
+	<figcaption>第二次访问</figcaption>
+	
+</figure></p>
+<p>这里在总结一下关于GrantTicket和ServiceTicket，跟CAS模型中提到的TGT、ST、PGT这些东西是类似的，本质是作为验证的票据，图中的GrantTicket、ServiceTicket、token含义如下</p>
+<p>GrantTicket：全局会话票据，保存在登录页，通过GrantTicket才能换取ServiceTicket；</p>
+<p>ServiceTicket表示访问资源的一次性票据，根据ServiceTicket换取token，换取后失效；</p>
+<p>token：登录凭证</p>
+<p>GT、ST和token都是保存在Redis中的，他们在Redis中的存储结构如下</p>
+<pre tabindex="0"><code>key：TOKEN_${Token的值}
+value:
+{
+    &quot;createTime&quot;: 1565961654807,
+    &quot;accountId&quot;: &quot;123&quot;,
+    // 用户其他信息
+    &quot;grantTicket&quot;: ${GrantTicket的值}  // token关联GT，用于注销时实现全局注销
+}
+
+key：GRANT_TICKET_${GrantTicket的值}
+value:
+{
+    &quot;createTime&quot;: 1565961654807,
+    &quot;accountId&quot;: &quot;123&quot;,
+}
+
+key：SERVICE_TICKET_${ServiceTicket的值}
+value:
+{
+    &quot;createTime&quot;: 1565961654807,
+    &quot;grantTicket&quot;: ${GrantTicket的值} // ST关联GT，用于判断该ST是否有效，换取token后删除
+}
+
+// token与grantTicket的记录，注销时，根据token中关联的GT，找到所有与之关联的token，进行删除，这里推荐使用Redis的scan命令进行分段查询，原因是Redis是单线程的，如果数据量太大使用keys命令遍历太久，阻塞Redis接收其他命令
+key：{grantTicket}-{token}
+value：无
+</code></pre><h1 id="基于oauth20的第三方登录">基于OAuth2.0的第三方登录</h1>
+<p>可参考：<a class="link" href="https://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html"  target="_blank" rel="noopener"
+    >理解OAuth 2.0</a>，这样基本就入门了，这里是总结项目中如何接入，一般在集成facebook和google的第三方登录也是类似的流程机制，这里只用到了access_token，对于refresh_token，是用来延长access_token的过期时间的，减少短时间内的重复登录，这里就没有涉及到了</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eoauth2%e7%9a%84%e7%ac%ac%e4%b8%89%e6%96%b9%e7%99%bb%e5%bd%95%e6%b5%81%e7%a8%8b.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e5%9f%ba%e4%ba%8eoauth2%e7%9a%84%e7%ac%ac%e4%b8%89%e6%96%b9%e7%99%bb%e5%bd%95%e6%b5%81%e7%a8%8b.png"
+			
+			
+			
+			loading="lazy"
+			alt="基于OAuth2的第三方登录">
+	</a>
+	
+	<figcaption>基于OAuth2的第三方登录</figcaption>
+	
+</figure></p>
+<p>为什么要后端要根据code + clientId + secret换成access_token，再根据access_token换用户个人信息？</p>
+<p>为什么后端不直接code + clientId + secret换用户个人信息呢？</p>
+<p>主要还是为了安全，防止中间人攻击</p>
+<ul>
+<li>
+<p>重定向的参数是带在url里的，是直接暴露在客户端的，如果直接返回access_token就不安全，因此才多了code这一层，为了降低code被拦截泄漏后的风险，code的过期时间一般都很短，且是一次性的；</p>
+</li>
+<li>
+<p>另外就是后端对于外部的请求都是不信任的，因此接收到的参数(code)首先还要配合凭证去验证其合法性，对于验证通过后获得的access_token也有更多的操作空间，由后端持有，不会暴露出去</p>
+<p>像上图那种登录方案，后端只需要用户个人信息换完token就算完事了，所以看起来好像直接使用code + clientId + secret换用户个人信息就行，但是如果此时需要再获取用户的其他信息，就没有没办法再用code去换了，只能要求用户再次登录，此时如果有access_token就显得多么重要了</p>
+</li>
+</ul>
+<h1 id="压测">压测</h1>
+<p>总结一下做过的压测，压测工具jmetter，利用jmette可以多线程并发请求和可以实时查看简易报告的能力</p>
+<ol>
+<li>
+<p>先对被压测服务的接口针对不同场景编写压测用例，设定好TPS的起始和目标值，作为压测计划</p>
+</li>
+<li>
+<p>画压测机器部署关系图，部署压测环境</p>
+<ul>
+<li>
+<p>对于被压测的服务，一般会mock掉与该服务相关关联的服务，比如该服务还连了数据库，该接口请求依赖一些独立部署的中间件，或者依赖其他服务，则会对这些相关的依赖用桩来代替，用于维持通信，以减少这些额外服务的影响。</p>
+</li>
+<li>
+<p>一般一台机器只部署一个服务，特别是被压测服务，此外还要注意被压测服务所在的机器上网络设置相关的参数，比如TCP最大连接数、回收策略之类的设置</p>
+</li>
+</ul>
+</li>
+<li>
+<p>编写压测脚本，压测脚本越简单越好，尽量让压测工具不影响被压测服务，<strong>脚本最重要的几个设置</strong>： 发起请求时的并发线程数、响应的断言、TPS数，其他那些花里胡哨的输出树状图，饼图啊那些都不用配了，用最简单的报告输出即可</p>
+</li>
+<li>
+<p>部署完后，将脚本配置放到jmeter的机器上，启动压测</p>
+<pre tabindex="0"><code>nohup java -jar bin/ApacheJMeter.jar -n -t jmetter脚本路径/config.jmx &gt; test.out &amp;
+</code></pre><p>输出到当前目录下的test.out文件里，这里启动是使用默认参数启动，如果对jmetter的JVM设置有要求，也可以在启动时指定JVM参数，如</p>
+<pre tabindex="0"><code>nohup java -server -XX:+HeapDumpOnOutOfMemoryError -Xms512m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=250 -XX:G1ReservePercent=20 -Djava.security.egd=file:/dev/urandom -jar bin/ApacheJMeter.jar -n -t jmetter脚本路径/config.jmx &gt; test.out &amp;
+</code></pre><p>压测开启后可以打开test.out文件查看压测报告</p>
+</li>
+<li>
+<p>一般是按照TPS从小往大压，小的TPS压，在正常延时的情况下可以先判断程序是否有问题，比如内存泄漏，内存溢出，没问题了再逐步往大了压。如果先从大往小压，延时又上不去，此时判断不了是程序内部问题还是过大的TPS导致。压测时间一般最少压一天</p>
+</li>
+<li>
+<p>输出压测报告</p>
+</li>
+</ol>
+<p>一般有如下几个点要注意，这些点到时也要输出到压测报告上</p>
+<table>
+<thead>
+<tr>
+<th>监控点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jmetter端的TPS、延时、错误率</td>
+<td>观察TPS是否符合预期、延时是否达到预期且稳定、错误率要为0。<strong>当程序正常时降低RT的手段</strong>：减少不必要的日志输出、业务逻辑算法是否还有优化空间，是否有IO占用或者频繁序列化反序列化、内部队列是否阻塞</td>
+</tr>
+<tr>
+<td>被压测服务的gc</td>
+<td>fgc，ygc不要太频繁，一般来说<strong>fgc 一小时要小于3~4次</strong>；<strong>ygc一分钟要小于3~4次为佳</strong>。</td>
+</tr>
+<tr>
+<td>jmetter端的CPU、内存使用率等</td>
+<td>注意jmetter端的CPU是否过高或波动很大，避免影响压测结论</td>
+</tr>
+<tr>
+<td>被压测服务端的CPU、磁盘、内存使用率等</td>
+<td>如果cpu过高，如果连续达到90以上，基本上是内存泄漏导致了频繁的fgc；磁盘的占用情况，注意生成的日志是否把磁盘占满了</td>
+</tr>
+</tbody>
+</table>
+<p>使用 <code>jstat -gcutil [pid] [时间间隔，每几秒打印] [打印次数]</code>查看GC情况</p>
+<p>当被压测端的gc不正常时，应尽量保存事发环境</p>
+<p>​	1、收集内存使用基本情况统计：<code>jmap -heap [pid] &gt; [文件名，如heap.log]</code></p>
+<p>​	2、收集线程堆栈运行信息：<code>jstack [pid] &gt; [文件名，如stack.log]</code></p>
+<p>​	3、收集内存详细使用信息，生成dump内存快照：<code>jmap -dump:format=b,file=[文件名，如heap.dump] [pid]</code></p>
+<p>一般使用eclipse mat工具进行内存快照的分析，排查出内存泄漏的问题。</p>
+<p>mat的使用参见：<a class="link" href="https://www.cnblogs.com/yueshutong/p/9824772.html"  target="_blank" rel="noopener"
+    >Eclipse MAT内存分析工具</a></p>
+<p><strong>一般压测脚本的模板：</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
+<span class="nt">&lt;jmeterTestPlan</span> <span class="na">version=</span><span class="s">&#34;1.2&#34;</span> <span class="na">properties=</span><span class="s">&#34;3.2&#34;</span> <span class="na">jmeter=</span><span class="s">&#34;3.2 r1790748&#34;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;hashTree&gt;</span>
+    <span class="nt">&lt;TestPlan</span> <span class="na">guiclass=</span><span class="s">&#34;TestPlanGui&#34;</span> <span class="na">testclass=</span><span class="s">&#34;TestPlan&#34;</span> <span class="na">testname=</span><span class="s">&#34;测试计划&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+        <span class="c">&lt;!-- 一般写压测计划中的序号+名称 --&gt;</span>
+      <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;TestPlan.comments&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+      <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;TestPlan.functional_mode&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+      <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;TestPlan.serialize_threadgroups&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+      <span class="nt">&lt;elementProp</span> <span class="na">name=</span><span class="s">&#34;TestPlan.user_defined_variables&#34;</span> <span class="na">elementType=</span><span class="s">&#34;Arguments&#34;</span> <span class="na">guiclass=</span><span class="s">&#34;ArgumentsPanel&#34;</span> <span class="na">testclass=</span><span class="s">&#34;Arguments&#34;</span> <span class="na">testname=</span><span class="s">&#34;用户定义的变量&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;collectionProp</span> <span class="na">name=</span><span class="s">&#34;Arguments.arguments&#34;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/elementProp&gt;</span>
+      <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;TestPlan.user_define_classpath&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+    <span class="nt">&lt;/TestPlan&gt;</span>
+    <span class="nt">&lt;hashTree&gt;</span>
+      <span class="nt">&lt;ThreadGroup</span> <span class="na">guiclass=</span><span class="s">&#34;ThreadGroupGui&#34;</span> <span class="na">testclass=</span><span class="s">&#34;ThreadGroup&#34;</span> <span class="na">testname=</span><span class="s">&#34;Thread Group&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.on_sample_error&#34;</span><span class="nt">&gt;</span>continue<span class="nt">&lt;/stringProp&gt;</span>
+        <span class="nt">&lt;elementProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.main_controller&#34;</span> <span class="na">elementType=</span><span class="s">&#34;LoopController&#34;</span> <span class="na">guiclass=</span><span class="s">&#34;LoopControlPanel&#34;</span> <span class="na">testclass=</span><span class="s">&#34;LoopController&#34;</span> <span class="na">testname=</span><span class="s">&#34;循环控制器&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;LoopController.continue_forever&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+          <span class="nt">&lt;intProp</span> <span class="na">name=</span><span class="s">&#34;LoopController.loops&#34;</span><span class="nt">&gt;</span>-1<span class="nt">&lt;/intProp&gt;</span>
+        <span class="nt">&lt;/elementProp&gt;</span>
+        <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.num_threads&#34;</span><span class="nt">&gt;</span>500<span class="nt">&lt;/stringProp&gt;</span>                                             <span class="c">&lt;!-- 发起请求时的并发线程数，这里设置为500个并发线程，表示使用这么多的线程数来达到下面设置的TPS数 --&gt;</span>
+        <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.ramp_time&#34;</span><span class="nt">&gt;</span>8<span class="nt">&lt;/stringProp&gt;</span>
+        <span class="nt">&lt;longProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.start_time&#34;</span><span class="nt">&gt;</span>1509332694000<span class="nt">&lt;/longProp&gt;</span>
+        <span class="nt">&lt;longProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.end_time&#34;</span><span class="nt">&gt;</span>1509332694000<span class="nt">&lt;/longProp&gt;</span>
+        <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.scheduler&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+        <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.duration&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+        <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;ThreadGroup.delay&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+      <span class="nt">&lt;/ThreadGroup&gt;</span>
+      <span class="nt">&lt;hashTree&gt;</span>
+        <span class="nt">&lt;HTTPSamplerProxy</span> <span class="na">guiclass=</span><span class="s">&#34;HttpTestSampleGui&#34;</span> <span class="na">testclass=</span><span class="s">&#34;HTTPSamplerProxy&#34;</span> <span class="na">testname=</span><span class="s">&#34;click http request&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;elementProp</span> <span class="na">name=</span><span class="s">&#34;HTTPsampler.Arguments&#34;</span> <span class="na">elementType=</span><span class="s">&#34;Arguments&#34;</span> <span class="na">guiclass=</span><span class="s">&#34;HTTPArgumentsPanel&#34;</span> <span class="na">testclass=</span><span class="s">&#34;Arguments&#34;</span> <span class="na">testname=</span><span class="s">&#34;用户定义的变量&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;collectionProp</span> <span class="na">name=</span><span class="s">&#34;Arguments.arguments&#34;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;/elementProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.domain&#34;</span><span class="nt">&gt;</span>192.168.1.123<span class="nt">&lt;/stringProp&gt;</span>         <span class="c">&lt;!-- 此处为被压测服务的host --&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.port&#34;</span><span class="nt">&gt;</span>12345<span class="nt">&lt;/stringProp&gt;</span>                    <span class="c">&lt;!-- 此处为被压测服务的port --&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.protocol&#34;</span><span class="nt">&gt;</span>http<span class="nt">&lt;/stringProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.contentEncoding&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.path&#34;</span><span class="nt">&gt;</span>${__StringFromFile(/home/urls.log,,,)}<span class="nt">&lt;/stringProp&gt;</span>  <span class="c">&lt;!-- 发起的http请求uri从文件读取，文件路径 --&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.method&#34;</span><span class="nt">&gt;</span>GET<span class="nt">&lt;/stringProp&gt;</span>
+          <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.follow_redirects&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+          <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.auto_redirects&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+          <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.use_keepalive&#34;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/boolProp&gt;</span>
+          <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.DO_MULTIPART_POST&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.embedded_url_re&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.implementation&#34;</span><span class="nt">&gt;</span>Java<span class="nt">&lt;/stringProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.connect_timeout&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;HTTPSampler.response_timeout&#34;</span><span class="nt">&gt;&lt;/stringProp&gt;</span>
+        <span class="nt">&lt;/HTTPSamplerProxy&gt;</span>
+        <span class="nt">&lt;hashTree/&gt;</span>
+        <span class="nt">&lt;ResponseAssertion</span> <span class="na">guiclass=</span><span class="s">&#34;AssertionGui&#34;</span> <span class="na">testclass=</span><span class="s">&#34;ResponseAssertion&#34;</span> <span class="na">testname=</span><span class="s">&#34;Response Assertion&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;collectionProp</span> <span class="na">name=</span><span class="s">&#34;Asserion.test_strings&#34;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;49586&#34;</span><span class="nt">&gt;</span>200<span class="nt">&lt;/stringProp&gt;</span>                                       <span class="c">&lt;!-- http请求的响应断言，要求返回的http code为200才判定为成功 --&gt;</span>
+          <span class="nt">&lt;/collectionProp&gt;</span>
+          <span class="nt">&lt;stringProp</span> <span class="na">name=</span><span class="s">&#34;Assertion.test_field&#34;</span><span class="nt">&gt;</span>Assertion.response_code<span class="nt">&lt;/stringProp&gt;</span>
+          <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;Assertion.assume_success&#34;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/boolProp&gt;</span>
+          <span class="nt">&lt;intProp</span> <span class="na">name=</span><span class="s">&#34;Assertion.test_type&#34;</span><span class="nt">&gt;</span>8<span class="nt">&lt;/intProp&gt;</span>
+        <span class="nt">&lt;/ResponseAssertion&gt;</span>
+        <span class="nt">&lt;hashTree/&gt;</span>
+        <span class="nt">&lt;ConstantThroughputTimer</span> <span class="na">guiclass=</span><span class="s">&#34;TestBeanGUI&#34;</span> <span class="na">testclass=</span><span class="s">&#34;ConstantThroughputTimer&#34;</span> <span class="na">testname=</span><span class="s">&#34;Constant Throughput Timer&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;intProp</span> <span class="na">name=</span><span class="s">&#34;calcMode&#34;</span><span class="nt">&gt;</span>1<span class="nt">&lt;/intProp&gt;</span>
+          <span class="nt">&lt;doubleProp&gt;</span>
+            <span class="nt">&lt;name&gt;</span>throughput<span class="nt">&lt;/name&gt;</span>
+            <span class="nt">&lt;value&gt;</span>30000.0<span class="nt">&lt;/value&gt;</span>          <span class="c">&lt;!-- 1分钟内发起的请求数，换算为tps为500 --&gt;</span>
+            <span class="nt">&lt;savedValue&gt;</span>0.0<span class="nt">&lt;/savedValue&gt;</span>
+          <span class="nt">&lt;/doubleProp&gt;</span>
+        <span class="nt">&lt;/ConstantThroughputTimer&gt;</span>
+        <span class="nt">&lt;hashTree/&gt;</span>
+      <span class="nt">&lt;/hashTree&gt;</span>
+    <span class="nt">&lt;/hashTree&gt;</span>
+    <span class="nt">&lt;WorkBench</span> <span class="na">guiclass=</span><span class="s">&#34;WorkBenchGui&#34;</span> <span class="na">testclass=</span><span class="s">&#34;WorkBench&#34;</span> <span class="na">testname=</span><span class="s">&#34;工作台&#34;</span> <span class="na">enabled=</span><span class="s">&#34;true&#34;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;boolProp</span> <span class="na">name=</span><span class="s">&#34;WorkBench.save&#34;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/boolProp&gt;</span>
+    <span class="nt">&lt;/WorkBench&gt;</span>
+    <span class="nt">&lt;hashTree/&gt;</span>
+  <span class="nt">&lt;/hashTree&gt;</span>
+<span class="nt">&lt;/jmeterTestPlan&gt;</span>
+</code></pre></div><h1 id="调优">调优</h1>
+<p>参考：https://tech.meituan.com/2016/12/02/performance-tunning.html</p>
+<h1 id="业务相关">业务相关</h1>
+<h2 id="防止表单重复提交">防止表单重复提交</h2>
+<p><strong>场景</strong>：用户点击下单页面，跳转至下单页面，提交订单，此时有可能网络原因或者用户点击多次，导致订单重复提交。</p>
+<p><strong>解决</strong>：用户跳转至下单页前，会先获取订单号(也作为订单表主键)，将订单号绑定在下单页，利用数据库主键唯一的特性，让创建订单的操作变成幂等性。</p>
+<h2 id="解决aba问题">解决ABA问题</h2>
+<p>**场景：**类似MySQL的丢失更新，比如有操作1，操作2先后对记录A进行更新，操作1的响应丢失导致重试，此时操作2已经更新成功，操作1重试时会覆盖操作2的更新。</p>
+<p>**解决：**通过版本号解决，订单表增加一列作版本号，版本号可以使用递增序列、时间戳等，通过比较版本号来确定操作的先后顺序，更新成功时也需要更新版本号。</p>
+<h2 id="流量大数据量大的商品详情页数据存储">流量大、数据量大的商品详情页数据存储</h2>
+<p>**场景：**一般商品详情页都是访问量最大的页面，比如用户做商品对比、查看商品详情都需要，另外就是商品详情页一般涉及很多数据，如下，且后端存储的sku量也是巨大的，直接分多张表去存虽然可以实现，但是性能就一般了。</p>
+<pre tabindex="0"><code>商品
+├── 基本信息
+│    ├── 标题、副标题
+│    ├── 价格：原价、促销价
+│    └── 颜色、规格等
+├── 商品参数
+├── 商品介绍
+├── 图片视频
+来自其他系统的
+├── 促销信息
+├── 推荐商品
+├── 评论、评价
+├── 配送信息
+└── 店铺信息
+</code></pre><p>**解决：**分析不同的数据特性，比如有些数据是热点的、相对固定的、不常被修改的、需求变化不大的等各种维度去划分，进行不同存储。动态数据、实时数据还是照旧，该怎么处理怎么处理，其他的可以：</p>
+<ol>
+<li>
+<p>套一层缓存在数据库外面，查询数据先缓存后数据库</p>
+</li>
+<li>
+<p>针对每个不同的spu有不同的商品属性，则可以使用NoSQL来解决</p>
+</li>
+<li>
+<p>针对图片、视频等数据，使用对象存储、CDN解决，比如AWS S3，直接通过其提供的API进行访问，将这部分的压力转移到云服务厂商</p>
+</li>
+<li>
+<p>将相对固定的数据静态化，比如商品介绍，其包含了大量的文字、图片、视频等，可直接将这一部分保存成HTML文件中，访问时直接返回HTML文件，保存成HTML还可以配合CDN进行加速</p>
+</li>
+</ol>
+<h2 id="针对sql方面的优化">针对SQL方面的优化</h2>
+<ul>
+<li>可以起一个SQL检查脚本，检查执行时间过长的SQL，如果超过指定时间的，进行记录和kill，再进行优化，把慢SQL解决掉，避免多个执行时间过长的SQL拖垮整个数据库。</li>
+<li>主从分离，读写分离，服务降级</li>
+<li>分析SQL执行和访问量间的关系，数据库CPU利用率变化</li>
+<li>MySQL单次查询扫描的数据量控制在千万级别内，单次扫描的数据量在百万级别是可以接受，理论上查询都应该使用索引，避免全表扫描</li>
+</ul>
+<h2 id="对象存储原理">对象存储原理</h2>
+<ul>
+<li>本质是一个规模很大的分布式Key-value集群，外加一个保存集群节点信息、文件信息和映射关系(统称为元数据)的节点集群，在最外层再加上一个Gateway来对外提供服务即可。</li>
+<li>针对图片、视频等大文件，在存储时会将其拆分成多个大小相等的块Block，一般是几十KB到几MB，便于管理，也可以分散到不同节点，提升并行读写性能。</li>
+<li>由于分成的块太小，数量多，一般也不是直接进行管理的，而是将一些块进行聚合，放到容器里，类似分片的概念，主从复制时，也是直接复制这些块即可，不用再复制多日志</li>
+</ul>
+<h2 id="跨系统数据实时同步">跨系统数据实时同步</h2>
+<ul>
+<li>采用Bin Log + MQ的方式，将上游数据实时同步到下游其他系统的数据库中，为了确保数据一致性，必须顺序读取Bin Log，因此MQ的主题也必须设置为只有一个分区，才能保证Bin Log有序。</li>
+<li>当下游系统想要扩展消费能力时，不可盲目增加同步线程数和MQ主题分区，由于Bin Log的顺序性，要确保多线程消费时，不会对数据产生影响，所以可以将具有因果一致性的Bin Log发布给同一主题分区，才可以多线程同步消费。具体可参考MySQL 5.6版本后多线程处理Bin Log的做法。</li>
+</ul>
+<h2 id="不停机情况下更换数据库">不停机情况下更换数据库</h2>
+<ul>
+<li>利用Bin Log或者复制状态机理论，增加一个新库和同步服务。先将旧库上的数据快照同步到新库，对于旧库的新数据，使用同步服务进行同步复制</li>
+<li>改造旧服务，增加双写新旧两个库的功能，添加功能开关，使其能够只写旧库、只写新库、同步双写的功能</li>
+<li>开关打至只写旧服务，利用同步服务同步数据，等改造后的旧服务能稳定运行，验证新旧两个库的数据是否一致；一致之后将改造后的旧服务的开关打至同步双写，关闭同步服务，此时仍然以数据写至旧库为主，写新库失败则进行人工干预，此外，双写时可能会存在数据不一致，此时需要针对这一小段时期上线数据对比与补偿服务，验证和补充新旧数据不一致问题；待最终稳定后，才将开关打至只写新服务，实现数据库替换的平滑过渡。</li>
+</ul>
+<h2 id="海量数据处理">海量数据处理</h2>
+<p>针对的是埋点数据、日志数据、访问数据、点击数据、监控数据等，一般采用先存储后计算的方式</p>
+<ul>
+<li>使用Kafka存储，上游系统将海量数据采集后发给KafKa，利用Kafka无限消息堆积和超高吞吐，存储数据，再由下游系统进行订阅消费即可。这种方案适合短时间的海量数据处理。关键词：分布式流数据存储。</li>
+<li>HDFS存储 + Hive查询 或者 ES查询</li>
+<li>针对监控数据，可以使用时序数据库，例如Prometheus</li>
+</ul>
+<h2 id="api协议设计">API协议设计</h2>
+<p>其实分成了API和协议两部分</p>
+<ul>
+<li>一般API会符合Restful规范，由行为 + 资源组合而成；</li>
+<li>协议一般就包含了请求/响应头和响应/请求体的内容，参数结构化，比如参数类型是Hash，就不要存成String，值是Hash的序列化后的字符串；</li>
+<li>响应结果要统一，尽量不要因为参数的不同而返回不同类型的响应结构</li>
+<li>需要考虑认证和安全相关，比如是否需要签名、票据、token等</li>
+<li>多服务之间，保证风格一致</li>
+<li>考虑幂等；</li>
+<li>加入版本控制，加在URL上，或者请求头有个字段标识；</li>
+</ul>
+<h1 id="参考">参考</h1>
+<p>极客时间 - 后端存储实战</p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1/">定时任务</a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/">session和cookie</a>
+        
+            <a href="/tags/jwt/">JWT</a>
+        
+            <a href="/tags/%E5%8E%8B%E6%B5%8B%E8%B0%83%E4%BC%98/">压测调优</a>
+        
+            <a href="/tags/%E5%B8%B8%E8%A7%81%E4%B8%9A%E5%8A%A1%E6%96%B9%E6%A1%88/">常见业务方案</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Sep 03, 2021 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#其他定时器">其他定时器</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#原理">原理</a></li>
+    <li><a href="#使用">使用</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#防止表单重复提交">防止表单重复提交</a></li>
+    <li><a href="#解决aba问题">解决ABA问题</a></li>
+    <li><a href="#流量大数据量大的商品详情页数据存储">流量大、数据量大的商品详情页数据存储</a></li>
+    <li><a href="#针对sql方面的优化">针对SQL方面的优化</a></li>
+    <li><a href="#对象存储原理">对象存储原理</a></li>
+    <li><a href="#跨系统数据实时同步">跨系统数据实时同步</a></li>
+    <li><a href="#不停机情况下更换数据库">不停机情况下更换数据库</a></li>
+    <li><a href="#海量数据处理">海量数据处理</a></li>
+    <li><a href="#api协议设计">API协议设计</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

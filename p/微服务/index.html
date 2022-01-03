@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='微服务常见的方案，如限流、容错、熔断、降级、负载均衡、服务注册月发现'><title>微服务</title>
+
+<link rel='canonical' href='http://nixum.cc/p/%E5%BE%AE%E6%9C%8D%E5%8A%A1/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='微服务'>
+<meta property='og:description' content='微服务常见的方案，如限流、容错、熔断、降级、负载均衡、服务注册月发现'>
+<meta property='og:url' content='http://nixum.cc/p/%E5%BE%AE%E6%9C%8D%E5%8A%A1/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='微服务' /><meta property='article:tag' content='限流' /><meta property='article:tag' content='服务注册与发现' /><meta property='article:tag' content='负载均衡' /><meta property='article:published_time' content='2021-10-20T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-28T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="微服务">
+<meta name="twitter:description" content="微服务常见的方案，如限流、容错、熔断、降级、负载均衡、服务注册月发现">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" >
+                微服务
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        微服务常见的方案，如限流、容错、熔断、降级、负载均衡、服务注册月发现
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Oct 20, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    4 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="对微服务的理解">对微服务的理解</h1>
+<p><a class="link" href="http://dockone.io/article/3687"  target="_blank" rel="noopener"
+    >http://dockone.io/article/3687</a></p>
+<h1 id="限流">限流</h1>
+<p>下面的方案都是单机版本的，在分布式环境下可以把限流的实例放到Redis里，或者直接使用Lua脚本实现，保证并发安全。</p>
+<h2 id="固定窗口">固定窗口</h2>
+<p>规定单位时间内可访问的次数，比如规定接口一分钟内只能访问10次，以第一次请求为起始，计数1，一分钟内计数超过10后，后续的请求直接拒绝，只能等到这一分钟结束后，重置计数，重新开始计数。</p>
+<p>但是这样有个问题，如果在大部分请求集中在第一个窗口的后10s内，和第二个窗口的前10s内，虽然他们都符合限流策略，但是在临界的20s内，请求还是有可能压垮系统。</p>
+<p>算法Demo：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">fixWinLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">lock</span>            <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
+	<span class="nx">maxLimitCount</span>    <span class="kt">int64</span>   <span class="c1">// 最大限制数
+</span><span class="c1"></span>	<span class="nx">currentCount</span>     <span class="kt">int64</span>   <span class="c1">// 当前计数
+</span><span class="c1"></span>	<span class="nx">fixInterval</span>      <span class="kt">int64</span>   <span class="c1">// 为了简化，单位设置为秒
+</span><span class="c1"></span>	<span class="nx">lastReqStartAt</span>   <span class="kt">int64</span>   <span class="c1">// 秒级时间戳
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewFixWinLimit</span><span class="p">(</span><span class="nx">fixInterval</span> <span class="kt">int64</span><span class="p">,</span> <span class="nx">maxLimitCount</span> <span class="kt">int64</span><span class="p">)</span> <span class="o">*</span><span class="nx">fixWinLimiter</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">fixWinLimiter</span><span class="p">{</span>
+		<span class="nx">lock</span><span class="p">:</span>           <span class="nb">new</span><span class="p">(</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span><span class="p">),</span>
+		<span class="nx">maxLimitCount</span><span class="p">:</span>  <span class="nx">maxLimitCount</span><span class="p">,</span>
+		<span class="nx">fixInterval</span><span class="p">:</span>    <span class="nx">fixInterval</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">f</span> <span class="o">*</span><span class="nx">fixWinLimiter</span><span class="p">)</span> <span class="nf">IsPass</span><span class="p">()</span> <span class="kt">bool</span> <span class="p">{</span>
+	<span class="nx">f</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">f</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">now</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">()</span>
+	<span class="k">if</span> <span class="nx">now</span> <span class="o">-</span> <span class="nx">f</span><span class="p">.</span><span class="nx">lastReqStartAt</span> <span class="p">&gt;</span> <span class="nx">f</span><span class="p">.</span><span class="nx">fixInterval</span> <span class="p">{</span>
+		<span class="nx">f</span><span class="p">.</span><span class="nx">currentCount</span> <span class="p">=</span> <span class="mi">0</span>
+		<span class="nx">f</span><span class="p">.</span><span class="nx">lastReqStartAt</span> <span class="p">=</span> <span class="nx">now</span>
+		<span class="k">return</span> <span class="kc">true</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">f</span><span class="p">.</span><span class="nx">currentCount</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="nx">f</span><span class="p">.</span><span class="nx">maxLimitCount</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">false</span>
+	<span class="p">}</span>
+	<span class="nx">f</span><span class="p">.</span><span class="nx">currentCount</span><span class="o">++</span>
+	<span class="k">return</span> <span class="kc">true</span>
+<span class="p">}</span>
+
+<span class="c1">// 测试
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// 10s内只允许通过10次
+</span><span class="c1"></span>	<span class="nx">f1</span> <span class="o">:=</span> <span class="nf">NewFixWinLimit</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">20</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">index</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="nx">f1</span><span class="p">.</span><span class="nf">IsPass</span><span class="p">()</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;no pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span>
+		<span class="p">}(</span><span class="nx">i</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div><h2 id="滑动窗口">滑动窗口</h2>
+<p>与固定窗口类似，只是以时间片划分，比如规定窗口一秒内只能请求5次，每次请求时会按照前一秒内的请求数量进行判断，超过则拒绝。</p>
+<p>这种算法本质上只是把固定窗口计数限流的时间片变小了，仍然有可能出现固定窗口计数限流的临界点问题。</p>
+<p>算法Demo：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">slidingWinLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">lock</span>          <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
+	<span class="nx">limitInterval</span> <span class="kt">int64</span> <span class="c1">// 限制的时间间隔
+</span><span class="c1"></span>	<span class="nx">lastReqAt</span>     <span class="kt">int64</span> <span class="c1">// 上一次请求的时间
+</span><span class="c1"></span>
+	<span class="nx">winCount</span>           <span class="p">[]</span><span class="kt">int64</span> <span class="c1">// 窗口计数
+</span><span class="c1"></span>	<span class="nx">currentWinIndex</span>    <span class="kt">int64</span>   <span class="c1">// 当前窗口索引
+</span><span class="c1"></span>	<span class="nx">currentWinMaxLimit</span> <span class="kt">int64</span>   <span class="c1">// 当前窗口最大限制数
+</span><span class="c1"></span>	<span class="nx">winNum</span>             <span class="kt">int64</span>   <span class="c1">// 窗口数量
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewSlidingWinLimiter</span><span class="p">(</span><span class="nx">limitInterval</span> <span class="kt">int64</span><span class="p">,</span> <span class="nx">winMaxLimitCount</span> <span class="kt">int64</span><span class="p">,</span> <span class="nx">winNum</span> <span class="kt">int64</span><span class="p">)</span> <span class="o">*</span><span class="nx">slidingWinLimiter</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">slidingWinLimiter</span><span class="p">{</span>
+		<span class="nx">lock</span><span class="p">:</span>               <span class="nb">new</span><span class="p">(</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span><span class="p">),</span>
+		<span class="nx">limitInterval</span><span class="p">:</span>      <span class="nx">limitInterval</span><span class="p">,</span>
+		<span class="nx">lastReqAt</span><span class="p">:</span>          <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">(),</span>
+		<span class="nx">winCount</span><span class="p">:</span>           <span class="nb">make</span><span class="p">([]</span><span class="kt">int64</span><span class="p">,</span> <span class="nx">winNum</span><span class="p">),</span>
+		<span class="nx">currentWinMaxLimit</span><span class="p">:</span> <span class="nx">winMaxLimitCount</span><span class="p">,</span>
+		<span class="nx">winNum</span><span class="p">:</span>             <span class="nx">winNum</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="o">*</span><span class="nx">slidingWinLimiter</span><span class="p">)</span> <span class="nf">IsPass</span><span class="p">()</span> <span class="kt">bool</span> <span class="p">{</span>
+	<span class="nx">s</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">s</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">now</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">()</span>
+	<span class="c1">// 每个窗口的时间间隔
+</span><span class="c1"></span>	<span class="nx">eachWinInterval</span> <span class="o">:=</span> <span class="nb">float64</span><span class="p">(</span><span class="nx">s</span><span class="p">.</span><span class="nx">limitInterval</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float64</span><span class="p">(</span><span class="nx">s</span><span class="p">.</span><span class="nx">winNum</span><span class="p">)</span>
+	<span class="c1">// 判断前后两次请求的时间差是否在当前窗口内，不是则重置当前窗口，使用下一个窗口
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nb">float64</span><span class="p">(</span><span class="nx">now</span><span class="o">-</span><span class="nx">s</span><span class="p">.</span><span class="nx">lastReqAt</span><span class="p">)</span> <span class="p">&gt;</span> <span class="nx">eachWinInterval</span> <span class="p">{</span>
+		<span class="nx">s</span><span class="p">.</span><span class="nx">winCount</span><span class="p">[</span><span class="nx">s</span><span class="p">.</span><span class="nx">currentWinIndex</span><span class="p">]</span> <span class="p">=</span> <span class="mi">0</span>
+		<span class="nx">s</span><span class="p">.</span><span class="nx">currentWinIndex</span> <span class="p">=</span> <span class="p">(</span><span class="nx">s</span><span class="p">.</span><span class="nx">currentWinIndex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nx">s</span><span class="p">.</span><span class="nx">winNum</span>
+		<span class="nx">s</span><span class="p">.</span><span class="nx">lastReqAt</span> <span class="p">=</span> <span class="nx">now</span>
+	<span class="p">}</span>
+	<span class="c1">// 判断是否超过当前窗口的限制
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">s</span><span class="p">.</span><span class="nx">winCount</span><span class="p">[</span><span class="nx">s</span><span class="p">.</span><span class="nx">currentWinIndex</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">currentWinMaxLimit</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">false</span>
+	<span class="p">}</span>
+	<span class="nx">s</span><span class="p">.</span><span class="nx">winCount</span><span class="p">[</span><span class="nx">s</span><span class="p">.</span><span class="nx">currentWinIndex</span><span class="p">]</span><span class="o">++</span>
+	<span class="k">return</span> <span class="kc">true</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">f1</span> <span class="o">:=</span> <span class="nf">NewSlidingWinLimiter</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">20</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">index</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="nx">f1</span><span class="p">.</span><span class="nf">IsPass</span><span class="p">()</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;no pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span>
+		<span class="p">}(</span><span class="nx">i</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div><h2 id="漏桶">漏桶</h2>
+<p>控制流水，水(请求)持续加入桶中，底部以恒定速度流出，如果加水速度大于漏出速度，水则溢出，请求拒绝。即宽进严出，无论请求多少，请求的速率有多大，都按照固定的速率流出。</p>
+<p>一般用在对第三方提供服务的请求限制上，比如我们服务接入shopify的服务，为了不触发shopify的限流，就可以使用漏桶算法。</p>
+<p>算法Demo：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">bucketLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">lock</span>          <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
+	<span class="nx">lastReqAt</span>     <span class="kt">int64</span> <span class="c1">// 单位：秒
+</span><span class="c1"></span>	<span class="nx">bucketCap</span>     <span class="kt">int64</span> <span class="c1">// 桶的容量
+</span><span class="c1"></span>	<span class="nx">bucketBalance</span> <span class="kt">int64</span> <span class="c1">// 桶的余量
+</span><span class="c1"></span>	<span class="nx">rate</span>          <span class="kt">int64</span> <span class="c1">// 每时间单位内漏桶的漏出速率
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewBucketLimiter</span><span class="p">(</span><span class="nx">rate</span> <span class="kt">int64</span><span class="p">,</span> <span class="nx">bucketCap</span> <span class="kt">int64</span><span class="p">)</span> <span class="o">*</span><span class="nx">bucketLimiter</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">bucketLimiter</span><span class="p">{</span>
+		<span class="nx">lock</span><span class="p">:</span>          <span class="nb">new</span><span class="p">(</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span><span class="p">),</span>
+		<span class="nx">bucketCap</span><span class="p">:</span>     <span class="nx">bucketCap</span><span class="p">,</span>
+		<span class="nx">bucketBalance</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+		<span class="nx">rate</span><span class="p">:</span>          <span class="nx">rate</span><span class="p">,</span>
+		<span class="nx">lastReqAt</span><span class="p">:</span>     <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">(),</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">b</span> <span class="o">*</span><span class="nx">bucketLimiter</span><span class="p">)</span> <span class="nf">IsPass</span><span class="p">()</span> <span class="kt">bool</span> <span class="p">{</span>
+	<span class="nx">b</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">b</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">now</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">()</span>
+	<span class="c1">// 计算时间差内可通过的计数量
+</span><span class="c1"></span>	<span class="nx">diffInterval</span> <span class="o">:=</span> <span class="nx">now</span> <span class="o">-</span> <span class="nx">b</span><span class="p">.</span><span class="nx">lastReqAt</span>
+	<span class="nx">diffCount</span> <span class="o">:=</span> <span class="nx">diffInterval</span> <span class="o">*</span> <span class="nx">b</span><span class="p">.</span><span class="nx">rate</span>
+	<span class="c1">// 计算桶中剩余的量
+</span><span class="c1"></span>	<span class="nx">b</span><span class="p">.</span><span class="nx">bucketBalance</span> <span class="o">-=</span> <span class="nx">diffCount</span>
+	<span class="k">if</span> <span class="nx">b</span><span class="p">.</span><span class="nx">bucketBalance</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nx">b</span><span class="p">.</span><span class="nx">bucketBalance</span> <span class="p">=</span> <span class="mi">0</span>
+	<span class="p">}</span>
+	<span class="nx">b</span><span class="p">.</span><span class="nx">lastReqAt</span> <span class="p">=</span> <span class="nx">now</span>
+	<span class="c1">// 判断是否加水后是否溢出
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">b</span><span class="p">.</span><span class="nx">bucketBalance</span><span class="o">+</span><span class="mi">1</span> <span class="o">&lt;=</span> <span class="nx">b</span><span class="p">.</span><span class="nx">bucketCap</span> <span class="p">{</span>
+		<span class="nx">b</span><span class="p">.</span><span class="nx">bucketBalance</span><span class="o">++</span>
+		<span class="k">return</span> <span class="kc">true</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="kc">false</span>
+<span class="p">}</span>
+
+<span class="c1">// 测试
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    	<span class="c1">// 单位时间内漏出速度是2，桶的容量是5
+</span><span class="c1"></span>	<span class="nx">f1</span> <span class="o">:=</span> <span class="nf">NewBucketLimiter</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">20</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">index</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="nx">f1</span><span class="p">.</span><span class="nf">IsPass</span><span class="p">()</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;no pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span>
+		<span class="p">}(</span><span class="nx">i</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div><h2 id="令牌桶">令牌桶</h2>
+<p>类似信号量，令牌桶会单独维护一个令牌的存储桶，为这个桶设置一个上限，同时又会有令牌持续将放入桶中，以应对一定的突发流量，比如桶的上限是1000，每秒持续放入1000个令牌，当前1s有800个请求发生并消耗令牌，由于每秒会放入1000个令牌，后1s就有1200个令牌可以被消耗，因此下一秒可以应对1200个请求。</p>
+<p>漏桶和令牌桶的区别：漏桶是限制流出速度，令牌桶是限制流入速度。</p>
+<p>算法Demo：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">tokenLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">lock</span>           <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
+	<span class="nx">lastReqAt</span>      <span class="kt">int64</span> <span class="c1">// 单位：秒
+</span><span class="c1"></span>	<span class="nx">availableToken</span> <span class="kt">int64</span> <span class="c1">// 可用的令牌数量
+</span><span class="c1"></span>	<span class="nx">maxTokenLimit</span>  <span class="kt">int64</span> <span class="c1">// 最大令牌数量
+</span><span class="c1"></span>	<span class="nx">rate</span>           <span class="kt">int64</span> <span class="c1">// 每时间单位内token的加入速率
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewTokenLimiter</span><span class="p">(</span><span class="nx">rate</span> <span class="kt">int64</span><span class="p">,</span> <span class="nx">maxTokenLimit</span> <span class="kt">int64</span><span class="p">)</span> <span class="o">*</span><span class="nx">tokenLimiter</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">tokenLimiter</span><span class="p">{</span>
+		<span class="nx">lock</span><span class="p">:</span>           <span class="nb">new</span><span class="p">(</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span><span class="p">),</span>
+		<span class="nx">lastReqAt</span><span class="p">:</span>      <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">(),</span>
+		<span class="nx">maxTokenLimit</span><span class="p">:</span>  <span class="nx">maxTokenLimit</span><span class="p">,</span>
+		<span class="nx">availableToken</span><span class="p">:</span> <span class="nx">maxTokenLimit</span><span class="p">,</span>
+		<span class="nx">rate</span><span class="p">:</span>           <span class="nx">rate</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">tokenLimiter</span><span class="p">)</span> <span class="nf">IsPass</span><span class="p">()</span> <span class="kt">bool</span> <span class="p">{</span>
+	<span class="nx">t</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">t</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">now</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">()</span>
+	<span class="c1">// 计算时间差内可通过的计数量
+</span><span class="c1"></span>	<span class="nx">diffInterval</span> <span class="o">:=</span> <span class="nx">now</span> <span class="o">-</span> <span class="nx">t</span><span class="p">.</span><span class="nx">lastReqAt</span>
+	<span class="nx">diffCount</span> <span class="o">:=</span> <span class="nx">diffInterval</span> <span class="o">*</span> <span class="nx">t</span><span class="p">.</span><span class="nx">rate</span>
+	<span class="c1">// 把可通过的量加入令牌桶里
+</span><span class="c1"></span>	<span class="nx">t</span><span class="p">.</span><span class="nx">availableToken</span> <span class="o">+=</span> <span class="nx">diffCount</span>
+	<span class="k">if</span> <span class="nx">t</span><span class="p">.</span><span class="nx">availableToken</span> <span class="p">&gt;</span> <span class="nx">t</span><span class="p">.</span><span class="nx">maxTokenLimit</span> <span class="p">{</span>
+		<span class="nx">t</span><span class="p">.</span><span class="nx">availableToken</span> <span class="p">=</span> <span class="nx">t</span><span class="p">.</span><span class="nx">maxTokenLimit</span>
+	<span class="p">}</span>
+	<span class="nx">t</span><span class="p">.</span><span class="nx">lastReqAt</span> <span class="p">=</span> <span class="nx">now</span>
+	<span class="c1">// 判断是否有令牌可取
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">t</span><span class="p">.</span><span class="nx">availableToken</span> <span class="p">&gt;</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nx">t</span><span class="p">.</span><span class="nx">availableToken</span><span class="o">--</span>
+		<span class="k">return</span> <span class="kc">true</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="kc">false</span>
+<span class="p">}</span>
+
+<span class="c1">// 测试
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    	<span class="c1">// 单位时间内漏出速度是2，桶的容量是5
+</span><span class="c1"></span>	<span class="nx">f1</span> <span class="o">:=</span> <span class="nf">NewTokenLimiter</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">20</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">index</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="nx">f1</span><span class="p">.</span><span class="nf">IsPass</span><span class="p">()</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;no pass: %d&#34;</span><span class="p">,</span> <span class="nx">index</span><span class="p">))</span>
+			<span class="p">}</span>
+		<span class="p">}(</span><span class="nx">i</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div><h1 id="容错">容错</h1>
+<p>一旦发现上游服务调用失败，为了进一步减少错误的影响，可以设置容错策略</p>
+<ul>
+<li>FailFast 快速失败：当消费者调用远程服务失败时，立即报错，消费者只发起一次调用请求。</li>
+<li>FailOver 失败自动切换：当消费者调用远程服务失败时，重新尝试调用服务，重试的次数一般需要指定，防止无限次重试。</li>
+<li>FailSafe 失败安全：当消费者调用远程服务失败时，直接忽略，请求正常返回报成功。一般用于可有可无的服务调用。</li>
+<li>FailBack 失败自动恢复：当消费者调用远程服务失败时，定时重发请求。一般用于消息通知。</li>
+<li>Forking 并行调用：消费者同时调用多个远程服务，任一成功响应则返回。</li>
+</ul>
+<h1 id="熔断">熔断</h1>
+<p>作用：防止下游服务不断地尝试可能超时和失败的服务，能达到应用程序执行而不必等待上游服务修正错误；下游服务可以自我诊断上游服务的错误是否已修正，如果没有，则不放量，如果有，则会慢慢增加请求，再次尝试调用。</p>
+<p>上游服务是指那些不依赖于任何其他服务的服务，而下游服务依赖于上游服务的服务。</p>
+<p>熔断一般分为三种状态：</p>
+<ul>
+<li>Closed关闭：服务正常时，熔断处于关闭状态</li>
+<li>Open开启：当我们设定10s的滑动窗口内错误率达90%，则从Closed变为Open状态</li>
+<li>HalfOpen半开启：再经过10s的窗口期，此时从Open状态转为HalfOpen状态，按照 <code>0.5 * (Now() - Start()) / Duration </code>的公式放量，直到成功率变为90%，转为Closed状态，否则转为Open状态。</li>
+</ul>
+<p>滑动窗口的时间不能设置太长，否则熔断恢复时间也会变长；错误统计只统计系统异常不通知业务异常。</p>
+<h1 id="降级">降级</h1>
+<p>作用：解决资源不足喝访问量增加的矛盾。在有限资源下，放弃部分无关紧要的服务，保证主业务流程能平稳运行。</p>
+<p>降级一般可以是将部分功能关闭，简化，或者将强一致性变成最终一致性。</p>
+<h1 id="负载均衡">负载均衡</h1>
+<h2 id="常用算法">常用算法</h2>
+<ul>
+<li>随机轮询：在可用的服务中，随机选择一个进行调用</li>
+<li>顺序轮询：按请求的顺序分配给各个服务器，适用于各台服务器性能相同</li>
+<li>加权轮询：给各个服务器附上权重值，按权重的高低分配请求，适用于各台服务器性能不同，性能高的服务器权重也高</li>
+<li>加权随机轮询：随机 + 二分查找的方式负载均衡，时间复杂度为O(logn)</li>
+<li>最少链接：将请求发送给当前最少连接数的服务器上</li>
+<li>加权最少链接：在最少连接的基础上，根据服务器的性能为每台服务器分配权重，再根据权重计算出每台服务器能处理的连接数</li>
+<li>IP地址哈希：哈希均匀分布</li>
+<li>二次随机选择轮询：适合后端节点权重一致的情况，通过两次随机算法，获取到两个节点，对比节点CPU等信息，选择最优节点；（比较流行）</li>
+<li>会话保持：根据客户端IP或cookie进行会话保持，同一个客户端每次选取后端节点的IP保持一致，适用于节点保持登录验证会话的场景，比较少用。</li>
+</ul>
+<h2 id="探活">探活</h2>
+<p>负载均衡器上面一般会挂一个服务的多个复制集，进行流量的负载均衡，因此需要检查这多个复制集的健康情况，保证流量能正确路由到可用节点上。</p>
+<h3 id="主动健康检查">主动健康检查</h3>
+<p>设定一定时间间隔内对各个复制集执行ping操作，一般在获取节点数量过少的场景下才触发，避免长时间频繁的ping操作增加节点负担。</p>
+<p>比如通过当前节点数与15分钟前的节点数的比较，当小于80%时触发主动健康检查。</p>
+<h3 id="被动健康检查">被动健康检查</h3>
+<p>通过检查节点真实流量的响应结果，判断节点是否正常</p>
+<h1 id="服务注册与发现">服务注册与发现</h1>
+<h2 id="调用模式">调用模式</h2>
+<ul>
+<li>
+<p>调用方发现模式</p>
+<p>由一个服务发现系统和其提供得SDK组成，SDK由调用方使用，同时SDK也可以提供负载均衡和故障转移等功能；代表例子：Eureka</p>
+<p>各个调用方在启动时会向服务发现系统注册其实例信息，比如ip、port、serviceName等，待到调用方需要调用其他服务时，便根据被调用方服务的名称去服务发现服务查询对应的ip和port，发起请求。</p>
+<p>这种方式有个缺点，就是调用方可能有多个实例，而SDK只能针对一个调用方做负载均衡，多实例下仍然有可能导致请求负载不均衡；可能还需要准备多种语言的SDK。</p>
+</li>
+<li>
+<p>服务端发现模式</p>
+<p>由一个专门的load balancer服务与服务发现系统配合，该load balancer服务会实时订阅服务发现系统中各个节点的信息，起到一个反向代理的作用，将收到的请求分发到对应的服务。代表例子：kube-proxy，在Kubernetes中，各个节点上会运行一个kube-proxy，kube-proxy会实时watch Service和Endpoint对象，当其配置发生变化后，会在各自的Node节点设置相关的iptables或IPVS规则，便于Pod内的服务通过service的clusterIP，经过iptables或IPCS设置的规则进行路由和转发。</p>
+<p>这种方式的好处是调用方无需感知服务发现系统，所有服务发现相关的功能都被隔离在load balancer和服务发现系统之间，但是会多一层转发，也就多一次延迟，多一次发生故障的机会。</p>
+</li>
+</ul>
+<h2 id="基本功能">基本功能</h2>
+<ol>
+<li>
+<p>提供服务地址与域名的映射注册、查找和更新</p>
+<p>订阅机制有三种：</p>
+<ul>
+<li>服务发现系统push推送，可以基于socket长连接推送，比如Zookeeper；基于HTTP连接的Long Polling，将各个服务的注册信息推送给各个节点，但是这种长连接的方式会存在消息丢失问题。</li>
+<li>调用方SDK定时轮询，向服务发现系统拉取各个节点的注册信息，但可能存在延迟问题</li>
+<li>以上两种方式相结合，比如Consul，调用方和服务发现系统间会建立一个最长30s的HTTP长连接，如果发生变更，调用方就会立即收到推送，如果超过30s，调用方会立即建立新连接，开始新一轮订阅。</li>
+</ul>
+</li>
+<li>
+<p>提供多种负载均衡方案</p>
+</li>
+<li>
+<p>健康检查，比如心跳检测</p>
+<ul>
+<li>
+<p><strong>服务主动探活</strong>：服务注册到注册中心后，定时发送续租请求到注册中心，表明自己存活</p>
+<p>优点：该方案可最大程度<strong>避免IP重用</strong>导致节点在旧服务依然存活的问题(比如k8s环境)</p>
+<p>缺点：造成注册中心写操作变多，特别是在强一致性的注册中心上，频繁的节点变更会导致产生大量的通知事件，在同步到多个注册中心复制集时性能不佳；另外，仍然可能发生服务虽无法对外提供服务了，但仍然可以发送续租请求；面对不同的客户端需要提供不同语言的SDK</p>
+</li>
+<li>
+<p><strong>注册中心主动探活</strong>：服务提供健康检查接口，比如/ping，注册中心定时访问验证节点存活；k8s的Pod探针机制</p>
+<p>优点：一定程度上解决服务主动探活不能说明服务健康的问题</p>
+<p>缺点：IP重用问题，比如A、B两个服务都有相同的端口和/ping接口做健康检查，但是当发生服务替换时，无法区分是哪个服务，除非加上名称检查</p>
+</li>
+<li>
+<p>服务<strong>外挂一个负载均衡器</strong>实现服务探活、与注册中心的通信</p>
+<p>优点：注册中心和服务均不需要主动探活，均交由负载均衡器实现</p>
+<p>缺点：需要外挂的负载均衡器，增加成本</p>
+</li>
+</ul>
+</li>
+<li>
+<p>注册中心需要保证CP或者AP，一般来说，注册中心对一致性C的要求不是很高，因为节点的注册和反注册后通知到客户端也需要时间；对可用性的优先级较高。</p>
+</li>
+<li>
+<p>将上述功能包装成SDK，简化使用</p>
+</li>
+</ol>
+<h2 id="可能遇到的问题">可能遇到的问题</h2>
+<p><strong>注册中心</strong></p>
+<ul>
+<li>
+<p>注册中心挂掉时，此时可以持久化之前注册的Provider节点信息，并在重启后进入保护模式一段时间，在此期间先不剔除不健康的Provider节点(因为宕机期间Provider心跳无法上报)，否则可能导致在一个TTL内大量的Provider节点失效；</p>
+</li>
+<li>
+<p>需要网络闪断保护，当监测到大面积Provider心跳没有上报，则自动进入保护模式，该模式下不会剔除因心跳上报失败的Provider；</p>
+</li>
+<li>
+<p>注册中心故障时，服务注册功能失效，服务也无法执行扩容操作，可以在服务内缓存服务注册表，保证服务可通信；</p>
+</li>
+</ul>
+<p><strong>调用方</strong></p>
+<ul>
+<li>当调用方访问到某个服务发现系统不可用时，可以立即切换到下一个节点尝试；</li>
+<li>调用方优先使用缓存的服务注册表，当接收到的服务注册表的节点过少时，放弃使用；</li>
+<li>如果调用方重启了，内存中的数据不存在，可以走本地配置降级；</li>
+<li>通过在load balancer中加入被动健康检查和主动健康检查来剔除服务注册表中失效的节点，保证服务注册表的可用性</li>
+</ul>
+<ol>
+<li>参考Service Mesh的Envoy设计，不完全信任注册中心推送过来的服务注册表；</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>发现状态</th>
+<th>健康检查成功</th>
+<th>健康检查失败</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>发现</td>
+<td>路由</td>
+<td>不路由</td>
+</tr>
+<tr>
+<td>未发现</td>
+<td>路由</td>
+<td>不路由、剔除失败节点</td>
+</tr>
+</tbody>
+</table>
+<ol start="5">
+<li>面对节点和服务频繁变更，导致广播风暴的场景，可以通过合并设定时间内产生的消息后再进行推送，目的是为了减少广播次数，但是这样会影响消息的时效性，要注意设定的时间不宜过长。</li>
+</ol>
+<h2 id="常见的注册中心区别">常见的注册中心区别</h2>
+<table>
+<thead>
+<tr>
+<th>特征</th>
+<th>Nocas</th>
+<th>Eureka</th>
+<th>Zookeeper</th>
+<th>Consul</th>
+<th>ETCD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一致性协议</td>
+<td>AP或CP</td>
+<td>AP</td>
+<td>CP</td>
+<td>CP</td>
+<td>CP</td>
+</tr>
+<tr>
+<td>健康检查</td>
+<td>TCP、HTTP、MySQL、Client Beat</td>
+<td>TTL</td>
+<td>Keep Alive</td>
+<td>TCP、HTTP、gRPC、Cmd</td>
+<td>TTL</td>
+</tr>
+<tr>
+<td>网络异常保护</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>雪崩保护</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>自动注销实例</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>访问协议</td>
+<td>HTTP、DNS</td>
+<td>HTTP</td>
+<td>TCP</td>
+<td>HTTP、DNS</td>
+<td>HTTP</td>
+</tr>
+<tr>
+<td>跨注册中心同步</td>
+<td>支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>K8s集成</td>
+<td>支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>语言实现</td>
+<td>Java</td>
+<td>Java</td>
+<td>Java</td>
+<td>GO</td>
+<td>GO</td>
+</tr>
+</tbody>
+</table>
+<p>这里再说下K8s提供的默认服务发现（1.12后默认使用coreDNS），通过为Pod挂一个Service 或者 Pod 定义了hostname + subdomain，k8s也会为其生成Pod的 DNS A记录，然后 k8s 会把 Service 或 Pod 产生的DNS记录写入 CoreDNS 的 cache 或者 ETCD 中，同时在Pod的/etc/resolv.conf文件中添加CoreDNS服务的访问配置，Pod即可通过名称进行访问（同一命名空间下可以直接使用Pod名称进行访问，不同命名空间需要 Pod名称.命名空间名称 访问，或者直接使用Service的DNS名称访问）。</p>
+<p>CoreDNS会监听集群内所有Service API，当服务不可用时移除记录，在新服务创建时插入新记录，这些记录会存储在CoreDNS的cache或者ETCD中。</p>
+<p>参考：https://github.com/kubernetes/dns/blob/master/docs/specification.md</p>
+<p>比如有如下 /etc/resolv.conf文件</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># /etc/resolv.conf</span>
+nameserver 10.100.0.10  <span class="c1"># coreDNS的IP</span>
+search cafe.svc.cluster.local svc.cluster.local cluster.local us-west-2.compute.internal
+options ndots:5
+</code></pre></div><p>其含义是：DNS 服务器为 10.100.0.10，当查询关键词中 <code>.</code> 的数量少于 5 个，则根据 search 中配置的域名进行查询，当查询都没有返回正确响应时再尝试直接查询关键词本身。</p>
+<p>比如执行 host -v cn.bing.com 时会看到下面即此查询</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh">Trying <span class="s2">&#34;cn.bing.com.cafe.svc.cluster.local&#34;</span>
+Trying <span class="s2">&#34;cn.bing.com.svc.cluster.local&#34;</span>
+Trying <span class="s2">&#34;cn.bing.com.cluster.local&#34;</span>
+Trying <span class="s2">&#34;cn.bing.com.us-west-2.compute.internal&#34;</span>
+Trying <span class="s2">&#34;cn.bing.com&#34;</span>
+...
+</code></pre></div><h1 id="heading"></h1>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a>
+        
+            <a href="/tags/%E9%99%90%E6%B5%81/">限流</a>
+        
+            <a href="/tags/%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%8F%91%E7%8E%B0/">服务注册与发现</a>
+        
+            <a href="/tags/%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">负载均衡</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Nov 28, 2021 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#固定窗口">固定窗口</a></li>
+    <li><a href="#滑动窗口">滑动窗口</a></li>
+    <li><a href="#漏桶">漏桶</a></li>
+    <li><a href="#令牌桶">令牌桶</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#常用算法">常用算法</a></li>
+    <li><a href="#探活">探活</a>
+      <ol>
+        <li><a href="#主动健康检查">主动健康检查</a></li>
+        <li><a href="#被动健康检查">被动健康检查</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#调用模式">调用模式</a></li>
+    <li><a href="#基本功能">基本功能</a></li>
+    <li><a href="#可能遇到的问题">可能遇到的问题</a></li>
+    <li><a href="#常见的注册中心区别">常见的注册中心区别</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

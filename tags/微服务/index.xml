@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>微服务 on Nixum Blog</title>
+    <link>http://nixum.cc/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/</link>
+    <description>Recent content in 微服务 on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 20 Oct 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>微服务</title>
+      <link>http://nixum.cc/p/%E5%BE%AE%E6%9C%8D%E5%8A%A1/</link>
+      <pubDate>Wed, 20 Oct 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E5%BE%AE%E6%9C%8D%E5%8A%A1/</guid>
+      <description>[TOC]
+对微服务的理解 http://dockone.io/article/3687
+限流 下面的方案都是单机版本的，在分布式环境下可以把限流的实例放到Redis里，或者直接使用Lua脚本实现，保证并发安全。
+固定窗口 规定单位时间内可访问的次数，比如规定接口一分钟内只能访问10次，以第一次请求为起始，计数1，一分钟内计数超过10后，后续的请求直接拒绝，只能等到这一分钟结束后，重置计数，重新开始计数。
+但是这样有个问题，如果在大部分请求集中在第一个窗口的后10s内，和第二个窗口的前10s内，虽然他们都符合限流策略，但是在临界的20s内，请求还是有可能压垮系统。
+算法Demo：
+type fixWinLimiter struct { lock *sync.Mutex maxLimitCount int64 // 最大限制数 	currentCount int64 // 当前计数 	fixInterval int64 // 为了简化，单位设置为秒 	lastReqStartAt int64 // 秒级时间戳 } func NewFixWinLimit(fixInterval int64, maxLimitCount int64) *fixWinLimiter { return &amp;amp;fixWinLimiter{ lock: new(sync.Mutex), maxLimitCount: maxLimitCount, fixInterval: fixInterval, } } func (f *fixWinLimiter) IsPass() bool { f.lock.Lock() defer f.lock.Unlock() now := time.Now().Unix() if now - f.lastReqStartAt &amp;gt; f.fixInterval { f.</description>
+    </item>
+    
+  </channel>
+</rss>

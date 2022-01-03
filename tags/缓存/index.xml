@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>缓存 on Nixum Blog</title>
+    <link>http://nixum.cc/tags/%E7%BC%93%E5%AD%98/</link>
+    <description>Recent content in 缓存 on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 09 Aug 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E7%BC%93%E5%AD%98/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Redis</title>
+      <link>http://nixum.cc/p/redis/</link>
+      <pubDate>Sun, 09 Aug 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/redis/</guid>
+      <description>[TOC]
+数据类型及结构 数据类型 String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet
+String类型下还有一种扩展类型：Bitmap。原理：String类型会保存二进制字节数组，对于这个字节数组的每个bit来表示一个元素的二值状态。
+此外还有扩展类型：HyperLogLog、Geo
+底层数据结构  String：简单动态字符串(SDS) List：双向链表 + 压缩列表 Hash：哈希表 + 压缩列表 Set：整数数组+ 哈希表 ZSet：跳表 + 压缩列表  简单动态字符串(SDS) Redis的String类型底层有两种保存形式，当保存的是64位有符号整数时，String类型会保存为一个9字节的Long类型整数；当保存的数据包含字符时，String类型就会用简单动态字符串SDS。
+简单动态字符串SDS由三个部分组成：
+ buf：是字节数组，保存实际数据，结束标志位是&amp;quot;/0&amp;quot;。 len：表示buf已用长度，占4字节 alloc：表示buf的实际分配长度，一般大于len  此外，对于每种数据类型，Redis会使用RedisObject来记录一些元数据，比如最后以此访问时间，引用次数等，RedisObject包含了8个字节的元数据和一个8字节指针，指针指向具体的数据类型的实际数据所在。
+对于String类型的RedisObject：
+ 当保存的是Long类型整数时，RedisObject中的指针直接就是整数数据，不用额外的指针指向整数； 当保存的是字符串时，如果字符串&amp;lt;=44字节，RedisObject中元数据，指针和SDS是一块连续的内存区域，避免内存碎片 当保存的是字符串时，如果字符串&amp;gt;44字节，RedisObject会给SDS分配独立的空间，并用指针指向SDS  ![Redis String RedisObject: 来自极客时间Redis核心技术与实战](https://github.com/Nixum/Java-Note/raw/master/picture/Redis String RedisObject.png)
+当使用String类型时，且value的类型是String时，如果value的长度太小，可能会出现元数据的大小比数据本身的大小还大，造成额外的内存开销。如果能替换成Long类型，实际存储的大小会大大降低。
+哈希表 但无论值是什么类型的，所有的键值对会保存在全局哈希表中，便于快速找到对应的Key，哈希桶只会保存键值对的指针。全局哈希表中的桶每个元素entry由三个8字节指针组成，分别为key、value、next，但实际会占32字节，因为内存分配库jemalloc会分配最接近24的2的幂次数，所以是32，以减少频繁的分配次数。
+因此，即使Redis里存在大量数据，也不影响查找的速度，毕竟都是根据Key进行hash就能找到对应的Value，真正有影响的是哈希表的在解决哈希冲突和rehash时带来的阻塞。
+Redis的哈希表使用拉链法解决哈希冲突。通过两个全局哈希表加快rehash的操作。
+处理全局哈希表有这种操作，Hash的数据结构也是这样的操作，本质是一样的。
+当Redis生产RDB和AOF重写时，哈希表不会进行rehash。
+rehash触发条件 装载因子：哈希表中所有entry的个数除以哈希表的哈希桶个数。
+  当装载因子&amp;gt;= 1，且哈希表被允许rehash，即此时没有进行RDB和AOF重写
+  当装载因子&amp;gt;= 5，因为此时数据量已远远大于哈希桶的个数了，此时会立马进行rehash
+  rehash过程   默认使用哈希表1，此时哈希表2还没有被分配空间
+  当数据增多至需要rehash时，为哈希表2分配空间，大小会比哈希表1大，比如大两倍
+  把哈希表1中的数据重新映射并拷贝到哈希表2中</description>
+    </item>
+    
+  </channel>
+</rss>

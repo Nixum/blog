@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='JUC、线程、锁等原理'><title>Java并发</title>
+
+<link rel='canonical' href='http://nixum.cc/p/java%E5%B9%B6%E5%8F%91/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='Java并发'>
+<meta property='og:description' content='JUC、线程、锁等原理'>
+<meta property='og:url' content='http://nixum.cc/p/java%E5%B9%B6%E5%8F%91/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Java并发' /><meta property='article:tag' content='JUC' /><meta property='article:tag' content='线程' /><meta property='article:published_time' content='2019-03-02T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-12T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="Java并发">
+<meta name="twitter:description" content="JUC、线程、锁等原理">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/java/" >
+                Java
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/java%E5%B9%B6%E5%8F%91/">Java并发</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        JUC、线程、锁等原理
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 02, 2019</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    3 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="线程进程协程">线程、进程、协程</h1>
+<ul>
+<li>
+<p><strong>进程</strong>：可以简单理解为一个应用程序，进程是资源分配的基本单位。比如一个进程拥有自己的堆、栈、虚存空间、文件描述符等。</p>
+<p>涉及到用户态和内核态的切换。</p>
+<p><strong>进程间的通信</strong>：</p>
+<ul>
+<li>匿名管道：半双工，数据只能向一个方向流动，双方需要通信时，需要建立起两个管道；且只能用于有亲缘关系的进程；本质是一个内核缓冲区，可以看成是内存中的文件，但不属于某种文件系统，无需显示打开，创建时直接返回文件描述符，读写时需要确定对方的存在，否则将退出；以先进先出的方式存取数据，通信的双方需制定好数据的格式；</li>
+<li>有名管道：主要解决匿名管道只能作用与有亲缘关系的进程的问题，通过一个路径名关联，以文件形式存在于文件系统中，即使没有亲缘关系的进程也能通过访问路径实现通信；管道名字存在于文件系统中，内容存在内存中；打开时就得确定对方是否存在，否则将阻塞；</li>
+<li>信号：操作系统提供的一种机制，可以在任何时候发给某一进程，而无需指定该进程的状态，如果该进程当前处于未执行状态，该信号就由内核保存起来，直到进程回复执行并传递为止；信号接收可以被阻塞，直到阻塞解除；本质是对中断机制的模拟，异步通信，在用户态和内核态之间交互；能携带的信息较少。</li>
+<li>消息队列：存放在内核中的消息链表，只有在内核重启或显示地删除时，才会被真正的删除，与管道不同的是消息队列不需要确定接收进程是否存在；一般是FIFO，但也可以实现成随机查询；对消息格式，缓冲区大小等都能进行控制，比管道灵活；</li>
+<li>共享内存：没什么好说的，只是在访问共享内存时要依靠一些同步或互斥机制保证并发访问安全；</li>
+<li>信号量：计数器，一般用于多进程对共享内存访问的保护，内核中实现，保证原子操作</li>
+<li>套接字：通信机制，可用在本机或者跨网络，由域、端口号、协议类型三个属性确定；域分为AF_INET，即网络，另一个是AF_UNIX，即文件系统</li>
+</ul>
+</li>
+<li>
+<p><strong>线程</strong>：线程是独立调度的基本单位，由CPU进行调度和执行的实体。一个进程中可以有多个线程，线程之间共享进程资源，是进程中的实际运作单位。</p>
+<p>涉及到用户态和内核态的切换。</p>
+</li>
+<li>
+<p><strong>协程</strong>：GoLang中的协程</p>
+<ul>
+<li>在用户态层面，由线程控制，即用户应用层面自己控制，很难像抢占式调度那样强制CPU切换到其他线程/进程，只能是协作式调度，但同时也避免了上下文切换</li>
+<li>内存消耗比线程小，比如go开启协程是几kb，java开启一个线程至少1MB</li>
+<li>实现原理：在一个运行的线程上，起多个协程，每个协程会加入到调度队列中，线程会从调度队列里取出协程进行运行。队列个数默认取决于CPU的个数，协程间的切换会线程使用go提供的io函数进行控制。当有协程执行较慢时，会先将其挂起，然后唤醒其他线程，将未处理的协程队列转移到该线程，消费队列里的协程，当队列消费完成后，再切回原来的线程，继续执行刚刚挂起的协程。</li>
+</ul>
+</li>
+</ul>
+<p>参考：<a class="link" href="https://www.cnblogs.com/secondtonone1/p/11803961.html"  target="_blank" rel="noopener"
+    >图解Go协程调度原理，小白都能理解 </a></p>
+<p><a class="link" href="https://www.zhihu.com/question/20862617"  target="_blank" rel="noopener"
+    >Golang 的 goroutine 是如何实现的？</a></p>
+<h2 id="进程与线程的区别">进程与线程的区别</h2>
+<ol>
+<li>
+<p>拥有资源</p>
+<p>进程是资源分配的基本单位，但是线程不拥有资源，线程可以访问隶属进程的资源。</p>
+</li>
+<li>
+<p>调度</p>
+<p>线程是独立调度的基本单位，在同一进程中，线程的切换不会引起进程切换，从一个进程中的线程切换到另一个进程中的线程时，会引起进程切换。</p>
+</li>
+<li>
+<p>系统开销</p>
+<p>由于创建或撤销进程时，系统都要为之分配或回收资源，如内存空间、I/O 设备等，所付出的开销远大于创建或撤销线程时的开销。类似地，在进行进程切换时，涉及当前执行进程 CPU 环境的保存及新调度进程 CPU 环境的设置，而线程切换时只需保存和设置少量寄存器内容，开销很小。</p>
+</li>
+<li>
+<p>通信方面</p>
+<p>线程间可以通过直接读写同一进程中的数据进行通信，在java中如使用共享变量、wait/notify机制、阻塞队列；但是进程通信需要借助管道、消息队列、共享存储、信号量、信号、套接字socket</p>
+</li>
+</ol>
+<p>上下文切换的开销</p>
+<p>当CPU从执行一个线程切换到执行另外一个线程的时候，它需要先存储当前线程的本地的数据，程序指针等，然后载入另一个线程的本地数据，程序指针等，最后才开始执行。这种切换称为“上下文切换”(“context switch”)。CPU会在一个上下文中执行一个线程，然后切换到另外一个上下文中执行另外一个线程。</p>
+<h2 id="调度方式">调度方式</h2>
+<ul>
+<li>非抢占式：系统一旦开始执行某一进程，就会让该线程就会一直执行下去，直至完成，或者发生了其他事件导致系统放弃对该进程的执行后，才会去执行另外一个进程。</li>
+<li>抢占式：系统执行某一进程，在其执行期间，系统可以立即停止当前进程，转而执行另外一个进程，待处理完后，重新回来继续执行之前停止的进程</li>
+</ul>
+<h2 id="调度原理">调度原理</h2>
+<p>用户空间线程和内核空间线程之间的映射关系</p>
+<blockquote>
+<p>N:1模型：多个用户空间线程在1个内核空间线程上运行。优势是上下文切换非常快，因为这些线程都在内核态运行，但是无法利用多核系统的优点。</p>
+<p>1:1模型：1个内核空间线程运行一个用户空间线程。这种充分利用了多核系统的优势但是上下文切换非常慢，因为每一次调度都会在用户态和内核态之间切换。POSIX线程模型(pthread)就是这么做的。</p>
+<p>M:N模型：内核空间开启多个内核线程，一个内核空间线程对应多个用户空间线程。效率非常高，但是管理复杂。</p>
+</blockquote>
+<h1 id="线程的状态">线程的状态</h1>
+<h2 id="1状态转换">1.状态转换</h2>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e7%ba%bf%e7%a8%8b%e7%8a%b6%e6%80%81%e8%bd%ac%e6%8d%a2.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e7%ba%bf%e7%a8%8b%e7%8a%b6%e6%80%81%e8%bd%ac%e6%8d%a2.png"
+			
+			
+			
+			loading="lazy"
+			alt="线程状态转换">
+	</a>
+	
+	<figcaption>线程状态转换</figcaption>
+	
+</figure></p>
+<p>“阻塞”与“等待”的区别：
+“阻塞”状态是等待着获取到一个排他锁，进入“阻塞”状态都是被动的，离开“阻塞”状态是因为其它线程释放了锁，不阻塞了；
+“等待”状态是在等待一段时间 或者 唤醒动作的发生，进入“等待”状态是主动的</p>
+<h2 id="2-状态">2. 状态</h2>
+<ul>
+<li>New（新建）：通过new创建一个新线程，但还没运行，还有一些其他基础工作要做</li>
+<li>Runnable（可运行，就绪）：线程调用start方法，可能处于正在运行也可能处于没有运行，取决于操作系统提供的运行时间</li>
+<li>Running（运行）</li>
+<li>Blocked（阻塞）：线程已经被挂起，等待锁的释放，直到另一个线程走完临界区或发生了相应锁对象wait()操作后，它才有机会去争夺进入临界区的权利
+<ol>
+<li>等待阻塞：运行的线程执行wait()方法，JVM会把该线程放入等待池中。</li>
+<li>同步阻塞：运行的线程在获取对象的同步锁时，若该同步锁被别的线程占用，则JVM会把该线程放入锁池中。</li>
+<li>其他阻塞：运行的线程执行sleep()或join()方法，或者发出了I/O请求时，JVM会把该线程置为阻塞状态。当sleep()状态超时、join()等待线程终止或者超时、或者I/O处理完毕时，线程重新转入就绪状态。</li>
+</ol>
+</li>
+<li>Waiting（无限期等待）： 处于此状态的线程会等待另外一个线程，不会被分配CPU执行时间，直到被其他线程唤醒
+<ol>
+<li>没有设置timeout参数的Object.wait()</li>
+<li>没有设置timeout参数的Thread.join()</li>
+<li>LockSupport.park() 以上方法会使线程进入无限等待状态</li>
+</ol>
+</li>
+<li>Timed_waiting（限期等待）：不会被分配CPU执行时间，不过无需等待被其它线程显示的唤醒
+<ol>
+<li>Thread.sleep()方法</li>
+<li>设置了timeout参数的Object.wait()方法</li>
+<li>设置了timeout参数的Thread.join()方法</li>
+<li>LockSupport.parkNanos()方法</li>
+<li>LockSupport.parkUntil()方法</li>
+</ol>
+</li>
+<li>TERMINATED（结束，死亡）：已终止线程的线程状态，线程已经结束执行，run()方法走完了，线程就处于这种状态或者出现没有捕获异常终止run方法意外死亡</li>
+</ul>
+<h1 id="死锁">死锁</h1>
+<h2 id="死锁产生的条件">死锁产生的条件</h2>
+<ul>
+<li>互斥条件：一个资源每次只能被一个线程使用；</li>
+<li>请求与保持条件：一个线程因请求资源而阻塞时，对已获得的资源保持不放；</li>
+<li>不剥夺条件：进程已经获得的资源，在未使用完之前，不能强行剥夺；</li>
+<li>循环等待条件：若干线程之间形成一种头尾相接的循环等待资源关系。</li>
+</ul>
+<h2 id="避免死锁">避免死锁</h2>
+<p>一般场景发生在共享资源的使用上：</p>
+<ul>
+<li>线程1对资源A加锁后，进行业务操作，线程2对资源B加锁后进行业务操作，线程1业务处理需要用到资源B，线程2业务处理需要用到资源A，此时发生死锁</li>
+<li>线程1对资源A加锁后进行业务操作，线程2也需要用到资源A，但是线程1一直不释放锁，</li>
+</ul>
+<p>互斥条件是保证线程安全的条件，因此不能破环，只能尽量破坏其他造成死锁的条件，比如提前分配各个线程所需资源；设置等待时间或者自旋次数，超时中断；分配好获得锁的顺序；避免逻辑中出现复数个线程相互持有对方线程所需的独占锁的情况；</p>
+<p>比如:</p>
+<ul>
+<li>在合适的场景使用合适的锁类型，是否允许锁可重入的，共享还是排他</li>
+<li>避免多个线程操作多个共享资源，注意锁的申请顺序，比如给资源设置序号，顺序取放</li>
+<li>获取锁时设置超时时间</li>
+<li>减少共享资源的使用，使用ThreadLocal，消息队列，共享资源在方法内复制(set回去的时候cas)，或者设计一种模式对共享资源的访问</li>
+<li>jstack检查线程与状态</li>
+</ul>
+<h2 id="死锁检测工具">死锁检测工具</h2>
+<p>Jconsole, Jstack, visualVM</p>
+<h1 id="object和thread中关于线程的一些方法">Object和Thread中关于线程的一些方法</h1>
+<h2 id="object类中wait和notifynotifyall">Object类中wait()和notify()、notifyAll()</h2>
+<ul>
+<li>
+<p>wait()使得线程进入等待状态，同时释放锁，等待其他线程notify()、notifyAll()的唤醒</p>
+<p>因为wait()和notify()、notifyAll()是对象中的方法，如果wait()没有释放锁，其他线程就无法获得锁进入同步代码块中，也就无法执行notify()或者notifyAll()方法唤醒挂起的线程，造成死锁</p>
+</li>
+<li>
+<p><strong>这套方法只能在同步块synchronized中使用</strong>，否则会抛IllegalMonitorStateException异常，因为如果没有synchronized，有可能会导致多线程wait时对共享资源的竞争导致问题</p>
+</li>
+<li>
+<p>wait、notify、synchronized都是对同一个对象进行操作</p>
+</li>
+<li>
+<p>wait() 方法可以设置时间，时间到了也会进入就绪状态</p>
+</li>
+<li>
+<p>notify()方法只会随机唤醒某个在等待的线程，notifyAll()方法是唤醒全部，之后进行竞争，排队执行</p>
+</li>
+<li>
+<p>可响应中断</p>
+</li>
+<li>
+<p>会抛InterruptedException异常</p>
+</li>
+</ul>
+<p>为什么操作线程的方法wait()和notify()、notifyAll()是Object类中的？</p>
+<p>java提供的锁是对象级别的，等待需要锁，把每个对象看成一个锁，同一个对象可以放入不同的线程中，从而达到不同线程可以等待或唤醒，如果是线程里的方法，当前线程可能会等待多个线程的锁，这样操作比较复杂</p>
+<h2 id="thread中的yield">Thread中的yield()</h2>
+<ul>
+<li>静态方法</li>
+<li>yield()的作用是让步。它能让当前线程由“运行状态”进入到“就绪状态”，从而<strong>让其它具有相同优先级的等待线程获取执行权</strong></li>
+<li>该方法只是对线程调度器的一个建议，而且也只是建议具有相同优先级的其它线程可以运行，并不能保证在当前线程调用yield()之后，其它具有相同优先级的线程就一定能获得执行权，也有可能是当前线程又进入到“运行状态”继续运行</li>
+</ul>
+<h2 id="thread中的-suspend-和resume已过期">Thread中的 suspend() 和resume()，已过期</h2>
+<ul>
+<li>不是静态方法</li>
+<li>suspend()用于挂起线程， resume() 用于唤醒线程，需要配套使用，这两个方法被标为<strong>过期，不推荐</strong></li>
+<li>suspend() 在导致线程暂停的同时，并不会去释放任何锁资源。其他线程都无法访问被它占用的锁。直到对应的线程执行 resume() 方法后，被挂起的线程才能继续，从而其它被阻塞在这个锁的线程才可以继续执行</li>
+<li>如果 resume() 操作出现在 suspend() 之前执行，那么线程将一直处于挂起状态，同时一直占用锁，这就产生了死锁。而且，对于被挂起的线程，它的线程状态居然还是 Runnable</li>
+<li>不会抛InterruptedException异常</li>
+</ul>
+<h2 id="thread类中的sleep方法">Thread类中的sleep()方法</h2>
+<ul>
+<li>静态方法</li>
+<li>使当前正在执行的线程进入休眠（阻塞），不会释放锁，单位是毫秒</li>
+<li>sleep() 可能会抛出 InterruptedException，因为异常不能跨线程传播回 main() 中，因此必须在本地进行处理。线程中抛出的其它异常也同样需要在本地进行处理</li>
+<li>可响应中断</li>
+<li>会抛InterruptedException异常</li>
+</ul>
+<h2 id="thread类中的join方法">Thread类中的join()方法</h2>
+<ul>
+<li>不是静态方法</li>
+<li>在线程中调用另一个线程的 join() 方法，会将当前线程挂起（阻塞），而不是一直等待，直到目标线程结束</li>
+<li>没有释放锁</li>
+<li>可响应中断</li>
+<li>会抛InterruptedException异常</li>
+</ul>
+<h2 id="condition类中的await和signalsignalall">Condition类中的await()和signal()、signalAll()</h2>
+<ul>
+<li>Condition类中的await()和signal()、signalAll()用来代替传统Object里的wait()和notify()、notifyAll()方法，作用基本相同</li>
+<li>await()可以指定条件，Condition类中的await()和signal()、signalAll()会更加灵活</li>
+<li>Condition配合Lock(ReentrantLock)使用，Lock 可以用来获取一个 Condition对象、还有加锁解锁，阻塞队列中就使用了Condition来模拟线程间协作</li>
+<li>会抛InterruptedException异常</li>
+</ul>
+<h1 id="中断">中断</h1>
+<p>参考<a class="link" href="https://blog.csdn.net/meiliangdeng1990/article/details/80559012"  target="_blank" rel="noopener"
+    >Java并发&ndash;InterruptedException机制</a></p>
+<h1 id="关键字">关键字</h1>
+<h2 id="synchronized">synchronized</h2>
+<p>在进入synchronized代码块时，执行 monitorenter，将计数器 +1，释放锁 monitorexit 时，计数器-1；当一个线程判断到计数器为 0 时，则当前锁空闲，可以占用；反之，当前线程进入等待状态。</p>
+<p>synchronized是几种锁的封装：自旋锁、锁消除、锁粗化、轻量锁、偏向锁，在加对象锁时，在对象的对象头中的Mark Word记录对象的线程锁状态，根据线程的竞争情况在这几种锁中切换</p>
+<ul>
+<li>当synchronized(xxx.class)锁住的是类时，多个线程访问不同对象(它们同类),就会锁住代码段，当一个线程执行完这个代码段后才轮到别的线程，可以理解成全局锁</li>
+<li>当synchronized(object)锁住的是对象时，多个线程访问不同对象(它们同类),它们相互之间并不影响，只有当多个线程访问同一对象时，才会锁住代码段，等到一个线程执行完之后才轮到别的线程执行</li>
+<li>当synchronized(this)锁住的是当前的对象，当synchronized块里的内容执行完之后，释放当前对象的锁。同一时刻若有多个线程访问这个对象，则会被阻塞</li>
+<li>synchronized加在方法上，作用同锁住this，即当前对象</li>
+<li>synchronized所在的方法被static修饰，则锁住的是整个类</li>
+<li>synchronized下不可被中断</li>
+<li>synchronized是非公平锁</li>
+</ul>
+<p>在用synchronized关键字的时候，尽量缩小代码段的范围，能在代码段上加同步就不要再整个方法上加同步，减小锁的粒度，使代码更大程度的并发，如果锁的代码段太长了，别的线程等得就久一点</p>
+<h2 id="synchronized和reentrantlock区别">synchronized和ReentrantLock区别</h2>
+<p>相同点：</p>
+<ul>
+<li>都是加锁实现同步，阻塞性同步</li>
+<li>可重入</li>
+<li>有相同的并发性和内存语义</li>
+</ul>
+<p>不同点：</p>
+<ul>
+<li>
+<p>synchronized，是关键字，底层靠JVM实现，通过操作系统调度；ReentrantLock是JDK提供的类，源码可查</p>
+</li>
+<li>
+<p>synchronized锁的范围看{}，能对类、对象、方法加锁，由JVM控制锁的添加和释放；</p>
+<p>ReentrantLock锁代码块，可以灵活控制加锁解锁的位置，需要手动控制锁的添加和释放，相对来讲锁的灵活，锁的细粒度都比synchronized好些</p>
+</li>
+<li>
+<p>synchronized是非公平锁，ReentrantLock支持公平锁和非公平锁，默认是非公平锁</p>
+</li>
+<li>
+<p>synchronized不可中断，除非抛异常，否则只能等同步的代码执行完；ReentrantLock持锁在长期不释放锁时，正在等待的线程可以选择放弃等待，方法如下：</p>
+<ul>
+<li>lock(), 如果获取了锁立即返回，如果别的线程持有锁，当前线程则一直处于休眠状态，直到获取锁</li>
+<li>tryLock(), 如果获取了锁立即返回true，如果别的线程正持有锁，立即返回false；</li>
+<li>tryLock (long timeout, TimeUnit unit)，   如果获取了锁定立即返回true，如果别的线程正持有锁，会等待参数给定的时间，在等待的过程中，如果获取了锁定，就返回true，如果等待超时，返回false；</li>
+<li>lockInterruptibly: 如果获取了锁定立即返回，如果没有获取锁定，当前线程处于休眠状态，直到或者锁定，或者当前线程被别的线程中断</li>
+</ul>
+</li>
+<li>
+<p>synchronized在JDK1.6版本中进行了优化，性能跟ReentrantLock差不多，ReentrantLock仅比synchronized多了一些新功能</p>
+<p>synchronized和ReentrantLock都提供了最基本的锁功能，ReentrantLock多了一些额外的功能：可以提供一个Condition类，实现分组唤醒需要唤醒的线程；提供一些方法监听当前锁的信息</p>
+</li>
+</ul>
+<h2 id="volatile">volatile</h2>
+<p>需要先了解Java的内存模型，简单的说就是 每个线程有自己的工作内存，工作内存存在高速缓存中，而变量存在于主内存中，线程只能操作工作内存中的变量</p>
+<p>线程操作变量的时候，变量会从主内存中load到工作内存中，线程再在工作内存中使用变量，处理完之后再把变量更新到主内存中</p>
+<ul>
+<li>
+<p>保证此变量对所有线程的可见性，即当以线程修改这个变量的值，新值对其他线程可知，即如果此变量发送改变，会立即同步到主内存中，volatile只能保证可见性</p>
+<p>由于java里的运算不是原子性，所有volatile变量的运算在并发下一样不安全<br>
+当出现<br>
+运算结构不依赖变量的当前值，或能确保只有单一的线程修改变量的值<br>
+变量不需要与其他的状态变量共同参与不变约束<br>
+此时需要加锁</p>
+</li>
+<li>
+<p>禁止指令重排序优化，普通变量只会保证该方法执行过程中所依赖赋值的结果都能获得正确的结果，不能保证变量赋值操作的顺序与程序代码的执行顺序一致</p>
+</li>
+</ul>
+<p>典型用法是 检查某个状态标记以判断是否退出循环</p>
+<p>参考<a class="link" href="https://blog.csdn.net/qq_34337272/article/details/79680771"  target="_blank" rel="noopener"
+    >Java多线程学习（三）volatile关键字</a></p>
+<p><a class="link" href="https://blog.csdn.net/javazejian/article/details/72772461"  target="_blank" rel="noopener"
+    >全面理解Java内存模型(JMM)及volatile关键字</a></p>
+<h1 id="一些锁的概念">一些锁的概念</h1>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/java-%e9%94%81.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/java-%e9%94%81.png"
+			
+			
+			
+			loading="lazy"
+			alt="java中的锁">
+	</a>
+	
+	<figcaption>java中的锁</figcaption>
+	
+</figure></p>
+<p>参考：</p>
+<p><a class="link" href="http://www.importnew.com/19472.html"  target="_blank" rel="noopener"
+    >java中的锁</a></p>
+<p><a class="link" href="https://tech.meituan.com/2018/11/15/java-lock.html"  target="_blank" rel="noopener"
+    >美团技术团队 - 不可不说的Java“锁”事</a></p>
+<h1 id="线程池">线程池</h1>
+<p>为了解决无限创建线程产生的问题，采用线程池来管理，减少在创建和销毁线程上所消耗的时间以及系统资源的开销，解决资源不足的问题。如果不使用线程池，有可能造成系统创建大量同类线程而导致消耗完内存或者“过度切换”的问题</p>
+<p><strong>线程池 Executors静态类</strong>，工厂方法生成以下线程池</p>
+<p>​	newCachedThreadPool：核心数是0，最大数是Integer.MAX_VALUE，使用SynchronousQueue，不存储任务。对于每个任务，如果有空闲线程可用，立即让他执行任务，如果没有可用得空闲线程，则创建新线程，空闲线程超时设置是1分钟，线程池可无限扩展。容易造成堆外内存溢出，一般用于大量短期任务</p>
+<p>​	newFixedThreadPool：构建有固定大小的线程池，使用LinkedBlockingQueue。如果提交的任务数多于核心线程数，则把任务放到队列中，等其他任务完成后再运行他，创建的线程不会超时</p>
+<p>​	newSingleThreadExecutor：大小为 1 的线程池，使用LinkedBlockingQueue，每次只有一个线程执行任务，从阻塞队列中取任务一个接一个执行</p>
+<p>这三个静态方法 返回实现了ExecutorService接口的ThreadPoolExecutor类的对象</p>
+<p>使用方式：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">ExecutorService</span> <span class="n">threadPool</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newCachedThreadPool</span><span class="o">();</span>
+<span class="n">threadPool</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">线程实例</span><span class="o">);</span>	<span class="c1">// 无返回值
+</span><span class="c1"></span><span class="n">Future</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">threadPool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">实现了Callable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="n">的实例</span><span class="o">);</span> <span class="c1">// 有返回值
+</span><span class="c1"></span><span class="n">threadPool</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
+</code></pre></div><p>在阿里巴巴开发手册中不提倡使用Executors创建，而是通过 ThreadPoolExecutor的方式去定制线程池，从而明确线程池的参数</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">ExecutorService</span> <span class="n">threadPool</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadPoolExecutor</span><span class="o">(</span><span class="n">一系列参数</span><span class="err">，</span><span class="n">具体看构造器</span><span class="o">);</span>
+<span class="c1">// 构造器
+</span><span class="c1"></span><span class="kt">int</span> <span class="n">corePoolSize</span><span class="o">,</span>		<span class="c1">// 线程池中的线程数量
+</span><span class="c1"></span><span class="kt">int</span> <span class="n">maximumPoolSize</span><span class="o">,</span>	<span class="c1">// 线程池中允许的最大数量，当前阻塞队列满了，且继续提交任务，则创建新的线程执行任务，前提是当前线程数小于maximumPoolSize，如果使用无界队列，该参数就没什么用了
+</span><span class="c1"></span><span class="kt">long</span> <span class="n">keepAliveTime</span><span class="o">,</span>	<span class="c1">// 当活跃线程数大于corePoolSize时，多余的空闲线程最大存活时间
+</span><span class="c1"></span><span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">,</span>		<span class="c1">// keepAliveTime单位
+</span><span class="c1"></span><span class="n">BlockingQueue</span><span class="o">&lt;</span><span class="n">Runnable</span><span class="o">&gt;</span> <span class="n">workQueue</span><span class="o">,</span>	<span class="c1">// 用来保存等待被执行的任务的阻塞队列，且任务必须实现Runable接口，常见的如ArrayBlockingQueue、LinkedBlockingQuene
+</span><span class="c1"></span><span class="n">ThreadFactory</span> <span class="n">threadFactory</span><span class="o">,</span>	<span class="c1">// 当线程池创建新线程时调用，例如为每个线程实现一个名字
+</span><span class="c1"></span><span class="n">RejectedExecutionHandler</span> <span class="n">handler</span>	<span class="c1">// 线程池的饱和策略，线程池提供4种饱和策略，默认是AbortPolicy
+</span></code></pre></div><ul>
+<li>
+<p>阻塞队列</p>
+<p>当线程池中的线程数量大于等于corePoolSize的时候，把该任务封装成一个Worker对象放入等待队列</p>
+<ol>
+<li>ArrayBlockingQueue：是一个基于数组结构的有界阻塞队列，此队列按FIFO（先进先出）原则对元素进行排序，此时maximumPoolSize就会限制任务数</li>
+<li>LinkedBlockingQueue：一个基于链表结构的阻塞队列，此队列按FIFO排序元素，吞吐量通常要高于ArrayBlockingQueue。静态工厂方法Executors.newFixedThreadPool()使用了这个队列。队列无界时，maximumPoolSize也不起作用了</li>
+<li>SynchronousQueue：一个不存储元素的阻塞队列。每个插入操作必须等到另一个线程调用移除操作，否则插入操作一直处于阻塞状态，吞吐量通常要高于LinkedBlockingQueue，静态工厂方法newCachedThreadPool使用了这个队列</li>
+<li>PriorityBlockingQueue：一个具有优先级的无界阻塞队列</li>
+</ol>
+</li>
+<li>
+<p>饱和策略</p>
+<p>当运行的线程数量大于等于maximumPoolSize，且阻塞队列满了，才执行饱和策略</p>
+<ol>
+<li>AbortPolicy：无法处理新任务时抛出异常，默认策略</li>
+<li>CallerRunsPolicy：只用调用者所在线程来运行任务</li>
+<li>DiscardOldestPolicy：丢弃队列里最近的一个任务，并执行当前任务</li>
+<li>DiscardPolicy：不处理，丢弃掉。</li>
+</ol>
+</li>
+</ul>
+<h2 id="线程池处理过程">线程池处理过程</h2>
+<pre tabindex="0"><code>RUNNING：正常状态，接受新任务，处理等待队列中的任务
+SHUTDOWN：不接收新任务，但会处理阻塞队列中的任务；
+STOP ：不接收新任务，也不会处理阻塞队列中的任务，而且会中断正在运行的任务；
+TIDYING ：所有的任务都销毁，workcount=0，线程池在转换为此状态时会执行terminated()
+TERMINATED：terminated()方法执行过后变成这个
+</code></pre><p>线程池内部有一个变量（private final AtomicInteger变量ctl，高3位保存运行状态runState，低29位保存有效线程数量workerCount）来表示线程的状态，根据这个变量表达的状态在操作</p>
+<ol>
+<li>如果当前运行的线程少于corePoolSize，则创建新线程来执行任务（注意，执行这一步骤需要获取全局锁）</li>
+<li>如果运行的线程等于或多于corePoolSize，则将任务加入BlockingQueue</li>
+<li>如果无法将任务加入BlockingQueue(队列已满)，则创建新的线程来处理任务（注意，执行这一步骤需要获取全局锁）</li>
+<li>如果创建新线程将使当前运行的线程超出maximumPoolSize，任务将被拒绝，并调用RejectedExecutionHandler.rejectedExecution()方法</li>
+</ol>
+<p>当corePoolSize  = maximumPoolSize时，多出的任务都会交给阻塞队列去处理，如果阻塞队列满了，就执行饱和策略，如果队列无界，则任务堆积</p>
+<p>线程池里线程的锁是不可重入锁</p>
+<p>执行任务的时候要对工作线程加锁的理由：工作线程run方法中有个判断，当阻塞队列中没任务时，会阻塞，循环等待任务；调用shutdown方法时，会将线程池状态设置为SHUTDOWN，并且不允许将任务加入到阻塞队列中，中断各个工作线程；如果shutdown方法中没有对工作线程加锁，并在锁内修改状态，中断工作线程，如果此时操作系统分配的时间片给到工作线程的判断中，阻塞队列没有任务，就一直阻塞了，这样线程池就一直关闭不了了。</p>
+<p>加锁操作发生在创建线程、工作线程在获取到任务后、工作线程没任务处理后退出、判断是否结束线程池、关闭线程池；线程池状态(ctl)的改变使用自旋+CAS判断操作</p>
+<blockquote>
+<p>线程池的本质是一个生产者-消费者模型，解耦了线程和任务，达到线程复用的目的。任务管理部分充当生产者的角色，当任务提交后，线程池会判断该任务后续的流转：（1）直接申请线程执行该任务；（2）缓冲到队列中等待线程执行；（3）拒绝该任务。线程管理部分是消费者，它们被统一维护在线程池内，根据任务请求进行线程的分配，当线程执行完任务后则会继续获取新的任务去执行，最终当线程获取不到任务的时候，线程就会被回收。</p>
+</blockquote>
+<p><a class="link" href="https://www.cnblogs.com/a8457013/p/7819044.html"  target="_blank" rel="noopener"
+    >线程池的实现原理</a></p>
+<p><a class="link" href="https://juejin.im/entry/58fada5d570c350058d3aaad"  target="_blank" rel="noopener"
+    >深入理解Java线程池</a></p>
+<p><a class="link" href="https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html"  target="_blank" rel="noopener"
+    >Java线程池实现原理及其在美团业务中的实践</a>，这篇文章写得十分详细易理解了</p>
+<h2 id="对线程池复用的简单理解">对线程池复用的简单理解</h2>
+<p>这里先不谈如何保证线程安全，只说复用。比如corePoolSize  = 5，就是内部有5个线程Worker（继承了AQS和Runnable接口），通过ThreadFactory创建，保持在一个HashSet里，任务task就是实现了Runnable接口的类。当任务数如果大于corePoolSize  ，则加入到阻塞队列workQueue中；当然如果BlockingQueue存满了，corePoolSize 个线程里的任务还没执行完，会继续创建线程达到maximumPoolSize，多于corePoolSize 的线程没有被复用，当workQueue里没有任务了，并且线程池里也没其他任务了，这个时候就会等待keepAliveTime之后对线程进行回收。复用指的是对于接下来要执行的一系列任务，可以通过几个线程来执行，而不用重复的开启线程结束线程、一个任务对应一个线程。</p>
+<p>线程worker的run方法里通过<strong>直接获取任务</strong>或者<strong>从阻塞队列workQueue里获取任务</strong>作为<strong>循环</strong>条件来执行<strong>任务的run方法</strong>来达到线程重用，注意不是start方法</p>
+<h2 id="线程池是如何做到当线程数量大于corepoolsize-多余的空闲线程在等待keepalivetime之后被回收">线程池是如何做到当线程数量大于corePoolSize ，多余的空闲线程在等待keepAliveTime之后被回收</h2>
+<p>在Worker类里的runWorker方法里，当阻塞队列里取不出任务task.take()==null，即task.take()方法里会根据timed属性作为是否回收空闲线程的标志，在取阻塞队列里的任务为null时，会等待keepAliveTime时间，返回null的任务，相应的空闲线程数将减少，runWorker方法的finally块里根据线程数目判断是否结束此方法，以此达到当前线程被回收的目的</p>
+<h2 id="线程池调优">线程池调优</h2>
+<ul>
+<li>设置最大线程数，防止线程资源耗尽；</li>
+<li>使用有界队列，从而增加系统的稳定性和预警能力(饱和策略)；</li>
+<li>根据任务的性质设置线程池大小：CPU密集型任务(CPU个数个线程)，IO密集型任务(CPU个数两倍的线程)，混合型任务(拆分)。</li>
+</ul>
+<h1 id="juc包内的一些类">JUC包内的一些类</h1>
+<h2 id="blockingqueue">BlockingQueue</h2>
+<h3 id="1分类">1.分类</h3>
+<p>注：有界指的是，对阻塞队列初始化时<strong>必须</strong>指明队列大小</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ArrayBlockingQueue</td>
+<td>底层是数组，有界，需要初始化时指明容量大小，支持公平模式，默认非公平模式，读写都是只有一把锁</td>
+</tr>
+<tr>
+<td>LinkedBlockingQueue</td>
+<td>底层是链表，有界，默认容量是Integer.MAX_VALUE，使用读锁和写锁，因此吞吐量比ArrayBlockingQueue大</td>
+</tr>
+<tr>
+<td>PriorityBlockingQueue</td>
+<td>底层是数组 + 堆排实现排序，无界，默认容量是11，最大是Integer.MAX_VALUE - 8，默认对元素使用自然顺序排序，也可指定比较器</td>
+</tr>
+<tr>
+<td>DelayQueue</td>
+<td>无界，支持延时获取，不允许take或poll移除未过期元素，size=过期元素 + 非过期元素</td>
+</tr>
+<tr>
+<td>SynchronousQueue</td>
+<td>有界，一个线程的插入必须等待另一个线程的删除后才能完成，反之亦然，不能被迭代，容量可理解为只有1，支持公平和非公平模式</td>
+</tr>
+<tr>
+<td>LinkedTransferQueue</td>
+<td>底层是链表，无界，生产者会一直阻塞直到所添加到队列的元素被某一个消费者所消费，主要用于线程间消息的传递</td>
+</tr>
+<tr>
+<td>LinkedBlockingDeque</td>
+<td>底层是链表，双向队列，无界</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2常用方法">2.常用方法</h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>操作失败时会抛异常</th>
+<th>操作后会返回特殊值</th>
+<th>操作时会阻塞</th>
+<th>超时退出返回特殊值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>插入</td>
+<td>add(e)</td>
+<td>offer(e)</td>
+<td>put(e)</td>
+<td>offer(e, time, unit)</td>
+</tr>
+<tr>
+<td>移除 / 获取</td>
+<td>remove()</td>
+<td>poll()</td>
+<td>take()</td>
+<td>poll(time, unit)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3原理">3.原理</h3>
+<h4 id="arrayblockingqueue">ArrayBlockingQueue</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 把数组当成环形队列使用
+</span><span class="c1">// 在执行插入或获取操作前会上锁，上的是同一把锁，方法执行完解锁，允许中断
+</span><span class="c1"></span><span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span><span class="o">;</span>
+
+<span class="c1">// 在take方法中，如果数组长度为0，则调用await()方法进行等待，否则就获取第一个元素，调用singal()方法唤醒等待线程生产
+</span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notEmpty</span><span class="o">;</span>
+
+<span class="c1">// 在put方法中，往数组中添加一个元素，更新索引，再调用singal()方法唤醒等待线程消费，如果数组满了，则调用await()方法进行等待
+</span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notFull</span><span class="o">;</span>
+</code></pre></div><h4 id="linkedblockingqueue">LinkedBlockingQueue</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 整体分为读锁和写锁，而不像ArrayBlockingQueue只使用一个锁，原因是LinkedBlockingQueue底层是链表的，只需要关心头尾两个节点就行了，头节点加读锁，尾节点加写锁，使用的是不同的锁，因此读写时是不阻塞的；另外，由于节点是链表实例，在高并发下也会影响GC，而ArrayBlockingQueue是数组，不用包多一层
+</span><span class="c1"></span>
+<span class="c1">// take操作时上读锁，队列为空则等待，不为空时则移除并获取，再不为空则唤醒其他消费线程，解开读锁，允许中断
+</span><span class="c1">// 然后判断出消费元素之前队列是满的(此时是临界状态，但刚又被消费了一次)，则加写锁，唤醒其他生产线程，解写锁，不允许中断
+</span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">takeLock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>  <span class="c1">// 读锁
+</span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notEmpty</span> <span class="o">=</span> <span class="n">takeLock</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
+
+<span class="c1">// put操作时上写锁，队列满则等待，不满时则插入，插入后还不满则唤醒其他生产线程，解开写锁，允许中断
+</span><span class="c1">// 然后判断入队前只有一个元素(此时的该元素是刚刚加的)，则加读锁，唤醒其他消费线程，解读锁，不允许中断
+</span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">putLock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>   <span class="c1">// 写锁
+</span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notFull</span> <span class="o">=</span> <span class="n">putLock</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
+</code></pre></div><p>其实ArrayBlockingQueue也可以像LinkedBlockingQueue使用读写锁，但此时的count和index就需要使用AtomicInteger来保证线程安全，加之数组不像链表那样还要构建节点，使用读写锁带来的收益不是特别大，所以没有使用了。</p>
+<h3 id="参考">参考</h3>
+<p><a class="link" href="https://www.jianshu.com/p/4028efdbfc35"  target="_blank" rel="noopener"
+    >java阻塞队列详解</a></p>
+<h2 id="aqs">AQS</h2>
+<ul>
+<li>
+<p>AbstractQueuedSynchronized的缩写，全名：抽象队列同步器，基本是JUC包中各个同步组件的底层基础了</p>
+</li>
+<li>
+<p>内置一个 <code>volatile int state</code> 记录同步状态；</p>
+<p>还有一个<code>双端队列（遵循FIFO）</code>用于存放资源堵塞的线程，被阻塞的线程加入队尾，队列头结点释放锁时，唤醒后面结点</p>
+</li>
+<li>
+<p>AQS提供了一些同步组件，如下面提到的方法，使我们能制作自定义同步组件，公平锁和非公平锁是通过FairSync类和NonFairSync内部类实现的，独占式和共享式就是实现了这两个类的tryAcquire - tryRelease方法或tryAcquireShared-tryReleaseShared，像ReentrantLock是独占式就只实现了tryAcquire - tryRelease方法</p>
+</li>
+<li>
+<p>AQS内部有两种队列，一种是同步队列，用于锁的获取和释放时使用；一种是等待队列，用于Condition类，每个Condition对应一个队列</p>
+</li>
+<li>
+<p>AQS内控制线程阻塞和唤醒使用的是Unsafe类里native方法，如park、unpark方法</p>
+</li>
+</ul>
+<h3 id="同步方式">同步方式</h3>
+<h4 id="独占式如reentrantlock">独占式：如ReentrantLock</h4>
+<p>获取：</p>
+<ol>
+<li>调用入口方法acquire</li>
+<li>调用模版方法tryAcquire(arg)尝试获取锁，若成功则返回，若失败则走下一步</li>
+<li>将当前线程构造成一个Node节点，并利用CAS将其加入到同步队列到尾部，然后该节点对应到线程进入自旋状态</li>
+<li>自旋时，首先判断其前驱节点释放为头节点&amp;是否成功获取同步状态，两个条件都成立，则将当前线程的节点设置为头节点，如果不是，则利用<code>LockSupport.park(this)</code>将当前线程挂起，不然它一直循环 ,等待被前驱节点唤醒(释放锁的时候)</li>
+</ol>
+<p>释放：</p>
+<ol>
+<li>调用入口方法release</li>
+<li>调用模版方法<code>tryRelease</code>释放同步状态</li>
+<li>获取当前节点的下一个节点</li>
+<li>利用<code>LockSupport.unpark(currentNode.next.thread)</code>唤醒后继节点，之后重复上面 获取 第4步</li>
+</ol>
+<h4 id="共享式如semaphorecountdownlatch">共享式：如Semaphore，CountDownLatch</h4>
+<p>获取：</p>
+<ol>
+<li>调用入口方法acquireShared</li>
+<li>进入tryAcquireShared(arg)模版方法获取同步状态，如果返回值&gt;=0，则说明同步状态(state)有剩余，获取锁成功直接返回</li>
+<li>如果tryAcquireShared(arg)返回值&lt;0，说明获取同步状态失败，向队列尾部添加一个共享类型的Node节点，随即该节点进入自旋状态</li>
+<li>自旋时，首先检查 (前驱节点是否为头节点 &amp; tryAcquireShared()是否&gt;=0)  (即成功获取同步状态)</li>
+<li>如果是，则说明当前节点可执行，同时把当前节点设置为头节点，并且唤醒所有后继节点</li>
+<li>如果否，则利用<code>LockSupport.unpark(this)</code>挂起当前线程，等待被前驱节点唤醒</li>
+</ol>
+<p>释放：</p>
+<ol>
+<li>调用releaseShared(arg)模版方法释放同步状态</li>
+<li>如果释放成，则遍历整个队列，利用<code>LockSupport.unpark(nextNode.thread)</code>唤醒所有后继节点</li>
+</ol>
+<h4 id="区别">区别</h4>
+<ul>
+<li>
+<p>独占式每次释放锁只唤醒后继结点；共享式每次释放锁会唤醒所有后继结点，使它们同时获取同步状态</p>
+</li>
+<li>
+<p>独占锁的同步状态值为1，同一时刻只能有一个线程成功获取同步状态；共享锁的同步状态&gt;1，取值由上层同步组件确定</p>
+</li>
+<li>
+<p>公平锁和非公平锁是分别重写tryAcquire()和tryRelease()方法实现，是两套方案，独占模式和共享模式都可以有公平锁非公平锁的实现</p>
+<p>公平锁，当线程请求到来时先会判断同步队列是否存在结点，如果存在先执行同步队列中的结点线程，当前线程将封装成node加入同步队列等待（新加入的线程获取锁，如果队列不为空，加入队尾，执行队头的线程）</p>
+<p>非公平锁，当线程请求到来时，不管同步队列是否存在线程结点，直接尝试获取同步状态，获取成功直接访问共享资源（新加入的线程获取锁，直接与队列中的头结点竞争，不成功在加入队列）</p>
+</li>
+</ul>
+<h3 id="condition">Condition</h3>
+<p>一个Lock可以创建多个Condition，每个Condition对应一个等待队列，单向，有头尾两个结点，遵循 FIFO</p>
+<p>当一个线程调用了await()相关的方法，那么该线程将会释放锁，并构建一个Node节点封装当前线程的相关信息加入到等待队列中进行等待，直到被唤醒、中断、超时才从队列中移出</p>
+<p>只有独占式才有Condition、等待队列这些东西，共享式没有</p>
+<p>await()：将当前线程封装成结点加入到等待队列中，释放同步状态以唤醒同步队列的后继结点，判断当前结点是否在同步队列中，不是就挂起当前线程，此时仍然在自旋中，等待被唤醒</p>
+<p>singal()：判断当前线程是否持有锁，没有则抛异常，有的话唤醒等待队列的头结点，如果为null则继续唤醒后面的结点，唤醒的意思是移除等待队列中的头结点，加入到同步队列中，如果该结点的前驱结点结束或者Node.SIGNAL状态设置失败，唤醒它，解除await()方法中的自旋，等待获取锁</p>
+<p>参考</p>
+<p><a class="link" href="https://juejin.im/entry/59756e5051882566d86d8a5d"  target="_blank" rel="noopener"
+    >深入剖析基于并发AQS的重入锁(ReetrantLock)及其Condition实现原理</a></p>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/54297968?utm_source=wechat_session&amp;utm_medium=social&amp;utm_oi=632939468966072320"  target="_blank" rel="noopener"
+    >(JDK)ReetrantLock手撕AQS</a></p>
+<p><a class="link" href="https://tech.meituan.com/2019/12/05/aqs-theory-and-apply.html"  target="_blank" rel="noopener"
+    >从ReentrantLock的实现看AQS的原理及应用</a></p>
+<h2 id="原子操作类">原子操作类</h2>
+<p>多线程下，java 自增自减操作是线程不安全的，因此JUC包才提供了线程安全的原子操作类</p>
+<h3 id="原理">原理</h3>
+<p>CAS + 自旋保证</p>
+<p><a class="link" href="https://blog.csdn.net/qfycc92/article/details/46489553"  target="_blank" rel="noopener"
+    >AtomicInteger源码分析——基于CAS的乐观锁实现</a></p>
+<h2 id="reentrantlock">ReentrantLock</h2>
+<h3 id="原理-1">原理</h3>
+<p><a class="link" href="http://www.blogjava.net/zhanglongsr/articles/356782.html"  target="_blank" rel="noopener"
+    >ReentrantLock源码之一lock方法解析(锁的获取)</a></p>
+<h1 id="无同步方案">无同步方案</h1>
+<h2 id="cas">CAS</h2>
+<p>Compare-and-Swap, 是一种算法，CAS 指令需要有 3 个操作数，分别是内存地址 V、旧的预期值 A 和新值 B。当执行操作时，只有当 V 的值等于 A，才将 V 的值更新为 B。</p>
+<h2 id="threadlocalt">ThreadLocal&lt;T&gt;</h2>
+<p>是java.lang包中的一个类，使用 ThreadLocal 维护变量时，其为每个使用该变量的线程提供独立的变量副本，把共享数据的可见范围限制在同一个线程之内，所以每一个线程都可以独立的改变自己的副本，而不会影响其他线程对应的副本。</p>
+<p>注意：ThreadLocal 无法解决共享对象的更新问题，ThreadLocal 对象建议使用 static修饰。这个变量是针对一个线程内所有操作共享的，所以设置为静态变量，所有此类实例共享此静态变量  ，也就是说在类第一次被使用时装载，只分配一块存储空间，所有此类的对象(只要是这个线程内定义的)都可以操控这个变量</p>
+<h3 id="原理-2">原理</h3>
+<p>每个线程内部都会维护一个 静态的ThreadLocalMap对象，该对象里有一个Entry（K-V 键值对）<strong>数组</strong></p>
+<p>Entry的Key是一个ThreadLocal实例，Value是一个线程特有对象。之所以key是一个ThreadLocal实例，是因为在同一线程内可以有多个ThreadLocal，而一个线程只有一个ThreadLocalMap，所以以一个ThreadLocal对应一个要保存的value就比较合适了</p>
+<p>Entry的作用即是：为其属主线程建立起一个ThreadLocal实例与一个线程特有对象之间的对应关系；</p>
+<p>Entry对Key的引用是弱引用；Entry对 Value的引用是强引用；</p>
+<p>ThreadLocalMap不同于HashMap，其解决哈希冲突不使用拉链法，而是使用线性探测法，当出现哈希冲突时，由于key是弱引用，还会有不同的逻辑进行插入</p>
+<p>每次对ThreadLocal做get、set操作时，以get方法为例，先通过Thread.currentThread()获得当前线程，在获取该线程对象里的ThreadLocalMap，以当前对象为key(当前线程的ThreadLoacl)在ThreadLocalMap中找到value，强转返回</p>
+<p>ThreadLocal本身有探测式清理和启发式清理过期的key，但在一些场景 (尤其是使用线程池) 下，由于 ThreadLocal.ThreadLocalMap 的底层数据结构导致 ThreadLocal 有内存泄漏的情况，应该尽可能在每次使用 ThreadLocal 后手动调用 remove()，以避免出现 ThreadLocal 经典的内存泄漏甚至是造成自身业务混乱的风险，因为ThreadLocal里的key是弱引用，当释放掉对threadlocal对象的强引用后，map里面的value没有被回收，但却永远不会被访问到了</p>
+<p>详细的可参考<a class="link" href="https://snailclimb.gitee.io/javaguide/#/docs/java/Multithread/ThreadLocal?id=threadlocalset%e6%96%b9%e6%b3%95%e6%ba%90%e7%a0%81%e8%af%a6%e8%a7%a3"  target="_blank" rel="noopener"
+    >threadlocalset方法源码详解</a></p>
+<h1 id="参考-1">参考</h1>
+<p><a class="link" href="https://github.com/CyC2018/CS-Notes/blob/master/docs/notes/Java%20%E5%B9%B6%E5%8F%91.md"  target="_blank" rel="noopener"
+    >CyC2018/CS-Notes/并发</a></p>
+<p><a class="link" href="https://www.cnblogs.com/zhengbin/p/6505971.html"  target="_blank" rel="noopener"
+    >过期的suspend()挂起、resume()继续执行线程</a></p>
+<p><a class="link" href="https://blog.csdn.net/qq838642798/article/details/65441415"  target="_blank" rel="noopener"
+    >ReenTrantLock可重入锁（和synchronized的区别）总结</a></p>
+<p><a class="link" href="https://blog.csdn.net/weixin_40792878/article/details/81369385"  target="_blank" rel="noopener"
+    >ReentrantLock锁和Synchronized锁的异同点</a></p>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/44185603"  target="_blank" rel="noopener"
+    >Java程序员开发岗面试知识点解析</a></p>
+<p><a class="link" href="https://www.cnblogs.com/chengxiao/p/7141160.html"  target="_blank" rel="noopener"
+    >Java并发包基石-AQS详解</a></p>
+<p><a class="link" href="https://blog.csdn.net/zhangdong2012/article/details/79983404"  target="_blank" rel="noopener"
+    >Java并发-AQS及各种Lock锁的原理</a></p>
+<p><a class="link" href="https://www.cnblogs.com/daydaynobug/p/6752837.html"  target="_blank" rel="noopener"
+    >Java并发之AQS详解</a></p>
+<p><a class="link" href="http://www.cnblogs.com/chenpi/p/5614290.html"  target="_blank" rel="noopener"
+    >Java并发编程JUC总结</a></p>
+<p>阿里巴巴Java开发手册1.40</p>
+<p>Java并发编程实战</p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/">Java并发</a>
+        
+            <a href="/tags/juc/">JUC</a>
+        
+            <a href="/tags/%E7%BA%BF%E7%A8%8B/">线程</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Nov 12, 2021 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+        <h2 class="section-title">Related contents</h2>
+        <div class="related-contents">
+            <div class="flex article-list--tile">
+                
+                    
+<article class="">
+    <a href="/p/java-io/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java IO</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/jvm/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">JVM</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/java-list-map/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java List Map</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/java-se/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java SE</h2>
+        </div>
+    </a>
+</article>
+                
+            </div>
+        </div>
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#进程与线程的区别">进程与线程的区别</a></li>
+    <li><a href="#调度方式">调度方式</a></li>
+    <li><a href="#调度原理">调度原理</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#1状态转换">1.状态转换</a></li>
+    <li><a href="#2-状态">2. 状态</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#死锁产生的条件">死锁产生的条件</a></li>
+    <li><a href="#避免死锁">避免死锁</a></li>
+    <li><a href="#死锁检测工具">死锁检测工具</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#object类中wait和notifynotifyall">Object类中wait()和notify()、notifyAll()</a></li>
+    <li><a href="#thread中的yield">Thread中的yield()</a></li>
+    <li><a href="#thread中的-suspend-和resume已过期">Thread中的 suspend() 和resume()，已过期</a></li>
+    <li><a href="#thread类中的sleep方法">Thread类中的sleep()方法</a></li>
+    <li><a href="#thread类中的join方法">Thread类中的join()方法</a></li>
+    <li><a href="#condition类中的await和signalsignalall">Condition类中的await()和signal()、signalAll()</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#synchronized">synchronized</a></li>
+    <li><a href="#synchronized和reentrantlock区别">synchronized和ReentrantLock区别</a></li>
+    <li><a href="#volatile">volatile</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#线程池处理过程">线程池处理过程</a></li>
+    <li><a href="#对线程池复用的简单理解">对线程池复用的简单理解</a></li>
+    <li><a href="#线程池是如何做到当线程数量大于corepoolsize-多余的空闲线程在等待keepalivetime之后被回收">线程池是如何做到当线程数量大于corePoolSize ，多余的空闲线程在等待keepAliveTime之后被回收</a></li>
+    <li><a href="#线程池调优">线程池调优</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#blockingqueue">BlockingQueue</a>
+      <ol>
+        <li><a href="#1分类">1.分类</a></li>
+        <li><a href="#2常用方法">2.常用方法</a></li>
+        <li><a href="#3原理">3.原理</a>
+          <ol>
+            <li><a href="#arrayblockingqueue">ArrayBlockingQueue</a></li>
+            <li><a href="#linkedblockingqueue">LinkedBlockingQueue</a></li>
+          </ol>
+        </li>
+        <li><a href="#参考">参考</a></li>
+      </ol>
+    </li>
+    <li><a href="#aqs">AQS</a>
+      <ol>
+        <li><a href="#同步方式">同步方式</a>
+          <ol>
+            <li><a href="#独占式如reentrantlock">独占式：如ReentrantLock</a></li>
+            <li><a href="#共享式如semaphorecountdownlatch">共享式：如Semaphore，CountDownLatch</a></li>
+            <li><a href="#区别">区别</a></li>
+          </ol>
+        </li>
+        <li><a href="#condition">Condition</a></li>
+      </ol>
+    </li>
+    <li><a href="#原子操作类">原子操作类</a>
+      <ol>
+        <li><a href="#原理">原理</a></li>
+      </ol>
+    </li>
+    <li><a href="#reentrantlock">ReentrantLock</a>
+      <ol>
+        <li><a href="#原理-1">原理</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#cas">CAS</a></li>
+    <li><a href="#threadlocalt">ThreadLocal&lt;T&gt;</a>
+      <ol>
+        <li><a href="#原理-2">原理</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

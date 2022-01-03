@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Java NIO on Nixum Blog</title>
+    <link>http://nixum.cc/tags/java-nio/</link>
+    <description>Recent content in Java NIO on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 22 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/java-nio/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Java IO</title>
+      <link>http://nixum.cc/p/java-io/</link>
+      <pubDate>Tue, 22 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/java-io/</guid>
+      <description>[TOC]
+BIO 特点
+ BIO是同步阻塞的，以流的形式处理，基于字节流和字符流 每个请求都需要创建独立的线程，处理Read和Write 并发数较大时，就算是使用了线程池，也需要创建大量的线程来处理 连接建立后，如果处理线程被读操作阻塞了，那就阻塞了，只能等到读完才能进行其他操作  以基于TCP协议的Socket，编写服务端Demo
+package com.nixum.bio; import java.io.InputStream; import java.io.PrintWriter; import java.net.ServerSocket; import java.net.Socket; import java.util.Date; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; public class BIOServer { public static void main(String[] args) throws Exception { ExecutorService newCachedThreadPool = Executors.newCachedThreadPool(); //创建ServerSocket  ServerSocket serverSocket = new ServerSocket(8080); while (true) { // 主线程负责处理监听  final Socket socket = serverSocket.accept(); // 创建线程处理请求  newCachedThreadPool.execute(() -&amp;gt; { handler(socket); }); } } public static void handler(Socket socket) { try { byte[] bytes = new byte[1024]; //通过socket获取输入流  InputStream inputStream = socket.</description>
+    </item>
+    
+  </channel>
+</rss>

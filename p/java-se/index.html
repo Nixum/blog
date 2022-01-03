@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='Java基础'><title>Java SE</title>
+
+<link rel='canonical' href='http://nixum.cc/p/java-se/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='Java SE'>
+<meta property='og:description' content='Java基础'>
+<meta property='og:url' content='http://nixum.cc/p/java-se/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='JavaSE' /><meta property='article:tag' content='面向对象' /><meta property='article:published_time' content='2019-02-18T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2020-10-23T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="Java SE">
+<meta name="twitter:description" content="Java基础">
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/java/" >
+                Java
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/java-se/">Java SE</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        Java基础
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 18, 2019</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    3 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="一面向对象">一、面向对象</h1>
+<p>面向对象的特征：
+抽象(注意与当前目标有关的，选择一部分，暂时不用部分细节，分为过程抽象、数据抽象)
+<strong>继承</strong>：联结类的层次模型、允许和鼓励类的重用，派生类可以从它的基类那里继承方法和实例变量，进行修改和新增使其更适合
+<strong>封装</strong>：封装是把过程和数据包围起来，对数据的访问只能通过已定义的界面，这些对象通过一个受保护的接口访问其他对象
+<strong>多态</strong>：允许不同类的对象对同一消息作出响应，包括参数化多态性和包含多态性，灵活、抽象、行为共享、代码共享，解决程序函数同名问题</p>
+<h1 id="二基础类型及其包装类型">二、基础类型及其包装类型</h1>
+<table>
+<thead>
+<tr>
+<th>基本类型</th>
+<th style="text-align:center">boolean</th>
+<th>byte</th>
+<th>char</th>
+<th>short</th>
+<th>int</th>
+<th>float</th>
+<th>long</th>
+<th>double</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>包装类型</td>
+<td style="text-align:center">Boolean</td>
+<td>Byte</td>
+<td>Character</td>
+<td>Short</td>
+<td>Integer</td>
+<td>Float</td>
+<td>Long</td>
+<td>Double</td>
+</tr>
+<tr>
+<td>位数</td>
+<td style="text-align:center">1</td>
+<td>8</td>
+<td>16</td>
+<td>16</td>
+<td>32</td>
+<td>32</td>
+<td>64</td>
+<td>64</td>
+</tr>
+<tr>
+<td>字节数</td>
+<td style="text-align:center"></td>
+<td>1</td>
+<td>2</td>
+<td>2</td>
+<td>4</td>
+<td>4</td>
+<td>8</td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p>字符集</p>
+<p>unicode是字符集，一种标准，UTF-8、UTF-16、GBK之类的是编码方式，是字符集的具体实现</p>
+<p>UTF-16：定长,固定2字节， UTF-8：变长,中文占3字节,英文占1字节</p>
+<p>char可以保存一个中文字符</p>
+<p>java中采用unicode编码，无论中文、英文都是占2个字节</p>
+<p>java虚拟机中使用UTF-16编码方式</p>
+<p>java的字节码文件(.class)文件采用的是UTF-8编码，但是在java 运行时会使用UTF-16编码。</p>
+<p>参考<a class="link" href="https://blog.csdn.net/worm0527/article/details/70833531"  target="_blank" rel="noopener"
+    >Java中的UTF-8、UTF-16编码字符所占字节数</a></p>
+</li>
+<li>
+<p>自动转换的顺序，</p>
+<p>由高到低：btye, short, char(这三个之间无法自动转换，只能强转) &mdash;&gt; int &mdash;&gt; long &mdash;&gt; float &mdash;&gt; double</p>
+</li>
+<li>
+<p>为什么 占8字节的long 转占 4字节float 不需要强转转化？</p>
+<p>因为底层实现方式不同，浮点数在内存中的32位不是简单地转化为十进制，而是通过公式计算得到，最大值要比long的范围大</p>
+</li>
+</ul>
+<h2 id="装箱和拆箱">装箱和拆箱</h2>
+<p>以 int 和 Integer 为例</p>
+<ul>
+<li>
+<p>装箱的时候自动调用的是 Integer 的 valueOf(int) 方法，Integer a = 1; 就会触发调用valueOf(int)方法</p>
+<p>拆箱的时候自动调用的是Integer的 intValue() 方法</p>
+<p>parseInt(&quot;&quot;)方法是将字符串转化为基本类型</p>
+</li>
+</ul>
+<p>其中，装箱时，即调用 valueOf() 方法时，会先去缓存池里找，看看该值是否在缓存池的范围中，如果是，多次调用时会取得同一对象的引用，属于同一对象，如果不在缓存池中，则使用new Integer()</p>
+<p>使用new Integer()初始化的，无论传入的数是否在缓存池的范围内，都是重新分配内存初始化的，属于不同对象</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Integer</span> <span class="n">a</span> <span class="o">=</span> <span class="n">23</span><span class="o">;</span> <span class="n">Integer</span> <span class="n">b</span> <span class="o">=</span> <span class="n">23</span><span class="o">;</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="o">);</span> <span class="c1">// true
+</span><span class="c1"></span>
+<span class="n">Integer</span> <span class="n">a1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Integer</span><span class="o">(</span><span class="n">23</span><span class="o">);</span> <span class="n">Integer</span> <span class="n">b1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Integer</span><span class="o">(</span><span class="n">23</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">a1</span> <span class="o">==</span> <span class="n">b1</span><span class="o">);</span> <span class="c1">// false
+</span><span class="c1"></span>
+<span class="n">Integer</span> <span class="n">c</span> <span class="o">=</span> <span class="n">128</span><span class="o">;</span> <span class="n">Integer</span> <span class="n">d</span> <span class="o">=</span> <span class="n">128</span><span class="o">;</span> 
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="n">d</span><span class="o">);</span> <span class="c1">// false
+</span></code></pre></div><ul>
+<li>
+<p>基本类型缓存池，其他类型没有</p>
+<p>boolean：true、false</p>
+<p>short ： -128 ~127</p>
+<p>int ： -128 ~127</p>
+<p>char ： \u0000 ~ \u007F</p>
+</li>
+<li>
+<p>equals 和 == 对于 装箱和拆箱</p>
+<ul>
+<li>
+<p>== ：比较的是两个包装类型的，同包装类型，比较两者的引用，判断是否指向同一对象；不同包装类型用==比较会出现编译错误</p>
+<p>比较时两者都是基本类型，无论类型是否一样，都是比较数值</p>
+<p>比较时一个是包装类型，一个是基本类型，无论值的范围是否在缓存池内，则将自动拆箱，比较基本类型</p>
+<p>比较时有算术运算，自动拆箱，运算，比较数值</p>
+</li>
+<li>
+<p>equals：看具体类型的equals方法，一般先比较类型，类型不一样直接返回false，类型一样再比较数值</p>
+<p>比较时传入基本类型，会进行装箱，之后进行equals比较</p>
+<p>比较时有算术运算，自动拆箱，运算，之后根据运算完后的类型再装箱（可能会向上转型），之后再进行equals比较</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="运算与转型">运算与转型</h2>
+<ul>
+<li>从低位类型到高位类型自动转换；从高位类型到低位类型需要强制类型转换</li>
+<li>算术运算中，基本就是先转换为高位数据类型，再参加运算，结果也是最高位的数据类型</li>
+<li>short、byte、char计算时都会提升为int</li>
+<li>采用 +=、*= 等缩略形式的运算符，系统会自动强制将运算结果转换为目标变量的类型</li>
+<li>当运算符为自动递增运算符（++）或自动递减运算符（&ndash;）时，如果操作数为 byte，short 或 char类型不发生改变</li>
+<li>被final修饰的变量不会自动改变类型，当2个final修饰相操作时，结果会根据左边变量的类型自动转化</li>
+<li>三元运算符？，：两边是基本类型会做自动类型提升</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kt">byte</span> <span class="n">a</span> <span class="o">=</span> <span class="n">127</span><span class="o">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">127</span><span class="o">,</span> <span class="n">d</span><span class="o">;</span> 
+<span class="kd">final</span> <span class="kt">byte</span> <span class="n">c</span> <span class="o">=</span> <span class="n">127</span><span class="o">;</span>
+<span class="n">a</span> <span class="o">+=</span> <span class="n">b</span><span class="o">;</span> <span class="n">a</span> <span class="o">-=</span> <span class="n">b</span><span class="o">;</span> <span class="c1">//这种写法是可以的，会变成 a = (byte) (a+b) 
+</span><span class="c1"></span><span class="n">而</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="err">；</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="err">；</span><span class="n">则会因为没有类型转化而出错</span><span class="err">，</span><span class="n">int无法转成byte</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">c</span><span class="o">;</span> <span class="c1">// 会出错，a在运算时为自动提升为int
+</span><span class="c1"></span><span class="n">如果是final修饰</span> <span class="n">a</span><span class="err">、</span><span class="n">b</span><span class="err">，</span><span class="n">那么byte</span> <span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="n">就不会编译错误</span>
+</code></pre></div><h1 id="三string">三、String</h1>
+<h2 id="1基本">1.基本</h2>
+<ul>
+<li>
+<p>底层：private final char value[];</p>
+<p>value数组被final修饰，因此当它初始化之后就不能再引用其它数组</p>
+<p>String 内部没有改变 value 数组的方法，因此可以保证 String 不可变</p>
+<p>String类的方法都不是在原来的字符串上进行操作，而是重新生成新的字符数组</p>
+</li>
+<li>
+<p>类本身被 final 修饰，使它不可被继承</p>
+</li>
+<li>
+<p>String类的 “+&quot;  本质是使用StringBuilder的append方法，最终返回new的string</p>
+</li>
+<li>
+<p>JDK9之前底层使用char数组，JDK9底层改为使用byte数组+coder标识符，主要是因为有些字符集并不需要使用到2个字节的char，不需要用到2个字节的char</p>
+</li>
+</ul>
+<h2 id="2不可变的好处">2.不可变的好处</h2>
+<ul>
+<li>
+<p>可以缓存 hash 值</p>
+<p>因为 String 的 hash 值经常被使用，例如 String 用做 HashMap 的 key。不可变的特性可以使得 hash 值也不可变，因此只需要进行一次计算。</p>
+</li>
+<li>
+<p>String Pool 的需要</p>
+<p>如果一个 String 对象已经被创建过了，那么就会从 String Pool 中取得引用。只有 String 是不可变的，才可能使用 String Pool。</p>
+</li>
+<li>
+<p>安全</p>
+<ul>
+<li>
+<p>String 经常作为参数，String 不可变性可以保证参数不可变。例如在作为网络连接参数的情况下如果 String 是可变的，那么在网络连接过程中，String 被改变，改变 String 对象的那一方以为现在连接的是其它主机，而实际情况却不一定是。</p>
+</li>
+<li>
+<p>不可变得特性使得它天生是线程安全的</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="3字符串常量池string-pool">3.字符串常量池（String Pool）</h2>
+<ul>
+<li>一般用于缓存字符串字面量和符号引用</li>
+</ul>
+<p>String的intern方法可以把相应的字符串缓存起来，保存在永久代中，但是一般永久代空间有限，且只有FullGC才会进行垃圾回收（JDK8后移永久代移到了元空间中，默认大小也增加了），所以需要谨慎使用该方法</p>
+<h2 id="4stringbuffer和stringbuilder">4.StringBuffer和StringBuilder</h2>
+<p>StringBuffer是线程安全的，因为大部分方法都用了synchronized关键字修饰，而StringBuilder没有，所以是非线程安全的，两者在功能上是等价的，性能上，StringBuilder比StringBuffer好。</p>
+<p>3和4具体参考<a class="link" href="https://www.cnblogs.com/xiaoxi/p/6036701.html"  target="_blank" rel="noopener"
+    >深入理解Java中的String</a>，这篇文章写得相当详细了</p>
+<h1 id="四equalshashcodeclone">四、equals()、hashCode()、clone()</h1>
+<h2 id="equals">equals()</h2>
+<ul>
+<li>在不重写的情况下，Object类下的 equals() 方法比较的是两个对象的引用，即判断两个对象是否是同一个对象，此时等价于 ==</li>
+<li>重写的情况下，看具体类重写后的equals方法，像String类的 equals 方法是先判断是否是String类型，再比较字符的内容</li>
+</ul>
+<h2 id="hashcode">hashCode()</h2>
+<ul>
+<li>
+<p>作用是返回对象的int类型的哈希码，一般用于当索引，例如，在HashMap里，加入一对键值对，HashMap会先计算key的哈希值，取模，找到对应桶的下标</p>
+</li>
+<li>
+<p>hashCode()一般会和equals()有联系，例如，HashMap在找到要加入的键值对所在对应的桶，桶内的键值对的哈希码肯定是一样，为了判断该键值对是否重复出现，将使用key的equals进行比较</p>
+<p>为什么有了equals()还要hashCode方法，有了hashCode方法还要equals方法？</p>
+<ol>
+<li>因为equals方法的实现比较复杂，效率较低，hashCode只需计算hash值就能进行对比，效率高</li>
+<li>hashCode方法不一定可靠，不同对象生成的hashCode可能一样，所以需要equals方法</li>
+</ol>
+<p>hashCode() 与 equals() 的相关规定</p>
+<ol>
+<li>如果两个对象相等，则hashcode一定也是相同的</li>
+<li>两个对象相等,对两个对象分别调用equals方法都返回true</li>
+<li>两个对象有相同的hashcode值，它们也不一定是相等的</li>
+<li>因此，equals 方法被覆盖过，则 hashCode 方法也必须被覆盖</li>
+<li>hashCode() 的默认行为是对堆上的对象产生独特值。如果没有重写 hashCode()，则该 class 的两个对象无论如何都不会相等（即使这两个对象指向相同的数据）</li>
+</ol>
+</li>
+</ul>
+<h2 id="clone">clone()</h2>
+<ul>
+<li>
+<p>clone分为深拷贝和浅拷贝</p>
+<ul>
+<li>
+<p>浅拷贝：对象的属性是基本类型的，直接复制一份；属性是引用类型的（如数组、对象），复制引用，也就是拷贝过后的两个对象里引用类型的属性，都是指向同一个对象</p>
+<p>Object类里的clone方法就是浅拷贝</p>
+</li>
+<li>
+<p>深拷贝：对象里的属性无论是基本类型还是引用类型，都是重新复制一份，即会为拷贝对象里的引用属性重新开辟内存空间，不再是和被拷贝对象指向同一个对象</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Object里的clone()方法被protected 修饰，一般类如果不重写的话是调用不了的，如果要重写的话，需要实现Cloneable接口，不然会抛出CloneNotSupportedException异常，之后可以通过super.clone()调用Object类中的原clone方法</p>
+</li>
+</ul>
+<h1 id="关键字">关键字</h1>
+<h2 id="final和static">final和static</h2>
+<ul>
+<li>final关键字主要用在三个地方：变量、方法、类。</li>
+</ul>
+<ol>
+<li>修饰变量，如果是基本数据类型的变量，则其数值一旦在初始化之后便不能更改；如果是引用类型的变量，则在对其初始化之后便不能再让其指向另一个对象，final修饰的变量一定要初始化，要不就直接初始化，不然就需要在每个构造方法里初始化，或者在代码块里初始化，代码块里的初始化和构造方法里的初始化只能二选一，否则会造成赋值重复</li>
+<li>修饰类，表明这个类不能被继承，final类中的所有成员方法都会被隐式地指定为final方法</li>
+<li>修饰方法，表明该方法不能被子类重写</li>
+</ol>
+<ul>
+<li>声明为static成员不能被序列化</li>
+</ul>
+<h2 id="instanceof">instanceof</h2>
+<ul>
+<li>是关键字，也是运算符</li>
+<li>用于判断一个对象是否是 一个类的实例，一个类的子类，一个接口的实现类</li>
+</ul>
+<h1 id="抽象类和接口">抽象类和接口</h1>
+<ul>
+<li>
+<p>抽象类可以有构造方法（但不能实例化），接口没有</p>
+</li>
+<li>
+<p>抽象类可以有普通成员变量、静态变量或常量，访问类型任意，接口只有静态常量，且默认被public static final修饰</p>
+</li>
+<li>
+<p>抽象类可以包含非抽象的普通方法，接口中的方法必须是抽象的，不能有非抽象方法</p>
+</li>
+<li>
+<p>抽象类中的<strong>抽象方法访问类型</strong>可以是<strong>public、protected和不写</strong>，接口中的方法默认是public abstract</p>
+</li>
+<li>
+<p>抽象类中可以包含静态方法(可以调用)，接口不行</p>
+</li>
+<li>
+<p>JDK1.8之前接口中的方法不能有方法体，且不能被default修饰，但是可以不写访问修饰符，</p>
+<p>1.8之后（包含1.8）接口中的方法可以有方法体，表示默认方法体，但需要用default修饰</p>
+</li>
+<li>
+<p>JDK1.8之前接口中的方法不能用static修饰，1.8之后（包含1.8）才可以使用static修饰，才可以通过接口名调用静态方法</p>
+</li>
+</ul>
+<h1 id="继承">继承</h1>
+<h2 id="重写与重载">重写与重载</h2>
+<ul>
+<li>
+<p>重写（Override）</p>
+<p>继承中，子类重写父类方法</p>
+<ul>
+<li>子类方法的<strong>访问权限</strong>必须<strong>大于等于</strong>父类方法；</li>
+<li>子类方法的返回类型必须是<strong>父类方法返回类型或为其子类型</strong>。</li>
+<li>子类抛出的<strong>异常</strong>比父类的<strong>小或者相等</strong></li>
+</ul>
+<p>关于静态方法重写</p>
+<p>static方法不能被子类重写，子类如果定义了和父类完全相同的static方法，Son.staticmethod()或new Son().staticmethod()都是调用子类的，如果是Father.staticmethod()或Father f = new Son(); f.staticmethod()调用的是父类的</p>
+</li>
+<li>
+<p>重载（Overload）</p>
+<p>存在于同一个类中，指一个方法与已经存在的方法名称上相同，但是<strong>参数类型、个数、顺序</strong>至少有一个不同</p>
+<p>注意，返回值不同，其它都相同不算是重载。</p>
+</li>
+</ul>
+<h2 id="初始化顺序">初始化顺序</h2>
+<p>（括号内的按出现先后进行初始化）</p>
+<ol>
+<li>父类（静态变量、静态代码块）</li>
+<li>子类（静态变量、静态代码块）</li>
+<li>父类（实例变量、普通代码块）</li>
+<li>父类（构造函数）</li>
+<li>子类（实例变量、普通代码块）</li>
+<li>子类（构造函数）</li>
+</ol>
+<p>在构造方法中，this()和super()调用构造方法时，只能放在第一行，且不能同时出现</p>
+<h1 id="内部类">内部类</h1>
+<h2 id="基础">基础</h2>
+<ul>
+<li>
+<p>内部类是指在一个外部类的内部再定义一个类。内部类作为外部类的一个成员，并且依附于外部类而存在的。</p>
+</li>
+<li>
+<p>内部类可为静态，可用protected和private修饰（而外部类只能使用public和缺省的包访问权限）。</p>
+</li>
+<li>
+<p>内部类主要有以下几类：成员内部类、局部内部类、静态内部类、匿名内部类</p>
+</li>
+</ul>
+<h2 id="成员内部类">成员内部类</h2>
+<ul>
+<li>
+<p>在外部类里想调用内部类里的方法和变量，只能通过new的形式创建内部类实例才可以使用</p>
+</li>
+<li>
+<p>内部类调用外部类的方法，无论静态非静态，直接调用</p>
+</li>
+<li>
+<p>内部类里的成员可以和外部类的成员的名字相同，直接使用的时候调用的是内部的，内部类调用外部类同名变量需要加上外部类名，如果没有同名变量就可以直接使用，不需要加外部类名</p>
+</li>
+<li>
+<p>在其他地方想要调用有内部类的类的内部类方法，需要实例化一个外部类，再使用外部类的实例变量实例化内部类</p>
+</li>
+<li>
+<p>可以被abstarct修饰，但无法实例化</p>
+</li>
+<li>
+<p>不能有静态成员、方法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Outer</span> <span class="n">out</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">();</span>
+<span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span> <span class="n">outin</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="na">new</span> <span class="nf">Inner</span><span class="o">();</span>
+<span class="n">outin</span><span class="o">.</span><span class="na">inner_f1</span><span class="o">();</span>
+</code></pre></div></li>
+</ul>
+<h2 id="局部内部类">局部内部类</h2>
+<ul>
+<li>局部内部类调用外部类的方法，直接调用</li>
+<li>外部类调用内部类方法，初始化外部类实例，调用有局部内部类的方法</li>
+<li>局部内部类 可以看成是 方法里的成员变量，只能在该方法里实例化</li>
+<li>局部内部类 对于同名变量的访问方式同成员内部类</li>
+<li>方法外的外部类的成员变量可以直接访问，但只能访问内部类所在方法里的final修饰的变量</li>
+<li>不能被static还有访问控制符修饰，可以被abstract、final修饰</li>
+</ul>
+<h2 id="静态内部类">静态内部类</h2>
+<ul>
+<li>
+<p>静态内部类中可以定义静态或者非静态的成员或方法</p>
+</li>
+<li>
+<p>静态内部类只能访问外部类的静态成员，不能访问外部类的非静态的成员</p>
+</li>
+<li>
+<p>外部类方法访问内部类静态成员，直接 内部类名.静态成员变量</p>
+<p>访问内部非静态成员，实例化内部类，在调用</p>
+<p>说白了，静态属于整个类的，不属于某个对象的，可以直接使用，不依赖外部类，可以直接调用，或者实例化外部类里的静态类</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span> <span class="n">outin</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span><span class="o">();</span>
+<span class="n">outin</span><span class="o">.</span><span class="na">staticInner_f1</span><span class="o">();</span>		<span class="c1">// 或者直接调用 Outer.Inner.staticInner_f1()
+</span><span class="c1"></span><span class="n">outin</span><span class="o">.</span><span class="na">inner_f1</span><span class="o">();</span>			<span class="c1">// 不能直接 Outer.Inner.inner_f1()
+</span><span class="c1"></span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">print</span><span class="o">(</span><span class="n">outin</span><span class="o">.</span><span class="na">staticField</span> <span class="o">+</span> <span class="n">outin</span><span class="o">.</span><span class="na">field</span><span class="o">);</span>
+<span class="c1">// 同理只能 Outer.Inner.staticField, 不能Outer.Inner.field；
+</span></code></pre></div></li>
+<li>
+<p>不可以只实例化外部类，再使用这个实例去实例化内部类或者调用内部类里的成员，这点跟成员内部类是不一样的</p>
+</li>
+</ul>
+<h2 id="匿名内部类">匿名内部类</h2>
+<ul>
+<li>匿名内部类不能有构造方法</li>
+<li>无法被访问控制符、static修饰</li>
+<li>匿名内部类不能定义任何静态成员、方法和类</li>
+</ul>
+<p>匿名都没类名了，构造方法，静态成员之类的没办法调用了</p>
+<p>参考<a class="link" href="https://www.cnblogs.com/ITtangtang/p/3980460.html"  target="_blank" rel="noopener"
+    >深入理解java内部类</a></p>
+<h1 id="反射和内省">反射和内省</h1>
+<ul>
+<li>反射：可以在运行时动态获取类信息或者动态调用类方法；JVM运行的时候，读入类的字节码到 JVM 中，对该类的属性、方法、构造方法进行获取和调用</li>
+</ul>
+<p>类加载一次之后会在JVM中缓存，但是如果是<strong>不同的类加载器</strong>去加载<strong>同一个class</strong>则会多次加载。</p>
+<p>两个类相等需要类本身相等，并且使用同一个类加载器进行加载。这是因为每一个类加载器都拥有一个独立的类名称空间。</p>
+<p>这里的相等，包括类的 Class 对象的 equals() 方法、isAssignableFrom() 方法、isInstance() 方法的返回结果为 true，也包括使用 instanceof 关键字做对象所属关系判定结果为 true。</p>
+<p>反射慢是因为Java是静态语言，如果在JVM运行时才进行加载，进行参数和方法的解析，此时的JVM无法对反射加载的类进行优化，还有就是类加载需要经过验证，判断是否对JVM有害，反射加载验证会比平时在装载期的时间长，但是总的来说影响不大</p>
+<ul>
+<li>内省：针对JavaBean，只能对Bean的属性进行操作；加载类，得到它的属性，对属性进行get/set，是对反射的一层封装</li>
+</ul>
+<h1 id="枚举">枚举</h1>
+<ul>
+<li>
+<p>使用enum定义的枚举类默认继承了java.lang.Enum，而不是继承Object类</p>
+</li>
+<li>
+<p>枚举类可以实现一个或多个接口</p>
+</li>
+<li>
+<p>使用enum定义、非抽象的枚举类默认使用final修饰，不可以被继承，定义的Enum类默认被final修饰，无法被其他类继承</p>
+</li>
+<li>
+<p>枚举类的所有实例都必须放在第一行展示，不需使用new 关键字，不需显式调用构造器。</p>
+<p>自动添加public static final修饰</p>
+</li>
+<li>
+<p>枚举类的构造器只能是私有的</p>
+</li>
+<li>
+<p>枚举类也能定义属性和方法，可以是静态和非静态的</p>
+</li>
+</ul>
+<p>参考 <a class="link" href="https://www.cnblogs.com/sister/p/4700702.html"  target="_blank" rel="noopener"
+    >java浅谈枚举类</a></p>
+<p>具体例子</p>
+<p>反编译之后会发现，SPRING、SUMMER、FALL这些是静态常量(public static final 修饰)，而且是在静态代码块里初始化的，同时还附带有public static Season[] values()方法和public static Season valueOf(String s)方法</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">enum</span> <span class="n">Season</span><span class="o">{</span>
+    <span class="c1">// 调用无参构造器、括号里的变量称为自定义变量，可以有多个，要跟构造方法对应
+</span><span class="c1"></span>    <span class="n">SPRING</span><span class="o">(),</span>
+    <span class="c1">// 调用有参构造器
+</span><span class="c1"></span>    <span class="n">SUMMER</span><span class="o">(</span><span class="s">&#34;夏天&#34;</span><span class="o">),</span>
+    <span class="c1">// 默认调用无参构造器
+</span><span class="c1"></span>    <span class="n">FALL</span><span class="err">；</span>
+
+    <span class="kd">private</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+
+    <span class="c1">// 默认是private的
+</span><span class="c1"></span>    <span class="n">Season</span><span class="o">()</span> <span class="o">{}</span>
+
+    <span class="kd">private</span> <span class="nf">Season</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="c1">// ----------------------------------------------------    
+</span><span class="c1"></span>    <span class="c1">// 如果在enum中定义了抽象方法,每个实例都要重写该方法
+</span><span class="c1"></span>    <span class="kd">public</span> <span class="kd">abstract</span> <span class="n">String</span> <span class="nf">whatSeason</span><span class="o">();</span>
+    
+    <span class="c1">// 调用无参构造器
+</span><span class="c1"></span>    <span class="n">SPRING</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// 方法无法调用enum类里的非静态变量，只能调用非静态变量
+</span><span class="c1"></span>        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="n">String</span> <span class="nf">whatSeason</span><span class="o">(){</span><span class="k">return</span> <span class="s">&#34;chun&#34;</span><span class="o">;}</span>
+    <span class="o">},</span>
+    <span class="c1">// 调用有参构造器
+</span><span class="c1"></span>    <span class="n">SUMMER</span><span class="o">(</span><span class="s">&#34;夏天&#34;</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="n">String</span> <span class="nf">whatSeason</span><span class="o">(){</span><span class="k">return</span> <span class="s">&#34;xia&#34;</span><span class="o">;}</span>
+    <span class="o">},</span>
+    <span class="c1">// 默认调用无参构造器
+</span><span class="c1"></span>    <span class="n">FALL</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="n">String</span> <span class="nf">whatSeason</span><span class="o">(){</span><span class="k">return</span> <span class="s">&#34;qiu&#34;</span><span class="o">;}</span>
+    <span class="o">};</span>
+<span class="o">}</span>
+
+</code></pre></div><p>原理参考<a class="link" href="https://blog.csdn.net/javazejian/article/details/71333103"  target="_blank" rel="noopener"
+    >深入理解java类型</a></p>
+<h1 id="泛型">泛型</h1>
+<ul>
+<li>
+<p>泛型会类型擦除，那它如何保证类型的正确？</p>
+<p>java编译器是通过先检查代码中泛型的类型，然后再进行类型擦除，在进行编译的</p>
+<p>只能在编译期保证类型相同</p>
+</li>
+<li>
+<p>泛型被擦除，统一使用原始类型Object，泛型类型变量最后都会被替换为原始类型，那为什么我们使用的时候不需要强转转换?</p>
+<p>比如ArrayList，它会帮我们进行强转转换，它会做了一个checkcast操作，检查什么类型，之后进行强转</p>
+</li>
+<li>
+<p>类型擦除与多态导致冲突，如何解决</p>
+<p>比如本意是进行重写，实现多态。可是类型擦除后，只能变为了重载。这样，类型擦除就和多态有了冲突，JVM采用桥方法解决此问题</p>
+</li>
+<li>
+<p>泛型擦除的优点</p>
+<p>类型安全，编译器会帮我们检查、消除强制类型转换，提高代码可读性、为未来版本的 JVM 的优化带来可能</p>
+</li>
+<li>
+<p>List&lt;?&gt;、List<!-- raw HTML omitted -->、List、List&lt;? super T&gt;、List&lt;? extends T&gt;的区别</p>
+<p>List&lt;? super T&gt;：T的父类，包括T，表示范围</p>
+<p>List&lt;? extends T&gt;：T的子类，包括T，表示范围</p>
+<p>List&lt;?&gt; 表示任意类型，如果没明确，就是Object或者任意类，与List、List<!-- raw HTML omitted -->一样，表示 点</p>
+<p>List 也可表示范围</p>
+</li>
+</ul>
+<p>参考 <a class="link" href="https://cloud.tencent.com/developer/article/1033693"  target="_blank" rel="noopener"
+    >10 道 Java 泛型面试题</a></p>
+<p>参考<a class="link" href="https://www.cnblogs.com/xll1025/p/6489088.html"  target="_blank" rel="noopener"
+    >java泛型（二）、泛型的内部原理：类型擦除以及类型擦除带来的问题</a></p>
+<h1 id="注解">注解</h1>
+<h1 id="序列化和反序列化">序列化和反序列化</h1>
+<p>序列化：将对象转换为字节序列，用于将保存在JVM内存中的对象持久化，保存到文件或者网络传输</p>
+<p>反序列化：将字节序列还原成对象</p>
+<p>与JSON的比较，两者都可以用于网络传输，JSON更使用web方面、应用方面，易读，需要将JSON解析才能还原成对象，而序列化反序列化是JAVA提供的，由JVM来还原，应用范围会更广一些</p>
+<p>除此之外也有其他协议，如基于XML文本协议(基于SOAP规范)：WebService、Burlap，二进制协议：Hessian，Hessian生成的字节流简凑、跨平台、高性能比JDK的序列化反序列化优秀</p>
+<h1 id="参考">参考</h1>
+<p><a class="link" href="https://www.cnblogs.com/dolphin0520/p/3780005.html"  target="_blank" rel="noopener"
+    >深入剖析Java中的装箱和拆箱</a>
+<a class="link" href="https://github.com/CyC2018/CS-Notes/blob/master/docs/notes/Java%20%E5%9F%BA%E7%A1%80.md"  target="_blank" rel="noopener"
+    >CyC2018/CS-Notes/java基础.md</a>
+<a class="link" href="https://www.cnblogs.com/xiaoxi/p/6036701.html"  target="_blank" rel="noopener"
+    >深入理解Java中的String</a></p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/javase/">JavaSE</a>
+        
+            <a href="/tags/%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1/">面向对象</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Oct 23, 2020 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+        <h2 class="section-title">Related contents</h2>
+        <div class="related-contents">
+            <div class="flex article-list--tile">
+                
+                    
+<article class="">
+    <a href="/p/java-list-map/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java List Map</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/java-io/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java IO</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/jvm/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">JVM</h2>
+        </div>
+    </a>
+</article>
+                
+                    
+<article class="">
+    <a href="/p/java%E5%B9%B6%E5%8F%91/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Java并发</h2>
+        </div>
+    </a>
+</article>
+                
+            </div>
+        </div>
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                go GC
+            </a>
+        
+            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                go内存模型
+            </a>
+        
+            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
+                go协程
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                go并发
+            </a>
+        
+            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                go集合类原理
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
+                分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+                
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#装箱和拆箱">装箱和拆箱</a></li>
+    <li><a href="#运算与转型">运算与转型</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#1基本">1.基本</a></li>
+    <li><a href="#2不可变的好处">2.不可变的好处</a></li>
+    <li><a href="#3字符串常量池string-pool">3.字符串常量池（String Pool）</a></li>
+    <li><a href="#4stringbuffer和stringbuilder">4.StringBuffer和StringBuilder</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#equals">equals()</a></li>
+    <li><a href="#hashcode">hashCode()</a></li>
+    <li><a href="#clone">clone()</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#final和static">final和static</a></li>
+    <li><a href="#instanceof">instanceof</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#重写与重载">重写与重载</a></li>
+    <li><a href="#初始化顺序">初始化顺序</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#基础">基础</a></li>
+    <li><a href="#成员内部类">成员内部类</a></li>
+    <li><a href="#局部内部类">局部内部类</a></li>
+    <li><a href="#静态内部类">静态内部类</a></li>
+    <li><a href="#匿名内部类">匿名内部类</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

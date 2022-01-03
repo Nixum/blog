@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Spring on Nixum Blog</title>
+    <link>http://nixum.cc/tags/spring/</link>
+    <description>Recent content in Spring on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 17 Apr 2019 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/spring/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Spring和SpringBoot</title>
+      <link>http://nixum.cc/p/spring%E5%92%8Cspringboot/</link>
+      <pubDate>Wed, 17 Apr 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/spring%E5%92%8Cspringboot/</guid>
+      <description>[TOC]
+SpringBoot Spring 和 Spring Boot区别 Spring Boot实现了自动配置，降低了项目搭建的复杂度。它主要是为了解决使用Spring框架需要进行大量的配置太麻烦的问题，所以它并不是用来替代Spring的解决方案，而是和Spring框架紧密结合用于提升Spring开发者体验的工具。同时它集成了大量常用的第三方库配置(例如Jackson, JDBC, Mongo, Redis, Mail等等)，做到零配置即用。内置Tomcat作为Web服务器，不像之前还要把服务部署到Tomcat在进行启动。
+SpringBoot整个启动流程  构建SpringApplication对象，执行其run方法 加载properties/yaml等配置文件 创建ApplicationContext（也可以称为Bean、IOC容器） 将扫描到的Bean或者xml中的bean，先解析成BeanDefinition，注册到ApplicationContext中的BeanFactory中（即自动配置过程，也是IOC容器的refresh方法执行过程） 实例化Bean，进行依赖注入，（AOP也是在此处实现，创建代理实例加入IOC容器）   SpringBoot启动流程 
+参考SpringBoot启动流程解析
+SpringBoot启动流程
+SpringBoot自动配置流程 自动配置流程只是SpringBoot启动中的一个环节，该环节只是在告诉Spring要在哪里找到Bean的声明。
+启动类main方法为入口，main方法所在的类会被**@SpringBootApplication**修饰， 通过main方法里执行**SpringApplication.run(Application.class, args)**进行启动，Spring启动时会解析出@SpringBootApplication注解，进行Bean的加载和注入。
+  @SpringBootApplication里包含了
+  @SpringBootConfiguration：作用类似于**@Configuration**，JavaConfig配置类，相当一个xml文件，配合@Bean注解让IOC容器管理声明的Bean
+  @ComponentScan：配上包路径，用于扫描指定包及其子包下所有类，如扫描@Component、@Server、@Controller等，并注入到IOC容器中
+  @EnableAutoConfiguration：自动配置的核心注解，主要用于找出所有自动配置类。该注解会使用**@Import(EnableAutoConfigurationImportSelector.class**)帮助SpringBoot应用将所有符合条件的@Configuration配置都加载到当前SpringBoot创建并使用的IoC容器。
+    EnableAutoConfigurationImportSelector类里有个SpringFactoriesLoader工厂加载器，通过里面的loadFactoryNames方法，传入工厂类名称和对应的类加载器，加载该类加载器搜索路径下的指定文件spring.factories文件，传入的工厂类为接口，而文件中对应的类则是接口的实现类，或最终作为实现类，得到这些类名集合后，通过反射获取这些类的类对象、构造方法，最终生成实例。
+因此只要在maven中加入了所需依赖，根据spring.factories文件里的key-value，能够在类路径下找到对应的class文件，就会触发自动配置
+  自定义starter 实际上就是编写自动配置类，会使用到一系列配置注解，如@Configuration、@EnableConfigurationProperties、@Component、@Bean、@ConditionOnXX、@AutoConfigureOrder等，让IOC容器加载我们自定义的Bean进去；
+另外就是必须在META-INF文件夹下创建spring.factories，告知Spring在哪找到配置类。
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=[自定义配置类的全限定名称] 自定义Starter可以理解为一个Jar包，该Jar包在Maven或Gradle注册后，服务启动时，IOC容器会去自动加载。
+自定义Starter内也可以使用配置文件，设定默认配置的key-value，当本项目里有配置的key与starter里定义的配置key重复时可以被替换
+ContextLoaderListener 【Spring】浅谈ContextLoaderListener及其上下文与DispatcherServlet的区别
+ 作为Spring启动入口 实现了ServletContextListener 接口，监听ServletContext，如果 ServletContext 发生变化（如服务器启动时ServletContext 被创建，服务器关闭时 ServletContext 将要被销毁）时，执行监听器里的方法 为IOC容器提供环境，扫描包，将带有注解的Bean加入到容器用于依赖注入，或者加载xml文件，将xml注册的bean加入容器用于依赖注入  常用注解 @Controller与@RestController  @Controller 默认是返回视图，即方法的return返回的是视图层的路径，只有+@ResponseBody才会返回Json格式的数据 @RestController实际上是@Controller + @ResponseBody组合，默认返回json格式的数据  @Autowired与@Resource   @Autowired 注解，修饰类成员变量、方法及构造方法，完成自动装配的工作，默认按 byType 自动注入。只有一个required属性，默认是true，表示必须注入，不能为null</description>
+    </item>
+    
+  </channel>
+</rss>

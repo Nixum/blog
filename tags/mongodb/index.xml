@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>MongoDB on Nixum Blog</title>
+    <link>http://nixum.cc/tags/mongodb/</link>
+    <description>Recent content in MongoDB on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 28 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/mongodb/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>mongoDB</title>
+      <link>http://nixum.cc/p/mongodb/</link>
+      <pubDate>Sun, 28 Nov 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/mongodb/</guid>
+      <description>[TOC]
+特点  分布式数据库，Json数据模型，面向对象数据模型，不强制表的scheme 当应用场景不清晰时，可以直接以对象模型直接存储，无需关心字段，表结构灵活，动态增加新字段 不用太过关注表间的关系，可直接嵌套存储，将多种关系存储在同一张表上，同时也加快查表，因为它可以减少磁盘定位次数，如果是关系型数据库，同时查多张表就需要定位多次 原生支持高可用，一般的部署方式是部署三个节点replica set，最多50个；多replica set可以实现自恢复（当主节点挂点后会选出从节点），异地容灾，数据库滚动更新 原生支持横向扩展，通过水平扩展分片实现，外部并不感知有多少个分片，只会当成一个分片使用 支持字段级加密，针对隐私数据，比如身份证、电话等，在入库时可以进行加密，查询时解密 支持地理位置经纬度查询 强大的聚合查询，适合报表、时序数据  NoSQL语句 客户端使用驱动时连接的执行流程
+ 客户端执行流程 
+数据库端执行流程
+ 数据库端执行流程 
+要获取ticket是因为MongoDB默认存储引擎wiredtiger的机制，ticket代表着系统资源的数量，ticket数量有限，读写操作都需要先获得ticket才可以进行下一步操作，机制类似信号量。
+连接 连接mongoDB语句，当有多节点或多分片时，连接也要写上，mongodb://节点1的host:port, 节点2的host:port,.../databaseName?[options: maxPoolSize(java默认是100), maxWaitTime(查询的最大等待事件), writeConcern, readConcern]
+mongoDB驱动里已提供负载均衡，多节点探测
+聚合 作用相当与group by，可作用与多个collection，可进行查询和计算。Mongo的聚合操作发生在pipeline中，由多个stage组成，有点像责任链，通过多个state来过滤，聚合数据，每一个{}代表一个state
+demo
+MySQL中的SELECTdepartment,count(null)asemp_QTYFROMUserWHEREgender=&amp;#39;female&amp;#39;GROUPBYdepartmentHAVINGcount(*)&amp;lt;10等价于mongo中的db.user.aggregate([{$match:{gender:&amp;#39;female&amp;#39;}},{$group:{_id:&amp;#39;$DEPARTMENT&amp;#39;,emp_qty:{$sum:1}}},{$match:{emp_qty:{$lt:10}}}])几个比较特别的运算符
+$unwind：将查询到的数组展开
+$grouphLookup：图搜索
+$facet/$bucket: 分面搜索，根据不同范围条件，多个维度一次性进行分组输出
+优化  查询时，尽量使用索引，为经常做查询的条件添加索引 查询时，只查询需要的字段，而不是查询全部，减少网络资源的浪费 更新时，只更新必要的字段，而不是每次更新都把整个json文档发送过去，减少网络资源的浪费 插入时，尽可能直接批量插入，而不是一条一条插 通过mongodb提供的TTL索引，可以实现过期自删数据 建表时，文档嵌套不超过3层 尽量少用count()来计算总页数，而是使用limit 尽量少用skip/limit形式分页，而是通过id来定位起始的位置，这点跟aws dynamoDB很像，不过至少有提供这种功能 尽量少用事务，跨分片事务，避免过大事务，控制更新的文档(行)数量 使用aggregate时，前一个stage计算得到的数据会传递到下个stage，如果前一个stage没有该数据，则下一个stage无法获取到（尽管表中有该字段） 使用aggregate时，pipeline最开始时的match sort可以使用到索引，一旦发生过project投射，group分组，lookup表关联，unwind打散等操作后，则无法使用索引。  分析  在查询语句中使用explain()方法分析查询语句，有三种分析模式，通过传参的方式使用，比如：db.getCollection(&amp;quot;order&amp;quot;).explain(&#39;executionStats&#39;).find({条件})  queryPlanner：默认，只会输出被查询优化器选择出来的查询计划winningPlane executionStats：除了输出被查询优化器选择出来的查询计划winningPlane，并执行语句（如果是写操作，不会真正操作数据库），给出分析结果，比如扫描的行数，使用什么索引，耗时，返回的条数等 allPlansExecution：列出所有可能的查询计划并执行，给出所有方案的结果，mongo支持这种分析模式，但aws的documentDB不支持    # 常见的stage枚举： COLLSCAN：全表扫描 IXSCAN：索引扫描 FETCH：根据前面扫描到的位置抓取完整文档，相当于回表 IDHACK：针对_id进行查询 SHARD_MERGE 合并分片中结果 SHARDING_FILTER 分片中过滤掉孤立文档 SORT：进行内存排序，最终返回结果 SORT_KEY_GENERATOR：获取每一个文档排序所用的键值 LIMIT：使用limit限制返回数 SKIP：使用skip进行跳过 IDHACK：针对_id进行查询 COUNTSCAN：count不使用用Index进行count时的stage返回 COUNT_SCAN：count使用了Index进行count时的stage返回 TEXT：使用全文索引进行查询时候的stage返回 SUBPLA：未使用到索引的$or查询的stage返回 PROJECTION：限定返回字段时候stage的返回 # 一个executionStats例子 { &amp;quot;queryPlanner&amp;quot; : { &amp;quot;plannerVersion&amp;quot; : 1.</description>
+    </item>
+    
+  </channel>
+</rss>
