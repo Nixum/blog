@@ -589,13 +589,8 @@ dao接口与mapper的映射  通过动态代理实现 实际上XML在定义Mappe
       <pubDate>Tue, 12 Feb 2019 00:00:00 +0000</pubDate>
       
       <guid>http://nixum.cc/p/readme/</guid>
-      <description>&lt;h1 id=&#34;content&#34;&gt;Content&lt;/h1&gt;
-&lt;p&gt;个人是后端开发，以Go和Java为主要开发语言，该Repository主要记录已使用或者感兴趣的技术的知识点，以及一些工作中的感受之类。&lt;/p&gt;
-&lt;p&gt;emmm有时间再好好美化首页README。&lt;/p&gt;
-&lt;p&gt;阅读的时候可以直接看对应的gitbook即可，&lt;a class=&#34;link&#34; href=&#34;https://nixum.gitbook.io/note&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;gitbook入口&lt;/a&gt;、&lt;a class=&#34;link&#34; href=&#34;https://github.com/Nixum/Note&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;github入口&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;This article offers a sample of basic Markdown syntax that can be used in Hugo content files, also it shows whether basic HTML elements are decorated with CSS in a Hugo theme.&lt;/p&gt;</description>
+      <description>为了更好的阅读体验，可前往 个人bolg、gitbook
+目录 Java  Java SE JUC Java IO JVM  Go  Go SE GO 并发  框架  Spring SpringMVC MyBatis  数据存储  MySQL MongoDB Redis  微服务与云原生  Kubernetes 容器 etcd 与 ZooKeeper 微服务 分布式相关 RPC与异步设计 其他  消息队列  消息队列基本原理  计算机网络  网络  操作系统  操作系统  设计模式  设计模式  工具  git UML图  </description>
     </item>
     
   </channel>
