@@ -12,6 +12,8 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='消息队列' /><meta property='article:published_time' content='2020-09-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-06T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="消息队列">
 <meta name="twitter:description" content="主要是消息队列原理以及消息队列常见问题，不涉及具体某一款消息队列">
+    <link rel="shortcut icon" href="img/favicon.ico" />
+
     </head>
     <body class="
     article-page has-toc
@@ -609,6 +611,44 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
             </section>
 
             <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#好处">好处</a></li>
+    <li><a href="#缺点">缺点</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#一般消息队列架构">一般消息队列架构</a></li>
+    <li><a href="#关于消息的序列化和反序列化">关于消息的序列化和反序列化</a></li>
+    <li><a href="#关于消息的断句">关于消息的断句</a></li>
+    <li><a href="#关于消息的存储">关于消息的存储</a>
+      <ol>
+        <li><a href="#kafka">Kafka</a></li>
+        <li><a href="#rocketmq">RocketMQ</a></li>
+      </ol>
+    </li>
+    <li><a href="#案例一---异步消息的处理">案例一 - 异步消息的处理</a></li>
+    <li><a href="#案例二---kafka高性能io">案例二 - Kafka高性能IO</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#如何利用事务消息实现分布式事务">如何利用事务消息实现分布式事务</a></li>
+    <li><a href="#如何保证高可用性">如何保证高可用性</a></li>
+    <li><a href="#如何解决消息重复问题保证消息幂等性">如何解决消息重复问题，保证消息幂等性</a></li>
+    <li><a href="#如何保证消息顺序">如何保证消息顺序</a></li>
+    <li><a href="#如何保证消息的可靠性传输">如何保证消息的可靠性传输</a></li>
+    <li><a href="#关于pull模式和push模式">关于pull模式和push模式</a></li>
+    <li><a href="#如何解决消息队列的延时以及过期失效问题">如何解决消息队列的延时以及过期失效问题？</a></li>
+    <li><a href="#如何解决消息积压问题">如何解决消息积压问题？</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+            <section class="widget archives">
                 <h2 class="widget-title section-title">Other Article Tags</h2>
                 <section class="widget tagCloud">
     <div class="tagCloud-tags">
@@ -815,44 +855,6 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
         
     </div>
 </section>
-            </section>
-
-            <section class="widget archives">
-                <h2 class="widget-title section-title">Contents</h2>
-                
-                <div class="widget--toc">
-                    <nav id="TableOfContents">
-  <ol>
-    <li><a href="#好处">好处</a></li>
-    <li><a href="#缺点">缺点</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#一般消息队列架构">一般消息队列架构</a></li>
-    <li><a href="#关于消息的序列化和反序列化">关于消息的序列化和反序列化</a></li>
-    <li><a href="#关于消息的断句">关于消息的断句</a></li>
-    <li><a href="#关于消息的存储">关于消息的存储</a>
-      <ol>
-        <li><a href="#kafka">Kafka</a></li>
-        <li><a href="#rocketmq">RocketMQ</a></li>
-      </ol>
-    </li>
-    <li><a href="#案例一---异步消息的处理">案例一 - 异步消息的处理</a></li>
-    <li><a href="#案例二---kafka高性能io">案例二 - Kafka高性能IO</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#如何利用事务消息实现分布式事务">如何利用事务消息实现分布式事务</a></li>
-    <li><a href="#如何保证高可用性">如何保证高可用性</a></li>
-    <li><a href="#如何解决消息重复问题保证消息幂等性">如何解决消息重复问题，保证消息幂等性</a></li>
-    <li><a href="#如何保证消息顺序">如何保证消息顺序</a></li>
-    <li><a href="#如何保证消息的可靠性传输">如何保证消息的可靠性传输</a></li>
-    <li><a href="#关于pull模式和push模式">关于pull模式和push模式</a></li>
-    <li><a href="#如何解决消息队列的延时以及过期失效问题">如何解决消息队列的延时以及过期失效问题？</a></li>
-    <li><a href="#如何解决消息积压问题">如何解决消息积压问题？</a></li>
-  </ol>
-</nav>
-                </div>
             </section>
 
         </aside>

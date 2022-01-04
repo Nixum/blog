@@ -12,6 +12,8 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='go并发' /><meta property='article:tag' content='go内存模型' /><meta property='article:tag' content='go channel原理' /><meta property='article:published_time' content='2021-03-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-05-15T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="go并发">
 <meta name="twitter:description" content="go内存模型、channel、并发包相关类的实现原理">
+    <link rel="shortcut icon" href="img/favicon.ico" />
+
     </head>
     <body class="
     article-page has-toc
@@ -1088,6 +1090,102 @@
             </section>
 
             <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#证heppen-before的手段">证heppen before的手段</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#数据结构">数据结构</a></li>
+    <li><a href="#基本">基本</a></li>
+    <li><a href="#初始化">初始化</a></li>
+    <li><a href="#发送数据">发送数据</a></li>
+    <li><a href="#接收数据">接收数据</a></li>
+    <li><a href="#关闭">关闭</a></li>
+    <li><a href="#应用场景">应用场景</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#mutex---互斥锁">Mutex - 互斥锁</a>
+      <ol>
+        <li><a href="#数据结构-1">数据结构</a></li>
+        <li><a href="#基本-1">基本</a></li>
+        <li><a href="#lock方法">Lock方法</a></li>
+        <li><a href="#unlock方法">Unlock方法</a></li>
+        <li><a href="#基于mutex的拓展">基于Mutex的拓展</a></li>
+      </ol>
+    </li>
+    <li><a href="#rwmutex---读写锁">RWMutex - 读写锁</a>
+      <ol>
+        <li><a href="#数据结构-2">数据结构</a></li>
+        <li><a href="#基本-2">基本</a></li>
+        <li><a href="#rlock--runlock-方法">RLock / RUnlock 方法</a></li>
+        <li><a href="#lock方法-1">Lock方法</a></li>
+        <li><a href="#unlock方法-1">Unlock方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#waitgroup">WaitGroup</a>
+      <ol>
+        <li><a href="#数据结构-3">数据结构</a></li>
+        <li><a href="#基本-3">基本</a></li>
+        <li><a href="#add方法">Add方法</a></li>
+        <li><a href="#done方法">Done方法</a></li>
+        <li><a href="#wait方法">Wait方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#cond--condition--waitnotify">Cond = condition + Wait/Notify</a>
+      <ol>
+        <li><a href="#数据结构-4">数据结构</a></li>
+        <li><a href="#基本-4">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#once">Once</a>
+      <ol>
+        <li><a href="#数据结构-5">数据结构</a></li>
+        <li><a href="#基本-5">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#并发安全的map">并发安全的map</a></li>
+    <li><a href="#pool">Pool</a>
+      <ol>
+        <li><a href="#数据结构-6">数据结构</a></li>
+        <li><a href="#基本-6">基本</a></li>
+        <li><a href="#get方法">Get方法</a></li>
+        <li><a href="#put方法">Put方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#原子操作">原子操作</a></li>
+    <li><a href="#weighted--semaphore信号量">Weighted = Semaphore信号量</a>
+      <ol>
+        <li><a href="#数据结构-7">数据结构</a></li>
+        <li><a href="#基本-7">基本</a></li>
+        <li><a href="#acquire方法">Acquire方法</a></li>
+        <li><a href="#release方法">Release方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#singleflight">SingleFlight</a>
+      <ol>
+        <li><a href="#结构体">结构体</a></li>
+        <li><a href="#基本-8">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#cyclicbarrier---循环栅栏">CyclicBarrier - 循环栅栏</a>
+      <ol>
+        <li><a href="#数据结构-8">数据结构</a></li>
+        <li><a href="#基本-9">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#errgroup">ErrGroup</a></li>
+    <li><a href="#检测工具">检测工具</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+            <section class="widget archives">
                 <h2 class="widget-title section-title">Other Article Tags</h2>
                 <section class="widget tagCloud">
     <div class="tagCloud-tags">
@@ -1294,102 +1392,6 @@
         
     </div>
 </section>
-            </section>
-
-            <section class="widget archives">
-                <h2 class="widget-title section-title">Contents</h2>
-                
-                <div class="widget--toc">
-                    <nav id="TableOfContents">
-  <ol>
-    <li><a href="#证heppen-before的手段">证heppen before的手段</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#数据结构">数据结构</a></li>
-    <li><a href="#基本">基本</a></li>
-    <li><a href="#初始化">初始化</a></li>
-    <li><a href="#发送数据">发送数据</a></li>
-    <li><a href="#接收数据">接收数据</a></li>
-    <li><a href="#关闭">关闭</a></li>
-    <li><a href="#应用场景">应用场景</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#mutex---互斥锁">Mutex - 互斥锁</a>
-      <ol>
-        <li><a href="#数据结构-1">数据结构</a></li>
-        <li><a href="#基本-1">基本</a></li>
-        <li><a href="#lock方法">Lock方法</a></li>
-        <li><a href="#unlock方法">Unlock方法</a></li>
-        <li><a href="#基于mutex的拓展">基于Mutex的拓展</a></li>
-      </ol>
-    </li>
-    <li><a href="#rwmutex---读写锁">RWMutex - 读写锁</a>
-      <ol>
-        <li><a href="#数据结构-2">数据结构</a></li>
-        <li><a href="#基本-2">基本</a></li>
-        <li><a href="#rlock--runlock-方法">RLock / RUnlock 方法</a></li>
-        <li><a href="#lock方法-1">Lock方法</a></li>
-        <li><a href="#unlock方法-1">Unlock方法</a></li>
-      </ol>
-    </li>
-    <li><a href="#waitgroup">WaitGroup</a>
-      <ol>
-        <li><a href="#数据结构-3">数据结构</a></li>
-        <li><a href="#基本-3">基本</a></li>
-        <li><a href="#add方法">Add方法</a></li>
-        <li><a href="#done方法">Done方法</a></li>
-        <li><a href="#wait方法">Wait方法</a></li>
-      </ol>
-    </li>
-    <li><a href="#cond--condition--waitnotify">Cond = condition + Wait/Notify</a>
-      <ol>
-        <li><a href="#数据结构-4">数据结构</a></li>
-        <li><a href="#基本-4">基本</a></li>
-      </ol>
-    </li>
-    <li><a href="#once">Once</a>
-      <ol>
-        <li><a href="#数据结构-5">数据结构</a></li>
-        <li><a href="#基本-5">基本</a></li>
-      </ol>
-    </li>
-    <li><a href="#并发安全的map">并发安全的map</a></li>
-    <li><a href="#pool">Pool</a>
-      <ol>
-        <li><a href="#数据结构-6">数据结构</a></li>
-        <li><a href="#基本-6">基本</a></li>
-        <li><a href="#get方法">Get方法</a></li>
-        <li><a href="#put方法">Put方法</a></li>
-      </ol>
-    </li>
-    <li><a href="#原子操作">原子操作</a></li>
-    <li><a href="#weighted--semaphore信号量">Weighted = Semaphore信号量</a>
-      <ol>
-        <li><a href="#数据结构-7">数据结构</a></li>
-        <li><a href="#基本-7">基本</a></li>
-        <li><a href="#acquire方法">Acquire方法</a></li>
-        <li><a href="#release方法">Release方法</a></li>
-      </ol>
-    </li>
-    <li><a href="#singleflight">SingleFlight</a>
-      <ol>
-        <li><a href="#结构体">结构体</a></li>
-        <li><a href="#基本-8">基本</a></li>
-      </ol>
-    </li>
-    <li><a href="#cyclicbarrier---循环栅栏">CyclicBarrier - 循环栅栏</a>
-      <ol>
-        <li><a href="#数据结构-8">数据结构</a></li>
-        <li><a href="#基本-9">基本</a></li>
-      </ol>
-    </li>
-    <li><a href="#errgroup">ErrGroup</a></li>
-    <li><a href="#检测工具">检测工具</a></li>
-  </ol>
-</nav>
-                </div>
             </section>
 
         </aside>

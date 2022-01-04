@@ -12,6 +12,8 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='分布式理论' /><meta property='article:tag' content='分布式事务' /><meta property='article:tag' content='分布式算法' /><meta property='article:tag' content='分布式锁' /><meta property='article:tag' content='分布式相关' /><meta property='article:published_time' content='2020-08-14T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-09-04T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="分布式相关">
 <meta name="twitter:description" content="记录分布式相关的一些理论、技术">
+    <link rel="shortcut icon" href="img/favicon.ico" />
+
     </head>
     <body class="
     article-page has-toc
@@ -672,6 +674,75 @@ rev={4 1}, key=key2, value=&quot;v22&quot;
             </section>
 
             <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#cap理论">CAP理论</a></li>
+    <li><a href="#base理论">BASE理论</a></li>
+    <li><a href="#关于可靠性可用性稳定性">关于可靠性、可用性、稳定性：</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#一2pc">一、2PC</a>
+      <ol>
+        <li><a href="#正常情况下">正常情况下</a></li>
+        <li><a href="#异常情况下">异常情况下</a></li>
+      </ol>
+    </li>
+    <li><a href="#二3pc">二、3PC</a>
+      <ol>
+        <li><a href="#正常情况下-1">正常情况下</a></li>
+        <li><a href="#异常情况下-1">异常情况下</a></li>
+      </ol>
+    </li>
+    <li><a href="#三tcc">三、TCC</a></li>
+    <li><a href="#四本地消息表">四、本地消息表</a>
+      <ol>
+        <li><a href="#正常情况下-2">正常情况下</a></li>
+      </ol>
+    </li>
+    <li><a href="#五saga">五、SAGA</a></li>
+    <li><a href="#六简单通过可靠消息和最终一致性方案实现">六、简单通过可靠消息和最终一致性方案实现</a></li>
+    <li><a href="#参考">参考：</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#主从复制如mysqlredis">主从复制，如MySQL、Redis</a></li>
+    <li><a href="#去中心化复制如gossip">去中心化复制，如Gossip</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#利用数据库唯一约束">利用数据库唯一约束</a></li>
+    <li><a href="#etcd实现">etcd实现</a></li>
+    <li><a href="#zookeeper实现">ZooKeeper实现</a></li>
+    <li><a href="#redis实现">Redis实现</a>
+      <ol>
+        <li><a href="#单机redis实现">单机Redis实现</a></li>
+        <li><a href="#集群redis实现">集群Redis实现</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#数据库自增id">数据库自增id</a></li>
+    <li><a href="#雪花算法">雪花算法</a></li>
+    <li><a href="#利用etcd">利用ETCD</a></li>
+    <li><a href="#利用zookeeper">利用ZooKeeper</a></li>
+    <li><a href="#利用redis">利用Redis</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#paxos算法">Paxos算法</a></li>
+    <li><a href="#raft算法">Raft算法</a></li>
+    <li><a href="#gossip协议">Gossip协议</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+            <section class="widget archives">
                 <h2 class="widget-title section-title">Other Article Tags</h2>
                 <section class="widget tagCloud">
     <div class="tagCloud-tags">
@@ -878,75 +949,6 @@ rev={4 1}, key=key2, value=&quot;v22&quot;
         
     </div>
 </section>
-            </section>
-
-            <section class="widget archives">
-                <h2 class="widget-title section-title">Contents</h2>
-                
-                <div class="widget--toc">
-                    <nav id="TableOfContents">
-  <ol>
-    <li><a href="#cap理论">CAP理论</a></li>
-    <li><a href="#base理论">BASE理论</a></li>
-    <li><a href="#关于可靠性可用性稳定性">关于可靠性、可用性、稳定性：</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#一2pc">一、2PC</a>
-      <ol>
-        <li><a href="#正常情况下">正常情况下</a></li>
-        <li><a href="#异常情况下">异常情况下</a></li>
-      </ol>
-    </li>
-    <li><a href="#二3pc">二、3PC</a>
-      <ol>
-        <li><a href="#正常情况下-1">正常情况下</a></li>
-        <li><a href="#异常情况下-1">异常情况下</a></li>
-      </ol>
-    </li>
-    <li><a href="#三tcc">三、TCC</a></li>
-    <li><a href="#四本地消息表">四、本地消息表</a>
-      <ol>
-        <li><a href="#正常情况下-2">正常情况下</a></li>
-      </ol>
-    </li>
-    <li><a href="#五saga">五、SAGA</a></li>
-    <li><a href="#六简单通过可靠消息和最终一致性方案实现">六、简单通过可靠消息和最终一致性方案实现</a></li>
-    <li><a href="#参考">参考：</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#主从复制如mysqlredis">主从复制，如MySQL、Redis</a></li>
-    <li><a href="#去中心化复制如gossip">去中心化复制，如Gossip</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#利用数据库唯一约束">利用数据库唯一约束</a></li>
-    <li><a href="#etcd实现">etcd实现</a></li>
-    <li><a href="#zookeeper实现">ZooKeeper实现</a></li>
-    <li><a href="#redis实现">Redis实现</a>
-      <ol>
-        <li><a href="#单机redis实现">单机Redis实现</a></li>
-        <li><a href="#集群redis实现">集群Redis实现</a></li>
-      </ol>
-    </li>
-  </ol>
-
-  <ol>
-    <li><a href="#数据库自增id">数据库自增id</a></li>
-    <li><a href="#雪花算法">雪花算法</a></li>
-    <li><a href="#利用etcd">利用ETCD</a></li>
-    <li><a href="#利用zookeeper">利用ZooKeeper</a></li>
-    <li><a href="#利用redis">利用Redis</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#paxos算法">Paxos算法</a></li>
-    <li><a href="#raft算法">Raft算法</a></li>
-    <li><a href="#gossip协议">Gossip协议</a></li>
-  </ol>
-</nav>
-                </div>
             </section>
 
         </aside>

@@ -12,6 +12,8 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Spring' /><meta property='article:tag' content='SpringBoot' /><meta property='article:tag' content='IOC和AOP' /><meta property='article:published_time' content='2019-04-17T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2020-06-03T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Spring和SpringBoot">
 <meta name="twitter:description" content="Spring和SpringBoot常见问题、IOC、AOP原理">
+    <link rel="shortcut icon" href="img/favicon.ico" />
+
     </head>
     <body class="
     article-page has-toc
@@ -765,6 +767,55 @@
             </section>
 
             <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#spring-和-spring-boot区别">Spring 和 Spring Boot区别</a></li>
+    <li><a href="#springboot整个启动流程">SpringBoot整个启动流程</a></li>
+    <li><a href="#springboot自动配置流程">SpringBoot自动配置流程</a></li>
+    <li><a href="#自定义starter">自定义starter</a></li>
+    <li><a href="#contextloaderlistener">ContextLoaderListener</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#controller与restcontroller">@Controller与@RestController</a></li>
+    <li><a href="#autowired与resource">@Autowired与@Resource</a></li>
+    <li><a href="#component与bean">@Component与@Bean</a></li>
+    <li><a href="#configuration与configurationproperties">@Configuration与@ConfigurationProperties</a></li>
+    <li><a href="#springbootapplication与componentscan与import">@SpringBootApplication与@ComponentScan与@Import</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#bean的作用域">Bean的作用域</a></li>
+    <li><a href="#注入方式">注入方式</a></li>
+    <li><a href="#bean加载流程">Bean加载流程</a></li>
+    <li><a href="#三级缓存解决循环依赖">三级缓存解决循环依赖</a></li>
+    <li><a href="#bean的生命周期">Bean的生命周期</a></li>
+    <li><a href="#applicationcontext与beanfactory的区别">ApplicationContext与BeanFactory的区别</a></li>
+    <li><a href="#ioc模拟">IOC模拟</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#基本原理">基本原理</a>
+      <ol>
+        <li><a href="#静态代理">静态代理</a></li>
+        <li><a href="#jdk动态代理">JDK动态代理</a></li>
+        <li><a href="#cglib代理">CGLIB代理</a></li>
+      </ol>
+    </li>
+    <li><a href="#springboot中的实现">SpringBoot中的实现</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#spring事务传播行为">Spring事务传播行为</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+            <section class="widget archives">
                 <h2 class="widget-title section-title">Other Article Tags</h2>
                 <section class="widget tagCloud">
     <div class="tagCloud-tags">
@@ -971,55 +1022,6 @@
         
     </div>
 </section>
-            </section>
-
-            <section class="widget archives">
-                <h2 class="widget-title section-title">Contents</h2>
-                
-                <div class="widget--toc">
-                    <nav id="TableOfContents">
-  <ol>
-    <li><a href="#spring-和-spring-boot区别">Spring 和 Spring Boot区别</a></li>
-    <li><a href="#springboot整个启动流程">SpringBoot整个启动流程</a></li>
-    <li><a href="#springboot自动配置流程">SpringBoot自动配置流程</a></li>
-    <li><a href="#自定义starter">自定义starter</a></li>
-    <li><a href="#contextloaderlistener">ContextLoaderListener</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#controller与restcontroller">@Controller与@RestController</a></li>
-    <li><a href="#autowired与resource">@Autowired与@Resource</a></li>
-    <li><a href="#component与bean">@Component与@Bean</a></li>
-    <li><a href="#configuration与configurationproperties">@Configuration与@ConfigurationProperties</a></li>
-    <li><a href="#springbootapplication与componentscan与import">@SpringBootApplication与@ComponentScan与@Import</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#bean的作用域">Bean的作用域</a></li>
-    <li><a href="#注入方式">注入方式</a></li>
-    <li><a href="#bean加载流程">Bean加载流程</a></li>
-    <li><a href="#三级缓存解决循环依赖">三级缓存解决循环依赖</a></li>
-    <li><a href="#bean的生命周期">Bean的生命周期</a></li>
-    <li><a href="#applicationcontext与beanfactory的区别">ApplicationContext与BeanFactory的区别</a></li>
-    <li><a href="#ioc模拟">IOC模拟</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#基本原理">基本原理</a>
-      <ol>
-        <li><a href="#静态代理">静态代理</a></li>
-        <li><a href="#jdk动态代理">JDK动态代理</a></li>
-        <li><a href="#cglib代理">CGLIB代理</a></li>
-      </ol>
-    </li>
-    <li><a href="#springboot中的实现">SpringBoot中的实现</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#spring事务传播行为">Spring事务传播行为</a></li>
-  </ol>
-</nav>
-                </div>
             </section>
 
         </aside>

@@ -12,6 +12,8 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Java并发' /><meta property='article:tag' content='JUC' /><meta property='article:tag' content='线程' /><meta property='article:published_time' content='2019-03-02T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-12T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Java并发">
 <meta name="twitter:description" content="JUC、线程、锁等原理">
+    <link rel="shortcut icon" href="img/favicon.ico" />
+
     </head>
     <body class="
     article-page has-toc
@@ -984,6 +986,100 @@ TERMINATED：terminated()方法执行过后变成这个
             </section>
 
             <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#进程与线程的区别">进程与线程的区别</a></li>
+    <li><a href="#调度方式">调度方式</a></li>
+    <li><a href="#调度原理">调度原理</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#1状态转换">1.状态转换</a></li>
+    <li><a href="#2-状态">2. 状态</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#死锁产生的条件">死锁产生的条件</a></li>
+    <li><a href="#避免死锁">避免死锁</a></li>
+    <li><a href="#死锁检测工具">死锁检测工具</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#object类中wait和notifynotifyall">Object类中wait()和notify()、notifyAll()</a></li>
+    <li><a href="#thread中的yield">Thread中的yield()</a></li>
+    <li><a href="#thread中的-suspend-和resume已过期">Thread中的 suspend() 和resume()，已过期</a></li>
+    <li><a href="#thread类中的sleep方法">Thread类中的sleep()方法</a></li>
+    <li><a href="#thread类中的join方法">Thread类中的join()方法</a></li>
+    <li><a href="#condition类中的await和signalsignalall">Condition类中的await()和signal()、signalAll()</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#synchronized">synchronized</a></li>
+    <li><a href="#synchronized和reentrantlock区别">synchronized和ReentrantLock区别</a></li>
+    <li><a href="#volatile">volatile</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#线程池处理过程">线程池处理过程</a></li>
+    <li><a href="#对线程池复用的简单理解">对线程池复用的简单理解</a></li>
+    <li><a href="#线程池是如何做到当线程数量大于corepoolsize-多余的空闲线程在等待keepalivetime之后被回收">线程池是如何做到当线程数量大于corePoolSize ，多余的空闲线程在等待keepAliveTime之后被回收</a></li>
+    <li><a href="#线程池调优">线程池调优</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#blockingqueue">BlockingQueue</a>
+      <ol>
+        <li><a href="#1分类">1.分类</a></li>
+        <li><a href="#2常用方法">2.常用方法</a></li>
+        <li><a href="#3原理">3.原理</a>
+          <ol>
+            <li><a href="#arrayblockingqueue">ArrayBlockingQueue</a></li>
+            <li><a href="#linkedblockingqueue">LinkedBlockingQueue</a></li>
+          </ol>
+        </li>
+        <li><a href="#参考">参考</a></li>
+      </ol>
+    </li>
+    <li><a href="#aqs">AQS</a>
+      <ol>
+        <li><a href="#同步方式">同步方式</a>
+          <ol>
+            <li><a href="#独占式如reentrantlock">独占式：如ReentrantLock</a></li>
+            <li><a href="#共享式如semaphorecountdownlatch">共享式：如Semaphore，CountDownLatch</a></li>
+            <li><a href="#区别">区别</a></li>
+          </ol>
+        </li>
+        <li><a href="#condition">Condition</a></li>
+      </ol>
+    </li>
+    <li><a href="#原子操作类">原子操作类</a>
+      <ol>
+        <li><a href="#原理">原理</a></li>
+      </ol>
+    </li>
+    <li><a href="#reentrantlock">ReentrantLock</a>
+      <ol>
+        <li><a href="#原理-1">原理</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#cas">CAS</a></li>
+    <li><a href="#threadlocalt">ThreadLocal&lt;T&gt;</a>
+      <ol>
+        <li><a href="#原理-2">原理</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+            <section class="widget archives">
                 <h2 class="widget-title section-title">Other Article Tags</h2>
                 <section class="widget tagCloud">
     <div class="tagCloud-tags">
@@ -1190,100 +1286,6 @@ TERMINATED：terminated()方法执行过后变成这个
         
     </div>
 </section>
-            </section>
-
-            <section class="widget archives">
-                <h2 class="widget-title section-title">Contents</h2>
-                
-                <div class="widget--toc">
-                    <nav id="TableOfContents">
-  <ol>
-    <li><a href="#进程与线程的区别">进程与线程的区别</a></li>
-    <li><a href="#调度方式">调度方式</a></li>
-    <li><a href="#调度原理">调度原理</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#1状态转换">1.状态转换</a></li>
-    <li><a href="#2-状态">2. 状态</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#死锁产生的条件">死锁产生的条件</a></li>
-    <li><a href="#避免死锁">避免死锁</a></li>
-    <li><a href="#死锁检测工具">死锁检测工具</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#object类中wait和notifynotifyall">Object类中wait()和notify()、notifyAll()</a></li>
-    <li><a href="#thread中的yield">Thread中的yield()</a></li>
-    <li><a href="#thread中的-suspend-和resume已过期">Thread中的 suspend() 和resume()，已过期</a></li>
-    <li><a href="#thread类中的sleep方法">Thread类中的sleep()方法</a></li>
-    <li><a href="#thread类中的join方法">Thread类中的join()方法</a></li>
-    <li><a href="#condition类中的await和signalsignalall">Condition类中的await()和signal()、signalAll()</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#synchronized">synchronized</a></li>
-    <li><a href="#synchronized和reentrantlock区别">synchronized和ReentrantLock区别</a></li>
-    <li><a href="#volatile">volatile</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#线程池处理过程">线程池处理过程</a></li>
-    <li><a href="#对线程池复用的简单理解">对线程池复用的简单理解</a></li>
-    <li><a href="#线程池是如何做到当线程数量大于corepoolsize-多余的空闲线程在等待keepalivetime之后被回收">线程池是如何做到当线程数量大于corePoolSize ，多余的空闲线程在等待keepAliveTime之后被回收</a></li>
-    <li><a href="#线程池调优">线程池调优</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#blockingqueue">BlockingQueue</a>
-      <ol>
-        <li><a href="#1分类">1.分类</a></li>
-        <li><a href="#2常用方法">2.常用方法</a></li>
-        <li><a href="#3原理">3.原理</a>
-          <ol>
-            <li><a href="#arrayblockingqueue">ArrayBlockingQueue</a></li>
-            <li><a href="#linkedblockingqueue">LinkedBlockingQueue</a></li>
-          </ol>
-        </li>
-        <li><a href="#参考">参考</a></li>
-      </ol>
-    </li>
-    <li><a href="#aqs">AQS</a>
-      <ol>
-        <li><a href="#同步方式">同步方式</a>
-          <ol>
-            <li><a href="#独占式如reentrantlock">独占式：如ReentrantLock</a></li>
-            <li><a href="#共享式如semaphorecountdownlatch">共享式：如Semaphore，CountDownLatch</a></li>
-            <li><a href="#区别">区别</a></li>
-          </ol>
-        </li>
-        <li><a href="#condition">Condition</a></li>
-      </ol>
-    </li>
-    <li><a href="#原子操作类">原子操作类</a>
-      <ol>
-        <li><a href="#原理">原理</a></li>
-      </ol>
-    </li>
-    <li><a href="#reentrantlock">ReentrantLock</a>
-      <ol>
-        <li><a href="#原理-1">原理</a></li>
-      </ol>
-    </li>
-  </ol>
-
-  <ol>
-    <li><a href="#cas">CAS</a></li>
-    <li><a href="#threadlocalt">ThreadLocal&lt;T&gt;</a>
-      <ol>
-        <li><a href="#原理-2">原理</a></li>
-      </ol>
-    </li>
-  </ol>
-</nav>
-                </div>
             </section>
 
         </aside>
