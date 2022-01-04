@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='分布式理论' /><meta property='article:tag' content='分布式事务' /><meta property='article:tag' content='分布式算法' /><meta property='article:tag' content='分布式锁' /><meta property='article:tag' content='分布式相关' /><meta property='article:published_time' content='2020-08-14T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-09-04T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="分布式相关">
 <meta name="twitter:description" content="记录分布式相关的一些理论、技术">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -376,20 +376,42 @@
 <h2 id="redis实现">Redis实现</h2>
 <h3 id="单机redis实现">单机Redis实现</h3>
 <p>使用setnx命令，setnx命令表示如果key不存在，则可以set成功，返回1，否则返回0，根据返回值来判断是否加锁成功，注意setnx不支持设置key、value的同时还要设置过期时间，过期时间主要是保证资源占用时间过长后可以释放锁，避免死锁，所以如果要用来加锁，必须使用Lua脚本来保证原子性</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="kr">if</span> <span class="n">redis.call</span><span class="p">(</span><span class="s1">&#39;setnx&#39;</span><span class="p">,</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="kr">if</span> <span class="n">redis.call</span><span class="p">(</span><span class="s1">&#39;setnx&#39;</span><span class="p">,</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span>
   <span class="n">redis.call</span><span class="p">(</span><span class="s1">&#39;expire&#39;</span><span class="p">,</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
 <span class="kr">end</span>
 
 <span class="kr">return</span> <span class="n">ok</span>
-</code></pre></div><p>不过从2.6.12起，set涵盖了setex、setnx功能，并且set本身可以设置过期时间，因此可以使用以下命令进行加锁</p>
+</code></pre></td></tr></table>
+</div>
+</div><p>不过从2.6.12起，set涵盖了setex、setnx功能，并且set本身可以设置过期时间，因此可以使用以下命令进行加锁</p>
 <p>命令：<code>SET [key: 资源代表的key] [value: 客户端事务Id] NX PX [时间，EX的单位是秒，PX的单位是毫秒] </code>，要注意旧版本的setnx命令不支持设置过期时间</p>
 <p>解锁，先判断锁是不是自己加的，如果是才可以解锁，即删除该key，需要保证这两个步骤的原子性，否则可能会出现因为查询时间过长导致删掉了别人的锁</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="kr">if</span> <span class="n">redis.call</span><span class="p">(</span><span class="s2">&#34;get&#34;</span><span class="p">,</span><span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">ARGV</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="kr">then</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="kr">if</span> <span class="n">redis.call</span><span class="p">(</span><span class="s2">&#34;get&#34;</span><span class="p">,</span><span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">ARGV</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="kr">then</span>
     <span class="kr">return</span> <span class="n">redis.call</span><span class="p">(</span><span class="s2">&#34;del&#34;</span><span class="p">,</span><span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 <span class="kr">else</span>
     <span class="kr">return</span> <span class="mi">0</span>
 <span class="kr">end</span>
-</code></pre></div><p>为了保证Redis的高可用，就会部署Redis集群，但在集群环境下还使用上述方案可能会出现锁偶尔失效。比如Redis设置主从节点，一般加锁解锁会在主节点上进行，但是当加锁后，主节点宕机，从节点还未进行同步，从节点提升为主节点，其他服务就有机会获取到锁了，此时就出现了多个服务对同一资源的操作问题；另外，当发生网络分区现象时，Redis可能出现脑裂，出现多个master，使得多个client可以获得锁。</p>
+</code></pre></td></tr></table>
+</div>
+</div><p>为了保证Redis的高可用，就会部署Redis集群，但在集群环境下还使用上述方案可能会出现锁偶尔失效。比如Redis设置主从节点，一般加锁解锁会在主节点上进行，但是当加锁后，主节点宕机，从节点还未进行同步，从节点提升为主节点，其他服务就有机会获取到锁了，此时就出现了多个服务对同一资源的操作问题；另外，当发生网络分区现象时，Redis可能出现脑裂，出现多个master，使得多个client可以获得锁。</p>
 <h3 id="集群redis实现">集群Redis实现</h3>
 <p>RedLock与Redission实现，有空再进行补充，先把RedLock的基本思想简单描述一下</p>
 <p>假设有5个Redis节点，</p>

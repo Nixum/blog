@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Redis' /><meta property='article:tag' content='主从架构' /><meta property='article:tag' content='缓存' /><meta property='article:published_time' content='2020-08-09T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2020-11-28T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Redis">
 <meta name="twitter:description" content="Redis数据结构、架构、常见常见、持久化、主从架构">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -510,7 +510,30 @@
 <li>Lua脚本，才能实现复杂逻辑的原子操作，使用时会先通过script load命令把脚本加载到Redis中，得到唯一摘要，再通过命令evalsha + 摘要的方式执行脚本，避免每次执行脚本都要先传输，减少网络IO；另外Lua脚本的时间复杂度不易过长，否则会阻塞主线。</li>
 </ul>
 <p>Demo：限制客户端每分钟访问次数不能超过20次 的Lua脚本，该脚本包含了计数、访问次数判断和过期时间设置。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="o">//</span> <span class="err">客户端先获取</span><span class="n">ip对应的访问次数</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="o">//</span> <span class="err">客户端先获取</span><span class="n">ip对应的访问次数</span>
 <span class="n">current</span> <span class="o">=</span> <span class="n">redis.call</span><span class="p">(</span><span class="s2">&#34;get&#34;</span><span class="p">,</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 <span class="o">//</span><span class="err">如果超过访问次数超过</span><span class="mi">20</span><span class="err">次，则报错，这两步不涉及临界值的修改，因此可以不放在脚本中原子执行。</span>
 <span class="n">IF</span> <span class="n">current</span> <span class="err">!</span><span class="o">=</span> <span class="n">NULL</span> <span class="n">AND</span> <span class="n">current</span> <span class="o">&gt;</span> <span class="mi">20</span> <span class="n">THEN</span>
@@ -529,7 +552,9 @@
 <span class="n">END</span>
 <span class="err">执行命令：</span>
 <span class="n">redis</span><span class="o">-</span><span class="n">cli</span> <span class="c1">--eval visit_restrict.script keys , args</span>
-</code></pre></div><h2 id="redis中的隔离性">Redis中的隔离性</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="redis中的隔离性">Redis中的隔离性</h2>
 <ul>
 <li>需要依赖Watch机制，因为Redis流水线命令是在Exec命令执行后开始的，在Exec命令还未执行前，如果要保证隔离性，需要使用Watch监控某个key，当Exec命令执行时，Watch机制就会触发，如果监控的数据被修改了，就放弃此次事务的执行。</li>
 <li>如果是在Exec命令执行后的，由于Redis是单线程的，所以并发情况下不会破坏事务隔离性。</li>

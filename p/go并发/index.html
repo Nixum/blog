@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='go并发' /><meta property='article:tag' content='go内存模型' /><meta property='article:tag' content='go channel原理' /><meta property='article:published_time' content='2021-03-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-05-15T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="go并发">
 <meta name="twitter:description" content="go内存模型、channel、并发包相关类的实现原理">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    6 minute read
+                    8 minute read
                 </time>
             </div>
         
@@ -149,7 +149,48 @@
 <p>当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数</p>
 </li>
 </ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">var</span> <span class="p">(</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">var</span> <span class="p">(</span>
   <span class="nx">a</span> <span class="p">=</span> <span class="nx">c</span> <span class="o">+</span> <span class="nx">b</span>  <span class="c1">// == 9
 </span><span class="c1"></span>  <span class="nx">b</span> <span class="p">=</span> <span class="nf">f</span><span class="p">()</span>    <span class="c1">// == 4
 </span><span class="c1"></span>  <span class="nx">c</span> <span class="p">=</span> <span class="nf">f</span><span class="p">()</span>    <span class="c1">// == 5
@@ -186,10 +227,25 @@
 	<span class="k">return</span> <span class="mi">2</span>
 <span class="p">}</span>
 <span class="c1">// 运行后，输出2，4
-</span></code></pre></div><ul>
+</span></code></pre></td></tr></table>
+</div>
+</div><ul>
 <li>goroutine：启动goroutine的go语句执行，一定happens before此goroutine内的代码</li>
 </ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">var</span> <span class="nx">a</span> <span class="kt">string</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">var</span> <span class="nx">a</span> <span class="kt">string</span>
 <span class="kd">func</span> <span class="nf">f</span><span class="p">()</span> <span class="p">{</span>
 	<span class="nb">print</span><span class="p">(</span><span class="nx">a</span><span class="p">)</span>
 <span class="p">}</span>
@@ -198,7 +254,9 @@
 	<span class="k">go</span> <span class="nf">f</span><span class="p">()</span>
 <span class="p">}</span>
 <span class="nx">执行hello方法</span><span class="err">，</span><span class="nx">必定打印出hello</span>
-</code></pre></div><ul>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
 <li>channel：
 <ul>
 <li>send操作必定heppen before于receive操作；</li>
@@ -212,7 +270,30 @@
 <p>CSP模型（Communicating Sequential Process，通信顺序进程），允许使用进程组来描述系统，独立运行，并且只通过消息传递的方式通信。</p>
 <p>本质上就是，在使用协程执行函数时，不通过内存共享(会用到锁)的方式通信，而是通过Channel通信传递数据。</p>
 <h2 id="数据结构">数据结构</h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">hchan</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">hchan</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">qcount</span>   <span class="kt">uint</span>   <span class="c1">// 已经接收但还没被取走的元素个数，即channel中的循环数组的元素个数
 </span><span class="c1"></span>	<span class="nx">dataqsiz</span> <span class="kt">uint</span>   <span class="c1">// channel中的循环数组的长度
 </span><span class="c1"></span>	<span class="nx">buf</span>      <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="c1">// channel中缓冲区数据指针，buf是一个循环数组，buf的总大小是elemsize的整数倍
@@ -231,7 +312,9 @@
 	<span class="nx">first</span> <span class="o">*</span><span class="nx">sudog</span>
 	<span class="nx">last</span>  <span class="o">*</span><span class="nx">sudog</span>
 <span class="p">}</span>
-</code></pre></div><h2 id="基本">基本</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="基本">基本</h2>
 <ul>
 <li>
 <p>chan是引用类型，使用make关键字创建，未初始化时的零值是nil，如</p>
@@ -248,22 +331,77 @@
 <p>带有 &lt;- 的chan是有方向的，不带 &lt;- 的chan是双向的，比如</p>
 </li>
 </ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">  <span class="kd">chan</span> <span class="kt">string</span>        <span class="c1">// 双向chan，可以发送和接收string
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">  <span class="kd">chan</span> <span class="kt">string</span>        <span class="c1">// 双向chan，可以发送和接收string
 </span><span class="c1"></span>  <span class="kd">chan</span><span class="o">&lt;-</span> <span class="kd">struct</span><span class="p">{}</span>    <span class="c1">// 只能发送struct到chan中
 </span><span class="c1"></span>  <span class="o">&lt;-</span><span class="kd">chan</span> <span class="kt">int</span>         <span class="c1">// 只能从chan中接收int
-</span></code></pre></div><ul>
+</span></code></pre></td></tr></table>
+</div>
+</div><ul>
 <li>chan可以是任何类型的，比如可以是 chan&lt;- 类型，&lt;-总是尽量和左边的chan结合，比如</li>
 </ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">chan</span><span class="o">&lt;-</span> <span class="kd">chan</span> <span class="kt">int</span>    <span class="c1">// 等价于 chan&lt;- (chan int)
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">chan</span><span class="o">&lt;-</span> <span class="kd">chan</span> <span class="kt">int</span>    <span class="c1">// 等价于 chan&lt;- (chan int)
 </span><span class="c1"></span><span class="kd">chan</span><span class="o">&lt;-</span> <span class="o">&lt;-</span><span class="kd">chan</span> <span class="kt">int</span>  <span class="c1">// 等价于 chan&lt;- (&lt;-chan int)
 </span><span class="c1"></span><span class="o">&lt;-</span><span class="kd">chan</span> <span class="o">&lt;-</span><span class="kd">chan</span> <span class="kt">int</span>  <span class="c1">// 等价于 &lt;-chan (&lt;-chan int)
 </span><span class="c1"></span><span class="kd">chan</span> <span class="p">(</span><span class="o">&lt;-</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">)</span>  <span class="c1">// 等价于 chan (&lt;-chan int)
-</span></code></pre></div><ul>
+</span></code></pre></td></tr></table>
+</div>
+</div><ul>
 <li>接收数据时可以有两个返回值，第一个是返回的元素，第二个是bool类型，表示是否成功地从chan中读取到一个值。如果是false，说明chan以及被close并且chan中没有缓存的数据，此时第一个元素是零值。所以，如果接收时第一个元素是零值，可能是sender真的发送了零值，也可能是closed并且没有元素导致的。</li>
 <li>双向chan可以赋值给单向chan，但反过来不可以</li>
 </ul>
 <h2 id="初始化">初始化</h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">makechan</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">chantype</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">int</span><span class="p">)</span> <span class="o">*</span><span class="nx">hchan</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">makechan</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">chantype</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">int</span><span class="p">)</span> <span class="o">*</span><span class="nx">hchan</span> <span class="p">{</span>
     <span class="o">...</span>
     <span class="nx">elem</span> <span class="o">:=</span> <span class="nx">t</span><span class="p">.</span><span class="nx">elem</span>
         <span class="c1">// 略去检查代码
@@ -295,7 +433,9 @@
 
     <span class="k">return</span> <span class="nx">c</span>
   <span class="p">}</span>
-</code></pre></div><h2 id="发送数据">发送数据</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="发送数据">发送数据</h2>
 <p>使用<code>ch &lt;- &quot;test&quot;</code>发送数据，最终会调用chansend函数发送数据，该函数设置了阻塞参数为true。</p>
 <ol>
 <li>如果chan是nil，则把发送者的goroutine park（阻塞休眠），此时发送者将被永久阻塞。</li>
@@ -351,7 +491,28 @@
 </blockquote>
 <p>注意点：使用chan要注意panic和goroutine泄露，另外，只要一个 chan 还有未读的数据，即使把它 close 掉，你还是可以继续把这些未读的数据消费完，之后才是读取零值数据。</p>
 <p>在使用chan和select配合时要注意会出现goroutine泄漏的情况：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">process</span><span class="p">(</span><span class="nx">timeout</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Duration</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">process</span><span class="p">(</span><span class="nx">timeout</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Duration</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
     <span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">bool</span><span class="p">)</span>
 
     <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
@@ -368,7 +529,9 @@
         <span class="k">return</span> <span class="kc">false</span>
     <span class="p">}</span>
 <span class="p">}</span>
-</code></pre></div><table>
+</code></pre></td></tr></table>
+</div>
+</div><table>
 <thead>
 <tr>
 <th></th>
@@ -409,7 +572,22 @@
 <h1 id="并发包">并发包</h1>
 <h2 id="mutex---互斥锁">Mutex - 互斥锁</h2>
 <h3 id="数据结构-1">数据结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Mutex</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Mutex</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">state</span> <span class="kt">int32</span>   <span class="c1">// 分成三部分，最小一位表示锁是否被持有，第二位表示是否有唤醒的goroutine，第三位表示是否处于饥饿状态，剩余的位数表示等待锁的goroutine的数量，最大数量为2^(32-3)-1个，以goroutine初始空间为2k，则达到最大数量时需要消耗1TB内存
 </span><span class="c1"></span>	<span class="nx">sema</span>  <span class="kt">uint32</span>  <span class="c1">// 信号量变量，用来控制等待goroutine的阻塞休眠和唤醒
 </span><span class="c1"></span><span class="p">}</span>
@@ -420,7 +598,9 @@
 </span><span class="c1"></span>	<span class="nx">mutexWaiterShift</span> <span class="p">=</span> <span class="kc">iota</span>  <span class="c1">// 阻塞等待的waiter数量
 </span><span class="c1"></span>    <span class="nx">starvationThresholdNs</span> <span class="p">=</span> <span class="mf">1e6</span>
 <span class="p">}</span>
-</code></pre></div><h3 id="基本-1">基本</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-1">基本</h3>
 <ul>
 <li>
 <p>只有Lock和Unlock两个方法，用于锁定临界区</p>
@@ -477,7 +657,19 @@
 </ul>
 <h2 id="rwmutex---读写锁">RWMutex - 读写锁</h2>
 <h3 id="数据结构-2">数据结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">RWMutex</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">RWMutex</span> <span class="kd">struct</span> <span class="p">{</span>
     <span class="nx">w</span> <span class="nx">Mutex</span>           <span class="c1">// 互斥锁解决多个writer的竞争
 </span><span class="c1"></span>    <span class="nx">writerSem</span> <span class="kt">uint32</span>  <span class="c1">// writer信号量 
 </span><span class="c1"></span>    <span class="nx">readerSem</span> <span class="kt">uint32</span>  <span class="c1">// reader信号量 
@@ -485,7 +677,9 @@
 </span><span class="c1"></span>    <span class="nx">readerWait</span> <span class="kt">int32</span>  <span class="c1">// writer等待完成的reader的数量
 </span><span class="c1"></span><span class="p">}</span>
 <span class="kd">const</span> <span class="nx">rwmutexMaxReaders</span> <span class="p">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">30</span> <span class="c1">// 最大的reader数量
-</span></code></pre></div><h3 id="基本-2">基本</h3>
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-2">基本</h3>
 <ul>
 <li>主要提升Mutex在读多写少的场景下的吞吐量，读时共享锁，写时排他锁，基于Mutex实现</li>
 <li>由5个方法构成：
@@ -519,7 +713,19 @@
 </ol>
 <h2 id="waitgroup">WaitGroup</h2>
 <h3 id="数据结构-3">数据结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">WaitGroup</span> <span class="kd">struct</span> <span class="p">{</span> 
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">WaitGroup</span> <span class="kd">struct</span> <span class="p">{</span> 
     <span class="c1">// 避免复制，使用vet工具在编译时检测是否被复制
 </span><span class="c1"></span>    <span class="nx">noCopy</span> <span class="nx">noCopy</span>
     <span class="c1">// 因为64bit值的原子操作需要64bit对齐，但是32bit编译器不支持，所以数组中的元素在不同的架构中不一样
@@ -527,7 +733,9 @@
 </span><span class="c1"></span>    <span class="c1">// 高32bit是WaitGroup的计数值，低32bit是waiter的计数,另外32bit是用作信号量
 </span><span class="c1"></span>    <span class="nx">state1</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">uint32</span>
 <span class="p">}</span>
-</code></pre></div><h3 id="基本-3">基本</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-3">基本</h3>
 <ul>
 <li>state的值由32bit的值表示信号量，64bit的值表示计数和waiter的数量组成。因为原子操作只能64bit对齐，而计数值和waiter的数量是一个64bit的值，在64bit的编译器上，一次读取是64bit，刚好可以直接操作，但是如果是32bit的机器，一次只能读32bit，为了保证进行64bit对齐时一定能获取到计数值和waiter的值，在进行64bit的原子操作对齐时，第一次是对齐到了一个空32bit和第一个32bit的值，第二次对齐就能保证获取了。</li>
 <li>同RWMutex，WaitGroup的三个方法内还很多data race检查，保证并发时候共享数据的正确性，一旦检查出有问题，会直接panic</li>
@@ -555,13 +763,25 @@
 </ol>
 <h2 id="cond--condition--waitnotify">Cond = condition + Wait/Notify</h2>
 <h3 id="数据结构-4">数据结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Cond</span> <span class="kd">struct</span> <span class="p">{</span> 
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Cond</span> <span class="kd">struct</span> <span class="p">{</span> 
     <span class="nx">noCopy</span> <span class="nx">noCopy</span> <span class="c1">// 使用vet工具在编译时检测是否被复制
 </span><span class="c1"></span>    <span class="nx">checker</span> <span class="nx">copyChecker</span> <span class="c1">// 用于运行时被检测是否被复制
 </span><span class="c1"></span>    <span class="nx">L</span> <span class="nx">Locker</span> <span class="c1">// 当观察或者修改等待条件的时候需要加锁
 </span><span class="c1"></span>    <span class="nx">notify</span> <span class="nx">notifyList</span> <span class="c1">// 等待队列 
 </span><span class="c1"></span><span class="p">}</span>
-</code></pre></div><h3 id="基本-4">基本</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-4">基本</h3>
 <ul>
 <li>
 <p>初始化时，要指定使用的锁，比如Mutex</p>
@@ -585,18 +805,47 @@
 </ul>
 <h2 id="once">Once</h2>
 <h3 id="数据结构-5">数据结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Once</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Once</span> <span class="kd">struct</span> <span class="p">{</span>
     <span class="nx">done</span> <span class="kt">uint32</span>
     <span class="nx">m</span> <span class="nx">Mutex</span>
 <span class="p">}</span>
-</code></pre></div><h3 id="基本-5">基本</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-5">基本</h3>
 <ul>
 <li>sync.Once只有一个Do方法，入参是一个无参数无返回值的函数，当且仅当第一次调用Do方法的时候该函数才会执行，即使之后调用了n次、入参的值不一样都不会被执行</li>
 <li>可以将sync.Once与想要只初始化一次的对象封装成一个结构体，提供只初始化一次该值的方法，常用于初始化单例资源、并发访问只初始化一次的共享资源、需要延迟初始化的场景等</li>
 <li>Once传入的函数参数，就算在执行时发生panic，Once也会认为已经执行过了，so如果要知道Once里传入的方法是否执行成功，模仿Do函数自己写一个返回参数的入参方法</li>
 <li>内部的实现非常简单，就是一个flag + 一个双重校验锁</li>
 </ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">o</span> <span class="o">*</span><span class="nx">Once</span><span class="p">)</span> <span class="nf">Do</span><span class="p">(</span><span class="nx">f</span> <span class="kd">func</span><span class="p">())</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">o</span> <span class="o">*</span><span class="nx">Once</span><span class="p">)</span> <span class="nf">Do</span><span class="p">(</span><span class="nx">f</span> <span class="kd">func</span><span class="p">())</span> <span class="p">{</span>
     <span class="c1">// 判断flag是否被置为0，即函数是否还没被执行过
 </span><span class="c1"></span>	<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">LoadUint32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">o</span><span class="p">.</span><span class="nx">done</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span> 
         <span class="nx">o</span><span class="p">.</span><span class="nf">doSlow</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> 
@@ -611,7 +860,9 @@
         <span class="nf">f</span><span class="p">()</span> 
     <span class="p">}</span>
 <span class="p">}</span>
-</code></pre></div><h2 id="并发安全的map">并发安全的map</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="并发安全的map">并发安全的map</h2>
 <ul>
 <li>
 <p>将map与RWMutex封装成一个结构体，使用读写锁封装map的各种操作即可</p>
@@ -676,7 +927,83 @@
 </li>
 </ul>
 <p>用atomic实现的lock-free的队列</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kn">package</span> <span class="nx">queue</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kn">package</span> <span class="nx">queue</span>
 <span class="kn">import</span> <span class="p">(</span>
   <span class="s">&#34;sync/atomic&#34;</span>
   <span class="s">&#34;unsafe&#34;</span>
@@ -748,15 +1075,29 @@
   <span class="k">return</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">CompareAndSwapPointer</span><span class="p">(</span>
     <span class="nx">p</span><span class="p">,</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">old</span><span class="p">),</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">new</span><span class="p">))</span>
 <span class="p">}</span>
-</code></pre></div><h2 id="weighted--semaphore信号量">Weighted = Semaphore信号量</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="weighted--semaphore信号量">Weighted = Semaphore信号量</h2>
 <h3 id="数据结构-7">数据结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Weighted</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Weighted</span> <span class="kd">struct</span> <span class="p">{</span>
     <span class="nx">size</span>    <span class="kt">int64</span>         <span class="c1">// 最大资源数
 </span><span class="c1"></span>    <span class="nx">cur</span>     <span class="kt">int64</span>         <span class="c1">// 当前已被使用的资源
 </span><span class="c1"></span>    <span class="nx">mu</span>      <span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>    <span class="c1">// 互斥锁，对字段的保护
 </span><span class="c1"></span>    <span class="nx">waiters</span> <span class="nx">list</span><span class="p">.</span><span class="nx">List</span>     <span class="c1">// 等待队列，通过channel实现通知机制
 </span><span class="c1"></span><span class="p">}</span>
-</code></pre></div><h3 id="基本-7">基本</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-7">基本</h3>
 <ul>
 <li>
 <p>信号量中的PV操作，P：获取资源，如果获取不到，则阻塞，加入到等待队列中；V：释放资源，从等待队列中唤醒一个元素执行P操作</p>
@@ -796,7 +1137,28 @@
 </ol>
 <h2 id="singleflight">SingleFlight</h2>
 <h3 id="结构体">结构体</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 代表一个正在处理的请求，或者已经处理完的请求
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 代表一个正在处理的请求，或者已经处理完的请求
 </span><span class="c1"></span><span class="kd">type</span> <span class="nx">call</span> <span class="kd">struct</span> <span class="p">{</span>
     <span class="nx">wg</span> <span class="nx">sync</span><span class="p">.</span><span class="nx">WaitGroup</span>
     <span class="c1">// 这个字段代表处理完的值，在waitgroup完成之前只会写一次, waitgroup完成之后就读取这个值
@@ -813,7 +1175,9 @@
     <span class="nx">mu</span> <span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>       <span class="c1">// protects m
 </span><span class="c1"></span>    <span class="nx">m</span>  <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">call</span> <span class="c1">// lazily initialized
 </span><span class="c1"></span><span class="p">}</span>
-</code></pre></div><h3 id="基本-8">基本</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-8">基本</h3>
 <ul>
 <li>
 <p>SingleFlight可以合并多个请求为一个请求，再将该请求的结果返回给多个请求，从而达到合并并发请求的目的，减少并发调用的数量。比如有多个相同的读请求查库，那就可以合并成一个请求查库，再把结果响应回这多个请求中；或者是解决缓存击穿问题，降低对下游服务的并发压力</p>
@@ -829,7 +1193,23 @@
 </ul>
 <h2 id="cyclicbarrier---循环栅栏">CyclicBarrier - 循环栅栏</h2>
 <h3 id="数据结构-8">数据结构</h3>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">CyclicBarrier</span> <span class="kd">interface</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">CyclicBarrier</span> <span class="kd">interface</span> <span class="p">{</span>
     <span class="c1">// 等待所有的参与者到达，如果被ctx.Done()中断，会返回ErrBrokenBarrier
 </span><span class="c1"></span>    <span class="nf">Await</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="kt">error</span>
     <span class="c1">// 重置循环栅栏到初始化状态。如果当前有等待者，那么它们会返回ErrBrokenBarrier
@@ -841,7 +1221,9 @@
     <span class="c1">// 循环栅栏是否处于中断状态
 </span><span class="c1"></span>    <span class="nf">IsBroken</span><span class="p">()</span> <span class="kt">bool</span>
 <span class="p">}</span>
-</code></pre></div><h3 id="基本-9">基本</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="基本-9">基本</h3>
 <ul>
 <li>类似Java的CyclicBarrier，允许一组goroutine相互等待，到达一个共同的执行点再继续往下执行；同时也可被重复使用。</li>
 <li>CyclicBarrier是一个接口，然后有两个初始化的方法，New方法，指定循环栅栏的参与者数量即可初始化；NewWithAction方法，除了指定参与者数量，第二个参数是一个函数，表示在最后一个参与者到达之后，但其他参与者还没放行之前，会调用该函数</li>

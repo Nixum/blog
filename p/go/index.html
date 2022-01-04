@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='go' /><meta property='article:tag' content='go集合类原理' /><meta property='article:tag' content='go协程' /><meta property='article:tag' content='go GC' /><meta property='article:published_time' content='2020-11-07T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-10-24T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="go">
 <meta name="twitter:description" content="go集合类、协程、runtime、GC原理">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -153,12 +153,23 @@
 <h1 id="切片slice">切片Slice</h1>
 <h2 id="数据结构">数据结构</h2>
 <p>slice本质是一个结构体，所以它是值类型是不难理解的，它仅仅只是对数组的一种包装，且该结构体不包含任何函数，任何对slice的处理都是go的内置函数来处理的。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Slice</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Slice</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">ptr</span>   <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> 	<span class="c1">// 指向数组的指针
 </span><span class="c1"></span>	<span class="nx">len</span>   <span class="kt">int</span>               <span class="c1">// 切片长度
 </span><span class="c1"></span>	<span class="nx">cap</span>   <span class="kt">int</span>               <span class="c1">// 切片容量
 </span><span class="c1"></span><span class="p">}</span>
-</code></pre></div><h2 id="基本">基本</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="基本">基本</h2>
 <ul>
 <li>
 <p>创建时无需指定长度，如 <code>slice1 := []int{1,2,3}, 此时长度和容量均为3</code></p>
@@ -193,7 +204,26 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <li>range遍历的注意点：使用range遍历时，底层的slice会发生一次拷贝，即range指向的slice是原始slice的拷贝，长度也是；将slice的每个元素赋值给v时，也发生了一次拷贝，无法通过修改v来修改slice。</li>
 </ul>
 <p>demo</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">	<span class="nx">arr</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span> <span class="c1">// 比如此时arr的地址是0xc00000e380
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">	<span class="nx">arr</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span> <span class="c1">// 比如此时arr的地址是0xc00000e380
 </span><span class="c1"></span>	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">arr</span> <span class="p">{</span>
         <span class="c1">// 此时arr的地址是0xc00000c3c0，可见发生了拷贝，v的地址就一直不变的
 </span><span class="c1"></span>		<span class="nx">arr</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">arr</span><span class="p">,</span> <span class="nx">v</span><span class="p">)</span>
@@ -208,7 +238,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">newArr</span> <span class="p">{</span>
 		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;%v &#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">v</span><span class="p">)</span> <span class="c1">// 打印3 3 3，因为是v指向了同一个指针
 </span><span class="c1"></span>	<span class="p">}</span>
-</code></pre></div><h2 id="扩容">扩容</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="扩容">扩容</h2>
 <h3 id="原理">原理</h3>
 <p>当使用append()函数向slice追加元素，会根据slice的容量判断是否需要扩容。另外，因为slice是值传递，append()函数不会修改传入的slice，返回是重新对底层数组、长度、容量做包装，返回新slice。</p>
 <ol>
@@ -218,7 +250,22 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </ol>
 <p>另外，copy函数拷贝两个slice时，会将源slice拷贝到目标slice，如果目标slice的长度&lt;源slice，不会发生扩容。</p>
 <p>Demo：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="nx">data</span> <span class="o">:=</span> <span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="kt">int</span><span class="p">{}</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="nx">data</span> <span class="o">:=</span> <span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="kt">int</span><span class="p">{}</span>
 <span class="nx">slice</span> <span class="o">:=</span> <span class="nx">data</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">8</span><span class="p">]</span>
 <span class="nx">slice</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">slice</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span><span class="c1">// slice=? data=?
 </span><span class="c1"></span><span class="nx">slice</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">slice</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span><span class="c1">// slice=? data=?
@@ -229,7 +276,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <span class="c1">// 第二次append后结果
 </span><span class="c1"></span><span class="nx">slice</span> <span class="p">=</span> <span class="p">[</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">9</span> <span class="mi">10</span> <span class="mi">11</span> <span class="mi">12</span><span class="p">]</span>
 <span class="nx">data</span> <span class="p">=</span> <span class="p">[</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">9</span> <span class="mi">0</span><span class="p">]</span>
-</code></pre></div><h3 id="扩容策略">扩容策略</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="扩容策略">扩容策略</h3>
 <p>扩容实际上包括两部分：计算容量的规则 和 内存对齐</p>
 <ol>
 <li>
@@ -246,7 +295,26 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>内存对齐主要是为了提高内存分配效率，减少内存碎片。</p>
 </li>
 </ol>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 此时期望容量是2 + 3 = 5 &gt; 旧容量的两倍 2 * 2 = 4，期望容量为5，占40个字节，触发内存对齐，向上取整为48字节，此时新容量为 48 / 8 = 6。
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 此时期望容量是2 + 3 = 5 &gt; 旧容量的两倍 2 * 2 = 4，期望容量为5，占40个字节，触发内存对齐，向上取整为48字节，此时新容量为 48 / 8 = 6。
 </span><span class="c1"></span><span class="nx">s1</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int64</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">}</span>
 <span class="nx">s1</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">s1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;len=%d, cap=%d\n&#34;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="nx">s1</span><span class="p">),</span><span class="nb">cap</span><span class="p">(</span><span class="nx">s1</span><span class="p">))</span>  <span class="c1">// len=5, cap=6
@@ -261,9 +329,48 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;len=%d, cap=%d\n&#34;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="nx">s</span><span class="p">),</span><span class="nb">cap</span><span class="p">(</span><span class="nx">s</span><span class="p">))</span>  <span class="c1">// len=4, cap=4
 </span><span class="c1"></span><span class="nx">s</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">s</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;len=%d, cap=%d\n&#34;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="nx">s</span><span class="p">),</span><span class="nb">cap</span><span class="p">(</span><span class="nx">s</span><span class="p">))</span>  <span class="c1">// len=5, cap=8
-</span></code></pre></div><h1 id="map">Map</h1>
+</span></code></pre></td></tr></table>
+</div>
+</div><h1 id="map">Map</h1>
 <h2 id="数据结构-1">数据结构</h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">hmap</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">hmap</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">count</span>     <span class="kt">int</span>    <span class="c1">// 哈希表中元素的数量
 </span><span class="c1"></span>	<span class="c1">// 1：可能有迭代器使用buckets，2：可能有迭代器使用oldbuckets，4：有协程正在向map中写入key，8：等量扩容
 </span><span class="c1"></span>	<span class="nx">flags</span>     <span class="kt">uint8</span>  <span class="c1">// 记录map的状态
@@ -296,7 +403,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
     <span class="nx">pad</span>      <span class="kt">uintptr</span>
     <span class="nx">overflow</span> <span class="kt">uintptr</span> <span class="c1">// 每个桶只能存8个元素，超过8个时会存入溢出桶，溢出桶只是临时方案，溢出过多时会进行扩容
 </span><span class="c1"></span><span class="p">}</span>
-</code></pre></div><p><figure 
+</code></pre></td></tr></table>
+</div>
+</div><p><figure 
 	>
 	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/go_map_struct.png" >
 		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/go_map_struct.png"
@@ -366,7 +475,48 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>当桶的数量大于2^4时，就会额外创建2^(B-4)个溢出桶，溢出桶与普通桶在内存空间上是连续的。</p>
 </li>
 </ol>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">makemap</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">maptype</span><span class="p">,</span> <span class="nx">hint</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">h</span> <span class="o">*</span><span class="nx">hmap</span><span class="p">)</span> <span class="o">*</span><span class="nx">hmap</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">makemap</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">maptype</span><span class="p">,</span> <span class="nx">hint</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">h</span> <span class="o">*</span><span class="nx">hmap</span><span class="p">)</span> <span class="o">*</span><span class="nx">hmap</span> <span class="p">{</span>
 <span class="o">...</span>
 	<span class="c1">// 函数内，计算桶的数量
 </span><span class="c1"></span>	<span class="nx">B</span> <span class="o">:=</span> <span class="nb">uint8</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -403,7 +553,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 	<span class="p">}</span>
 	<span class="k">return</span> <span class="nx">buckets</span><span class="p">,</span> <span class="nx">nextOverflow</span>
 <span class="p">}</span>
-</code></pre></div><h2 id="查找与插入">查找与插入</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="查找与插入">查找与插入</h2>
 <p><code>v := m[key]</code>使用函数mapaccess1()进行查找， <code>v, ok := m[key]</code>使用函数mapaccess2()进行查找</p>
 <p>mapaccess2也会调用mapaccess1，只是返回的时候会返回多一个用于表示当前键值对是否存在的布尔值。</p>
 <h3 id="key的定位">key的定位</h3>
@@ -414,7 +566,25 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <li>每个桶是一整片连续的内存空间，先遍历bucket桶中的正常位，与桶中的tophash进行比较，当找到对应的tophash时，根据tophash进行计算得到key，根据key的大小计算得到value的地址，找到value。</li>
 <li>如果bucket桶中的正常位没找到tophash，且overflow不为空，则继续遍历溢出桶overflow bucket，直到找到对应的tophash，再根据key的大小计算得到value的地址，找到value。</li>
 </ol>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 计算得到bucket桶在buckets数组中的位置
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 计算得到bucket桶在buckets数组中的位置
 </span><span class="c1"></span><span class="nx">bucket</span> <span class="o">:=</span> <span class="nx">hash</span> <span class="o">&amp;</span> <span class="nf">bucketMask</span><span class="p">(</span><span class="nx">h</span><span class="p">.</span><span class="nx">B</span><span class="p">)</span>
 <span class="nx">b</span> <span class="o">:=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">h</span><span class="p">.</span><span class="nx">buckets</span><span class="p">)</span> <span class="o">+</span> <span class="nx">bucket</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
 
@@ -428,7 +598,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <span class="c1">// 计算key和value，dataoffset是tophash[8]所占用的大小，所以key的地址就是：b的地址 + dataOffset的偏移 + 对应的索引i * key的大小
 </span><span class="c1"></span><span class="nx">k</span> <span class="o">:=</span> <span class="nf">add</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">b</span><span class="p">),</span> <span class="nx">dataOffset</span><span class="o">+</span><span class="nx">i</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">keysize</span><span class="p">))</span>
 <span class="nx">val</span> <span class="p">=</span> <span class="nf">add</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">b</span><span class="p">),</span> <span class="nx">dataOffset</span><span class="o">+</span><span class="nx">bucketCnt</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">keysize</span><span class="p">)</span><span class="o">+</span><span class="nx">i</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">valuesize</span><span class="p">))</span>
-</code></pre></div><p><figure 
+</code></pre></td></tr></table>
+</div>
+</div><p><figure 
 	>
 	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/go_map_get.png" >
 		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/go_map_get.png"
@@ -465,13 +637,37 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <h3 id="扩容策略-1">扩容策略</h3>
 <h4 id="增量扩容---降低哈希冲突">增量扩容 - 降低哈希冲突</h4>
 <p>overLoadFactor函数，该函数返回true，表示哈希表内的元素过多，哈希冲突的概率变大，查找可能在找到桶，遍历完桶内的元素，还要继续遍历溢出桶链表，此时需要**增量扩容，扩容为原来的两倍 **，降低哈希冲突的概率。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">overLoadFactor</span><span class="p">(</span><span class="nx">count</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">B</span> <span class="kt">uint8</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">overLoadFactor</span><span class="p">(</span><span class="nx">count</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">B</span> <span class="kt">uint8</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
     <span class="c1">// loadFactorNum = 13, loadFactorDen = 2, 即count &gt; 8 &amp;&amp; count / (2^B) &gt; 6.5
 </span><span class="c1"></span>    <span class="k">return</span> <span class="nx">count</span> <span class="p">&gt;</span> <span class="nx">bucketCnt</span> <span class="o">&amp;&amp;</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">count</span><span class="p">)</span> <span class="p">&gt;</span> <span class="nx">loadFactorNum</span> <span class="o">*</span><span class="p">(</span><span class="nf">bucketShift</span><span class="p">(</span><span class="nx">B</span><span class="p">)</span><span class="o">/</span><span class="nx">loadFactorDen</span><span class="p">)</span>
 <span class="p">}</span>
-</code></pre></div><h4 id="等量扩容---提高桶的利用率防止内存泄漏加快查询效率">等量扩容 - 提高桶的利用率，防止内存泄漏，加快查询效率</h4>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="等量扩容---提高桶的利用率防止内存泄漏加快查询效率">等量扩容 - 提高桶的利用率，防止内存泄漏，加快查询效率</h4>
 <p>tooManyOverflowBuckets函数，该函数返回true，表示由于某一个桶满后，开始使用溢出桶，不断的插入数据到溢出桶，又不断的删除正常桶上的正常位，但此时哈希表的数量又没超阈值，即空桶太多，溢出桶的数量太多，而每次查找又得先遍历正常位，查找效率变低，此时需要<strong>等量扩容，容量不变，重新迁移键值对</strong>。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">tooManyOverflowBuckets</span><span class="p">(</span><span class="nx">noverflow</span> <span class="kt">uint16</span><span class="p">,</span> <span class="nx">B</span> <span class="kt">uint8</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">tooManyOverflowBuckets</span><span class="p">(</span><span class="nx">noverflow</span> <span class="kt">uint16</span><span class="p">,</span> <span class="nx">B</span> <span class="kt">uint8</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
     <span class="c1">// 如果负载因子太低, 不操作。
 </span><span class="c1"></span>    <span class="c1">// 如果负载因子太高，maps的扩容和缩容会使用大量未使用的内存
 </span><span class="c1"></span>    <span class="c1">// 太多指的是溢出桶的数量和buckets数组的数量一样.
@@ -481,7 +677,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
     <span class="c1">// The compiler doesn&#39;t see here that B &lt; 16; mask B to generate shorter shift code.
 </span><span class="c1"></span>    <span class="k">return</span> <span class="nx">noverflow</span> <span class="o">&gt;=</span> <span class="nb">uint16</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">&lt;&lt;</span><span class="p">(</span><span class="nx">B</span><span class="o">&amp;</span><span class="mi">15</span><span class="p">)</span>
 <span class="p">}</span>
-</code></pre></div><h3 id="触发扩容">触发扩容</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="触发扩容">触发扩容</h3>
 <p>触发扩容条件时，会执行hashGrow函数，进行新桶的分配，此时还未迁移数据。</p>
 <ol>
 <li>

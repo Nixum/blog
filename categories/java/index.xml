@@ -16,7 +16,7 @@
       <description>[TOC]
 BIO 特点
  BIO是同步阻塞的，以流的形式处理，基于字节流和字符流 每个请求都需要创建独立的线程，处理Read和Write 并发数较大时，就算是使用了线程池，也需要创建大量的线程来处理 连接建立后，如果处理线程被读操作阻塞了，那就阻塞了，只能等到读完才能进行其他操作  以基于TCP协议的Socket，编写服务端Demo
-package com.nixum.bio; import java.io.InputStream; import java.io.PrintWriter; import java.net.ServerSocket; import java.net.Socket; import java.util.Date; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; public class BIOServer { public static void main(String[] args) throws Exception { ExecutorService newCachedThreadPool = Executors.newCachedThreadPool(); //创建ServerSocket  ServerSocket serverSocket = new ServerSocket(8080); while (true) { // 主线程负责处理监听  final Socket socket = serverSocket.accept(); // 创建线程处理请求  newCachedThreadPool.execute(() -&amp;gt; { handler(socket); }); } } public static void handler(Socket socket) { try { byte[] bytes = new byte[1024]; //通过socket获取输入流  InputStream inputStream = socket.</description>
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55  package com.nixum.bio; import java.io.InputStream; import java.</description>
     </item>
     
     <item>
@@ -89,12 +89,12 @@ Golang 的 goroutine 是如何实现的？
 Collection  javaCollection类图简版 
 Set HashSet 1.基本   底层是HashMap，因此初始容量，默认负载因子、扩容倍数这些都和HashMap一样
   由于HashSet只需要key，因此value统一使用静态不可变的Object对象来装，即所有key共享这一个对象
-  private transient HashMap&amp;lt;E,Object&amp;gt; map; private static final Object PRESENT = new Object();  HashSet允许存入null 不是线程安全的 不保证插入元素的顺序  List ArrayList 1.基本   底层：Object数组
+  1 2  private transient HashMap&amp;lt;E,Object&amp;gt; map; private static final Object PRESENT = new Object();    HashSet允许存入null 不是线程安全的 不保证插入元素的顺序  List ArrayList 1.基本   底层：Object数组
   默认大小：10 （调用空参构造方法时）
 最大是Integer.MAX_VALUE - 8（2^31 - 1，一些虚拟器需要在数组前加个头标签，所以减去 8 ）
 调用此构造方法时，
-public ArrayList(Collection&amp;lt;? extends E&amp;gt; c) 其中要注意的是，里面有这样一句话
-// c.toArray might (incorrectly) not return Object[] (see 6260652) if (elementData.getClass() != Object[].</description>
+1  public ArrayList(Collection&amp;lt;? extends E&amp;gt; c)   其中要注意的是，里面有这样一句话
+1 2 3  // c.</description>
     </item>
     
     <item>

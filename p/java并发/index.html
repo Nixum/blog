@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Java并发' /><meta property='article:tag' content='JUC' /><meta property='article:tag' content='线程' /><meta property='article:published_time' content='2019-03-02T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-12T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Java并发">
 <meta name="twitter:description" content="JUC、线程、锁等原理">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -436,12 +436,35 @@
 <p>​	newSingleThreadExecutor：大小为 1 的线程池，使用LinkedBlockingQueue，每次只有一个线程执行任务，从阻塞队列中取任务一个接一个执行</p>
 <p>这三个静态方法 返回实现了ExecutorService接口的ThreadPoolExecutor类的对象</p>
 <p>使用方式：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">ExecutorService</span> <span class="n">threadPool</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newCachedThreadPool</span><span class="o">();</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">ExecutorService</span> <span class="n">threadPool</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newCachedThreadPool</span><span class="o">();</span>
 <span class="n">threadPool</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">线程实例</span><span class="o">);</span>	<span class="c1">// 无返回值
 </span><span class="c1"></span><span class="n">Future</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">threadPool</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">实现了Callable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="n">的实例</span><span class="o">);</span> <span class="c1">// 有返回值
 </span><span class="c1"></span><span class="n">threadPool</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
-</code></pre></div><p>在阿里巴巴开发手册中不提倡使用Executors创建，而是通过 ThreadPoolExecutor的方式去定制线程池，从而明确线程池的参数</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">ExecutorService</span> <span class="n">threadPool</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadPoolExecutor</span><span class="o">(</span><span class="n">一系列参数</span><span class="err">，</span><span class="n">具体看构造器</span><span class="o">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在阿里巴巴开发手册中不提倡使用Executors创建，而是通过 ThreadPoolExecutor的方式去定制线程池，从而明确线程池的参数</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">ExecutorService</span> <span class="n">threadPool</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadPoolExecutor</span><span class="o">(</span><span class="n">一系列参数</span><span class="err">，</span><span class="n">具体看构造器</span><span class="o">);</span>
 <span class="c1">// 构造器
 </span><span class="c1"></span><span class="kt">int</span> <span class="n">corePoolSize</span><span class="o">,</span>		<span class="c1">// 线程池中的线程数量
 </span><span class="c1"></span><span class="kt">int</span> <span class="n">maximumPoolSize</span><span class="o">,</span>	<span class="c1">// 线程池中允许的最大数量，当前阻塞队列满了，且继续提交任务，则创建新的线程执行任务，前提是当前线程数小于maximumPoolSize，如果使用无界队列，该参数就没什么用了
@@ -450,7 +473,9 @@
 </span><span class="c1"></span><span class="n">BlockingQueue</span><span class="o">&lt;</span><span class="n">Runnable</span><span class="o">&gt;</span> <span class="n">workQueue</span><span class="o">,</span>	<span class="c1">// 用来保存等待被执行的任务的阻塞队列，且任务必须实现Runable接口，常见的如ArrayBlockingQueue、LinkedBlockingQuene
 </span><span class="c1"></span><span class="n">ThreadFactory</span> <span class="n">threadFactory</span><span class="o">,</span>	<span class="c1">// 当线程池创建新线程时调用，例如为每个线程实现一个名字
 </span><span class="c1"></span><span class="n">RejectedExecutionHandler</span> <span class="n">handler</span>	<span class="c1">// 线程池的饱和策略，线程池提供4种饱和策略，默认是AbortPolicy
-</span></code></pre></div><ul>
+</span></code></pre></td></tr></table>
+</div>
+</div><ul>
 <li>
 <p>阻塞队列</p>
 <p>当线程池中的线程数量大于等于corePoolSize的时候，把该任务封装成一个Worker对象放入等待队列</p>
@@ -581,7 +606,20 @@ TERMINATED：terminated()方法执行过后变成这个
 </table>
 <h3 id="3原理">3.原理</h3>
 <h4 id="arrayblockingqueue">ArrayBlockingQueue</h4>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 把数组当成环形队列使用
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 把数组当成环形队列使用
 </span><span class="c1">// 在执行插入或获取操作前会上锁，上的是同一把锁，方法执行完解锁，允许中断
 </span><span class="c1"></span><span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span><span class="o">;</span>
 
@@ -590,8 +628,25 @@ TERMINATED：terminated()方法执行过后变成这个
 
 <span class="c1">// 在put方法中，往数组中添加一个元素，更新索引，再调用singal()方法唤醒等待线程消费，如果数组满了，则调用await()方法进行等待
 </span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notFull</span><span class="o">;</span>
-</code></pre></div><h4 id="linkedblockingqueue">LinkedBlockingQueue</h4>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 整体分为读锁和写锁，而不像ArrayBlockingQueue只使用一个锁，原因是LinkedBlockingQueue底层是链表的，只需要关心头尾两个节点就行了，头节点加读锁，尾节点加写锁，使用的是不同的锁，因此读写时是不阻塞的；另外，由于节点是链表实例，在高并发下也会影响GC，而ArrayBlockingQueue是数组，不用包多一层
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="linkedblockingqueue">LinkedBlockingQueue</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 整体分为读锁和写锁，而不像ArrayBlockingQueue只使用一个锁，原因是LinkedBlockingQueue底层是链表的，只需要关心头尾两个节点就行了，头节点加读锁，尾节点加写锁，使用的是不同的锁，因此读写时是不阻塞的；另外，由于节点是链表实例，在高并发下也会影响GC，而ArrayBlockingQueue是数组，不用包多一层
 </span><span class="c1"></span>
 <span class="c1">// take操作时上读锁，队列为空则等待，不为空时则移除并获取，再不为空则唤醒其他消费线程，解开读锁，允许中断
 </span><span class="c1">// 然后判断出消费元素之前队列是满的(此时是临界状态，但刚又被消费了一次)，则加写锁，唤醒其他生产线程，解写锁，不允许中断
@@ -602,7 +657,9 @@ TERMINATED：terminated()方法执行过后变成这个
 </span><span class="c1">// 然后判断入队前只有一个元素(此时的该元素是刚刚加的)，则加读锁，唤醒其他消费线程，解读锁，不允许中断
 </span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">putLock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>   <span class="c1">// 写锁
 </span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notFull</span> <span class="o">=</span> <span class="n">putLock</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
-</code></pre></div><p>其实ArrayBlockingQueue也可以像LinkedBlockingQueue使用读写锁，但此时的count和index就需要使用AtomicInteger来保证线程安全，加之数组不像链表那样还要构建节点，使用读写锁带来的收益不是特别大，所以没有使用了。</p>
+</code></pre></td></tr></table>
+</div>
+</div><p>其实ArrayBlockingQueue也可以像LinkedBlockingQueue使用读写锁，但此时的count和index就需要使用AtomicInteger来保证线程安全，加之数组不像链表那样还要构建节点，使用读写锁带来的收益不是特别大，所以没有使用了。</p>
 <h3 id="参考">参考</h3>
 <p><a class="link" href="https://www.jianshu.com/p/4028efdbfc35"  target="_blank" rel="noopener"
     >java阻塞队列详解</a></p>

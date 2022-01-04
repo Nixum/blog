@@ -19,7 +19,7 @@
 结构型模式是将不同功能代码解耦
 行为型模式是将不同的行为代码解耦
 创建型 单例模式 数据在应用上只保持一份，解决资源访问冲突的问题，就可以使用单例模式
-/** 1. * 懒汉模式,线程不安全，只有在调用方法的时候才实例化,好处是没用到该类时就不实例化，节约资源 */ class LazyInstance { private static LazyInstance singleton; private LazyInstance() { // if (singleton != null) // throw new RuntimeException();  } /** 1.1 * 想要线程安全只需在方法上加上synchronized关键字，缺点是，多线程访问时锁的操作耗时 */ public static LazyInstance getInstance() { if (singleton == null) { singleton = new LazyInstance(); } return singleton; } } /** 2.</description>
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105  /** 1.</description>
     </item>
     
   </channel>

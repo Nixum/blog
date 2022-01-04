@@ -18,12 +18,12 @@
 Collection  javaCollection类图简版 
 Set HashSet 1.基本   底层是HashMap，因此初始容量，默认负载因子、扩容倍数这些都和HashMap一样
   由于HashSet只需要key，因此value统一使用静态不可变的Object对象来装，即所有key共享这一个对象
-  private transient HashMap&amp;lt;E,Object&amp;gt; map; private static final Object PRESENT = new Object();  HashSet允许存入null 不是线程安全的 不保证插入元素的顺序  List ArrayList 1.基本   底层：Object数组
+  1 2  private transient HashMap&amp;lt;E,Object&amp;gt; map; private static final Object PRESENT = new Object();    HashSet允许存入null 不是线程安全的 不保证插入元素的顺序  List ArrayList 1.基本   底层：Object数组
   默认大小：10 （调用空参构造方法时）
 最大是Integer.MAX_VALUE - 8（2^31 - 1，一些虚拟器需要在数组前加个头标签，所以减去 8 ）
 调用此构造方法时，
-public ArrayList(Collection&amp;lt;? extends E&amp;gt; c) 其中要注意的是，里面有这样一句话
-// c.toArray might (incorrectly) not return Object[] (see 6260652) if (elementData.getClass() != Object[].</description>
+1  public ArrayList(Collection&amp;lt;? extends E&amp;gt; c)   其中要注意的是，里面有这样一句话
+1 2 3  // c.</description>
     </item>
     
     <item>

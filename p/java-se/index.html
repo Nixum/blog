@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='JavaSE' /><meta property='article:tag' content='面向对象' /><meta property='article:published_time' content='2019-02-18T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2020-10-23T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Java SE">
 <meta name="twitter:description" content="Java基础">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    3 minute read
+                    4 minute read
                 </time>
             </div>
         
@@ -221,7 +221,19 @@
 </ul>
 <p>其中，装箱时，即调用 valueOf() 方法时，会先去缓存池里找，看看该值是否在缓存池的范围中，如果是，多次调用时会取得同一对象的引用，属于同一对象，如果不在缓存池中，则使用new Integer()</p>
 <p>使用new Integer()初始化的，无论传入的数是否在缓存池的范围内，都是重新分配内存初始化的，属于不同对象</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Integer</span> <span class="n">a</span> <span class="o">=</span> <span class="n">23</span><span class="o">;</span> <span class="n">Integer</span> <span class="n">b</span> <span class="o">=</span> <span class="n">23</span><span class="o">;</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Integer</span> <span class="n">a</span> <span class="o">=</span> <span class="n">23</span><span class="o">;</span> <span class="n">Integer</span> <span class="n">b</span> <span class="o">=</span> <span class="n">23</span><span class="o">;</span>
 <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="o">);</span> <span class="c1">// true
 </span><span class="c1"></span>
 <span class="n">Integer</span> <span class="n">a1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Integer</span><span class="o">(</span><span class="n">23</span><span class="o">);</span> <span class="n">Integer</span> <span class="n">b1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Integer</span><span class="o">(</span><span class="n">23</span><span class="o">);</span>
@@ -229,7 +241,9 @@
 </span><span class="c1"></span>
 <span class="n">Integer</span> <span class="n">c</span> <span class="o">=</span> <span class="n">128</span><span class="o">;</span> <span class="n">Integer</span> <span class="n">d</span> <span class="o">=</span> <span class="n">128</span><span class="o">;</span> 
 <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="n">d</span><span class="o">);</span> <span class="c1">// false
-</span></code></pre></div><ul>
+</span></code></pre></td></tr></table>
+</div>
+</div><ul>
 <li>
 <p>基本类型缓存池，其他类型没有</p>
 <p>boolean：true、false</p>
@@ -264,13 +278,25 @@
 <li>被final修饰的变量不会自动改变类型，当2个final修饰相操作时，结果会根据左边变量的类型自动转化</li>
 <li>三元运算符？，：两边是基本类型会做自动类型提升</li>
 </ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kt">byte</span> <span class="n">a</span> <span class="o">=</span> <span class="n">127</span><span class="o">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">127</span><span class="o">,</span> <span class="n">d</span><span class="o">;</span> 
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kt">byte</span> <span class="n">a</span> <span class="o">=</span> <span class="n">127</span><span class="o">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">127</span><span class="o">,</span> <span class="n">d</span><span class="o">;</span> 
 <span class="kd">final</span> <span class="kt">byte</span> <span class="n">c</span> <span class="o">=</span> <span class="n">127</span><span class="o">;</span>
 <span class="n">a</span> <span class="o">+=</span> <span class="n">b</span><span class="o">;</span> <span class="n">a</span> <span class="o">-=</span> <span class="n">b</span><span class="o">;</span> <span class="c1">//这种写法是可以的，会变成 a = (byte) (a+b) 
 </span><span class="c1"></span><span class="n">而</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="err">；</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="err">；</span><span class="n">则会因为没有类型转化而出错</span><span class="err">，</span><span class="n">int无法转成byte</span>
 <span class="n">d</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">c</span><span class="o">;</span> <span class="c1">// 会出错，a在运算时为自动提升为int
 </span><span class="c1"></span><span class="n">如果是final修饰</span> <span class="n">a</span><span class="err">、</span><span class="n">b</span><span class="err">，</span><span class="n">那么byte</span> <span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="n">就不会编译错误</span>
-</code></pre></div><h1 id="三string">三、String</h1>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="三string">三、String</h1>
 <h2 id="1基本">1.基本</h2>
 <ul>
 <li>
@@ -472,10 +498,19 @@
 </li>
 <li>
 <p>不能有静态成员、方法</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Outer</span> <span class="n">out</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">();</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Outer</span> <span class="n">out</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">();</span>
 <span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span> <span class="n">outin</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="na">new</span> <span class="nf">Inner</span><span class="o">();</span>
 <span class="n">outin</span><span class="o">.</span><span class="na">inner_f1</span><span class="o">();</span>
-</code></pre></div></li>
+</code></pre></td></tr></table>
+</div>
+</div></li>
 </ul>
 <h2 id="局部内部类">局部内部类</h2>
 <ul>
@@ -498,12 +533,23 @@
 <p>外部类方法访问内部类静态成员，直接 内部类名.静态成员变量</p>
 <p>访问内部非静态成员，实例化内部类，在调用</p>
 <p>说白了，静态属于整个类的，不属于某个对象的，可以直接使用，不依赖外部类，可以直接调用，或者实例化外部类里的静态类</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span> <span class="n">outin</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span><span class="o">();</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span> <span class="n">outin</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">.</span><span class="na">Inner</span><span class="o">();</span>
 <span class="n">outin</span><span class="o">.</span><span class="na">staticInner_f1</span><span class="o">();</span>		<span class="c1">// 或者直接调用 Outer.Inner.staticInner_f1()
 </span><span class="c1"></span><span class="n">outin</span><span class="o">.</span><span class="na">inner_f1</span><span class="o">();</span>			<span class="c1">// 不能直接 Outer.Inner.inner_f1()
 </span><span class="c1"></span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">print</span><span class="o">(</span><span class="n">outin</span><span class="o">.</span><span class="na">staticField</span> <span class="o">+</span> <span class="n">outin</span><span class="o">.</span><span class="na">field</span><span class="o">);</span>
 <span class="c1">// 同理只能 Outer.Inner.staticField, 不能Outer.Inner.field；
-</span></code></pre></div></li>
+</span></code></pre></td></tr></table>
+</div>
+</div></li>
 <li>
 <p>不可以只实例化外部类，再使用这个实例去实例化内部类或者调用内部类里的成员，这点跟成员内部类是不一样的</p>
 </li>
@@ -554,7 +600,49 @@
     >java浅谈枚举类</a></p>
 <p>具体例子</p>
 <p>反编译之后会发现，SPRING、SUMMER、FALL这些是静态常量(public static final 修饰)，而且是在静态代码块里初始化的，同时还附带有public static Season[] values()方法和public static Season valueOf(String s)方法</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">enum</span> <span class="n">Season</span><span class="o">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">enum</span> <span class="n">Season</span><span class="o">{</span>
     <span class="c1">// 调用无参构造器、括号里的变量称为自定义变量，可以有多个，要跟构造方法对应
 </span><span class="c1"></span>    <span class="n">SPRING</span><span class="o">(),</span>
     <span class="c1">// 调用有参构造器
@@ -592,7 +680,9 @@
     <span class="o">};</span>
 <span class="o">}</span>
 
-</code></pre></div><p>原理参考<a class="link" href="https://blog.csdn.net/javazejian/article/details/71333103"  target="_blank" rel="noopener"
+</code></pre></td></tr></table>
+</div>
+</div><p>原理参考<a class="link" href="https://blog.csdn.net/javazejian/article/details/71333103"  target="_blank" rel="noopener"
     >深入理解java类型</a></p>
 <h1 id="泛型">泛型</h1>
 <ul>

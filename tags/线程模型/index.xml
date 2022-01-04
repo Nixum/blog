@@ -16,7 +16,7 @@
       <description>[TOC]
 BIO 特点
  BIO是同步阻塞的，以流的形式处理，基于字节流和字符流 每个请求都需要创建独立的线程，处理Read和Write 并发数较大时，就算是使用了线程池，也需要创建大量的线程来处理 连接建立后，如果处理线程被读操作阻塞了，那就阻塞了，只能等到读完才能进行其他操作  以基于TCP协议的Socket，编写服务端Demo
-package com.nixum.bio; import java.io.InputStream; import java.io.PrintWriter; import java.net.ServerSocket; import java.net.Socket; import java.util.Date; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; public class BIOServer { public static void main(String[] args) throws Exception { ExecutorService newCachedThreadPool = Executors.newCachedThreadPool(); //创建ServerSocket  ServerSocket serverSocket = new ServerSocket(8080); while (true) { // 主线程负责处理监听  final Socket socket = serverSocket.accept(); // 创建线程处理请求  newCachedThreadPool.execute(() -&amp;gt; { handler(socket); }); } } public static void handler(Socket socket) { try { byte[] bytes = new byte[1024]; //通过socket获取输入流  InputStream inputStream = socket.</description>
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55  package com.nixum.bio; import java.io.InputStream; import java.</description>
     </item>
     
   </channel>

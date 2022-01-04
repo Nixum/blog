@@ -19,7 +19,7 @@
 固定窗口 规定单位时间内可访问的次数，比如规定接口一分钟内只能访问10次，以第一次请求为起始，计数1，一分钟内计数超过10后，后续的请求直接拒绝，只能等到这一分钟结束后，重置计数，重新开始计数。
 但是这样有个问题，如果在大部分请求集中在第一个窗口的后10s内，和第二个窗口的前10s内，虽然他们都符合限流策略，但是在临界的20s内，请求还是有可能压垮系统。
 算法Demo：
-type fixWinLimiter struct { lock *sync.Mutex maxLimitCount int64 // 最大限制数 	currentCount int64 // 当前计数 	fixInterval int64 // 为了简化，单位设置为秒 	lastReqStartAt int64 // 秒级时间戳 } func NewFixWinLimit(fixInterval int64, maxLimitCount int64) *fixWinLimiter { return &amp;amp;fixWinLimiter{ lock: new(sync.Mutex), maxLimitCount: maxLimitCount, fixInterval: fixInterval, } } func (f *fixWinLimiter) IsPass() bool { f.lock.Lock() defer f.lock.Unlock() now := time.Now().Unix() if now - f.lastReqStartAt &amp;gt; f.fixInterval { f.</description>
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47  type fixWinLimiter struct { lock *sync.Mutex maxLimitCount int64 // 最大限制数 	currentCount int64 // 当前计数 	fixInterval int64 // 为了简化，单位设置为秒 	lastReqStartAt int64 // 秒级时间戳 } func NewFixWinLimit(fixInterval int64, maxLimitCount int64) *fixWinLimiter { return &amp;amp;fixWinLimiter{ lock: new(sync.</description>
     </item>
     
   </channel>

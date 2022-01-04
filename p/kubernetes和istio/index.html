@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Kubernetes' /><meta property='article:tag' content='Istio' /><meta property='article:published_time' content='2020-07-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-12-03T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Kubernetes和Istio">
 <meta name="twitter:description" content="Kubernetes和Istio架构、原理">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    7 minute read
+                    8 minute read
                 </time>
             </div>
         
@@ -245,7 +245,24 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <h3 id="优先级与抢占机制">优先级与抢占机制</h3>
 <p>给Pod设置优先级，使得高优先级的Pod可用先调度，即使调度失败也比低优先级的Pod有优先调度的机会。</p>
 <p>需要先定义一个PriorityClass的API对象才能给Pod设置优先级。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">scheduling.k8s.io/v1beta1 </span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">scheduling.k8s.io/v1beta1 </span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">PriorityClass </span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w"> 
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">high-priority </span><span class="w">
@@ -258,7 +275,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
 </span><span class="w">    </span><span class="l">...</span><span class="w">
 </span><span class="w">  </span><span class="nt">priorityClassName</span><span class="p">:</span><span class="w"> </span><span class="l">high-priority</span><span class="w">
-</span></code></pre></div><p>PriorityClass里的value值越高，优先级越大，优先级是一个32bit的整数，最大不超过 10亿，超过10亿的值是Kubernetes保留给系统Pod使用，保证系统Pod不会被用户Pod抢占；globalDefault为true表示该PriorityClass的值会成为系统默认值，为false表示只有使用了该PriorityClass的Pod才有优先级，没有声明则默认是0。</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>PriorityClass里的value值越高，优先级越大，优先级是一个32bit的整数，最大不超过 10亿，超过10亿的值是Kubernetes保留给系统Pod使用，保证系统Pod不会被用户Pod抢占；globalDefault为true表示该PriorityClass的值会成为系统默认值，为false表示只有使用了该PriorityClass的Pod才有优先级，没有声明则默认是0。</p>
 <h4 id="抢占过程">抢占过程</h4>
 <p>当一个高优先级的Pod调度失败时，调度器会试图从当前集群里寻找一个节点，当该节点上的一个或多个低优先级的Pod被删除后，待调度的高优先级的Pod可用被调度到该节点上，但是抢占过程不是立即发生，而只是在待调度的高优先级的Pod上先设置spec.nominatedNodeName=Node名字，等到下一个调度周期再决定是否针对要运行在该节点上，之所以这么做是因为被删除的Pod有默认的30秒优雅退出时间，在这个过程中，可能有新的更加被适合给高优先级调度的节点加入。</p>
 <h4 id="抢占原理">抢占原理</h4>
@@ -365,7 +384,34 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>k8s将预先定义好的数据投射进容器，支持的种类：secret、ConfigMap、Downward API，这三种PV一般存放不经常更新的数据，ServiceAccountToken则是在访问Kubernetes API Server时会使用到。</p>
 <h4 id="secret">Secret</h4>
 <p>将Pod想要访问的加密数据，存放到etcd中，通过在Pod中的容器里挂载Volume的方式访问这些数据。如果etcd里的这些数据发生了改变，挂载到容器里的数据会在一定的延时后进行更新。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">test-projected-volume </span><span class="w">
@@ -388,10 +434,24 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">user</span><span class="w">
 </span><span class="w">      </span>- <span class="nt">secret</span><span class="p">:</span><span class="w">
 </span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">pass</span><span class="w">
-</span></code></pre></div><p>这里是挂载了一个类型为projected的volume，存放数据的sources是一个secret对象(有属性name)，name的值表示数据存放的名字，比如通过这个名字取得对于的值（值可以是对应的存放数据的文件路径），</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>这里是挂载了一个类型为projected的volume，存放数据的sources是一个secret对象(有属性name)，name的值表示数据存放的名字，比如通过这个名字取得对于的值（值可以是对应的存放数据的文件路径），</p>
 <pre tabindex="0"><code>如：kubectl create secret generic user --from-file=./username.txt
 </code></pre><p>也可直接在yaml文件中定义 secret对象，如下，通过data字段定义，kind是secret，值需要经过base64编码</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Secret</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">mysecret</span><span class="w">
@@ -399,14 +459,44 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w"></span><span class="nt">data</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l">YWRtaW4=</span><span class="w">
 </span><span class="w">  </span><span class="nt">pass</span><span class="p">:</span><span class="w"> </span><span class="l">MWYyZDFlMmU2N2Rm</span><span class="w">
-</span></code></pre></div><p>通过这种方式进行定义并运行后，会先将信息保存到ectd中，然后在以文件的形式挂载在容器的Volume目录里，文件名是${name}或者${data.key}。</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>通过这种方式进行定义并运行后，会先将信息保存到ectd中，然后在以文件的形式挂载在容器的Volume目录里，文件名是${name}或者${data.key}。</p>
 <h4 id="configmap">configMap</h4>
 <p>configMap的作用、用法同secret，只是其内容不需要经过加密</p>
 <h4 id="downward-api">downward API</h4>
 <p>让Pod里的容器能够直接获取到这个Pod API对象本身的信息，只能获取Pod启动之前就能确定的信息，Pod运行之后的信息只能通过sidecar容器获取。</p>
 <p>比如下面这份配置，volume的类型是projected，数据来源是downwardAPI，声明要暴露的信息是当前yaml文件定义的metadata.labels信息，K8S会自动挂载为容器里的/podInfo/labels文件。</p>
 <p>Downward API支持的字段是固定的，使用fieldRef字段可以查看宿主机名称、IP、Pod的标签等信息；resourceFieldRef字段可以查看容器CPU、内存等信息。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">test-downwardapi-volume</span><span class="w">
@@ -430,12 +520,41 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">              </span>- <span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;labels&#34;</span><span class="w">
 </span><span class="w">                </span><span class="nt">fieldRef</span><span class="p">:</span><span class="w">
 </span><span class="w">                  </span><span class="nt">fieldPath</span><span class="p">:</span><span class="w"> </span><span class="l">metadata.labels</span><span class="w">
-</span></code></pre></div><h4 id="serviceaccounttoken">serviceAccountToken</h4>
+</span></code></pre></td></tr></table>
+</div>
+</div><h4 id="serviceaccounttoken">serviceAccountToken</h4>
 <p>serviceAccountToken是一种特殊的Secret，一般用于访问Kubernetes API Server时提供token作为验证的凭证。Kubernets提供了一个默认的default Service Account，任何运行在Kubernets中的Pod都可以使用，无需显示声明挂载了它。</p>
 <p>默认挂载路径：/var/run/secrets/kubernetes.io/serviceaccount，里面包含了ca.crt，namespace，token三个文件，用于授权当前Pod访问API Server。</p>
 <p>如果要让Pod拥有不同访问API Server的权限，就需要不同的service account，也就需要不同的token了。</p>
 <h4 id="挂载宿主机上的目录">挂载宿主机上的目录</h4>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">two-containers</span><span class="w">
@@ -458,10 +577,28 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">      </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/pod-data</span><span class="w">
 </span><span class="w">      </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">]</span><span class="w">
 </span><span class="w">      </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;echo Hello from the debian container &gt; /pod-data/ index.html&#34;</span><span class="p">]</span><span class="w">
-</span></code></pre></div><p>声明了两个容器，都挂载了shared-data这个Volume，且该Volume是hostPath，对应宿主机上的/data目录，所以么，nginx-container 可 以 从 它 的/usr/share/ nginx/html 目 录 中， 读取到debian-container生 成 的 index.html文件。</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>声明了两个容器，都挂载了shared-data这个Volume，且该Volume是hostPath，对应宿主机上的/data目录，所以么，nginx-container 可 以 从 它 的/usr/share/ nginx/html 目 录 中， 读取到debian-container生 成 的 index.html文件。</p>
 <h3 id="pod的资源分配">Pod的资源分配</h3>
 <p>Pod的资源分配由定义的Container决定，比如</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nn">...</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nn">...</span><span class="w">
 </span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">app</span><span class="w">
@@ -473,7 +610,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">        </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;128Mi&#34;</span><span class="w">
 </span><span class="w">        </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;500m&#34;</span><span class="w">
 </span><span class="w"></span><span class="nn">...</span><span class="w">
-</span></code></pre></div><p>CPU属于可压缩资源，当CPU不足时，Pod只会&quot;饥饿&quot;，不会退出；</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>CPU属于可压缩资源，当CPU不足时，Pod只会&quot;饥饿&quot;，不会退出；</p>
 <p>内存数与不可压缩资源，当内存不足时，Pod会因为OOM而被kill掉；</p>
 <p>Matser的kube-scheduler会根据requests的值进行计算，根据limits设置cgroup的限制，不同的requests和limits设置方式，会将Pod划分为不同的QoS类型，用于对Pod进行资源回收和调度。</p>
 <ol>
@@ -499,7 +638,21 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </blockquote>
 <h3 id="pod中的健康检查">Pod中的健康检查</h3>
 <p>对于Web应用，最简单的就是由Web应用提供健康检查的接口，我们在定义的API对象的时候设置定时请求来检查运行在容器中的web应用是否健康</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nn">...</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nn">...</span><span class="w">
 </span><span class="w"></span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
 </span><span class="w">     </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">
 </span><span class="w">       </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/healthz</span><span class="w">
@@ -509,7 +662,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">         </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">Awesome</span><span class="w">
 </span><span class="w">       </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
 </span><span class="w">       </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
-</span></code></pre></div><h3 id="pod的恢复机制">Pod的恢复机制</h3>
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="pod的恢复机制">Pod的恢复机制</h3>
 <p>API对象中spec.restartPolicy字段用来描述Pod的恢复策略，默认是always，即容器不在运行状态则重启，OnFailure是只有容器异常时才自动重启，Never是从来不重启容器</p>
 <p>Pod的恢复过程，永远发生在当前节点，即跟着API对象定义的spec.node的对应的节点，如果要发生在其他节点，则需要deployment的帮助。</p>
 <p>当Pod的restartPolicy是always时，Pod就会保持Running状态，无论里面挂掉多少个，因为Pod总会重启这些容器；当restartPolicy是never时，Pod里的所有容器都挂了，才会变成Failed，只有一个容器挂了也是Running。</p>
@@ -517,7 +672,28 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <h3 id="podpreset">PodPreset</h3>
 <p>预置类型的Pod，是Pod配置文件上追加字段的预置模板，PodPreset里定义的内容，只会在Pod对象被创建之前追加在这个对象本身，不会影响任何Pod控制器的定义。</p>
 <p>一个Pod可以对应多个PodPreset，多个PodPreset间会进行合并，如果有冲突字段，则后面执行的PodPreset不会修改前面的字段。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">settings.k8s.io/v1alpha1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">settings.k8s.io/v1alpha1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">PodPreset</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">allow-database</span><span class="w">
@@ -534,7 +710,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span><span class="w"> 
 </span><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">cache-volume </span><span class="w">
 </span><span class="w">      </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
-</span></code></pre></div><p>在先创建完这个API对象后，在创建对应Pod，这个PodPreset会根据selector，选择lables中有role: frontend的Pod，为其添加env、volumeMounts、volumes等声明。</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>在先创建完这个API对象后，在创建对应Pod，这个PodPreset会根据selector，选择lables中有role: frontend的Pod，为其添加env、volumeMounts、volumes等声明。</p>
 <h3 id="pod的通信">Pod的通信</h3>
 <p>Kubernetes上的CNI网桥相当于docker0网桥，容器(Pod)与宿主机通信，仍然使用VethPair设备，CNI网桥会接管所有CNI插件负责的容器(Pod)，主要是与Pod中的Infra容器的Network Namespace交互。</p>
 <p>CNI网络方案主要由两部分工作</p>
@@ -644,7 +822,45 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </figure></p>
 <h3 id="pod中的网络隔离">Pod中的网络隔离</h3>
 <p>通过NetworkPolicy对象来实现，控制Pod的入站和出站请求，实现了NetworkPolicy的网络插件包括Calico、Weave，不包括Flannel。通过NetworkPolicy Controller监控NetworkPolicy，修改宿主机上的iptable。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.k8s.io/v1 </span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.k8s.io/v1 </span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">NetworkPolicy </span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w"> 
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">test-network-policy </span><span class="w">
@@ -678,7 +894,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w"> 
 </span><span class="w">    </span>- <span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">TCP </span><span class="w">
 </span><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">5978</span><span class="w">
-</span></code></pre></div><h2 id="pvpvcstoageclass">PV、PVC、StoageClass</h2>
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="pvpvcstoageclass">PV、PVC、StoageClass</h2>
 <ul>
 <li>
 <p>PVC（Persistent Volume Claim）：定义持久化卷的声明，作用类似于接口，开发人员直接使用而不用知道其具体实现，比如定义了数据库的用户名和密码之类的属性。</p>
@@ -705,7 +923,46 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 第二阶段Mount：运行在每个节点上kubelet组件的内部，把第一步attach的远程磁盘 mount 到宿主机目录。这个控制循环叫VolumeManagerReconciler，运行在独立的Goroutine，不会阻塞kubelet主循环。</p>
 <p>完成这两步，PV对应的“持久化 Volume”就准备好了，Pod可以正常启动，将“持久化 Volume”挂载在容器内指定的路径。当需要卸载时，则先Unmount再进行Dettach。</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">StatefulSet</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w"> 
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">web </span><span class="w">
@@ -740,11 +997,26 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">      </span><span class="nt">resources</span><span class="p">:</span><span class="w"> 
 </span><span class="w">        </span><span class="nt">requests</span><span class="p">:</span><span class="w"> 
 </span><span class="w">          </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l">10Gi</span><span class="w">
-</span></code></pre></div><h2 id="控制器模型">控制器模型</h2>
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="控制器模型">控制器模型</h2>
 <p>常见的控制器有Deployment、Job、CronbJob、ReplicaSet、StatefulSet、DaemonSet等</p>
 <h3 id="原理-2">原理</h3>
 <p>控制循环：在一个无限循环内不断的轮询集群中的对象，将其状态与期望的状态做对比后，对该对象采取相应的操作。实际状态来自集群本身，如Kubelet汇报的容器状态、节点状态，监控系统的监控数据；期望状态来自用户提交的yaml文件；对象X指的是Pod或是其他受控制器控制的对象。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="k">for</span> <span class="p">{</span> 
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="k">for</span> <span class="p">{</span> 
     <span class="nx">实际状态</span> <span class="o">:=</span> <span class="nx">获取集群中对象X的实际状态</span><span class="err">（</span> <span class="nx">Actual</span> <span class="nx">State</span><span class="err">）</span>
     <span class="nx">期望状态</span> <span class="o">:=</span> <span class="nx">获取集群中对象X的期望状态</span><span class="err">（</span> <span class="nx">Desired</span> <span class="nx">State</span><span class="err">）</span>
     <span class="k">if</span> <span class="nx">实际状态</span> <span class="o">==</span> <span class="nx">期望状态</span><span class="p">{</span>
@@ -753,10 +1025,37 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
         <span class="nx">执行编排动作</span><span class="err">，</span><span class="nx">将实际状态调整为期望状态</span> 
     <span class="p">}</span> 
 <span class="p">}</span>
-</code></pre></div><p>与事件驱动的区别：事件驱动是被动型，接收到事件就执行相应的操作，事件是一次性，因此操作失败比较难处理，控制循环是不对轮询操作值只状态与期望一致的</p>
+</code></pre></td></tr></table>
+</div>
+</div><p>与事件驱动的区别：事件驱动是被动型，接收到事件就执行相应的操作，事件是一次性，因此操作失败比较难处理，控制循环是不对轮询操作值只状态与期望一致的</p>
 <h3 id="deployment">Deployment</h3>
 <p>最基本的控制器对象，管理Pod的工具，比如管理多个相同Pod的实例，滚动更新</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx-deployment</span><span class="w">
@@ -777,10 +1076,25 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nginx:1.7.9</span><span class="w">
 </span><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
 </span><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
-</span></code></pre></div><p>Deployment想要实现水平扩展/收缩，实际操控的是ReplicaSet对象，而ReplicaSet管理着定义数量的Pod，所以它是一种三层结构，Deployment -&gt; ReplicaSet -&gt; 多个平行的Pod，Deployment是一个两层控制器，Deployment控制的是ReplocaSet的版本，ReplicaSet控制的是Pod的数量。</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>Deployment想要实现水平扩展/收缩，实际操控的是ReplicaSet对象，而ReplicaSet管理着定义数量的Pod，所以它是一种三层结构，Deployment -&gt; ReplicaSet -&gt; 多个平行的Pod，Deployment是一个两层控制器，Deployment控制的是ReplocaSet的版本，ReplicaSet控制的是Pod的数量。</p>
 <p>ReplicaSet表示版本，比如上面那份配置，replicas:2是一个版本，replicas:3是一个版本，这里是因为数量不同产生两个版本，每一个版本对应着一个ReplicaSet，由Deployment管理。</p>
 <p>当我们修改Deployment的replicas字段时，会触发水平扩展/收缩，修改template.Image或者版本号时，就会触发滚动更新。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># 设置更新策略</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># 设置更新策略</span><span class="w">
 </span><span class="w"></span><span class="nn">...</span><span class="w">
 </span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="l">...</span><span class="w">
@@ -789,7 +1103,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">    </span><span class="nt">rollingUpdate</span><span class="p">:</span><span class="w"> 
 </span><span class="w">      </span><span class="nt">maxSurge</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">  </span><span class="c"># 指定Desired数量，</span><span class="w">
 </span><span class="w">      </span><span class="nt">maxUnavailable</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 一次更新中，可以删除的旧的Pod的数量</span><span class="w">
-</span></code></pre></div><p>滚动更新相关命令</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>滚动更新相关命令</p>
 <ul>
 <li>使用<code>kubectl describe deploy xxx -n yyy</code>或者<code>kubectl rollout status deploy xxx -n yyy</code>即可查看滚动更新的流程；</li>
 <li>当新的版本有问题时，使用<code>kubectl rollout undo deploy xxx [--to-revision=n]</code>回滚到上个版本；</li>
@@ -956,7 +1272,34 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <li>Role和RoleBinding：只针对某一namespace的操作授权，namespace只是逻辑上的隔离。</li>
 </ul>
 <p>以下配置就是给用户名为example-user绑定了一个example-role的角色，该角色只能操作namespace为mynamespace下的pod的所有读操作。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io/v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io/v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Role </span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w"> 
 </span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">mynamespace </span><span class="w">
@@ -979,11 +1322,38 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Role </span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">example-role </span><span class="w">
 </span><span class="w">  </span><span class="nt">apiGroup</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io</span><span class="w">
-</span></code></pre></div><ul>
+</span></code></pre></td></tr></table>
+</div>
+</div><ul>
 <li>ClusterRole和ClusterRoleBinding：针对的是整个集群的操作的授权</li>
 </ul>
 <p>以下配置就是给用户名为example-user绑定了一个example-role的角色，该角色能对整个集群下的Pod进行读操作。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io/v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io/v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterRole </span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w"> 
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">example-clusterrole </span><span class="w">
@@ -1004,19 +1374,32 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterRole </span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">example-clusterrole </span><span class="w">
 </span><span class="w">  </span><span class="nt">apiGroup</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io</span><span class="w">
-</span></code></pre></div><p>verbs操作可以有get、list、watch、create、update、patch、delete。</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>verbs操作可以有get、list、watch、create、update、patch、delete。</p>
 <p>resources指的是configmaps、pods、services、deployments、nodes。</p>
 <p>resourceNames指定是对应资源的名称。</p>
 <p>subjects的类型不止有User，也可以是ServiceAccount，创建该service后，k8s会自动为其分配一个Secret对象，该字段保存一个用来与API Server交互的token，token的内容可以是证书或者密码，以Secret对象的方式保存在etcd中。</p>
 <p>在Pod中也可以使用ServiceAccount，通过serviceAccountName字段配置使用，如果Pod没有显式使用ServiceAccount，K8s会使用默认的拥有绝大多数权限的default ServiceAccount。创建完ServiceAccount后，会在K8s中产生一个用户名和用户组，</p>
 <p>用户名：system:serviceaccount:&lt;Namespace名字&gt;:&lt;ServiceAccount名字&gt;</p>
 <p>用户组：system:serviceaccount:&lt;Namespace名字&gt;</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1 </span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1 </span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ServiceAccount </span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w"> 
 </span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">mynamespace </span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">example-user</span><span class="w">
-</span></code></pre></div><p>在K8s内，已经内置了很多系统保留的ClusterRole，给Master节点内的组件使用，以system:开头；此外，还有一些权限粒度比较大的ClusterRole，如cluster-admin(拥有最高权限)、admin、edit、view</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>在K8s内，已经内置了很多系统保留的ClusterRole，给Master节点内的组件使用，以system:开头；此外，还有一些权限粒度比较大的ClusterRole，如cluster-admin(拥有最高权限)、admin、edit、view</p>
 <h2 id="声明式api">声明式API</h2>
 <p>通过编排对象，在为它们定义服务的这种方法，就称为声明式API，</p>
 <p>Pod就是一种API对象，每一个API对象都有一个Metadata字段，表示元数据，通过里面的labels字段（键值对）来找到这个API对象；每一个API对象都有一个Spec字段，来配置这个对象独有的配置，如为Pod添加挂载的Volume。</p>
@@ -1114,7 +1497,26 @@ spec:
 <p><strong>hostNetwork</strong>: true、hostIPC: true、hostPID: true表示共享宿主机的network、IPC、namespace</p>
 <p><strong>ImagePullPolicy</strong>=alaways(默认)、never、ifNotPresent，每次创建Pod都会${value}拉取镜像</p>
 <p><strong>Lifecycle</strong>: 容器状态发生变化时触发的一系列钩子，属于container级别</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">lifecycle-demo</span><span class="w">
@@ -1129,7 +1531,9 @@ spec:
 </span><span class="w">      </span><span class="nt">preStop</span><span class="p">:</span><span class="w">
 </span><span class="w">        </span><span class="nt">exec</span><span class="p">:</span><span class="w">
 </span><span class="w">          </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;/usr/sbin/nginx&#34;</span><span class="p">,</span><span class="s2">&#34;-s&#34;</span><span class="p">,</span><span class="s2">&#34;quit&#34;</span><span class="p">]</span><span class="w">
-</span></code></pre></div><p>在lifecycle里的postStart，指的是容器启动后，要执行的操作，但是它不是串行的，即在docker的ENTRYPOINT命令执行后就开始执行了，此时ENTRYPOINT命令执行的动作可能还没完成；preStart，指的是在容器被杀死之前，要执行的操作，只有这个动作执行完成，才允许容器被杀死</p>
+</span></code></pre></td></tr></table>
+</div>
+</div><p>在lifecycle里的postStart，指的是容器启动后，要执行的操作，但是它不是串行的，即在docker的ENTRYPOINT命令执行后就开始执行了，此时ENTRYPOINT命令执行的动作可能还没完成；preStart，指的是在容器被杀死之前，要执行的操作，只有这个动作执行完成，才允许容器被杀死</p>
 <h2 id="常用命令">常用命令</h2>
 <pre tabindex="0"><code>查看所有Pod
 kubectl get pod -A
@@ -1294,7 +1698,29 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 </li>
 <li>
 <p>熔断：通过DestinationRule的trafficPolicy里connectionPool和outlierDection的配置实现</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">DestinationRule</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">httpnin</span><span class="w">
@@ -1312,7 +1738,9 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 </span><span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l">1s</span><span class="w"> </span><span class="c"># 失败次数计数时间</span><span class="w">
 </span><span class="w">      </span><span class="nt">baseEjectionTime</span><span class="p">:</span><span class="w"> </span><span class="l">3m</span><span class="w"> </span><span class="c"># 最小驱逐时间，经过此时间后将pod重新加入，默认30s，乘于触发次数后作为熔断持续时间</span><span class="w">
 </span><span class="w">      </span><span class="nt">maxEjectionPercent</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="c"># 熔断触发时驱逐pod的比例</span><span class="w">
-</span></code></pre></div></li>
+</span></code></pre></td></tr></table>
+</div>
+</div></li>
 <li>
 <p>故障注入：通过VirtualService的fault配置实现</p>
 </li>

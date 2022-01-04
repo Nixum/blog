@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='设计模式' /><meta property='article:tag' content='领域驱动' /><meta property='article:published_time' content='2020-09-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-29T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="设计模式">
 <meta name="twitter:description" content="设计模式原则，常见的设计模式、领域驱动模型">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    12 minute read
+                    16 minute read
                 </time>
             </div>
         
@@ -149,7 +149,116 @@
 <h2 id="创建型">创建型</h2>
 <h3 id="单例模式">单例模式</h3>
 <p>数据在应用上只保持一份，解决资源访问冲突的问题，就可以使用单例模式</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="cm">/** 1.
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="cm">/** 1.
 </span><span class="cm"> * 懒汉模式,线程不安全，只有在调用方法的时候才实例化,好处是没用到该类时就不实例化，节约资源
 </span><span class="cm"> */</span>
 <span class="kd">class</span> <span class="nc">LazyInstance</span> <span class="o">{</span>
@@ -254,7 +363,9 @@
 </span><span class="cm"> *     return instance;
 </span><span class="cm"> *  }
 </span><span class="cm"> */</span>
-</code></pre></div><h3 id="工厂模式">工厂模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="工厂模式">工厂模式</h3>
 <ul>
 <li>
 <p>创建型模式</p>
@@ -283,7 +394,60 @@
 	<figcaption>工厂模式例子类图</figcaption>
 	
 </figure></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 接口
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 接口
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Shape</span><span class="o">{</span>
     <span class="kt">void</span> <span class="nf">draw</span><span class="o">();</span>
 <span class="o">}</span>
@@ -332,7 +496,9 @@
       <span class="n">shape2</span><span class="o">.</span><span class="na">draw</span><span class="o">();</span>	<span class="c1">//Rectangle draw
 </span><span class="c1"></span>   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="抽象工厂模式">抽象工厂模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="抽象工厂模式">抽象工厂模式</h3>
 <ul>
 <li>与工厂模式类似，也创建型模式</li>
 <li>工厂方法是一个工厂，根据传入参数生产不同实例，而抽象工厂则加多一层工厂获取。抽象工厂属于大工厂，根据传入参数产生工厂实例，在通过这个工厂，传入参数获取对象实例</li>
@@ -342,7 +508,92 @@
 <li>其实就是链式调用，主要为了解决构造方法参数过多，且需要校验的情况下，如果参数过多且需要校验，使用构造方法或者set方法来实例化对象不太方便，同时，使用建造者模式还可以把对象处理成初始化后属性不可变得对象</li>
 <li>工厂模式是用来创建不同但是相关类型的对象（继承同一父类或者接口的一组子类），由给定的参数来决定创建哪种类型的对象。建造者模式是用来创建一种类型的复杂对象，可以通过设置不同的可选参数，“定制化”地创建不同的对象</li>
 </ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ResourcePoolConfig</span> <span class="o">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ResourcePoolConfig</span> <span class="o">{</span>
   <span class="kd">private</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
   <span class="kd">private</span> <span class="kt">int</span> <span class="n">maxTotal</span><span class="o">;</span>
   <span class="kd">private</span> <span class="kt">int</span> <span class="n">maxIdle</span><span class="o">;</span>
@@ -423,7 +674,9 @@
         <span class="o">.</span><span class="na">build</span><span class="o">();</span>
    <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="原型模式">原型模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="原型模式">原型模式</h3>
 <ul>
 <li>其实就是拷贝，把对于那些创建成本较大(比如创建要进行复杂计算、IO读取等)且同一类但不同对象得对象，利用原有对象进行拷贝，来达到创建新对象的目的</li>
 <li>常见方式有序列化再反序列化，或者递归遍历对象里的字段进行创建和赋值，深拷贝或者浅拷贝，这里要注意浅拷贝和深拷贝问题</li>
@@ -460,7 +713,63 @@
 	<figcaption>代理模式例子</figcaption>
 	
 </figure></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 代理类和被代理类的接口
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 代理类和被代理类的接口
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Image</span> <span class="o">{</span>
    <span class="kt">void</span> <span class="nf">display</span><span class="o">();</span>
 <span class="o">}</span>
@@ -512,7 +821,9 @@
 </span><span class="c1"></span>      <span class="n">image</span><span class="o">.</span><span class="na">display</span><span class="o">();</span>  	<span class="c1">// Displaying test_10mb.jpg
 </span><span class="c1"></span>   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="装饰器模式">装饰器模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="装饰器模式">装饰器模式</h3>
 <ul>
 <li>
 <p>结构型模式</p>
@@ -549,7 +860,76 @@
 	
 </figure></p>
 <p>接口Shape表示形状，它的实现类是圆Circle类，统一的抽象装饰类ShapeDecorator，带有Shape类的引用，其 实现的装饰类RedShapeDecorator通过传入具体的形状实例，来对共同的方法做增强</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 接口，作为被装饰类的接口
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 接口，作为被装饰类的接口
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Shape</span> <span class="o">{</span>
    <span class="kt">void</span> <span class="nf">draw</span><span class="o">();</span>
 <span class="o">}</span>
@@ -614,7 +994,9 @@
 </span><span class="c1"></span>
    <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="适配器模式">适配器模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="适配器模式">适配器模式</h3>
 <ul>
 <li>结构型模式</li>
 <li>接口适配器使得实现了不同接口的类可以通过适配器的选择而工作，主要是规避接口不兼容的问题，本质是使用一组类和接口充当适配器，包在被适配的类和接口上，具体又是实现或组合</li>
@@ -636,7 +1018,106 @@
 </figure></p>
 <p>有两个接口AdvancedMediaPlayer和MediaPlayer，它们都有不同的作用，但它们的作用又很相似，AdvancedMediaPlayer可以播放vlc格式或者mp4格式，而MediaPlayer只能单纯的播放，多接口适配</p>
 <p>如果想要让MediaPlayer能播放不同格式的音乐，就需要适配了，适配器实现MediaPlayer接口，根据传入的参数来判断需要实例化哪种播放器，并在播放方法里执行相应播放器的播放方法</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// AdvancedMediaPlayer接口
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// AdvancedMediaPlayer接口
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">AdvancedMediaPlayer</span> <span class="o">{</span> 
    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">playVlc</span><span class="o">(</span><span class="n">String</span> <span class="n">fileName</span><span class="o">);</span>
    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">playMp4</span><span class="o">(</span><span class="n">String</span> <span class="n">fileName</span><span class="o">);</span>
@@ -731,9 +1212,49 @@
        <span class="c1">// Invalid media. avi format not supported
 </span><span class="c1"></span>   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><p>其他例子，以下例子来自极客时间-设计模式之美，都是单接口适配</p>
+</code></pre></td></tr></table>
+</div>
+</div><p>其他例子，以下例子来自极客时间-设计模式之美，都是单接口适配</p>
 <p>1、封装外部sdk接口</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CD</span> <span class="o">{</span> <span class="c1">//这个类来自外部sdk，我们无权修改它的代码
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CD</span> <span class="o">{</span> <span class="c1">//这个类来自外部sdk，我们无权修改它的代码
 </span><span class="c1"></span>  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">staticFunction1</span><span class="o">()</span> <span class="o">{</span> <span class="c1">//... }
 </span><span class="c1"></span>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">uglyNamingFunction2</span><span class="o">()</span> <span class="o">{</span> <span class="c1">//... }
 </span><span class="c1"></span>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">tooManyParamsFunction3</span><span class="o">(</span><span class="kt">int</span> <span class="n">paramA</span><span class="o">,</span> <span class="kt">int</span> <span class="n">paramB</span><span class="o">,</span> <span class="o">...)</span> <span class="o">{</span> <span class="c1">//... }
@@ -767,8 +1288,73 @@
     <span class="c1">//...reimplement it...
 </span><span class="c1"></span>  <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><p>2、统一多个类的接口</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ASensitiveWordsFilter</span> <span class="o">{</span> <span class="c1">// A敏感词过滤系统提供的接口
+</code></pre></td></tr></table>
+</div>
+</div><p>2、统一多个类的接口</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ASensitiveWordsFilter</span> <span class="o">{</span> <span class="c1">// A敏感词过滤系统提供的接口
 </span><span class="c1"></span>  <span class="c1">//text是原始文本，函数输出用***替换敏感词之后的文本
 </span><span class="c1"></span>  <span class="kd">public</span> <span class="n">String</span> <span class="nf">filterSexyWords</span><span class="o">(</span><span class="n">String</span> <span class="n">text</span><span class="o">)</span> <span class="o">{</span>
     <span class="c1">// ...
@@ -827,8 +1413,46 @@
     <span class="k">return</span> <span class="n">maskedText</span><span class="o">;</span>
   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><p>3、替换依赖的外部系统</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="o">/</span> <span class="n">外部系统A</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>3、替换依赖的外部系统</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="o">/</span> <span class="n">外部系统A</span>
 <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">IA</span> <span class="o">{</span>
   <span class="c1">//...
 </span><span class="c1"></span>  <span class="kt">void</span> <span class="nf">fa</span><span class="o">();</span>
@@ -860,7 +1484,9 @@
 <span class="c1">// 借助BAdaptor，Demo的代码中，调用IA接口的地方都无需改动，
 </span><span class="c1">// 只需要将BAdaptor如下注入到Demo即可。
 </span><span class="c1"></span><span class="n">Demo</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Demo</span><span class="o">(</span><span class="k">new</span> <span class="n">BAdaptor</span><span class="o">(</span><span class="k">new</span> <span class="n">B</span><span class="o">()));</span>
-</code></pre></div><h3 id="桥接模式">桥接模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="桥接模式">桥接模式</h3>
 <ul>
 <li>结构型模式</li>
 <li>抽象与实现分离，桥接接口类和抽象类，实现解耦，这里其实并不一定是要抽象类，抽象类只是代表一组现实的抽象，即一个类存在两个（或多个）独立变化的维度，通过组合的方式，让这两个（或多个）维度可以独立进行扩展</li>
@@ -882,7 +1508,53 @@
 	
 </figure></p>
 <p>桥接接口类和抽象类，接口类实现上色，抽象类实现形状，在抽象类中引入接口，通过不同的组合实现不同的功能</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 桥接实现接口， 连接 画 和 上色
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 桥接实现接口， 连接 画 和 上色
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">DrawAPI</span> <span class="o">{</span>
    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">drawCircle</span><span class="o">(</span><span class="kt">int</span> <span class="n">radius</span><span class="o">,</span> <span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">);</span>
 <span class="o">}</span>
@@ -924,7 +1596,9 @@
       <span class="n">redCircle</span><span class="o">.</span><span class="na">draw</span><span class="o">();</span>	<span class="c1">// Drawing Circle[ color: red, radius: 10, x: 100, 100]
 </span><span class="c1"></span>   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="代理模式桥接模式装饰器模式适配器模式的区别">代理模式、桥接模式、装饰器模式、适配器模式的区别</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="代理模式桥接模式装饰器模式适配器模式的区别">代理模式、桥接模式、装饰器模式、适配器模式的区别</h3>
 <blockquote>
 <p>**代理模式：**代理模式在不改变原始类接口的条件下，为原始类定义一个代理类，主要目的是控制访问，而非加强功能，这是它跟装饰器模式最大的不同。</p>
 <p>**桥接模式：**桥接模式的目的是将接口部分和实现部分分离，从而让它们可以较为容易、也相对独立地加以改变。</p>
@@ -977,7 +1651,100 @@
 	
 </figure></p>
 <p>这是模拟日志级别打印的例子：日志抽象类规定每个结点的日志等级和需要重写的方法，参数传递处理的方法，可以看成一个链表上结点的抽象；具体的类实现该抽象类重写共同方法当成每一个结点，最后将这些结点连成链即可</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 创建抽象的记录器类
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 创建抽象的记录器类
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractLogger</span> <span class="o">{</span>
  
    <span class="kd">protected</span> <span class="kt">int</span> <span class="n">level</span><span class="o">;</span>
@@ -1066,7 +1833,9 @@
 </span><span class="c1"></span>	  <span class="c1">// Standard Console::Logger: This is an error information.
 </span><span class="c1"></span>   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="迭代器模式">迭代器模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="迭代器模式">迭代器模式</h3>
 <ul>
 <li>行为型模式</li>
 <li>用于顺序访问集合对象的元素，不需要知道集合对象的底层表示，不会暴露该对象的内部表示，迭代器内部使用游标记录当前位置信息，每个迭代器独享游标信息，这样当我们创建不同的迭代器对不同的容器进行遍历的时候就不会互相影响</li>
@@ -1087,7 +1856,57 @@
 	<figcaption>迭代器模式例子</figcaption>
 	
 </figure></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 迭代器接口
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 迭代器接口
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Iterator</span> <span class="o">{</span>
    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasNext</span><span class="o">();</span>
    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">next</span><span class="o">();</span>
@@ -1133,7 +1952,9 @@
       <span class="o">}</span>  
    <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="访问者模式">访问者模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="访问者模式">访问者模式</h3>
 <ul>
 <li>行为型</li>
 <li>允许一个或者多个操作应用到一组对象上，解耦操作和对象本身，比如对于多种文件类型，可以使用多种不同的执行器作用在不同的文件上</li>
@@ -1187,7 +2008,82 @@
 	<figcaption>观察者模式例子</figcaption>
 	
 </figure></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 被观察者，当状态发生改变时，通知观察者
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 被观察者，当状态发生改变时，通知观察者
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Subject</span> <span class="o">{</span>
    <span class="c1">// 观察者队列
 </span><span class="c1"></span>   <span class="kd">private</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Observer</span><span class="o">&gt;</span> <span class="n">observers</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Observer</span><span class="o">&gt;();</span>
@@ -1258,7 +2154,9 @@
       <span class="n">subject</span><span class="o">.</span><span class="na">setState</span><span class="o">(</span><span class="n">10</span><span class="o">);</span>		<span class="c1">//Octal String: 12 /n Binary String: 1010
 </span><span class="c1"></span>   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="模板方法">模板方法</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="模板方法">模板方法</h3>
 <ul>
 <li>行为型</li>
 <li>一个抽象类抽取一些通用方法合并成新方法并用final修饰作为模板，它的子类继承此抽象类，通过重写通用方法，来实现不一样的模板方法</li>
@@ -1279,7 +2177,53 @@
 	<figcaption>模板方法例子</figcaption>
 	
 </figure></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 抽象模板类
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 抽象模板类
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">Game</span> <span class="o">{</span>
    <span class="c1">// 给子类重写
 </span><span class="c1"></span>   <span class="kd">abstract</span> <span class="kt">void</span> <span class="nf">initialize</span><span class="o">();</span>
@@ -1321,7 +2265,9 @@
 </span><span class="c1"></span>	  <span class="c1">// Cricket Game Finished!    
 </span><span class="c1"></span>   <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><h3 id="策略模式">策略模式</h3>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="策略模式">策略模式</h3>
 <ul>
 <li>行为型</li>
 <li>通过定义一个通用策略接口 + 一组策略的实现，由调用者在运行时动态选择某一策略完成业务逻辑，常用搭配是 策略 + 工厂模式，根据不同类型选择不同策略</li>

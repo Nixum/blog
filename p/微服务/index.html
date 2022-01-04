@@ -12,7 +12,7 @@
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='微服务' /><meta property='article:tag' content='限流' /><meta property='article:tag' content='服务注册与发现' /><meta property='article:tag' content='负载均衡' /><meta property='article:published_time' content='2021-10-20T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-11-28T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="微服务">
 <meta name="twitter:description" content="微服务常见的方案，如限流、容错、熔断、降级、负载均衡、服务注册与发现">
-    <link rel="shortcut icon" href="/img/favicon.ico" />
+    <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
     <body class="
@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    4 minute read
+                    5 minute read
                 </time>
             </div>
         
@@ -141,7 +141,58 @@
 <p>规定单位时间内可访问的次数，比如规定接口一分钟内只能访问10次，以第一次请求为起始，计数1，一分钟内计数超过10后，后续的请求直接拒绝，只能等到这一分钟结束后，重置计数，重新开始计数。</p>
 <p>但是这样有个问题，如果在大部分请求集中在第一个窗口的后10s内，和第二个窗口的前10s内，虽然他们都符合限流策略，但是在临界的20s内，请求还是有可能压垮系统。</p>
 <p>算法Demo：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">fixWinLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">fixWinLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">lock</span>            <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
 	<span class="nx">maxLimitCount</span>    <span class="kt">int64</span>   <span class="c1">// 最大限制数
 </span><span class="c1"></span>	<span class="nx">currentCount</span>     <span class="kt">int64</span>   <span class="c1">// 当前计数
@@ -188,11 +239,72 @@
 	<span class="p">}</span>
 	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
 <span class="p">}</span>
-</code></pre></div><h2 id="滑动窗口">滑动窗口</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="滑动窗口">滑动窗口</h2>
 <p>与固定窗口类似，只是以时间片划分，比如规定窗口一秒内只能请求5次，每次请求时会按照前一秒内的请求数量进行判断，超过则拒绝。</p>
 <p>这种算法本质上只是把固定窗口计数限流的时间片变小了，仍然有可能出现固定窗口计数限流的临界点问题。</p>
 <p>算法Demo：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">slidingWinLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">slidingWinLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">lock</span>          <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
 	<span class="nx">limitInterval</span> <span class="kt">int64</span> <span class="c1">// 限制的时间间隔
 </span><span class="c1"></span>	<span class="nx">lastReqAt</span>     <span class="kt">int64</span> <span class="c1">// 上一次请求的时间
@@ -247,11 +359,71 @@
 	<span class="p">}</span>
 	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
 <span class="p">}</span>
-</code></pre></div><h2 id="漏桶">漏桶</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="漏桶">漏桶</h2>
 <p>控制流水，水(请求)持续加入桶中，底部以恒定速度流出，如果加水速度大于漏出速度，水则溢出，请求拒绝。即宽进严出，无论请求多少，请求的速率有多大，都按照固定的速率流出。</p>
 <p>一般用在对第三方提供服务的请求限制上，比如我们服务接入shopify的服务，为了不触发shopify的限流，就可以使用漏桶算法。</p>
 <p>算法Demo：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">bucketLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">bucketLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">lock</span>          <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
 	<span class="nx">lastReqAt</span>     <span class="kt">int64</span> <span class="c1">// 单位：秒
 </span><span class="c1"></span>	<span class="nx">bucketCap</span>     <span class="kt">int64</span> <span class="c1">// 桶的容量
@@ -305,11 +477,71 @@
 	<span class="p">}</span>
 	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
 <span class="p">}</span>
-</code></pre></div><h2 id="令牌桶">令牌桶</h2>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="令牌桶">令牌桶</h2>
 <p>类似信号量，令牌桶会单独维护一个令牌的存储桶，为这个桶设置一个上限，同时又会有令牌持续将放入桶中，以应对一定的突发流量，比如桶的上限是1000，每秒持续放入1000个令牌，当前1s有800个请求发生并消耗令牌，由于每秒会放入1000个令牌，后1s就有1200个令牌可以被消耗，因此下一秒可以应对1200个请求。</p>
 <p>漏桶和令牌桶的区别：漏桶是限制流出速度，令牌桶是限制流入速度。</p>
 <p>算法Demo：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">tokenLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">tokenLimiter</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">lock</span>           <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">Mutex</span>
 	<span class="nx">lastReqAt</span>      <span class="kt">int64</span> <span class="c1">// 单位：秒
 </span><span class="c1"></span>	<span class="nx">availableToken</span> <span class="kt">int64</span> <span class="c1">// 可用的令牌数量
@@ -363,7 +595,9 @@
 	<span class="p">}</span>
 	<span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
 <span class="p">}</span>
-</code></pre></div><h1 id="容错">容错</h1>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="容错">容错</h1>
 <p>一旦发现上游服务调用失败，为了进一步减少错误的影响，可以设置容错策略</p>
 <ul>
 <li>FailFast 快速失败：当消费者调用远程服务失败时，立即报错，消费者只发起一次调用请求。</li>
@@ -599,19 +833,41 @@
 <p>CoreDNS会监听集群内所有Service API，当服务不可用时移除记录，在新服务创建时插入新记录，这些记录会存储在CoreDNS的cache或者ETCD中。</p>
 <p>参考：https://github.com/kubernetes/dns/blob/master/docs/specification.md</p>
 <p>比如有如下 /etc/resolv.conf文件</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># /etc/resolv.conf</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># /etc/resolv.conf</span>
 nameserver 10.100.0.10  <span class="c1"># coreDNS的IP</span>
 search cafe.svc.cluster.local svc.cluster.local cluster.local us-west-2.compute.internal
 options ndots:5
-</code></pre></div><p>其含义是：DNS 服务器为 10.100.0.10，当查询关键词中 <code>.</code> 的数量少于 5 个，则根据 search 中配置的域名进行查询，当查询都没有返回正确响应时再尝试直接查询关键词本身。</p>
+</code></pre></td></tr></table>
+</div>
+</div><p>其含义是：DNS 服务器为 10.100.0.10，当查询关键词中 <code>.</code> 的数量少于 5 个，则根据 search 中配置的域名进行查询，当查询都没有返回正确响应时再尝试直接查询关键词本身。</p>
 <p>比如执行 host -v cn.bing.com 时会看到下面即此查询</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh">Trying <span class="s2">&#34;cn.bing.com.cafe.svc.cluster.local&#34;</span>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh">Trying <span class="s2">&#34;cn.bing.com.cafe.svc.cluster.local&#34;</span>
 Trying <span class="s2">&#34;cn.bing.com.svc.cluster.local&#34;</span>
 Trying <span class="s2">&#34;cn.bing.com.cluster.local&#34;</span>
 Trying <span class="s2">&#34;cn.bing.com.us-west-2.compute.internal&#34;</span>
 Trying <span class="s2">&#34;cn.bing.com&#34;</span>
 ...
-</code></pre></div><h1 id="heading"></h1>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading"></h1>
 
 </section>
 
