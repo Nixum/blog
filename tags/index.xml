@@ -125,7 +125,7 @@
     </item>
     
     <item>
-      <title>go channel原理</title>
+      <title>Go channel原理</title>
       <link>http://nixum.cc/tags/go-channel%E5%8E%9F%E7%90%86/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
@@ -134,7 +134,25 @@
     </item>
     
     <item>
-      <title>go内存模型</title>
+      <title>Go GC</title>
+      <link>http://nixum.cc/tags/go-gc/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/tags/go-gc/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Goroutine</title>
+      <link>http://nixum.cc/tags/goroutine/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/tags/goroutine/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Go内存模型</title>
       <link>http://nixum.cc/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
@@ -143,7 +161,7 @@
     </item>
     
     <item>
-      <title>go并发</title>
+      <title>Go并发</title>
       <link>http://nixum.cc/tags/go%E5%B9%B6%E5%8F%91/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
@@ -152,7 +170,7 @@
     </item>
     
     <item>
-      <title>go</title>
+      <title>Go</title>
       <link>http://nixum.cc/tags/go/</link>
       <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
       
@@ -161,16 +179,7 @@
     </item>
     
     <item>
-      <title>go GC</title>
-      <link>http://nixum.cc/tags/go-gc/</link>
-      <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/tags/go-gc/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>go协程</title>
+      <title>Go协程</title>
       <link>http://nixum.cc/tags/go%E5%8D%8F%E7%A8%8B/</link>
       <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
       
@@ -179,7 +188,7 @@
     </item>
     
     <item>
-      <title>go集合类原理</title>
+      <title>Go集合类原理</title>
       <link>http://nixum.cc/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/</link>
       <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
       
