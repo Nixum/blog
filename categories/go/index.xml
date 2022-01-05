@@ -8,7 +8,7 @@
     <language>en-us</language>
     <lastBuildDate>Mon, 22 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/categories/go/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>go并发</title>
+      <title>Go并发</title>
       <link>http://nixum.cc/p/go%E5%B9%B6%E5%8F%91/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
@@ -27,7 +27,7 @@ init函数也是如此，当init函数引用了全局变量a，运行main函数�
     </item>
     
     <item>
-      <title>go</title>
+      <title>Go</title>
       <link>http://nixum.cc/p/go/</link>
       <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
       
