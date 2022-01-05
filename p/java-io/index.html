@@ -1510,42 +1510,50 @@
                 <div class="widget--toc">
                     <nav id="TableOfContents">
   <ol>
-    <li><a href="#buffer">Buffer</a>
+    <li><a href="#bio">BIO</a></li>
+    <li><a href="#nio">NIO</a>
       <ol>
-        <li><a href="#重要属性">重要属性</a></li>
-        <li><a href="#常用子类">常用子类</a></li>
+        <li><a href="#buffer">Buffer</a>
+          <ol>
+            <li><a href="#重要属性">重要属性</a></li>
+            <li><a href="#常用子类">常用子类</a></li>
+          </ol>
+        </li>
+        <li><a href="#channel">Channel</a>
+          <ol>
+            <li><a href="#常用子类-1">常用子类</a></li>
+          </ol>
+        </li>
+        <li><a href="#selector">Selector</a></li>
       </ol>
     </li>
-    <li><a href="#channel">Channel</a>
+    <li><a href="#线程模型">线程模型</a>
       <ol>
-        <li><a href="#常用子类-1">常用子类</a></li>
+        <li><a href="#传统阻塞io模型">传统阻塞IO模型</a></li>
+        <li><a href="#reactor模型">Reactor模型</a>
+          <ol>
+            <li><a href="#1-单reactor单线程">1. 单Reactor单线程</a></li>
+            <li><a href="#2-单reactor多线程">2. 单Reactor多线程</a></li>
+            <li><a href="#3-主从reactor多线程">3. 主从Reactor多线程</a></li>
+          </ol>
+        </li>
       </ol>
     </li>
-    <li><a href="#selector">Selector</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#传统阻塞io模型">传统阻塞IO模型</a></li>
-    <li><a href="#reactor模型">Reactor模型</a>
+    <li><a href="#netty">Netty</a>
       <ol>
-        <li><a href="#1-单reactor单线程">1. 单Reactor单线程</a></li>
-        <li><a href="#2-单reactor多线程">2. 单Reactor多线程</a></li>
-        <li><a href="#3-主从reactor多线程">3. 主从Reactor多线程</a></li>
+        <li><a href="#server端线程模型">Server端线程模型</a></li>
+        <li><a href="#demo">Demo</a></li>
+        <li><a href="#核心组件">核心组件</a>
+          <ol>
+            <li><a href="#serverbootstrap和bootstrap">ServerBootstrap和Bootstrap</a></li>
+            <li><a href="#channelchannelpipelinechannelhandlercontext和channelhandler">Channel、ChannelPipeline、ChannelHandlerContext和ChannelHandler</a></li>
+            <li><a href="#eventloopgroup">EventLoopGroup</a></li>
+          </ol>
+        </li>
+        <li><a href="#一般流程">一般流程</a></li>
       </ol>
     </li>
-  </ol>
-
-  <ol>
-    <li><a href="#server端线程模型">Server端线程模型</a></li>
-    <li><a href="#demo">Demo</a></li>
-    <li><a href="#核心组件">核心组件</a>
-      <ol>
-        <li><a href="#serverbootstrap和bootstrap">ServerBootstrap和Bootstrap</a></li>
-        <li><a href="#channelchannelpipelinechannelhandlercontext和channelhandler">Channel、ChannelPipeline、ChannelHandlerContext和ChannelHandler</a></li>
-        <li><a href="#eventloopgroup">EventLoopGroup</a></li>
-      </ol>
-    </li>
-    <li><a href="#一般流程">一般流程</a></li>
+    <li><a href="#参考">参考：</a></li>
   </ol>
 </nav>
                 </div>

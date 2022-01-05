@@ -1409,93 +1409,109 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
                 <div class="widget--toc">
                     <nav id="TableOfContents">
   <ol>
-    <li><a href="#mysql逻辑架构图">MySQL逻辑架构图</a></li>
-    <li><a href="#日志系统">日志系统</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#countcount1count列区别">Count(*)、Count(1)、Count([列])区别</a></li>
-    <li><a href="#having的使用">having的使用</a></li>
-    <li><a href="#order-by">order by</a></li>
-    <li><a href="#group-by">group by</a></li>
-    <li><a href="#distinct">distinct</a></li>
-    <li><a href="#join">join</a></li>
-    <li><a href="#dropdelete与truncate">drop、delete与truncate</a></li>
-    <li><a href="#limit">Limit</a></li>
-    <li><a href="#日期类查询">日期类查询</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#varchar和char">varchar和char</a></li>
-    <li><a href="#int和int20">int和int(20)</a></li>
-    <li><a href="#datetime">Datetime</a></li>
-    <li><a href="#timestamp">TimeStamp</a></li>
-    <li><a href="#null">NULL</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#1常见索引及概念">1.常见索引及概念</a></li>
-    <li><a href="#2特点">2.特点</a></li>
-    <li><a href="#3原理">3.原理</a>
+    <li><a href="#基础架构">基础架构</a>
       <ol>
-        <li><a href="#为什么说b树比b树更适合mysql数据库索引">为什么说B+树比B树更适合MySQL数据库索引</a></li>
-        <li><a href="#与二叉查找树avl树的比较">与二叉查找树、AVL树的比较</a></li>
-        <li><a href="#与红黑树的比较">与红黑树的比较</a></li>
+        <li><a href="#mysql逻辑架构图">MySQL逻辑架构图</a></li>
+        <li><a href="#日志系统">日志系统</a></li>
       </ol>
     </li>
-    <li><a href="#4失效情况">4.失效情况</a></li>
-    <li><a href="#5优化">5.优化</a></li>
-    <li><a href="#6分析">6.分析</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#1myisam">1.MyISAM</a></li>
-    <li><a href="#2innodb">2.InnoDB</a></li>
-    <li><a href="#3memory">3.Memory</a></li>
-    <li><a href="#4myisam与innodb引擎区别">4.MyISAM与InnoDB引擎区别</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#1acid原则">1.ACID原则</a></li>
-    <li><a href="#2并发情况下带来的问题">2.并发情况下带来的问题</a></li>
-    <li><a href="#3事务隔离级别">3.事务隔离级别</a></li>
-    <li><a href="#4事务相关命令">4.事务相关命令</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#分库分表">分库分表</a></li>
-    <li><a href="#分片算法">分片算法</a></li>
-    <li><a href="#sharding-key选择问题">Sharding Key选择问题</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#数据存储和恢复">数据存储和恢复</a>
+    <li><a href="#常用sql">常用SQL</a>
       <ol>
-        <li><a href="#原理">原理</a></li>
+        <li><a href="#countcount1count列区别">Count(*)、Count(1)、Count([列])区别</a></li>
+        <li><a href="#having的使用">having的使用</a></li>
+        <li><a href="#order-by">order by</a></li>
+        <li><a href="#group-by">group by</a></li>
+        <li><a href="#distinct">distinct</a></li>
+        <li><a href="#join">join</a></li>
+        <li><a href="#dropdelete与truncate">drop、delete与truncate</a></li>
+        <li><a href="#limit">Limit</a></li>
+        <li><a href="#日期类查询">日期类查询</a></li>
       </ol>
     </li>
-    <li><a href="#主从复制">主从复制</a>
+    <li><a href="#数据类型">数据类型</a>
       <ol>
-        <li><a href="#原理-1">原理</a></li>
-        <li><a href="#具体步骤">具体步骤</a></li>
-        <li><a href="#主备延迟">主备延迟</a></li>
-        <li><a href="#主备切换策略">主备切换策略</a></li>
-        <li><a href="#库内表的复制">库内表的复制</a></li>
-        <li><a href="#读写分离">读写分离</a></li>
+        <li><a href="#varchar和char">varchar和char</a></li>
+        <li><a href="#int和int20">int和int(20)</a></li>
+        <li><a href="#datetime">Datetime</a></li>
+        <li><a href="#timestamp">TimeStamp</a></li>
+        <li><a href="#null">NULL</a></li>
       </ol>
     </li>
-    <li><a href="#mysql健康状态检测">MySQL健康状态检测</a>
+    <li><a href="#索引">索引</a>
       <ol>
-        <li><a href="#检测方法">检测方法</a></li>
+        <li><a href="#1常见索引及概念">1.常见索引及概念</a></li>
+        <li><a href="#2特点">2.特点</a></li>
+        <li><a href="#3原理">3.原理</a>
+          <ol>
+            <li><a href="#为什么说b树比b树更适合mysql数据库索引">为什么说B+树比B树更适合MySQL数据库索引</a></li>
+            <li><a href="#与二叉查找树avl树的比较">与二叉查找树、AVL树的比较</a></li>
+            <li><a href="#与红黑树的比较">与红黑树的比较</a></li>
+          </ol>
+        </li>
+        <li><a href="#4失效情况">4.失效情况</a></li>
+        <li><a href="#5优化">5.优化</a></li>
+        <li><a href="#6分析">6.分析</a></li>
       </ol>
     </li>
-  </ol>
-
-  <ol>
-    <li><a href="#自增主键">自增主键</a></li>
-    <li><a href="#xid">Xid</a></li>
-    <li><a href="#trx_id">trx_id</a></li>
-    <li><a href="#thread_id">thread_id</a></li>
+    <li><a href="#存储引擎">存储引擎</a>
+      <ol>
+        <li><a href="#1myisam">1.MyISAM</a></li>
+        <li><a href="#2innodb">2.InnoDB</a></li>
+        <li><a href="#3memory">3.Memory</a></li>
+        <li><a href="#4myisam与innodb引擎区别">4.MyISAM与InnoDB引擎区别</a></li>
+      </ol>
+    </li>
+    <li><a href="#事务">事务</a>
+      <ol>
+        <li><a href="#1acid原则">1.ACID原则</a></li>
+        <li><a href="#2并发情况下带来的问题">2.并发情况下带来的问题</a></li>
+        <li><a href="#3事务隔离级别">3.事务隔离级别</a></li>
+        <li><a href="#4事务相关命令">4.事务相关命令</a></li>
+      </ol>
+    </li>
+    <li><a href="#锁">锁</a></li>
+    <li><a href="#大表优化">大表优化</a>
+      <ol>
+        <li><a href="#分库分表">分库分表</a></li>
+        <li><a href="#分片算法">分片算法</a></li>
+        <li><a href="#sharding-key选择问题">Sharding Key选择问题</a></li>
+      </ol>
+    </li>
+    <li><a href="#数据部分">数据部分</a>
+      <ol>
+        <li><a href="#数据存储和恢复">数据存储和恢复</a>
+          <ol>
+            <li><a href="#原理">原理</a></li>
+          </ol>
+        </li>
+        <li><a href="#主从复制">主从复制</a>
+          <ol>
+            <li><a href="#原理-1">原理</a></li>
+            <li><a href="#具体步骤">具体步骤</a></li>
+            <li><a href="#主备延迟">主备延迟</a></li>
+            <li><a href="#主备切换策略">主备切换策略</a></li>
+            <li><a href="#库内表的复制">库内表的复制</a></li>
+            <li><a href="#读写分离">读写分离</a></li>
+          </ol>
+        </li>
+        <li><a href="#mysql健康状态检测">MySQL健康状态检测</a>
+          <ol>
+            <li><a href="#检测方法">检测方法</a></li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+    <li><a href="#其他">其他</a>
+      <ol>
+        <li><a href="#自增主键">自增主键</a></li>
+        <li><a href="#xid">Xid</a></li>
+        <li><a href="#trx_id">trx_id</a></li>
+        <li><a href="#thread_id">thread_id</a></li>
+      </ol>
+    </li>
+    <li><a href="#jdbc">JDBC</a></li>
+    <li><a href="#数据库连接池">数据库连接池</a></li>
+    <li><a href="#参考">参考</a></li>
   </ol>
 </nav>
                 </div>

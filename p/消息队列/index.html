@@ -616,33 +616,42 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
                 <div class="widget--toc">
                     <nav id="TableOfContents">
   <ol>
-    <li><a href="#好处">好处</a></li>
-    <li><a href="#缺点">缺点</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#一般消息队列架构">一般消息队列架构</a></li>
-    <li><a href="#关于消息的序列化和反序列化">关于消息的序列化和反序列化</a></li>
-    <li><a href="#关于消息的断句">关于消息的断句</a></li>
-    <li><a href="#关于消息的存储">关于消息的存储</a>
+    <li><a href="#使用场景">使用场景</a>
       <ol>
-        <li><a href="#kafka">Kafka</a></li>
-        <li><a href="#rocketmq">RocketMQ</a></li>
+        <li><a href="#好处">好处</a></li>
+        <li><a href="#缺点">缺点</a></li>
       </ol>
     </li>
-    <li><a href="#案例一---异步消息的处理">案例一 - 异步消息的处理</a></li>
-    <li><a href="#案例二---kafka高性能io">案例二 - Kafka高性能IO</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#如何利用事务消息实现分布式事务">如何利用事务消息实现分布式事务</a></li>
-    <li><a href="#如何保证高可用性">如何保证高可用性</a></li>
-    <li><a href="#如何解决消息重复问题保证消息幂等性">如何解决消息重复问题，保证消息幂等性</a></li>
-    <li><a href="#如何保证消息顺序">如何保证消息顺序</a></li>
-    <li><a href="#如何保证消息的可靠性传输">如何保证消息的可靠性传输</a></li>
-    <li><a href="#关于pull模式和push模式">关于pull模式和push模式</a></li>
-    <li><a href="#如何解决消息队列的延时以及过期失效问题">如何解决消息队列的延时以及过期失效问题？</a></li>
-    <li><a href="#如何解决消息积压问题">如何解决消息积压问题？</a></li>
+    <li><a href="#常见消息队列">常见消息队列</a></li>
+    <li><a href="#消息模型">消息模型</a>
+      <ol>
+        <li><a href="#一般消息队列架构">一般消息队列架构</a></li>
+        <li><a href="#关于消息的序列化和反序列化">关于消息的序列化和反序列化</a></li>
+        <li><a href="#关于消息的断句">关于消息的断句</a></li>
+        <li><a href="#关于消息的存储">关于消息的存储</a>
+          <ol>
+            <li><a href="#kafka">Kafka</a></li>
+            <li><a href="#rocketmq">RocketMQ</a></li>
+          </ol>
+        </li>
+        <li><a href="#案例一---异步消息的处理">案例一 - 异步消息的处理</a></li>
+        <li><a href="#案例二---kafka高性能io">案例二 - Kafka高性能IO</a></li>
+      </ol>
+    </li>
+    <li><a href="#常见问题">常见问题</a>
+      <ol>
+        <li><a href="#如何利用事务消息实现分布式事务">如何利用事务消息实现分布式事务</a></li>
+        <li><a href="#如何保证高可用性">如何保证高可用性</a></li>
+        <li><a href="#如何解决消息重复问题保证消息幂等性">如何解决消息重复问题，保证消息幂等性</a></li>
+        <li><a href="#如何保证消息顺序">如何保证消息顺序</a></li>
+        <li><a href="#如何保证消息的可靠性传输">如何保证消息的可靠性传输</a></li>
+        <li><a href="#关于pull模式和push模式">关于pull模式和push模式</a></li>
+        <li><a href="#如何解决消息队列的延时以及过期失效问题">如何解决消息队列的延时以及过期失效问题？</a></li>
+        <li><a href="#如何解决消息积压问题">如何解决消息积压问题？</a></li>
+      </ol>
+    </li>
+    <li><a href="#延迟队列">延迟队列</a></li>
+    <li><a href="#参考">参考</a></li>
   </ol>
 </nav>
                 </div>

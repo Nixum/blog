@@ -599,58 +599,72 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器</p>
                 <div class="widget--toc">
                     <nav id="TableOfContents">
   <ol>
-    <li><a href="#pc机启动流程">PC机启动流程</a></li>
-    <li><a href="#内核结构分类">内核结构分类</a>
+    <li><a href="#内核">内核</a>
       <ol>
-        <li><a href="#宏内核结构---类似单体服务">宏内核结构 - 类似单体服务</a></li>
-        <li><a href="#微内核结构---类似微服务">微内核结构 - 类似微服务</a></li>
-        <li><a href="#分离硬件的相关性">分离硬件的相关性</a></li>
-        <li><a href="#混合内核">混合内核</a></li>
+        <li><a href="#pc机启动流程">PC机启动流程</a></li>
+        <li><a href="#内核结构分类">内核结构分类</a>
+          <ol>
+            <li><a href="#宏内核结构---类似单体服务">宏内核结构 - 类似单体服务</a></li>
+            <li><a href="#微内核结构---类似微服务">微内核结构 - 类似微服务</a></li>
+            <li><a href="#分离硬件的相关性">分离硬件的相关性</a></li>
+            <li><a href="#混合内核">混合内核</a></li>
+          </ol>
+        </li>
       </ol>
     </li>
-  </ol>
-
-  <ol>
-    <li><a href="#工作模式">工作模式</a>
+    <li><a href="#cpu">CPU</a>
       <ol>
-        <li><a href="#实模式">实模式</a></li>
-        <li><a href="#保护模式">保护模式</a></li>
-        <li><a href="#长模式">长模式</a></li>
+        <li><a href="#工作模式">工作模式</a>
+          <ol>
+            <li><a href="#实模式">实模式</a></li>
+            <li><a href="#保护模式">保护模式</a></li>
+            <li><a href="#长模式">长模式</a></li>
+          </ol>
+        </li>
       </ol>
     </li>
-  </ol>
-
-  <ol>
-    <li><a href="#虚拟地址">虚拟地址</a></li>
-    <li><a href="#mmu">MMU</a></li>
-    <li><a href="#cache">Cache</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#引导-boot">引导 boot</a></li>
-    <li><a href="#启动-startup">启动 startup</a></li>
-  </ol>
-
-  <ol>
-    <li><a href="#内存划分与组织">内存划分与组织</a>
+    <li><a href="#内存">内存</a>
       <ol>
-        <li><a href="#分段">分段</a></li>
-        <li><a href="#分页">分页</a></li>
-        <li><a href="#分页再分区">分页再分区</a></li>
-        <li><a href="#组织内存页">组织内存页</a></li>
+        <li><a href="#虚拟地址">虚拟地址</a></li>
+        <li><a href="#mmu">MMU</a></li>
+        <li><a href="#cache">Cache</a></li>
       </ol>
     </li>
-    <li><a href="#linux内存管理">Linux内存管理</a>
+    <li><a href="#同步原语">同步原语</a></li>
+    <li><a href="#linux初始化">Linux初始化</a>
       <ol>
-        <li><a href="#伙伴系统">伙伴系统</a></li>
-        <li><a href="#slab">SLAB</a></li>
+        <li><a href="#引导-boot">引导 boot</a></li>
+        <li><a href="#启动-startup">启动 startup</a></li>
       </ol>
     </li>
-  </ol>
-
-  <ol>
-    <li><a href="#调度">调度</a></li>
-    <li><a href="#linux进程调度">Linux进程调度</a></li>
+    <li><a href="#内存管理">内存管理</a>
+      <ol>
+        <li><a href="#内存划分与组织">内存划分与组织</a>
+          <ol>
+            <li><a href="#分段">分段</a></li>
+            <li><a href="#分页">分页</a></li>
+            <li><a href="#分页再分区">分页再分区</a></li>
+            <li><a href="#组织内存页">组织内存页</a></li>
+          </ol>
+        </li>
+        <li><a href="#linux内存管理">Linux内存管理</a>
+          <ol>
+            <li><a href="#伙伴系统">伙伴系统</a></li>
+            <li><a href="#slab">SLAB</a></li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+    <li><a href="#进程">进程</a>
+      <ol>
+        <li><a href="#调度">调度</a></li>
+        <li><a href="#linux进程调度">Linux进程调度</a></li>
+      </ol>
+    </li>
+    <li><a href="#设备io">设备I/O</a></li>
+    <li><a href="#文件系统">文件系统</a></li>
+    <li><a href="#网络">网络</a></li>
+    <li><a href="#参考">参考</a></li>
   </ol>
 </nav>
                 </div>
