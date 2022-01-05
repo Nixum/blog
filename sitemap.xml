@@ -300,7 +300,7 @@
     <lastmod>2019-05-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://nixum.cc/page/</loc>
-    <lastmod>2019-05-28T00:00:00+00:00</lastmod>
+    <lastmod>2022-01-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://nixum.cc/tags/ioc%E5%92%8Caop/</loc>
     <lastmod>2020-06-03T00:00:00+00:00</lastmod>
@@ -370,6 +370,11 @@
   </url><url>
     <loc>http://nixum.cc/p/readme/</loc>
     <lastmod>2019-02-12T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://nixum.cc/about/</loc>
+    <lastmod>2022-01-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://nixum.cc/</loc>
   </url><url>
     <loc>http://nixum.cc/search/</loc>
   </url>
