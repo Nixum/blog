@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    6 minute read
+                    7 minute read
                 </time>
             </div>
         
@@ -197,7 +197,7 @@
 <p>使用new()和make()的区别</p>
 <blockquote>
 <p>看起来二者没有什么区别，都在堆上分配内存，但是它们的行为不同，适用于不同的类型。</p>
-<p>new (T) 为每个新的类型 T 分配一片内存，初始化为 0 并且返回类型为 *T 的内存地址：这种函数 返回一个指向类型为 T，值为 0 的地址的指针，它<strong>适用于值类型如数组和结构体</strong>；它相当于 &amp;T{}。
+<p>new (T) 为每个新的类型 T 分配一片内存，初始化为 0 并且返回类型为 *T 的内存地址：这种函数 返回一个指向类型为 T，值为 0 的地址的指针，它<strong>适用于值类型，如数组和结构体</strong>；它相当于 &amp;T{}。
 make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内建的引用类型：切片、map 和 channel</strong>。</p>
 </blockquote>
 <ul>
@@ -411,6 +411,11 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="lnt">74
 </span><span class="lnt">75
 </span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">hmap</span> <span class="kd">struct</span> <span class="p">{</span>
@@ -428,13 +433,18 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="c1"></span><span class="p">}</span>
 
 <span class="kd">type</span> <span class="nx">mapextra</span> <span class="kd">struct</span> <span class="p">{</span>
-    <span class="c1">// 当map的key和value都不是指针，并且size都小于128字节时（即可以被inline），会把bmap标记为不含指针，避免gc时扫描整个hmap。通过overflow实现，overflow是个指针，指向溢出的bucket，GC时又必定会扫描指针，也就是会扫描所有bmap，而当map的key和value都是非指针类型的话，可以直接标记整个map的颜色，不用去扫描每个bmap的overflow指针，避免扫描每个bmap的overflow指针，但溢出的bucket总是存在，与key和value的类型无关，于是就利用overflow来指向溢出的bucket，并把bmap结构体里的overflow指针类型变成unitptr类型（编译期干的），于是整个bmap就完全没指针了，也就不会被GC扫描。另一方面，当 GC 在扫描 hmap 时，通过 extra.overflow 这条路径（指针）就可以将 overflow 的 bucket 正常标记成黑色，从而不会被 GC 错误地回收。
+    <span class="c1">// 当map的key和value都不是指针，并且size都小于128字节时（即可以被inline），会把bmap标记为不含指针，避免gc时扫描整个hmap。
+</span><span class="c1"></span>    <span class="c1">// 通过overflow实现，bmap.overflow是个指针，指向溢出的bucket，GC时又必定会扫描指针，也就是会扫描所有bmap，
+</span><span class="c1"></span>    <span class="c1">// 而当map的key和value都是非指针类型时，可直接标记整个map的颜色，避免扫描每个bmap的overflow指针，
+</span><span class="c1"></span>    <span class="c1">// 但溢出的bucket总是存在，与key和value的类型无关，于是就利用overflow来指向溢出的bucket，
+</span><span class="c1"></span>    <span class="c1">// 并把bmap结构体里的overflow指针类型变成unitptr类型（编译期干的），于是整个bmap就完全没指针了，也就不会被GC扫描。
+</span><span class="c1"></span>    <span class="c1">// 另一方面，当 GC 在扫描 hmap 时，通过 extra.overflow 这条路径（指针）就可以将 overflow 的 bucket 正常标记成黑色，从而不会被 GC 错误地回收。
 </span><span class="c1"></span>	<span class="nx">overflow</span>    <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含hmap.buckets的overflow的buckets
 </span><span class="c1"></span>	<span class="nx">oldoverflow</span> <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含扩容时的hmap.oldbuckets的overflow的bucket
 </span><span class="c1"></span>	<span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span>    <span class="c1">// 指向空闲的 overflow bucket 的指针
 </span><span class="c1"></span><span class="p">}</span>
 
-<span class="c1">// 即桶bucket
+<span class="c1">// 即桶bucket的结构
 </span><span class="c1"></span><span class="kd">type</span> <span class="nx">bmap</span> <span class="kd">struct</span> <span class="p">{</span>
     <span class="nx">tophash</span> <span class="p">[</span><span class="nx">bucketCnt</span><span class="p">]</span><span class="kt">uint8</span> <span class="c1">// len为8的数组，即每个桶只能存8个键值对，包含此桶中每个key的哈希值的高8位，如果tophash[0] &lt; minTopHash，tophash[0]则代表桶的搬迁evacuation状态。
 </span><span class="c1"></span><span class="p">}</span>
@@ -471,7 +481,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
     <span class="p">}{}.</span><span class="nx">v</span><span class="p">)</span>
 
 
-    <span class="c1">// 每个桶（如果有溢出，则包含它的overflow的链接桶）在搬迁完成状态（evacuated* states）下，要么会包含它所有的键值对，要么一个都不包含（但不包括调用evacuate()方法阶段，该方法调用只会在对map发起write时发生，在该阶段其他goroutine是无法查看该map的）。简单的说，桶里的数据要么一起搬走，要么一个都还未搬。
+    <span class="c1">// 每个桶（如果有溢出，则包含它的overflow的链接桶）在搬迁完成状态下，要么会包含它所有的键值对，要么一个都不包含（但不包括调用evacuate()方法阶段，该方法调用只会在对map发起write时发生，在该阶段其他goroutine是无法查看该map的）。简单的说，桶里的数据要么一起搬走，要么一个都还未搬。
 </span><span class="c1"></span>    <span class="c1">// tophash除了放置正常的高8位hash值，还会存储一些特殊状态值（标志该cell的搬迁状态）。正常的tophash值，最小应该是5，以下列出的就是一些特殊状态值。
 </span><span class="c1"></span>    <span class="nx">emptyRest</span>      <span class="p">=</span> <span class="mi">0</span> <span class="c1">// 表示cell为空，并且比它高索引位的cell或者overflows中的cell都是空的。（初始化bucket时，就是该状态）
 </span><span class="c1"></span>    <span class="nx">emptyOne</span>       <span class="p">=</span> <span class="mi">1</span> <span class="c1">// 空的cell，cell已经被搬迁到新的bucket
@@ -505,7 +515,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 	<figcaption>go map 结构图</figcaption>
 	
 </figure></p>
-<p>注：一个bmap里key和value是各自存的，而不是想象中的key/value一对对存储，这样的好处是省掉padding字段，节省内存空间，方便内存对齐。</p>
+<p>注：一个bmap里key和value是各自存的，而key/value一对对存储，这样的好处是省掉padding字段，节省内存空间，方便内存对齐。</p>
 <blockquote>
 <p>例如，有这样一个类型的 map：<code>map[int64]int8</code>，如果按照 <code>key/value...</code> 这样的模式存储，那在每一个 key/value 对之后都要额外 padding 7 个字节；而将所有的 key，value 分别绑定到一起，这种形式 <code>key/key/.../value/value/...</code>，则只需要在最后添加 padding，每个 bucket 设计成最多只能放 8 个 key-value 对，如果有第 9 个 key-value 落入当前的 bucket，那就需要再构建一个 bucket ，通过 <code>overflow</code> 指针连接起来。</p>
 </blockquote>
@@ -525,7 +535,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>即key必须支持 == 或 != 运算的类型</p>
 </li>
 <li>
-<p>map容量最多为 6.5 * 2^B 个元素，6.5是装载因子阈值常量，装载因子 = 哈希表中的元素 / 哈希表总长度，装载因子越大，冲突越多。</p>
+<p>map容量最多为 6.5 * 2^B 个元素，6.5是装载因子阈值常量，装载因子 = 哈希表中的元素 / 哈希表总长度，装载因子越大，冲突越多。B最大值是63.</p>
 </li>
 <li>
 <p>拉链法解决哈希冲突（指8个正常位和溢出桶），除留余数法得到桶的位置（哈希值的低B位）。</p>
@@ -547,7 +557,24 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </li>
 </ul>
 <h2 id="创建初始化">创建初始化</h2>
-<p>最终会在运行时调用makemap函数进行创建和初始化，</p>
+<p>通过<code>make(map[type]type)</code>，或者<code>make(map[type]type, n), n &lt;= 8</code>创建的map，底层会调用makemap_small函数，并直接从堆上进行分配。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">makemap_small</span><span class="p">()</span> <span class="o">*</span><span class="nx">hmap</span> <span class="p">{</span>
+    <span class="nx">h</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">hmap</span><span class="p">)</span>
+    <span class="nx">h</span><span class="p">.</span><span class="nx">hash0</span> <span class="p">=</span> <span class="nf">fastrand</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nx">h</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>当hint &gt; 8时，则会在运行时调用makemap函数进行创建和初始化，</p>
 <ol>
 <li>
 <p>计算哈希表占用的内存是否溢出或者超出能分配的最大值</p>
@@ -556,8 +583,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>调用fastrand()获取随机哈希种子</p>
 </li>
 <li>
-<p>根据hint来计算需要的桶的数量，即计算B的值，用于初始化桶的数量 = 2^B；hint是一个预置的长度。</p>
-<p>这个值不知道怎么来的，本人的机器debug时发现默认创建map时，hint=137，B=5</p>
+<p>根据hint来计算需要的桶的数量来计算B的值（hint是make的第二个参数），用于初始化桶的数量 = 2^B；</p>
 </li>
 <li>
 <p>调用makeBucketArray()分配连续的空间，创建用于保存桶的数组</p>
@@ -604,10 +630,37 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="lnt">35
 </span><span class="lnt">36
 </span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">makemap</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">maptype</span><span class="p">,</span> <span class="nx">hint</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">h</span> <span class="o">*</span><span class="nx">hmap</span><span class="p">)</span> <span class="o">*</span><span class="nx">hmap</span> <span class="p">{</span>
 <span class="o">...</span>
+    <span class="nx">h</span><span class="p">.</span><span class="nx">hash0</span> <span class="p">=</span> <span class="nf">fastrand</span><span class="p">()</span>
 	<span class="c1">// 函数内，计算桶的数量
 </span><span class="c1"></span>	<span class="nx">B</span> <span class="o">:=</span> <span class="nb">uint8</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 	<span class="c1">//计算得到合适的B
@@ -615,6 +668,14 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 		<span class="nx">B</span><span class="o">++</span>
     <span class="p">}</span>
     <span class="nx">h</span><span class="p">.</span><span class="nx">B</span> <span class="p">=</span> <span class="nx">B</span>
+    <span class="k">if</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span>
+		<span class="nx">h</span><span class="p">.</span><span class="nx">buckets</span><span class="p">,</span> <span class="nx">nextOverflow</span> <span class="p">=</span> <span class="nf">makeBucketArray</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nx">nextOverflow</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="nx">h</span><span class="p">.</span><span class="nx">extra</span> <span class="p">=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">mapextra</span><span class="p">)</span>
+			<span class="nx">h</span><span class="p">.</span><span class="nx">extra</span><span class="p">.</span><span class="nx">nextOverflow</span> <span class="p">=</span> <span class="nx">nextOverflow</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
 <span class="o">...</span>
 <span class="p">}</span>
 
@@ -624,9 +685,11 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <span class="p">}</span>
 
 <span class="kd">func</span> <span class="nf">makeBucketArray</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">maptype</span><span class="p">,</span> <span class="nx">b</span> <span class="kt">uint8</span><span class="p">,</span> <span class="nx">dirtyalloc</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">)</span> <span class="p">(</span><span class="nx">buckets</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">,</span> <span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span><span class="p">)</span> <span class="p">{</span>
-	<span class="nx">base</span> <span class="o">:=</span> <span class="nf">bucketShift</span><span class="p">(</span><span class="nx">b</span><span class="p">)</span>
-	<span class="nx">nbuckets</span> <span class="o">:=</span> <span class="nx">base</span>
-	<span class="k">if</span> <span class="nx">b</span> <span class="o">&gt;=</span> <span class="mi">4</span> <span class="p">{</span>
+	<span class="nx">base</span> <span class="o">:=</span> <span class="nf">bucketShift</span><span class="p">(</span><span class="nx">b</span><span class="p">)</span>  <span class="c1">// base = 2 ^ B
+</span><span class="c1"></span>	<span class="nx">nbuckets</span> <span class="o">:=</span> <span class="nx">base</span>
+    <span class="c1">// B &lt; 4时，即桶的数量小于16，认为哈希冲突几率较小，因此不会创建溢出桶
+</span><span class="c1"></span>    <span class="c1">// B &gt;= 4时，创建2^(B-4)个溢出桶
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">b</span> <span class="o">&gt;=</span> <span class="mi">4</span> <span class="p">{</span>
 		<span class="nx">nbuckets</span> <span class="o">+=</span> <span class="nf">bucketShift</span><span class="p">(</span><span class="nx">b</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span>
 		<span class="nx">sz</span> <span class="o">:=</span> <span class="nx">t</span><span class="p">.</span><span class="nx">bucket</span><span class="p">.</span><span class="nx">size</span> <span class="o">*</span> <span class="nx">nbuckets</span>
 		<span class="nx">up</span> <span class="o">:=</span> <span class="nf">roundupsize</span><span class="p">(</span><span class="nx">sz</span><span class="p">)</span>
@@ -634,12 +697,27 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 			<span class="nx">nbuckets</span> <span class="p">=</span> <span class="nx">up</span> <span class="o">/</span> <span class="nx">t</span><span class="p">.</span><span class="nx">bucket</span><span class="p">.</span><span class="nx">size</span>
 		<span class="p">}</span>
 	<span class="p">}</span>
-	<span class="nx">buckets</span> <span class="p">=</span> <span class="nf">newarray</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucket</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nx">nbuckets</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nx">dirtyalloc</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="c1">// 为null, 会分配一个新的底层数组
+</span><span class="c1"></span>		<span class="nx">buckets</span> <span class="p">=</span> <span class="nf">newarray</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucket</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nx">nbuckets</span><span class="p">))</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="c1">// 不为null，则它指向的是曾经分配过的底层数组，该底层数组是由之前同样的t和b参数通过makeBucketArray分配的，如果数组不为空，需要把该数组之前的数据清空并复用
+</span><span class="c1"></span>		<span class="nx">buckets</span> <span class="p">=</span> <span class="nx">dirtyalloc</span>
+		<span class="nx">size</span> <span class="o">:=</span> <span class="nx">t</span><span class="p">.</span><span class="nx">bucket</span><span class="p">.</span><span class="nx">size</span> <span class="o">*</span> <span class="nx">nbuckets</span>
+		<span class="k">if</span> <span class="nx">t</span><span class="p">.</span><span class="nx">bucket</span><span class="p">.</span><span class="nx">ptrdata</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+			<span class="nf">memclrHasPointers</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="nf">memclrNoHeapPointers</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
 	<span class="c1">// 如果多申请了桶，将多申请的桶放在nextOverflow里备用
 </span><span class="c1"></span>	<span class="k">if</span> <span class="nx">base</span> <span class="o">!=</span> <span class="nx">nbuckets</span> <span class="p">{</span>
-		<span class="nx">nextOverflow</span> <span class="p">=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nf">add</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="nx">base</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
-		<span class="nx">last</span> <span class="o">:=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nf">add</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="p">(</span><span class="nx">nbuckets</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
-		<span class="nx">last</span><span class="p">.</span><span class="nf">setoverflow</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nx">buckets</span><span class="p">))</span>
+        <span class="c1">// 先计算出多申请出来的内存地址 nextOverflow
+</span><span class="c1"></span>		<span class="nx">nextOverflow</span> <span class="p">=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nf">add</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="nx">base</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
+        <span class="c1">// 计算出申请的最后一块bucket的地址
+</span><span class="c1"></span>		<span class="nx">last</span> <span class="o">:=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nf">add</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="p">(</span><span class="nx">nbuckets</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
+        <span class="c1">// 将最后一块bucket的overflow指针（指向链表的指针）指向buckets 的首部。 原因呢，是为了将来判断是否还有空的bucket 可以让溢出的bucket空间使用。
+</span><span class="c1"></span>		<span class="nx">last</span><span class="p">.</span><span class="nf">setoverflow</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nx">buckets</span><span class="p">))</span>
 	<span class="p">}</span>
 	<span class="k">return</span> <span class="nx">buckets</span><span class="p">,</span> <span class="nx">nextOverflow</span>
 <span class="p">}</span>
