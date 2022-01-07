@@ -138,6 +138,66 @@
 <li>诸如go、new、make、-&gt;、&lt;-等关键字都被编译器编译成runtime包里的函数</li>
 <li>build成可执行文件时，Runtime会和用户代码一起进行打包。</li>
 </ul>
+<h1 id="pprof">pprof</h1>
+<ul>
+<li>pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>allocs</td>
+<td>查询内存分配情况，所有对象的内存分配，在堆（Heap）分配的时候，记录一下调用堆栈。默认情况下，是每 1000 次分配，取样一次，这个数值可以改变。栈(Stack)分配 由于会随时释放，因此不会被内存分析所记录。由于内存分析是取样方式，并且也因为其记录的是分配内存，而不是使用内存。开启后会对runtime产生压力，通过runtime.MemProfileRate设置采样的内存比例，默认大小是512kb。</td>
+</tr>
+<tr>
+<td>blocks</td>
+<td>查询阻塞操作情况，类似于 CPU 性能分析，但是它所记录的是 goroutine 等待资源所花的时间。阻塞分析对分析程序并发瓶颈非常有帮助，阻塞性能分析可以显示出什么时候出现了大批的 goroutine 被阻塞了。阻塞性能分析是特殊的分析工具，在排除 CPU 和内存瓶颈前，不应该用它来分析。</td>
+</tr>
+<tr>
+<td>cmdline</td>
+<td>应用启动命令及参数</td>
+</tr>
+<tr>
+<td>goroutine</td>
+<td>当前所有协程的堆栈信息，开启时会STW</td>
+</tr>
+<tr>
+<td>heap</td>
+<td>堆上内存使用情况采样信息，活跃对象的内存分配</td>
+</tr>
+<tr>
+<td>mutex</td>
+<td>锁持有的堆栈，次数(采样)的信息</td>
+</tr>
+<tr>
+<td>profile</td>
+<td>CPU占用情况采样，启动后会对runtime产生压力，runtime每10ms会STW，记录当前运行的 goroutine 的调用堆栈及相关数据</td>
+</tr>
+<tr>
+<td>threadcreate</td>
+<td>系统线程创建情况的采样信息，不会STW</td>
+</tr>
+<tr>
+<td>trace</td>
+<td>程序运行跟踪信息</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p><code>go tool pprof -http=:8080 profile文件名</code>，打开web终端，左上角view里就有各种视图</p>
+</li>
+<li>
+<p>关于火焰图</p>
+<p>火焰图Y轴表示调用栈，每一层都是一个函数，调用栈越深火焰就越高，最底部是正在执行的函数，上面是它的父函数，X轴表示这个函数的抽样数，如果一个函数在X轴占的越宽，代表抽样数越高，执行CPU的时间越长，注意，X轴不代表时间,而是所有的调用栈合并后，按字母顺序排列的。</p>
+<p>火焰图就是看顶层的哪个函数占据的宽度最大。只要有&quot;平顶&quot;（plateaus），就表示该函数可能存在性能问题。</p>
+</li>
+</ul>
 <h1 id="goroutine">Goroutine</h1>
 <h2 id="基本">基本</h2>
 <ul>
@@ -812,6 +872,7 @@ M0负责执行初始化操作和启动第一个G， 在之后M0就和其他的M�
                     <nav id="TableOfContents">
   <ol>
     <li><a href="#runtime">Runtime</a></li>
+    <li><a href="#pprof">pprof</a></li>
     <li><a href="#goroutine">Goroutine</a>
       <ol>
         <li><a href="#基本">基本</a></li>
