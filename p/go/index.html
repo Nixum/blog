@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en-us">
     <head><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='go集合类、协程、runtime、GC原理'><title>Go SE</title>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='go 数组、slice、map原理、内存对齐'><title>Go</title>
 
-<link rel='canonical' href='http://nixum.cc/p/go-se/'>
+<link rel='canonical' href='http://nixum.cc/p/go/'>
 
-<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='Go SE'>
-<meta property='og:description' content='go集合类、协程、runtime、GC原理'>
-<meta property='og:url' content='http://nixum.cc/p/go-se/'>
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='Go'>
+<meta property='og:description' content='go 数组、slice、map原理、内存对齐'>
+<meta property='og:url' content='http://nixum.cc/p/go/'>
 <meta property='og:site_name' content='Nixum Blog'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Go' /><meta property='article:tag' content='Go集合类原理' /><meta property='article:tag' content='Go协程' /><meta property='article:tag' content='Go GC' /><meta property='article:published_time' content='2020-11-07T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-10-24T00:00:00&#43;00:00'/>
-<meta name="twitter:title" content="Go SE">
-<meta name="twitter:description" content="go集合类、协程、runtime、GC原理">
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Go' /><meta property='article:tag' content='Go slice和map原理' /><meta property='article:published_time' content='2020-11-07T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-10-24T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="Go">
+<meta name="twitter:description" content="go 数组、slice、map原理、内存对齐">
     <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
@@ -84,12 +84,12 @@
     
 
     <h2 class="article-title">
-        <a href="/p/go-se/">Go SE</a>
+        <a href="/p/go/">Go</a>
     </h2>
 
     
     <h3 class="article-subtitle">
-        go集合类、协程、runtime、GC原理
+        go 数组、slice、map原理、内存对齐
     </h3>
     
 
@@ -143,8 +143,8 @@
 <h1 id="数组">数组</h1>
 <ul>
 <li>声明时必须指定固定长度，因为编译时需要知道数组长度以便分配内存，如<code>var arr1 [5]int</code>，或者<code>var arr2 = [5]int{1,2,3}, 其余数字为0</code></li>
-<li>数组长度最大是2Gb</li>
-<li>当数组类型是整形时，所有元素都会被自动初始化为0，即声明完数组，数组会被设置类型的默认值</li>
+<li>数组<strong>长度最大是2Gb</strong></li>
+<li>当数组类型是整形时，所有元素都会被自动初始化为0，即声明完数组，<strong>数组会被设置类型的默认值</strong></li>
 <li>可以使用new()来创建，如<code>var arr3 = new([3]int)</code>，arr3的类型是<code>*[3]int</code>，arr1、arr2的类型是<code>[5]int</code></li>
 <li>函数的参数可以是[5]int, 表明入参是数组，如果是[]int，表明入参是slice。类型[3]int和[5]int是两种不同的类型。</li>
 <li><strong>数组是值类型</strong>，赋值和传参会进行拷贝，函数内部的修改不会影响原始数组。</li>
@@ -201,36 +201,21 @@
 make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内建的引用类型：切片、map 和 channel</strong>。</p>
 </blockquote>
 <ul>
-<li>range遍历的注意点：使用range遍历时，底层的slice会发生一次拷贝，即range指向的slice是原始slice的拷贝，长度也是；将slice的每个元素赋值给v时，也发生了一次拷贝，无法通过修改v来修改slice。</li>
+<li>range遍历的注意点：将slice的每个元素赋值给v时，发生了一次拷贝，无法通过修改v来修改slice。如果是slice是指针结构体类型，还是能修改的。也就是说如果slice是指针类型，通过range遍历append时要注意</li>
 </ul>
-<p>demo</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">	<span class="nx">arr</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span> <span class="c1">// 比如此时arr的地址是0xc00000e380
-</span><span class="c1"></span>	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">arr</span> <span class="p">{</span>
-        <span class="c1">// 此时arr的地址是0xc00000c3c0，可见发生了拷贝，v的地址就一直不变的
-</span><span class="c1"></span>		<span class="nx">arr</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">arr</span><span class="p">,</span> <span class="nx">v</span><span class="p">)</span>
-	<span class="p">}</span>
-	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">arr</span><span class="p">)</span>  <span class="c1">// 打印：1 2 3 1 2 3
-</span><span class="c1"></span>
-	<span class="nx">arr2</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span>
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">	<span class="nx">arr2</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span>
 	<span class="nx">newArr</span> <span class="o">:=</span> <span class="p">[]</span><span class="o">*</span><span class="kt">int</span><span class="p">{}</span>
 	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">arr2</span> <span class="p">{</span>
 		<span class="nx">newArr</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">newArr</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">v</span><span class="p">)</span>
@@ -248,7 +233,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <li>原slice容量不够，将slice扩容，得到新的slice</li>
 <li>将新元素追加到新slice，长度 + 1，返回新slice</li>
 </ol>
-<p>另外，copy函数拷贝两个slice时，会将源slice拷贝到目标slice，如果目标slice的长度&lt;源slice，不会发生扩容。</p>
+<p>另外，<strong>copy函数拷贝</strong>两个slice时，会将源slice拷贝到目标slice，<strong>如果目标slice的长度&lt;源slice，不会发生扩容</strong>。</p>
 <p>Demo：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -282,7 +267,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>扩容实际上包括两部分：计算容量的规则 和 内存对齐</p>
 <ol>
 <li>
-<p>如果期望容量大于当前容量的两倍就会使用期望容量，期望容量指的是把元素加进去后的容量。</p>
+<p>如果期望容量大于当前容量的两倍就会使用期望容量，期望容量指的是把元素加进去后的容量，一般发生在append 多个的时候，如 append(arr, 1, 2, 3, 4)。</p>
 </li>
 <li>
 <p>如果当前切片的长度小于 1024，扩容两倍。</p>
@@ -314,7 +299,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="lnt">15
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 此时期望容量是2 + 3 = 5 &gt; 旧容量的两倍 2 * 2 = 4，期望容量为5，占40个字节，触发内存对齐，向上取整为48字节，此时新容量为 48 / 8 = 6。
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 此时期望容量是2 + 3 = 5 &gt; 旧容量的两倍 2 * 2 = 4，期望容量为5，占40个字节，不是2^n次，so触发内存对齐，向上取整为48字节，此时新容量为 48 / 8 = 6。
 </span><span class="c1"></span><span class="nx">s1</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int64</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">}</span>
 <span class="nx">s1</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">s1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;len=%d, cap=%d\n&#34;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="nx">s1</span><span class="p">),</span><span class="nb">cap</span><span class="p">(</span><span class="nx">s1</span><span class="p">))</span>  <span class="c1">// len=5, cap=6
@@ -331,7 +316,186 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;len=%d, cap=%d\n&#34;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="nx">s</span><span class="p">),</span><span class="nb">cap</span><span class="p">(</span><span class="nx">s</span><span class="p">))</span>  <span class="c1">// len=5, cap=8
 </span></code></pre></td></tr></table>
 </div>
-</div><h1 id="map">Map</h1>
+</div><h2 id="内存对齐">内存对齐</h2>
+<p>CPU读取数据时不会一个字节一个字节去读取，而是一块一块，块的大小可以是2、4、6、8、16字节，块大小称为内存访问粒度。32位CPU一次读取4个字节，64位CPU一次读取8个字节。</p>
+<p>如果未进行内存对齐，会导致CPU进行两次内存访问，并且需要花费额外的时钟周期来处理对齐及运算，如果对齐了内存，一次读取就能访问完成，内存对齐可能会耗费额外的空间，但是可以加快读取效率，标准的空间换时间做法。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Part1</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">a</span> <span class="kt">bool</span>
+	<span class="nx">b</span> <span class="kt">int32</span>
+	<span class="nx">c</span> <span class="kt">int8</span>
+	<span class="nx">d</span> <span class="kt">int64</span>
+	<span class="nx">e</span> <span class="kt">byte</span>
+<span class="p">}</span>
+<span class="c1">// 乍一看按每个类型所占字节数去算，算出来的内存占用是15个字节，但实际上是32字节
+</span></code></pre></td></tr></table>
+</div>
+</div><p>对齐规则：</p>
+<blockquote>
+<ul>
+<li>结构体的成员变量，第一个成员变量的偏移量为 0。往后的每个成员变量的对齐值必须为编译器默认对齐长度（<code>#pragma pack(n)</code>）或当前成员变量类型的长度（<code>unsafe.Sizeof</code>），取最小值作为当前类型的对齐值。其偏移量必须为对齐值的整数倍</li>
+<li>结构体本身，对齐值必须为编译器默认对齐长度（<code>#pragma pack(n)</code>）或结构体的所有成员变量类型中的最大长度，取最大数的最小整数倍作为对齐值</li>
+<li>结合以上两点，可得知若编译器默认对齐长度（<code>#pragma pack(n)</code>）超过结构体内成员变量的类型最大长度时，默认对齐长度是没有任何意义的</li>
+</ul>
+</blockquote>
+<p>对齐过程：</p>
+<table>
+<thead>
+<tr>
+<th>成员变量</th>
+<th>类型</th>
+<th>偏移量</th>
+<th>自身占用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a</td>
+<td>bool</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>字节对齐</td>
+<td>无</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr>
+<td>b</td>
+<td>int32</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td>c</td>
+<td>int8</td>
+<td>8</td>
+<td>1</td>
+</tr>
+<tr>
+<td>字节对齐</td>
+<td>无</td>
+<td>9</td>
+<td>7</td>
+</tr>
+<tr>
+<td>d</td>
+<td>int64</td>
+<td>16</td>
+<td>8</td>
+</tr>
+<tr>
+<td>e</td>
+<td>byte</td>
+<td>24</td>
+<td>1</td>
+</tr>
+<tr>
+<td>字节对齐</td>
+<td>无</td>
+<td>25</td>
+<td>7</td>
+</tr>
+<tr>
+<td>总占用大小</td>
+<td>-</td>
+<td>-</td>
+<td>32</td>
+</tr>
+</tbody>
+</table>
+<p>内存布局：axxx|bbbb|cxxx|xxxx|dddd|dddd|e，之后要保证整个结构体进行字节对齐，发现它不是2^n，可得出最近一个数是32。</p>
+<p>对结构体内字段顺序进行调整后，可以发现算出来的大小会不一样</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Part2</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">e</span> <span class="kt">byte</span>
+	<span class="nx">c</span> <span class="kt">int8</span>
+	<span class="nx">a</span> <span class="kt">bool</span>
+	<span class="nx">b</span> <span class="kt">int32</span>
+	<span class="nx">d</span> <span class="kt">int64</span>
+<span class="p">}</span>
+<span class="c1">// 调整字段顺序后，算出来的大小是16，原因是整个结构体本身不需要额外对齐
+</span></code></pre></td></tr></table>
+</div>
+</div><table>
+<thead>
+<tr>
+<th>成员变量</th>
+<th>类型</th>
+<th>偏移量</th>
+<th>自身占用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>e</td>
+<td>byte</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>c</td>
+<td>int8</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>a</td>
+<td>bool</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>字节对齐</td>
+<td>无</td>
+<td>3</td>
+<td>1</td>
+</tr>
+<tr>
+<td>b</td>
+<td>int32</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td>d</td>
+<td>int64</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td>总占用大小</td>
+<td>-</td>
+<td>-</td>
+<td>16</td>
+</tr>
+</tbody>
+</table>
+<p>内存布局：ecax|bbbb|dddd|dddd</p>
+<h1 id="map">Map</h1>
 <h2 id="数据结构-1">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -418,18 +582,21 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="lnt">81
 </span><span class="lnt">82
 </span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">hmap</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">count</span>     <span class="kt">int</span>    <span class="c1">// 哈希表中元素的数量
-</span><span class="c1"></span>	<span class="nx">flags</span>     <span class="kt">uint8</span>  <span class="c1">// 记录map的状态, 1：可能有迭代器使用buckets，2：可能有迭代器使用oldbuckets，4：有协程正在向map中写入key，8：等量扩容
+</span><span class="c1"></span>    <span class="c1">// flags枚举：1: 可能有迭代器使用buckets，2: 可能有迭代器使用oldbuckets，4: 有协程正在向map中写入key，8:等量扩容
+</span><span class="c1"></span>    <span class="nx">flags</span>     <span class="kt">uint8</span>  <span class="c1">// 记录map的状态
 </span><span class="c1"></span>    <span class="nx">B</span>         <span class="kt">uint8</span>  <span class="c1">// buckets的数量，len(buckets) = 2^B
 </span><span class="c1"></span>	<span class="nx">noverflow</span> <span class="kt">uint16</span> <span class="c1">// 溢出的bucket的个数
 </span><span class="c1"></span>	<span class="nx">hash0</span>     <span class="kt">uint32</span> <span class="c1">// 哈希种子，为哈希函数的结果引入随机性。该值在创建哈希表时确定，在构造方法中传入
 </span><span class="c1"></span>
 	<span class="nx">buckets</span>    <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="c1">// 桶的地址，指向一个bmap数组，即指向很多个桶
 </span><span class="c1"></span>	<span class="nx">oldbuckets</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="c1">// 扩容时用于保存之前buckets的字段，大小是当前buckets的一半或0.75，非扩容状态下为null
-</span><span class="c1"></span>	<span class="nx">nevacuate</span>  <span class="kt">uintptr</span> <span class="c1">// 扩容迁移的进度，小于nevacuate的buckets表示已迁移完成，同时也表示下一个要迁移的桶在oldbuckets中的位置
+</span><span class="c1"></span>	<span class="nx">nevacuate</span>  <span class="kt">uintptr</span> <span class="c1">// 扩容迁移的进度，小于nevacuate的buckets表示已迁移完成，同时也用来计算下一个要迁移的桶在oldbuckets中的位置
 </span><span class="c1"></span>
 	<span class="nx">extra</span> <span class="o">*</span><span class="nx">mapextra</span> <span class="c1">// 用于扩容的指针，存储单个桶装满时溢出的数据，溢出桶和正常桶在内存上是连续的，该字段是为了优化GC扫描而设计的。
 </span><span class="c1"></span><span class="p">}</span>
@@ -448,8 +615,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 
 <span class="c1">// 即桶bucket的结构
 </span><span class="c1"></span><span class="kd">type</span> <span class="nx">bmap</span> <span class="kd">struct</span> <span class="p">{</span>
-    <span class="c1">// len为8的数组，即每个桶只能存8个键值对，包含此桶中每个key的哈希值的高8位，如果tophash[0] &lt; minTopHash，说明前minTopHash个以及被搬迁过
-</span><span class="c1"></span>    <span class="c1">// tophash的最低位代表桶的搬迁evacuation状态，0表示在X part，1表示在Y part。
+    <span class="c1">// 表示一个桶，实际上为len为8的数组，每个桶只能存8个键值对，包含此桶中每个key的哈希值的高8位
+</span><span class="c1"></span>    <span class="c1">// 如果tophash[0] &lt; minTopHash，说明前minTopHash个以及被搬迁过
+</span><span class="c1"></span>    <span class="c1">// tophash的最低位代表桶的搬迁evacuation状态，最低位0表示在X part，1表示在Y part。
 </span><span class="c1"></span>    <span class="nx">tophash</span> <span class="p">[</span><span class="nx">bucketCnt</span><span class="p">]</span><span class="kt">uint8</span> 
 <span class="p">}</span>
 
@@ -1177,11 +1345,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
         
             <a href="/tags/go/">Go</a>
         
-            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/">Go集合类原理</a>
-        
-            <a href="/tags/go%E5%8D%8F%E7%A8%8B/">Go协程</a>
-        
-            <a href="/tags/go-gc/">Go GC</a>
+            <a href="/tags/go-slice%E5%92%8Cmap%E5%8E%9F%E7%90%86/">Go slice和map原理</a>
         
     </section>
 
@@ -1418,6 +1582,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
             <li><a href="#扩容策略">扩容策略</a></li>
           </ol>
         </li>
+        <li><a href="#内存对齐">内存对齐</a></li>
       </ol>
     </li>
     <li><a href="#map">Map</a>
@@ -1461,10 +1626,6 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
         
             <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
                 主从架构
-            </a>
-        
-            <a href="/tags/go-gc/" class="font_size_2">
-                Go GC
             </a>
         
             <a href="/tags/javase/" class="font_size_2">
@@ -1511,6 +1672,14 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
                 Go channel原理
             </a>
         
+            <a href="/tags/go-gc/" class="font_size_1">
+                Go GC
+            </a>
+        
+            <a href="/tags/go-slice%E5%92%8Cmap%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Go slice和map原理
+            </a>
+        
             <a href="/tags/goroutine/" class="font_size_1">
                 Goroutine
             </a>
@@ -1519,16 +1688,8 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
                 Go内存模型
             </a>
         
-            <a href="/tags/go%E5%8D%8F%E7%A8%8B/" class="font_size_1">
-                Go协程
-            </a>
-        
             <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
                 Go并发
-            </a>
-        
-            <a href="/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
-                Go集合类原理
             </a>
         
             <a href="/tags/http/" class="font_size_1">
@@ -1657,6 +1818,10 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
         
             <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
                 分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
             </a>
         
     </div>

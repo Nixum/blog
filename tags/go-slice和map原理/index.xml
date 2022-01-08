@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Go集合类原理 on Nixum Blog</title>
-    <link>http://nixum.cc/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/</link>
-    <description>Recent content in Go集合类原理 on Nixum Blog</description>
+    <title>Go slice和map原理 on Nixum Blog</title>
+    <link>http://nixum.cc/tags/go-slice%E5%92%8Cmap%E5%8E%9F%E7%90%86/</link>
+    <description>Recent content in Go slice和map原理 on Nixum Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 07 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/go%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 07 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/go-slice%E5%92%8Cmap%E5%8E%9F%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Go SE</title>
-      <link>http://nixum.cc/p/go-se/</link>
+      <title>Go</title>
+      <link>http://nixum.cc/p/go/</link>
       <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
       
-      <guid>http://nixum.cc/p/go-se/</guid>
+      <guid>http://nixum.cc/p/go/</guid>
       <description>[TOC]
 以下基于go.1.14
 函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
