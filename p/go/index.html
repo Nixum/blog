@@ -610,7 +610,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="c1"></span>    <span class="c1">// 另一方面，当 GC 在扫描 hmap 时，通过 extra.overflow 这条路径（指针）就可以将 overflow 的 bucket 正常标记成黑色，从而不会被 GC 错误地回收。
 </span><span class="c1"></span>	<span class="nx">overflow</span>    <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含hmap.buckets的overflow的buckets
 </span><span class="c1"></span>	<span class="nx">oldoverflow</span> <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含扩容时的hmap.oldbuckets的overflow的bucket
-</span><span class="c1"></span>	<span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span>    <span class="c1">// 指向空闲的 overflow bucket 的指针
+</span><span class="c1"></span>	<span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span>    <span class="c1">// 指向空闲的 overflow bucket 的指针，用于预分配
 </span><span class="c1"></span><span class="p">}</span>
 
 <span class="c1">// 即桶bucket的结构
@@ -735,7 +735,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </li>
 </ul>
 <h2 id="创建初始化">创建初始化</h2>
-<p>通过<code>make(map[type]type)</code>，或者<code>make(map[type]type, hint), hint &lt;= 8</code>创建的map，底层会调用makemap_small函数，并直接从堆上进行分配。</p>
+<p>通过<code>make(map[type]type)</code>，或者<code>make(map[type]type, hint), hint &lt;= 8</code>创建的map，底层会调用makemap_small函数，并直接从堆上进行分配，此时只分配内存空间，不初始化桶，懒加载，只有在第一次插入时才会初始化桶，此时B=0，桶的数量为1。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -766,7 +766,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <li>
 <p>调用makeBucketArray()分配连续的空间，创建用于保存桶的数组</p>
 <p>当桶的数量小于2^4时，由于数据较少，哈希冲突的可能性较小，此时不会创建溢出桶。</p>
-<p>当桶的数量大于2^4时，就会额外创建2^(B-4)个溢出桶，溢出桶与普通桶在内存空间上是连续的。</p>
+<p>当桶的数量大于2^4时，就会额外创建2^(B-4)个溢出桶，溢出桶与普通桶在内存空间上是连续的，使用extra的nextOveflow来做溢出桶，预分配。</p>
 </li>
 </ol>
 <div class="highlight"><div class="chroma">
@@ -916,7 +916,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>确定使用buckets数组还是oldbuckets数组：判断oldbuckets数组中是否为空，不为空说明正处于扩容中，还没完成迁移，则重新计算桶的位置，并在oldbuckets数组找到对应的桶；如果为空，则在buckets数组中找到对应的桶。</p>
 </li>
 <li>
-<p>在桶中找tophash的位置：用key哈希计算得到的哈希值，取高8个bit位，计算得到此bucket桶中的tophash，即key在桶中的编号，之后在桶中的正常位遍历比较。</p>
+<p>在桶中找tophash的位置：用key哈希计算得到的哈希值，取高8个bit位 + minTopshash，计算得到此bucket桶中的tophash，即key在桶中的编号，之后在桶中的正常位遍历比较。</p>
 </li>
 <li>
 <p>每个桶是一整片连续的内存空间，先遍历bucket桶中的正常位，与桶中的tophash进行比较，当找到对应的tophash时，根据tophash进行计算得到key，根据key的大小计算得到value的地址，找到value。</p>
@@ -986,7 +986,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>先判断hmap是否为空，是否是并发写入，如果是直接抛错误；修改当前hamp的状态。</p>
 </li>
 <li>
-<p>根据key计算出哈希；还要就是判断bucket桶是否为空，为空则分配bmap数组。</p>
+<p>根据key计算出哈希；还要就是判断bucket桶是否为空，为空则分配bmap数组，。</p>
 </li>
 <li>
 <p>判断 hmap的oldbuckets是否为空，不为空说明当前处于扩容搬迁，则进行搬迁工作，完了再进行之后的流程。</p>
@@ -1268,7 +1268,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p><a class="link" href="https://github.com/Nixum/Java-Note/raw/master/source_with_note/go_map_evacuate.go"  target="_blank" rel="noopener"
     >evacuate函数</a></p>
 <h2 id="删除">删除</h2>
-<p>调用delete函数，无论要删除的key是否存在，delete都不会返回任何结果。删除实际上也是一个key的定位 + 删除的操作，定位到key后，将其键值对置空，hmap的count - 1，tophash置为empty。删除过程也会触发扩容迁移。</p>
+<p>调用delete函数，无论要删除的key是否存在，delete都不会返回任何结果。删除实际上也是一个key的定位 + 删除的操作，定位到key后，将其键值对置空，hmap的count - 1，tophash置为empty。删除过程也会检查是否处于扩容状态，如果是，则会触发搬迁。</p>
 <h2 id="遍历">遍历</h2>
 <p>对go中的map是无序的，每次遍历出来的顺序都是不一样的，go在每次遍历map时，并不是固定地从0号bucket桶开始遍历，每次都是从一个随机值序号的bucket桶开始遍历，并且是从这个bucket桶的一个随机序号的 正常位开始遍历。</p>
 <blockquote>
@@ -1658,6 +1658,10 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
                 索引
             </a>
         
+            <a href="/tags/context%E5%8E%9F%E7%90%86/" class="font_size_1">
+                context原理
+            </a>
+        
             <a href="/tags/docker/" class="font_size_1">
                 docker
             </a>
@@ -1824,10 +1828,6 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
         
             <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
                 分布式理论
-            </a>
-        
-            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
-                分布式相关
             </a>
         
     </div>

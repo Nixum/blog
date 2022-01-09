@@ -1617,7 +1617,20 @@ docker run --rm --name kubectl bitnami/kubectl:latest version
 
 启动时修改entrypoint
 docker run --rm -it --entrypoint env 镜像:tag /bin/bash
-</code></pre><h1 id="istio">Istio</h1>
+</code></pre><h1 id="servicemersh">ServiceMersh</h1>
+<p>优点：</p>
+<ol>
+<li>业务无需感知微服务组件，诸如限流、熔断、容错、降级、负载均衡等服务治理相关的中间件，这些功能全由ServiceMersh提供</li>
+<li>不限制开发语言和框架，提供多语言服务治理能力</li>
+<li>服务零成本升级，对服务无侵入，不会产生SDK依赖</li>
+<li>使得微服务体系统一管理和演进</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li>部署复杂，比如跨集群、跨机房等一些复杂环境覆盖不易</li>
+<li>每次网络请求会多一跳，带来一定的资源消耗和延时</li>
+</ol>
+<h1 id="istio">Istio</h1>
 <p>upstream：发出请求的流量</p>
 <p>downstream：接收请求的流量</p>
 <p>xDS：控制平面与数据平面通信的统一API标准，包括 LDS（监听器发现服务）、CDS（集群发现服务）、EDS（节点发现服务）、SDS（密钥发现服务）和 RDS（路由发现服务）</p>
@@ -2077,6 +2090,7 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
         <li><a href="#常用命令">常用命令</a></li>
       </ol>
     </li>
+    <li><a href="#servicemersh">ServiceMersh</a></li>
     <li><a href="#istio">Istio</a>
       <ol>
         <li><a href="#基本-1">基本</a></li>
@@ -2123,6 +2137,10 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
         
             <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
                 索引
+            </a>
+        
+            <a href="/tags/context%E5%8E%9F%E7%90%86/" class="font_size_1">
+                context原理
             </a>
         
             <a href="/tags/docker/" class="font_size_1">
@@ -2291,10 +2309,6 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
         
             <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
                 分布式理论
-            </a>
-        
-            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
-                分布式相关
             </a>
         
     </div>

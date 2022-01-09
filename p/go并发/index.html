@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en-us">
     <head><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='go内存模型、channel、并发包相关类的实现原理'><title>Go并发</title>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='go内存模型、context、channel、并发包相关类的实现原理'><title>Go并发</title>
 
 <link rel='canonical' href='http://nixum.cc/p/go%E5%B9%B6%E5%8F%91/'>
 
 <link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='Go并发'>
-<meta property='og:description' content='go内存模型、channel、并发包相关类的实现原理'>
+<meta property='og:description' content='go内存模型、context、channel、并发包相关类的实现原理'>
 <meta property='og:url' content='http://nixum.cc/p/go%E5%B9%B6%E5%8F%91/'>
 <meta property='og:site_name' content='Nixum Blog'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Go并发' /><meta property='article:tag' content='Go内存模型' /><meta property='article:tag' content='Go channel原理' /><meta property='article:published_time' content='2021-03-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-05-15T00:00:00&#43;00:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Go并发' /><meta property='article:tag' content='Go内存模型' /><meta property='article:tag' content='Go channel原理' /><meta property='article:tag' content='context原理' /><meta property='article:published_time' content='2021-03-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-05-15T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Go并发">
-<meta name="twitter:description" content="go内存模型、channel、并发包相关类的实现原理">
+<meta name="twitter:description" content="go内存模型、context、channel、并发包相关类的实现原理">
     <link rel="shortcut icon" href="img/favicon.ico" />
 
     </head>
@@ -89,7 +89,7 @@
 
     
     <h3 class="article-subtitle">
-        go内存模型、channel、并发包相关类的实现原理
+        go内存模型、context、channel、并发包相关类的实现原理
     </h3>
     
 
@@ -265,6 +265,7 @@
 </li>
 <li>此外还有Mutex / RWMutex、WaitGroup、Once、atomic</li>
 </ul>
+<h1 id="context">Context</h1>
 <h1 id="channel">Channel</h1>
 <p>Channel的设计基于CSP模型。</p>
 <p>CSP模型（Communicating Sequential Process，通信顺序进程），允许使用进程组来描述系统，独立运行，并且只通过消息传递的方式通信。</p>
@@ -1266,6 +1267,8 @@
         
             <a href="/tags/go-channel%E5%8E%9F%E7%90%86/">Go channel原理</a>
         
+            <a href="/tags/context%E5%8E%9F%E7%90%86/">context原理</a>
+        
     </section>
 
 
@@ -1494,6 +1497,7 @@
         <li><a href="#证heppen-before的手段">证heppen before的手段</a></li>
       </ol>
     </li>
+    <li><a href="#context">Context</a></li>
     <li><a href="#channel">Channel</a>
       <ol>
         <li><a href="#数据结构">数据结构</a></li>
@@ -1616,6 +1620,10 @@
         
             <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
                 索引
+            </a>
+        
+            <a href="/tags/context%E5%8E%9F%E7%90%86/" class="font_size_1">
+                context原理
             </a>
         
             <a href="/tags/docker/" class="font_size_1">
@@ -1784,10 +1792,6 @@
         
             <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
                 分布式理论
-            </a>
-        
-            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
-                分布式相关
             </a>
         
     </div>
