@@ -443,6 +443,10 @@ PROJECTION：限定返回字段时候stage的返回
 <li>可以创建部分索引，比如对id&gt;50的文档才会对id创建索引；对有值的字段才建索引，需要在创建索引时使用partialFilterExpression表达式</li>
 <li>创建索引时使用后台创建索引，{background: true}</li>
 </ul>
+<h1 id="引擎">引擎</h1>
+<h2 id="mmap">MMAP</h2>
+<h2 id="wiredtiger">wiredtiger</h2>
+<p>有空再补&hellip;</p>
 <h1 id="事务">事务</h1>
 <p>mongo是分布式数据库，通过部署多复制集来实现，单个MongoDB server不支持事务，至少需要一主一从两个。</p>
 <p>4.0版本支持复制集多文档事务，4.2版本支持分片事务，但其实3.2版本有支持单文档原子操作了，主要是用在单文档嵌套更新上，默认自动的，MongoDB中文档 = 行记录。</p>
@@ -852,6 +856,12 @@ PROJECTION：限定返回字段时候stage的返回
       <ol>
         <li><a href="#原理">原理</a></li>
         <li><a href="#调优">调优</a></li>
+      </ol>
+    </li>
+    <li><a href="#引擎">引擎</a>
+      <ol>
+        <li><a href="#mmap">MMAP</a></li>
+        <li><a href="#wiredtiger">wiredtiger</a></li>
       </ol>
     </li>
     <li><a href="#事务">事务</a>
