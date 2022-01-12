@@ -431,9 +431,18 @@
 <h1 id="线程池">线程池</h1>
 <p>为了解决无限创建线程产生的问题，采用线程池来管理，减少在创建和销毁线程上所消耗的时间以及系统资源的开销，解决资源不足的问题。如果不使用线程池，有可能造成系统创建大量同类线程而导致消耗完内存或者“过度切换”的问题</p>
 <p><strong>线程池 Executors静态类</strong>，工厂方法生成以下线程池</p>
-<p>​	newCachedThreadPool：核心数是0，最大数是Integer.MAX_VALUE，使用SynchronousQueue，不存储任务。对于每个任务，如果有空闲线程可用，立即让他执行任务，如果没有可用得空闲线程，则创建新线程，空闲线程超时设置是1分钟，线程池可无限扩展。容易造成堆外内存溢出，一般用于大量短期任务</p>
-<p>​	newFixedThreadPool：构建有固定大小的线程池，使用LinkedBlockingQueue。如果提交的任务数多于核心线程数，则把任务放到队列中，等其他任务完成后再运行他，创建的线程不会超时</p>
-<p>​	newSingleThreadExecutor：大小为 1 的线程池，使用LinkedBlockingQueue，每次只有一个线程执行任务，从阻塞队列中取任务一个接一个执行</p>
+<h2 id="线程池的分类">线程池的分类</h2>
+<ul>
+<li>
+<p>newCachedThreadPool：核心数是0，最大数是Integer.MAX_VALUE，使用SynchronousQueue，不存储任务。对于每个任务，如果有空闲线程可用，立即让他执行任务，如果没有可用得空闲线程，则创建新线程，空闲线程超时设置是1分钟，线程池可无限扩展。容易造成堆外内存溢出，一般用于大量短期任务</p>
+</li>
+<li>
+<p>newFixedThreadPool：构建有固定大小的线程池，使用LinkedBlockingQueue。如果提交的任务数多于核心线程数，则把任务放到队列中，等其他任务完成后再运行他，创建的线程不会超时</p>
+</li>
+<li>
+<p>newSingleThreadExecutor：大小为 1 的线程池，使用LinkedBlockingQueue，每次只有一个线程执行任务，从阻塞队列中取任务一个接一个执行</p>
+</li>
+</ul>
 <p>这三个静态方法 返回实现了ExecutorService接口的ThreadPoolExecutor类的对象</p>
 <p>使用方式：</p>
 <div class="highlight"><div class="chroma">
@@ -450,7 +459,8 @@
 </span><span class="c1"></span><span class="n">threadPool</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>在阿里巴巴开发手册中不提倡使用Executors创建，而是通过 ThreadPoolExecutor的方式去定制线程池，从而明确线程池的参数</p>
+</div><h2 id="基础">基础</h2>
+<p>在阿里巴巴开发手册中不提倡使用Executors创建，而是通过 ThreadPoolExecutor的方式去定制线程池，从而明确线程池的参数</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -1089,6 +1099,8 @@ TERMINATED：terminated()方法执行过后变成这个
     <li><a href="#一些锁的概念">一些锁的概念</a></li>
     <li><a href="#线程池">线程池</a>
       <ol>
+        <li><a href="#线程池的分类">线程池的分类</a></li>
+        <li><a href="#基础">基础</a></li>
         <li><a href="#线程池处理过程">线程池处理过程</a></li>
         <li><a href="#对线程池复用的简单理解">对线程池复用的简单理解</a></li>
         <li><a href="#线程池是如何做到当线程数量大于corepoolsize-多余的空闲线程在等待keepalivetime之后被回收">线程池是如何做到当线程数量大于corePoolSize ，多余的空闲线程在等待keepAliveTime之后被回收</a></li>

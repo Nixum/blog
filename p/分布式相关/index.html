@@ -242,7 +242,7 @@
 <p>2PC是<strong>强一致性</strong>的，保证原子性和隔离性。在执行阶段，节点是处于阻塞状态，直到commit阶段完成，本地事务才会释放资源，因此性能不佳，一般用在强一致性、并发量不大的场景。</p>
 <h3 id="正常情况下">正常情况下</h3>
 <p><strong>prepare阶段</strong>：协调者向参与者A、B发送请求执行操作，参与者A、B开启事务，执行操作，但不commit，操作完成后，告诉协调者已经完成。</p>
-<p>**commit阶段：**协调者收到参与者的完成响应，向参与者A、B发送commit请求，参与者A、B收到commit请求后，提交事务，完成操作；如果收到执行失败的响应，则发送回滚请求给参与者A、B，执行回滚。</p>
+<p><strong>commit阶段</strong>：协调者收到参与者的完成响应，向参与者A、B发送commit请求，参与者A、B收到commit请求后，提交事务，完成操作；如果收到执行失败的响应，则发送回滚请求给参与者A、B，执行回滚。</p>
 <h3 id="异常情况下">异常情况下</h3>
 <p>在协调者等待参与者的完成响应时，协调者或参与者可能宕机，最终会导致数据不一致或阻塞，例如</p>
 <ul>
@@ -255,20 +255,20 @@
 <p><strong>解决方法</strong>：协调者或者参与者进行重试，或者把参与者标记为问题节点移除集群</p>
 </li>
 <li>
-<p>**场景：**当处于prepare阶段和commit阶段之间时，协调者挂掉或重启，会导致协调者收不到参与者的响应，此时协调者就不清楚接下来的commit要发送什么请求过去，或者就不发请求过去了，导致参与者一直阻塞</p>
-<p>**解决办法：**协调者维护一份事务日志，以方便宕机重启后恢复原来的状态，但无法为参与者设置超时自动操作，因为它并不知道commit阶段自己要进行commit还是回滚</p>
+<p><strong>场景</strong>：当处于prepare阶段和commit阶段之间时，协调者挂掉或重启，会导致协调者收不到参与者的响应，此时协调者就不清楚接下来的commit要发送什么请求过去，或者就不发请求过去了，导致参与者一直阻塞</p>
+<p><strong>解决办法</strong>：协调者维护一份事务日志，以方便宕机重启后恢复原来的状态，但无法为参与者设置超时自动操作，因为它并不知道commit阶段自己要进行commit还是回滚</p>
 </li>
 <li>
-<p>**场景：**当处于prepare阶段和commit阶段之间时，参与者挂掉后，接收不到协调者的请求，不知道接下来要执行commit还是回滚，协调者也无法在参与者挂掉后进行回滚操作</p>
-<p>**解决办法：**3pc</p>
+<p><strong>场景</strong>：当处于prepare阶段和commit阶段之间时，参与者挂掉后，接收不到协调者的请求，不知道接下来要执行commit还是回滚，协调者也无法在参与者挂掉后进行回滚操作</p>
+<p><strong>解决办法</strong>：3pc</p>
 </li>
 </ul>
 <h2 id="二3pc">二、3PC</h2>
 <p>3pc实际上就是将commit阶段拆成两步，preCommit相当于一次保险阶段，作用类似于2pc的二阶段，但是它不是正真的提交</p>
 <h3 id="正常情况下-1">正常情况下</h3>
-<p>**canCommit阶段：**协调者向参与者发送请求，参与者开启事务执行操作，成功完成后响应Yes，否则响应No。</p>
-<p>**preCommit阶段：**协调者收到所有参与者的Yes响应，发送操作请求给所有参与者，告诉所有参与者进行预提交状态。如果参与者能收到PreCommit请求，意味着它知道大家都同意提交了，即使不commit阶段丢失，参与者也可以在超时之后进行事务提交。</p>
-<p>**commit阶段：**协调者收到所有参与者的应答响应，向所有参与者发送commit请求，参与者收到后提交事务。</p>
+<p><strong>canCommit阶段</strong>：协调者向参与者发送请求，参与者开启事务执行操作，成功完成后响应Yes，否则响应No。</p>
+<p><strong>preCommit阶段</strong>：协调者收到所有参与者的Yes响应，发送操作请求给所有参与者，告诉所有参与者进行预提交状态。如果参与者能收到PreCommit请求，意味着它知道大家都同意提交了，即使不commit阶段丢失，参与者也可以在超时之后进行事务提交。</p>
+<p><strong>commit阶段</strong>：协调者收到所有参与者的应答响应，向所有参与者发送commit请求，参与者收到后提交事务。</p>
 <h3 id="异常情况下-1">异常情况下</h3>
 <p>如果在preCommit阶段到commit阶段之间，协调者挂了，参与者会在超时后进行事务提交</p>
 <h2 id="三tcc">三、TCC</h2>
@@ -280,11 +280,11 @@
 <p>比如，在订单创建并减库存的场景中，</p>
 <p>Try阶段：订单创建时发出订单创建的事件，此时订单状态是创建中，库存服务接收到后，并不是直接减库存，而是先冻结库存，将要扣减的库存数冻结起来，订单创建完成；</p>
 <p>Confirm阶段：订单支付完成后，发出订单支付完成的事件，库存服务接收到后，才是真正的减库存</p>
-<p>[](<a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/TCC"  target="_blank" rel="noopener"
-    >https://github.com/Nixum/Java-Note/raw/master/picture/TCC</a> Try-Confirm流程.png)</p>
+<p><a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Confirm%e6%b5%81%e7%a8%8b.png"  target="_blank" rel="noopener"
+    ></a></p>
 <p>Cancel阶段：如果在Try阶段出错，则对已执行Try请求的服务执行回滚，对库存进行回滚</p>
-<p>[](<a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/TCC"  target="_blank" rel="noopener"
-    >https://github.com/Nixum/Java-Note/raw/master/picture/TCC</a> Try-Cancel流程.png)</p>
+<p><a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Cancel%e6%b5%81%e7%a8%8b.png"  target="_blank" rel="noopener"
+    ></a></p>
 <h2 id="四本地消息表">四、本地消息表</h2>
 <p>适合解决分布式最终一致性问题。</p>
 <h3 id="正常情况下-2">正常情况下</h3>

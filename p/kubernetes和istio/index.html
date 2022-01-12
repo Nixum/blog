@@ -900,7 +900,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <ul>
 <li>
 <p>PVC（Persistent Volume Claim）：定义持久化卷的声明，作用类似于接口，开发人员直接使用而不用知道其具体实现，比如定义了数据库的用户名和密码之类的属性。</p>
-<p>PVC的命名方式：&lt;PVC名字&gt;-&lt;StatefulSet名字&gt;-&lt;编号&gt;，StatefulSet创建出来的所有Pod都会使用此PVC，Kubernetes通过Dynamic Provisioning的方式为该PVC匹配对应的PV。</p>
+<p>PVC的命名方式：<code>&lt;PVC名字&gt;-&lt;StatefulSet名字&gt;-&lt;编号&gt;</code>，StatefulSet创建出来的所有Pod都会使用此PVC，Kubernetes通过Dynamic Provisioning的方式为该PVC匹配对应的PV。</p>
 </li>
 <li>
 <p>PV（Persistent Volume）：持久化卷的具体实现，即定义了持久化数据的相关属性，如数据库类型、用户名密码。</p>
@@ -999,7 +999,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">          </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l">10Gi</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
-</div><h2 id="控制器模型">控制器模型</h2>
+</div><p>注意点：一般来说，一个卷只允许被挂在一个pod上，如果静态分配的PV，虽然也可以设置PVC和PV，但是pod的复制集只能有一个，且需要设置更新策略为recreate，保证只有一个pod使用该pv，否则会有写冲突；一般每个pod挂的是不同的卷。</p>
+<h2 id="控制器模型">控制器模型</h2>
 <p>常见的控制器有Deployment、Job、CronbJob、ReplicaSet、StatefulSet、DaemonSet等</p>
 <h3 id="原理-2">原理</h3>
 <p>控制循环：在一个无限循环内不断的轮询集群中的对象，将其状态与期望的状态做对比后，对该对象采取相应的操作。实际状态来自集群本身，如Kubelet汇报的容器状态、节点状态，监控系统的监控数据；期望状态来自用户提交的yaml文件；对象X指的是Pod或是其他受控制器控制的对象。</p>
@@ -1190,25 +1191,25 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <li>Service：.. svc.cluster.local，对应的是所有被代理的Pod的IP地址的集合</li>
 <li>Pod：.. svc.cluster.local，对应Pod的IP</li>
 </ul>
-<h3 id="如何被集群外部访问">如何被集群外部访问</h3>
+<h3 id="service的几种设置">Service的几种设置</h3>
 <p>Service的本质是通过kube-proxy在宿主机上设置iptables规则、DNS映射，工作在第四层传输层。</p>
 <ul>
 <li>
-<p>Service设置type=NodePort，暴露virtual IP，访问这个virtual IP的时候，会将请求转发到对应的Pod，默认下nodePort会使用主机的端口范围：30000 - 32767。</p>
+<p>type=NodePort，暴露virtual IP，访问这个virtual IP的时候，会将请求转发到对应的Pod，默认下nodePort会使用主机的端口范围：30000 - 32767。</p>
 <p>在这里，请求可能会经过SNAT操作，因为当client通过node2的地址访问一个Service，node2可能会负载均衡将请求转发给node1，node1处理完，经过SNAT，将响应返回给node2，再由node2响应回client，保证了client请求node2后得到的响应也是node2的，此时Pod只知道请求的来源，并不知道真正的发起方；</p>
 <p>如果Service设置了spec.extrnalTrafficPolicy=local，Pod接收到请求，可以知道真正的外部发起方是谁了。</p>
 </li>
 <li>
-<p>Service设置type=LoadBalancer，设置一个外部均衡服务，这个一般由公有云提供，比如aws，阿里云的LB服务。</p>
+<p>type=LoadBalancer，设置一个外部均衡服务，这个一般由公有云提供，比如aws的NLB，阿里云的LB服务，此时会有ExternalIP，执行LB的域名。</p>
 </li>
 <li>
-<p>Service设置type=ExternalName，并设置externalName的值，这样就可以通过externalName访问，Service会暴露DNS记录，通过访问这个DNS，解析得到DNS对应的VIP，通过VIP再转发到对应的Pod；此时也不会产生EndPoints、clusterIP。</p>
+<p>type=ExternalName，并设置externalName的值，此时不会产生EndPoints、clusterIP，作用是为这个externalName设置了CName。主要用于集群内的Pod访问集群外的服务，比如ExternalName设置为www.google.com，此时pod可以直接通过<code> [svc名称].[namespace名称].svc.cluster.local</code>即可访问www.google.com</p>
 </li>
 <li>
-<p>Service设置externalIPs的值，这样也能通过该ip进行访问。</p>
+<p>设置externalIPs的值，这样也能通过该ip进行访问，前提是该IP对公网暴露，比如aws的弹性ip。</p>
 </li>
 <li>
-<p>可以直接通过port forward的方式，将Pod端口转发到执行命令的那台机器上，通过端口映射提供访问，而不需要Service。</p>
+<p>通过port forward的方式，将Pod端口转发到执行命令的那台机器上，通过端口映射提供访问，而不需要Service。</p>
 </li>
 </ul>
 <p>检查网络是否有问题，一般先检查Master节点的Service DNS是否正常、kube-dns(coreDns)的运行状态和日志；</p>
@@ -1618,6 +1619,8 @@ docker run --rm --name kubectl bitnami/kubectl:latest version
 启动时修改entrypoint
 docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 </code></pre><h1 id="servicemersh">ServiceMersh</h1>
+<h2 id="基本-1">基本</h2>
+<p>Service Mesh本质上是分布式的微服务<strong>网络控制的代理</strong>，以side car的方式实现：通过envoy+iptable对流量进行劫持，通过对流量的控制，实现诸如注册中心、负载均衡器、路由策略、熔断降级、限流、服务追踪等功能，而不需要耦合在具体的业务服务中，而Istio是其中一种实现。</p>
 <p>优点：</p>
 <ol>
 <li>业务无需感知微服务组件，诸如限流、熔断、容错、降级、负载均衡等服务治理相关的中间件，这些功能全由ServiceMersh提供</li>
@@ -1631,14 +1634,25 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 <li>每次网络请求会多一跳，带来一定的资源消耗和延时</li>
 </ol>
 <h1 id="istio">Istio</h1>
-<p>upstream：发出请求的流量</p>
-<p>downstream：接收请求的流量</p>
+<p>upstream和downstream是针对Envoy而言的，</p>
+<p>upstream：Envoy发送请求给服务，发出的流量是upstream</p>
+<p>downstream：发送请求给Envoy，Envoy接收的流量是downstream</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/envoy%e6%b5%81%e9%87%8f%e6%a8%a1%e5%9e%8b.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/envoy%e6%b5%81%e9%87%8f%e6%a8%a1%e5%9e%8b.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
 <p>xDS：控制平面与数据平面通信的统一API标准，包括 LDS（监听器发现服务）、CDS（集群发现服务）、EDS（节点发现服务）、SDS（密钥发现服务）和 RDS（路由发现服务）</p>
-<h2 id="基本-1">基本</h2>
-<p>Service Mesh本质上是分布式的微服务<strong>网络控制的代理</strong>，以side car的方式实现：通过envoy+iptable对流量进行劫持，通过对流量的控制，实现诸如注册中心、负载均衡器、路由策略、熔断降级、限流、服务追踪等功能，而不需要耦合在具体的业务服务中，而Istio是其中一种实现。</p>
 <p>Istio核心功能：</p>
 <ul>
-<li>流量控制：路由（如灰度发布、蓝绿部署、AB测试）、流量转移、弹性（如超时重试、熔断）测试（如故障注入、流量镜像，模拟生产环境的流量进行测试），</li>
+<li>流量控制：路由（如灰度发布、蓝绿部署、AB测试）、流量转移、弹性（如超时重试、熔断）测试（如故障注入、流量镜像，模拟生产环境的流量进行测试）</li>
 <li>安全：认证、授权</li>
 <li>可观察：指标、日志、追踪</li>
 <li>策略：限流、黑白名单</li>
@@ -2068,7 +2082,7 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
         <li><a href="#service">Service</a>
           <ol>
             <li><a href="#关于headless">关于Headless</a></li>
-            <li><a href="#如何被集群外部访问">如何被集群外部访问</a></li>
+            <li><a href="#service的几种设置">Service的几种设置</a></li>
           </ol>
         </li>
         <li><a href="#ingress">Ingress</a>
@@ -2090,10 +2104,13 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
         <li><a href="#常用命令">常用命令</a></li>
       </ol>
     </li>
-    <li><a href="#servicemersh">ServiceMersh</a></li>
-    <li><a href="#istio">Istio</a>
+    <li><a href="#servicemersh">ServiceMersh</a>
       <ol>
         <li><a href="#基本-1">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#istio">Istio</a>
+      <ol>
         <li><a href="#自动注入实现">自动注入实现</a></li>
         <li><a href="#核心crd">核心CRD</a></li>
         <li><a href="#应用场景">应用场景</a></li>
