@@ -445,8 +445,14 @@ PROJECTION：限定返回字段时候stage的返回
 </ul>
 <h1 id="引擎">引擎</h1>
 <h2 id="mmap">MMAP</h2>
-<h2 id="wiredtiger">wiredtiger</h2>
-<p>有空再补&hellip;</p>
+<h2 id="wiredtiger">WiredTiger</h2>
+<ul>
+<li>采用插件式的存储引擎架构，既支持B树，也支持LSM树索引，默认配置使用B树；</li>
+<li>设计了一个能充分利用CPU并行计算的内存模型的无锁并行框架，使其在多核CPU上表现优异；</li>
+<li>实现了一套基于BLOCK/Extent的磁盘访问算法，使其在数据压缩和磁盘IO上表现优异；</li>
+<li>实现基于snapshot的ACID事务，简化事务模型，摈弃传统事务锁隔离又能同时保证ACID；</li>
+<li>实现了一种基于Hazard Pointer的LRU cache模型，充分利用内存容量的同时又能拥有很高的事务读写并发；</li>
+</ul>
 <h1 id="事务">事务</h1>
 <p>mongo是分布式数据库，通过部署多复制集来实现，单个MongoDB server不支持事务，至少需要一主一从两个。</p>
 <p>4.0版本支持复制集多文档事务，4.2版本支持分片事务，但其实3.2版本有支持单文档原子操作了，主要是用在单文档嵌套更新上，默认自动的，MongoDB中文档 = 行记录。</p>
@@ -861,7 +867,7 @@ PROJECTION：限定返回字段时候stage的返回
     <li><a href="#引擎">引擎</a>
       <ol>
         <li><a href="#mmap">MMAP</a></li>
-        <li><a href="#wiredtiger">wiredtiger</a></li>
+        <li><a href="#wiredtiger">WiredTiger</a></li>
       </ol>
     </li>
     <li><a href="#事务">事务</a>
