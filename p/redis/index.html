@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    3 minute read
+                    4 minute read
                 </time>
             </div>
         
@@ -134,6 +134,64 @@
     <p>[TOC]</p>
 <h1 id="数据类型及结构">数据类型及结构</h1>
 <h2 id="数据类型">数据类型</h2>
+<p>Redis所有类型有一个顶层的数据结构叫RedisObject，这个RedisObject底层对应着具体对象类型和其编码方式。</p>
+<p>之所以有RedisObject对象，是因为每种不同的数据类型有不同的编码方式和结构，Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，还需要根据数据类型的不同编码进行多态处理。</p>
+<p>比如：SADD命令只能用于Set，LPUSH命令只能用于List，而DEL、TTL又能用于所有键，要正确实现这些命令，就需要为不同类型的键设置不同的处理方式；另外，同一种数据类型可能由不同的数据结构实现，比如List，底层可能是压缩列表或者双向链表，因此还需要知道数据类型的编码方式。</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.jpg" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.jpg"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">redisObject</span> <span class="p">{</span>
+    <span class="c1">// 类型，如String、List
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="nl">type</span><span class="p">:</span><span class="mi">4</span><span class="p">;</span>
+    <span class="c1">// 编码方式：SDS、压缩列表
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="nl">encoding</span><span class="p">:</span><span class="mi">4</span><span class="p">;</span>
+    <span class="c1">// LRU - 24位, 记录最后一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="nl">lru</span><span class="p">:</span><span class="n">LRU_BITS</span><span class="p">;</span> <span class="c1">// LRU_BITS: 24
+</span><span class="c1"></span>    <span class="c1">// 引用计数，新创建对象时值为1，当对该对象进行共享时值+1，使用完一个对象后值-1，=0时被GC回收
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">refcount</span><span class="p">;</span>
+    <span class="c1">// 指向底层数据结构实例，具体的实例，由type和encoding决定
+</span><span class="c1"></span>    <span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+
+<span class="p">}</span> <span class="n">robj</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p><strong>当执行一个处理数据类型命令的时候，redis执行以下步骤</strong></p>
+<ol>
+<li>根据给定的key，在数据库字典中查找和他相对应的redisObject，如果没找到，就返回NULL；</li>
+<li>检查redisObject的type属性和执行命令所需的类型是否相符，如果不相符，返回类型错误；</li>
+<li>根据redisObject的encoding属性所指定的编码，选择合适的操作函数来处理底层的数据结构；</li>
+<li>返回数据结构的操作结果作为命令的返回值</li>
+</ol>
+</blockquote>
+<p>Redis本身还会预分配一些值对象，比如响应结果OK、ERROR，还有包括0在内，所有小于REDIS_SHARED_INTEGERS（默认值是10k）的所有整数，共享对象只能被字典或双向链表这类带有指针的数据结果使用。</p>
+<p>具体的分为5种基本类型和3种特殊类型</p>
 <p>String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet</p>
 <p>String类型下还有一种扩展类型：Bitmap。原理：String类型会保存二进制字节数组，对于这个字节数组的每个bit来表示一个元素的二值状态。</p>
 <p>此外还有扩展类型：HyperLogLog、Geo</p>
@@ -145,6 +203,8 @@
 <li>Set：数组（带有编码类型字段，所以元素可以使用整型表示，少于默认的512个时使用）+ 哈希表（key为set中的元素，value为null，其他情况使用）</li>
 <li>ZSet：压缩列表（元素小于128个，且所有元素的长度小于64字节时使用） + 跳表 （其他情况使用）</li>
 </ul>
+<p>参考：<a class="link" href="https://www.pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html"  target="_blank" rel="noopener"
+    >Redis底层数据结构详解</a></p>
 <h3 id="简单动态字符串sds">简单动态字符串(SDS)</h3>
 <p>Redis的String类型底层有两种保存形式，当保存的是64位有符号整数时，String类型会保存为一个9字节的Long类型整数；当保存的数据包含字符时，String类型就会用简单动态字符串SDS。</p>
 <p>简单动态字符串SDS由三个部分组成：</p>
@@ -160,8 +220,8 @@
 <li>当保存的是字符串时，如果字符串&lt;=44字节，RedisObject中元数据，指针和SDS是一块连续的内存区域，避免内存碎片</li>
 <li>当保存的是字符串时，如果字符串&gt;44字节，RedisObject会给SDS分配独立的空间，并用指针指向SDS</li>
 </ul>
-<p>![Redis String RedisObject: 来自极客时间Redis核心技术与实战](<a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/Redis"  target="_blank" rel="noopener"
-    >https://github.com/Nixum/Java-Note/raw/master/picture/Redis</a> String RedisObject.png)</p>
+<p>![Redis String RedisObject: 来自极客时间Redis核心技术与实战](<a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String"  target="_blank" rel="noopener"
+    >https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String</a> RedisObject.png)</p>
 <p>当使用String类型时，且value的类型是String时，如果value的长度太小，可能会出现元数据的大小比数据本身的大小还大，造成额外的内存开销。如果能替换成Long类型，实际存储的大小会大大降低。</p>
 <h3 id="哈希表">哈希表</h3>
 <p>但无论值是什么类型的，所有的键值对会保存在<strong>全局哈希表</strong>中，便于快速找到对应的Key，哈希桶只会保存键值对的指针。全局哈希表中的桶每个元素entry由三个8字节指针组成，分别为key、value、next，但实际会占32字节，因为内存分配库jemalloc会分配最接近24的2的幂次数，所以是32，以减少频繁的分配次数。</p>
@@ -333,15 +393,23 @@
 <p>save，主线程创建快照写入磁盘，会阻塞其他命令请求</p>
 <p>redis.conf配置里，save [时间] [次数] 表示在[时间]内有[次数]写入，就会触发bgsave命令</p>
 <p>另外，在进行主从复制，主redis发生sync命令给从redis时，如果刚刚没有执行完bgsave，也会进行一次bgsave操作。</p>
+<h3 id="优点">优点</h3>
+<ul>
+<li>RDB文件是某个时间节点的快照，默认使用LZF算法进行压缩，压缩后的文件体积远远小于内存大小，适用于备份、全量复制等场景；</li>
+<li>Redis加载RDB文件恢复数据要远远快于AOF方式；</li>
+</ul>
 <h3 id="潜在风险">潜在风险</h3>
 <ul>
 <li>风险在于快照的创建频率，如果频繁创建快照，多快照写盘会影响磁盘IO，因此每次都进行全量快照并不可取。</li>
 <li><strong>如果频率过低，则会导致宕机时丢失的数据过多。解决方式是RDB + AOF一起使用，在两次快照期间用AOF代替。</strong></li>
 <li>当使用copy on write机制时，主线程会为其申请额外的空间，当进行频繁的写操作时，会导致内存很快被耗光。当实例系统开启了Swap机制时，超过内存使用量部分会转移到磁盘，访问磁盘的那部分就会很慢，如果没有开启Swap机制，则会触发OOM，Redis进程可能被kill或宕机</li>
 <li>另外，当出现频繁的写操作时，由于生成RDB的子进程需要CPU核运行，主线程、多个线程或后台进程会竞争使用CPU，导致性能降低。</li>
+<li>实时性不够，无法做到秒级别的持久化；</li>
+<li>RDB文件是二进制，没有可读性，而AOF文件可以在了解其结构后手动修改或补全；</li>
+<li>版本兼容RDB文件问题</li>
 </ul>
 <h2 id="aofappend-only-file">AOF（Append Only File）</h2>
-<h2 id="aof配置项">AOF配置项</h2>
+<h3 id="aof配置项">AOF配置项</h3>
 <ul>
 <li>
 <p>no：每次命令只写内存(日志缓冲区)，刷盘记日志的操作由操作系统决定</p>
@@ -392,9 +460,9 @@
 <p>主服务器每执行一次写命令，就向从服务器发送相同的写命令</p>
 </li>
 </ol>
-<p>一般只设置一个主节点，当负载上升时，主服务器可能无法很快地更新所有从服务器，或者重新连接和重新同步从服务器将导致系统超载。</p>
-<p>解决办法：通过主从级联模式解决，可以设置主节点为根节点，向下延申，从节点再设置从节点的方式，形成树状的主从链，让从节点帮忙同步给其子节点的方式，降低主节点的压力。</p>
-<p>同样使用命令slaveof或replicaof，只是ip换成从库的ip，这样就形成了主-从-从的模式了</p>
+<p>一般只设置一个主节点，当负载上升时，主服务器可能无法很快地更新所有从服务器，或者重新连接和重新同步从服务器将导致系统超载。因为在一次主从数据同步过程中，主库有两个耗时的操作：生成RDB文件和传输RDB文件，如果从库数量过多，会导致主库忙于fork子进程生成RDB文件进行全量复制，导致阻塞主线程的正常请求，同时传输的带宽也带来了压力</p>
+<p><strong>解决办法</strong>：通过主从级联模式解决，可以设置主节点为根节点，向下延申，从节点再设置从节点的方式，形成树状的主从链，让从节点帮忙同步给其子节点的方式，降低主节点的压力。</p>
+<p>同样使用命令slaveof或replicaof，只是ip换成从库的ip，这样就形成了主-从-从的模式了。</p>
 <h2 id="主从库命令传播时网络中断">主从库命令传播时网络中断</h2>
 <p>Redis2.8之前，如果主从库发生网络中断，重写连接时会进行全量复制，开销巨大。</p>
 <p>2.8之后，会使用增量复制。断连期间，主库会把收到的写命令写入缓冲区(replication buffer和repl_backlog_buffer)。repl_backlog_buffer是一个环形缓冲区，主库会记录自己写到的偏移量(master_repl_offset)，从库会记录自己读到的偏移量(slave_repl_offset)。</p>
@@ -461,7 +529,17 @@
 	<figcaption>Redis哨兵下线主库和Leader选举</figcaption>
 	
 </figure></p>
-<h1 id="高可扩展集群">高可扩展集群</h1>
+<h2 id="几个注意点">几个注意点</h2>
+<ul>
+<li>
+<p>主从复制设置时，最好在主节点上开启持久化，否则可能会导致从节点的数据被清空</p>
+<p>当主节点关闭持久化后，从节点开始从主节点复制数据，如果此时主节点挂了，因为关闭了持久化，且重启速度比较快，哨兵节点没有发现，拿重启后主节点数据为空，当从节点在进行数据复制时发现主节点是空的，从节点上的数据也会被删除。</p>
+</li>
+<li>
+<p>Redis支持无磁盘复制，当使用低转速的磁盘时，可能会影响复制性能，当启动无磁盘复制时，主节点子进程直接将RDB通过网络发送给从节点，不使用磁盘。</p>
+</li>
+</ul>
+<h1 id="高可用扩展集群">高可用扩展集群</h1>
 <p>一般一个Redis保存几个G内比较合适，<strong>当单个Redis实例要保存的键值对太多时，会影响Redis的主从复制、RDB快照和AOF日志的大小、影响从库重放速度、fork子进程的速度(太慢会导致阻塞主线程)</strong>，因此需要进行对单Redis实例扩展，常见的方式是对单个Redis实例进行扩展，一般分为纵向扩展和横向扩展。</p>
 <h2 id="扩展">扩展</h2>
 <ul>
@@ -496,10 +574,14 @@
 <p>一般的分配规模是几十个以内，不适合构建超大规模的集群，原因是去中心化设计，选举算法使用Gossip，规模越大时，插播速度越慢。如果要构建超大规模的集群，则需要增加一层代理，进行集群间的转发，例如twemproxy或者Codis这类基于代理的集群架构。</p>
 <h1 id="事务">事务</h1>
 <p>使用 MULTI 和 EXEC 命令将多个写操作包围起来进行发送，Redis收到后会先将命令暂存到一个队列里，当收到EXEC命令时才会一起顺序执行。</p>
+<blockquote>
+<p>如果客户端发送的命令为 EXEC 、 DISCARD 、 WATCH 、 MULTI 四个命令的其中一个， 那么服务器立即执行这个命令。</p>
+<p>与此相反， 如果客户端发送的命令是 EXEC 、 DISCARD 、 WATCH 、 MULTI 四个命令以外的其他命令， 那么服务器并不立即执行这个命令， 而是将这个命令放入一个事务队列里面， 然后向客户端返回 QUEUED 回复</p>
+</blockquote>
 <h2 id="redis中的原子性">Redis中的原子性</h2>
 <ul>
 <li>更多的是为了减少客户端与服务端的通信次数。Redis本身不提供回滚机制，如果一次性传输多个命令时，当有一个命令执行失败了，剩下的命令还是会继续往下执行，无法实现事务的原子性。</li>
-<li>如果命令本身有错，只有到了EXEC命令时才会保错，整个MULTI期间的命令都不会执行，此时才保证了原子性。</li>
+<li>如果命令本身有错，只有到了EXEC命令时才会报错，整个MULTI期间的命令都不会执行，此时才保证了原子性。</li>
 <li>RDB不会在事务执行的时候执行，所以可以保证原子性。</li>
 <li>事务执行过程中的命令，AOF日志则会记录，所以如果事务执行过程中宕机了，重启前需要使用redis-check-aof工具检查AOF日志，去除执行到一半的事务命令，才能保证原子性。</li>
 </ul>
@@ -559,6 +641,8 @@
 <li>需要依赖Watch机制，因为Redis流水线命令是在Exec命令执行后开始的，在Exec命令还未执行前，如果要保证隔离性，需要使用Watch监控某个key，当Exec命令执行时，Watch机制就会触发，如果监控的数据被修改了，就放弃此次事务的执行。</li>
 <li>如果是在Exec命令执行后的，由于Redis是单线程的，所以并发情况下不会破坏事务隔离性。</li>
 </ul>
+<p>因此调用方可以利用这个特性，不断的重试这个操作，知道成功为止。</p>
+<p>使用Watch的实现监控：在使用MULTI命令之前使用WATCH监控某些键值对，然后使用MULTI命令开启事务，执行各种数据结构的操作命令，此时这些命令入队列；当使用EXEC执行事务时，首先会对比WATCH所监控的键值对，如果没有发生变化，它会执行事务队列中的命令，提交事务，如果发生变化，则不执行事务中的任何命令，同时事务回滚，然后取消执行事务前的WATCH命令。</p>
 <h2 id="redis中的一致性">Redis中的一致性</h2>
 <p>在命令执行错误或 Redis 发生故障的情况下，Redis 事务机制对一致性属性是有保证的。</p>
 <h2 id="redis中的持久性">Redis中的持久性</h2>
@@ -1012,12 +1096,13 @@
           <ol>
             <li><a href="#原理-1">原理</a></li>
             <li><a href="#相关命令">相关命令</a></li>
+            <li><a href="#优点">优点</a></li>
             <li><a href="#潜在风险">潜在风险</a></li>
           </ol>
         </li>
-        <li><a href="#aofappend-only-file">AOF（Append Only File）</a></li>
-        <li><a href="#aof配置项">AOF配置项</a>
+        <li><a href="#aofappend-only-file">AOF（Append Only File）</a>
           <ol>
+            <li><a href="#aof配置项">AOF配置项</a></li>
             <li><a href="#原理-2">原理</a></li>
             <li><a href="#潜在风险-1">潜在风险</a></li>
             <li><a href="#重写机制">重写机制</a>
@@ -1054,9 +1139,10 @@
             </li>
           </ol>
         </li>
+        <li><a href="#几个注意点">几个注意点</a></li>
       </ol>
     </li>
-    <li><a href="#高可扩展集群">高可扩展集群</a>
+    <li><a href="#高可用扩展集群">高可用扩展集群</a>
       <ol>
         <li><a href="#扩展">扩展</a></li>
         <li><a href="#分片">分片</a>
