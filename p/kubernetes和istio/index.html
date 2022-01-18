@@ -121,7 +121,7 @@
 
 
                 <time class="article-time--reading">
-                    8 minute read
+                    9 minute read
                 </time>
             </div>
         
@@ -1162,13 +1162,22 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <h3 id="operator">Operator</h3>
 <p>本质是一个Deployment，会创建一个CRD，常用于简化StatefulSet的部署，用来管理有状态的Pod，维持拓扑状态和存储状态。需要编写与Kubernetes Matser交互的代码，才能实现自定义CRD的行为。</p>
 <h2 id="service">Service</h2>
-<p>工作在第四层，传输层，一般转发TCP、UDP流量。通过spec.selector，根据Pod的标签选择对应的Pod。</p>
+<ul>
+<li>
+<p>工作在第四层，传输层，一般转发TCP、UDP流量。</p>
+</li>
+<li>
 <p>每次Pod的重启都会导致IP发生变化，导致IP是不固定的，Service可以为一组相同的Pod套上一个固定的IP地址和端口，让我们能够以<strong>TCP/IP</strong>负载均衡的方式进行访问。</p>
 <p>虽然Service每次重启IP也会发生变化，但是相比Pod会更加稳定。</p>
+</li>
+<li>
 <p>一般是pod指定一个访问端口和label，Service的selector指明绑定的Pod，配置端口映射，Service并不直接连接Pod，而是在selector选中的Pod上产生一个Endpoints资源对象，通过Service的VIP就能访问它代理的Pod了。</p>
-<p>创建Service时，会在Service selector的Pod中的容器注入同一namespace下所有service的ip和端口作为环境变量，该环境变量会随着Pod或Service的ip和端口的改变而改变，可以实现基于环境变量的服务发现，但是只有在同一namespace下的Pod内才可以使用此环境变量进行访问。</p>
+</li>
+<li>
 <p>Service由kube-proxy组件 + kube-dns组件 + iptables共同实现。kube-proxy会为创建的service创建一条路由规则（由service到pod），并添加到宿主机的iptables中，所以请求经过Service会进行kube-proxy的转发。</p>
 <p>大量的Pod会产生大量的iptables导致性能问题，kube-proxy使用IPVS模式来解决。</p>
+</li>
+</ul>
 <h3 id="关于headless">关于Headless</h3>
 <p>Service在集群内部被访问，有两种方式</p>
 <ul>
@@ -1215,7 +1224,134 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>检查网络是否有问题，一般先检查Master节点的Service DNS是否正常、kube-dns(coreDns)的运行状态和日志；</p>
 <p>当无法通过ClusterIP访问Service访问时，检查Service是否有Endpoints，检查Kube-proxy是否正确运行；</p>
 <p>最后检查宿主机上的iptables。</p>
-<h2 id="ingress">Ingress</h2>
+<h3 id="endpoints的作用">EndPoints的作用</h3>
+<h3 id="关于服务发现">关于服务发现</h3>
+<p>Kubernetes支持两种服务发现：环境变量和DNS服务</p>
+<h4 id="环境变量">环境变量</h4>
+<p>创建Service时，会在Service selector的Pod中的容器注入同一namespace下所有service的IP和端口作为环境变量，该环境变量会随着Service的IP和端口的改变而改变，但设置到容器里的环境变量不会。</p>
+<p>可以使用<code>kubectl exec -it {pod名字} -n {名称空间 env}</code>查看，HOST为service的cluster-IP</p>
+<p>Kubernetes会设置两类环境变量：</p>
+<ul>
+<li>
+<p>service环境变量</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="na">{service名称}_SERVICE_HOST</span><span class="o">=</span><span class="s">172.20.97.162</span>
+<span class="na">{service名称}_SERVICE_PORT</span><span class="o">=</span><span class="s">8080</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>Docker Link环境变量</p>
+<p>DockerLink的作用：</p>
+<blockquote>
+<p>同一个宿主机上的多个docker容器之间如果想进行通信，可以通过使用容器的ip地址来通信，也可以通过宿主机的ip加上容器暴露出的端口号来通信，前者会导致ip地址的硬编码，不方便迁移，并且容器重启后ip地址会改变，除非使用固定的ip，后者的通信方式比较单一，只能依靠监听在暴露出的端口的进程来进行有限的通信。通过docker的link机制可以通过一个name来和另一个容器通信，link机制方便了容器去发现其它的容器并且可以安全的传递一些连接信息给其它的容器。</p>
+<p>使用时需要先连接容器，使用命令<code>docker run -d --name {容器名称} --link {另一个容器名称}</code>，之后在容器内即可使用对方容器的名称进行通信</p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="na">{service名称}_PORT_8080_TCP_ADDR</span><span class="o">=</span><span class="s">172.20.97.162</span>
+<span class="na">{service名称}_PORT_8080_TCP_PORT</span><span class="o">=</span><span class="s">8080</span>
+<span class="na">{service名称}_PORT_8080_TCP_PROTO</span><span class="o">=</span><span class="s">tcp</span>
+<span class="na">{service名称}_PORT</span><span class="o">=</span><span class="s">tcp://10.100.251.57:8080</span>
+<span class="na">{service名称}_PORT_8080_TCP</span><span class="o">=</span><span class="s">tcp://10.100.251.57:8080</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+<p>然后，服务即可通过环境变量获取要访问的服务的IP和端口，但是这种服务发现方式有一些<strong>缺点</strong>：</p>
+<ul>
+<li>先前的服务必须先运行起来，否则环境变量无法被注入，导致Pod无法使用该环境变量</li>
+<li>如果依赖的service被删了或绑定了新地址，环境变量不会被修改，仍然使用旧有地址</li>
+<li>只有在同一namespace下的Pod内才可以使用此环境变量进行访问，不同namespace下无法通过变量访问</li>
+</ul>
+<h4 id="dns服务">DNS服务</h4>
+<p>一般情况下，会使用CoreDNS作为Kubernetes集群的DNS，CoreDNS默认配置的缓存时间是30s，增大cache时间对域名解析TTL敏感型的应用有一定的影响，会延缓应用感知域名解析配置变更时间。</p>
+<p>Kubernetes 通过修改每个 Pod 中每个容器的域名解析配置文件<code>/etc/resolv.conf</code> 来达到服务发现的目的。</p>
+<p>比如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="c1"># /etc/resolv.conf</span>
+<span class="na">nameserver 172.20.0.10</span>
+<span class="c1"># 主机名查询列表，默认只包含本地域名，阈值为6个，256个字符</span>
+<span class="na">search {名称空间}.svc.cluster.local svc.cluster.local cluster.local us-west-2.compute.internal</span>
+<span class="c1"># 阈值为 15</span>
+<span class="na">options ndots:5</span>
+<span class="c1"># 等待 DNS 服务器响应的超时时间，单位为秒。阈值为 30 s。</span>
+<span class="na">options timeout: 30</span>
+<span class="c1"># 向同一个 DNS 服务器发起重试的次数，单位为次。阈值为 5。</span>
+<span class="na">options attempts: 1</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其含义为：DNS服务器为172.20.0.10，当查询的关键词中的 . 的数量少于5个，则根据search中配置的域名进行查询，当查询都没有返回正确响应时再尝试查询关键词本身，比如执行<code>host -v cn.bing.com</code>，会得到</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="na">Trying &#34;cn.bing.com.{名称空间}.svc.cluster.local&#34;</span>
+<span class="na">Trying &#34;cn.bing.com.svc.cluster.local&#34;</span>
+<span class="na">Trying &#34;cn.bing.com.cluster.local&#34;</span>
+<span class="na">Trying &#34;cn.bing.com.us-west-2.compute.internal&#34;</span>
+<span class="na">Trying &#34;cn.bing.com&#34;</span>
+<span class="na">...</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>coreDNS会监听集群内所有ServiceAPI，以在服务不可用时移除记录，在新服务创建时插入新记录，记录存储在coreDNS的本地缓存中。</p>
+<p>Kubernates的DNS服务支持Service的A记录、SRV记录（用于通用化地定位服务）和CNAME记录。</p>
+<p>当设置了service并select了一类pod之后，DNS服务就会产生以下A记录和SRV记录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="na">{service名称}.{名称空间}.svc.cluster.local. 5 IN A 10.100.71.56</span>
+<span class="na">_http._tcp.{service名称}.{名称空间}.svc.cluster.local. 30 IN SRV 10 100 443 {service名称}.{名称空间}.svc.cluster.local.</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>如果是headless service，则生成的A记录如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="na">{service名称}.{名称空间}.svc.cluster.local. 5 IN A 192.168.62.111</span>
+<span class="na">{service名称}.{名称空间}.svc.cluster.local. 5 IN A 192.168.62.112</span>
+<span class="na">{service名称}.{名称空间}.svc.cluster.local. 5 IN A 192.168.62.113</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="ingress">Ingress</h2>
 <p>工作在第七层，应用层，即一般代理Http流量。</p>
 <p>作用与Service类似，主要是用于对多个service的包装，作为service的service，设置一个统一的负载均衡（这样可以避免每个Service都设置一个LB，也可以避免因为节点扩缩容导致service的端口变化需要修改访问配置），设置Ingress rule，进行反向代理，实现的是Http负责均衡。</p>
 <p>Ingress是反向代理的规则，Ingress Controller是负责解析Ingress的规则后进行转发。可以理解为Nginx，本质是将请求通过不同的规则进行路由转发。常见的Ingress Class实现有Nginx-Ingress-Controller、AWS-LB-Ingress-Controller，使用Ingress时会在集群中创建对应的controller pod。</p>
@@ -2083,6 +2219,13 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
           <ol>
             <li><a href="#关于headless">关于Headless</a></li>
             <li><a href="#service的几种设置">Service的几种设置</a></li>
+            <li><a href="#endpoints的作用">EndPoints的作用</a></li>
+            <li><a href="#关于服务发现">关于服务发现</a>
+              <ol>
+                <li><a href="#环境变量">环境变量</a></li>
+                <li><a href="#dns服务">DNS服务</a></li>
+              </ol>
+            </li>
           </ol>
         </li>
         <li><a href="#ingress">Ingress</a>

@@ -7071,7 +7071,7 @@ User |    z h a n g s a n         | 23 | true
 &lt;li&gt;由于要保证消息的有序性，整个流程的大部分过程是不能并发的，只能单线程执行。所以，接下来我们使用一个线程WriteThread从请求队列中按照顺序来获取请求，依次进行解析请求等其他的处理逻辑，最后将消息序列化并写入存储。序列化后的消息会被写入到一个内存缓存中，就是图中的JournalCache，等待后续的处理。&lt;/li&gt;
 &lt;li&gt;执行到这里，一条一条的消息已经被转换成一个连续的字节流，每一条消息都在这个字节流中有一个全局唯一起止位置，也就是这条消息的Offset。后续的处理就不用关心字节流中的内容了，只要确保这个字节流能快速正确的被保存和复制就可以了。&lt;/li&gt;
 &lt;li&gt;这里面还有一个工作需要完成，就是给生产者回响应，但在这一步，消息既没有落盘，也没有完成复制，还不能给客户端返回响应，所以我们把待返回的响应按照顺序放到一个内存的链表PendingCallbacks中，并记录每个请求中的消息对应的Offset。&lt;/li&gt;
-&lt;li&gt;然后，我们有2个线程，FlushThread和ReplicationThread，这两个线程是并行执行的，分别负责批量异步进行刷盘和复制，刷盘和复制又分别是2个比较复杂的流程，我们暂时不展开讲。刷盘线程不停地将新写入JournalCache的字节流写到磁盘上，完成一批数据的刷盘，它就会更新一个刷盘位置的内存变量，确保这个刷盘位置之前数据都已经安全的写入磁盘中。复制线程的逻辑也是类似的，同样维护了一个复制位置的内存变量。&lt;/li&gt;
+&lt;li&gt;然后，我们有2个线程，FlushThread和ReplicationThread，这两个线程是并行执行的，分别负责批量异步进行刷盘和复制，刷盘和复制又分别是2个比较复杂的流程。刷盘线程不停地将新写入JournalCache的字节流写到磁盘上，完成一批数据的刷盘，它就会更新一个刷盘位置的内存变量，确保这个刷盘位置之前数据都已经安全的写入磁盘中。复制线程的逻辑也是类似的，同样维护了一个复制位置的内存变量。&lt;/li&gt;
 &lt;li&gt;最后，我们设计了一组专门用于发送响应的线程ReponseThreads，在刷盘位置或者复制位置更新后，去检查待返回的响应链表PendingCallbacks，根据QOS级别的设置（因为不同QOS基本对发送成功的定义不一样，有的设置需要消息写入磁盘才算成功，有的需要复制完成才算成功），将刷盘位置或者复制位置之前所有响应，以及已经超时的响应，利用这组线程ReponseThreads异步并行的发送给各个客户端。&lt;/li&gt;
 &lt;li&gt;这样就完成了消息生产这个流程。整个流程中，除了JournalCache的加载和卸载需要对文件加锁以外，没有用到其他的锁。每个小流程都不会等待其他流程的共享资源，也就不用互相等待资源（没有数据需要处理时等待上游流程提供数据的情况除外），并且只要有数据就能第一时间处理。&lt;/li&gt;
 &lt;li&gt;这个流程中，最核心的部分在于WriteThread执行处理的这个步骤，对每条消息进行处理的这些业务逻辑，都只能在WriteThread中单线程执行，虽然这里面干了很多的事儿，但是我们确保这些逻辑中，没有缓慢的磁盘和网络IO，也没有使用任何的锁来等待资源，全部都是内存操作，这样即使单线程可以非常快速地执行所有的业务逻辑。&lt;/li&gt;
@@ -9868,8 +9868,8 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;p&gt;比如：SADD命令只能用于Set，LPUSH命令只能用于List，而DEL、TTL又能用于所有键，要正确实现这些命令，就需要为不同类型的键设置不同的处理方式；另外，同一种数据类型可能由不同的数据结构实现，比如List，底层可能是压缩列表或者双向链表，因此还需要知道数据类型的编码方式。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.jpg&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.jpg&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.png&#34;
 			
 			
 			
@@ -9949,8 +9949,20 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;li&gt;当保存的是字符串时，如果字符串&amp;lt;=44字节，RedisObject中元数据，指针和SDS是一块连续的内存区域，避免内存碎片&lt;/li&gt;
 &lt;li&gt;当保存的是字符串时，如果字符串&amp;gt;44字节，RedisObject会给SDS分配独立的空间，并用指针指向SDS&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;![Redis String RedisObject: 来自极客时间Redis核心技术与实战](&lt;a class=&#34;link&#34; href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String&lt;/a&gt; RedisObject.png)&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String_RedisObject.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String_RedisObject.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			alt=&#34;Redis String RedisObject: 来自极客时间Redis核心技术与实战&#34;&gt;
+	&lt;/a&gt;
+	
+	&lt;figcaption&gt;Redis String RedisObject: 来自极客时间Redis核心技术与实战&lt;/figcaption&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;p&gt;当使用String类型时，且value的类型是String时，如果value的长度太小，可能会出现元数据的大小比数据本身的大小还大，造成额外的内存开销。如果能替换成Long类型，实际存储的大小会大大降低。&lt;/p&gt;
 &lt;h3 id=&#34;哈希表&#34;&gt;哈希表&lt;/h3&gt;
 &lt;p&gt;但无论值是什么类型的，所有的键值对会保存在&lt;strong&gt;全局哈希表&lt;/strong&gt;中，便于快速找到对应的Key，哈希桶只会保存键值对的指针。全局哈希表中的桶每个元素entry由三个8字节指针组成，分别为key、value、next，但实际会占32字节，因为内存分配库jemalloc会分配最接近24的2的幂次数，所以是32，以减少频繁的分配次数。&lt;/p&gt;
@@ -11583,13 +11595,22 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;h3 id=&#34;operator&#34;&gt;Operator&lt;/h3&gt;
 &lt;p&gt;本质是一个Deployment，会创建一个CRD，常用于简化StatefulSet的部署，用来管理有状态的Pod，维持拓扑状态和存储状态。需要编写与Kubernetes Matser交互的代码，才能实现自定义CRD的行为。&lt;/p&gt;
 &lt;h2 id=&#34;service&#34;&gt;Service&lt;/h2&gt;
-&lt;p&gt;工作在第四层，传输层，一般转发TCP、UDP流量。通过spec.selector，根据Pod的标签选择对应的Pod。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;工作在第四层，传输层，一般转发TCP、UDP流量。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;每次Pod的重启都会导致IP发生变化，导致IP是不固定的，Service可以为一组相同的Pod套上一个固定的IP地址和端口，让我们能够以&lt;strong&gt;TCP/IP&lt;/strong&gt;负载均衡的方式进行访问。&lt;/p&gt;
 &lt;p&gt;虽然Service每次重启IP也会发生变化，但是相比Pod会更加稳定。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;一般是pod指定一个访问端口和label，Service的selector指明绑定的Pod，配置端口映射，Service并不直接连接Pod，而是在selector选中的Pod上产生一个Endpoints资源对象，通过Service的VIP就能访问它代理的Pod了。&lt;/p&gt;
-&lt;p&gt;创建Service时，会在Service selector的Pod中的容器注入同一namespace下所有service的ip和端口作为环境变量，该环境变量会随着Pod或Service的ip和端口的改变而改变，可以实现基于环境变量的服务发现，但是只有在同一namespace下的Pod内才可以使用此环境变量进行访问。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;Service由kube-proxy组件 + kube-dns组件 + iptables共同实现。kube-proxy会为创建的service创建一条路由规则（由service到pod），并添加到宿主机的iptables中，所以请求经过Service会进行kube-proxy的转发。&lt;/p&gt;
 &lt;p&gt;大量的Pod会产生大量的iptables导致性能问题，kube-proxy使用IPVS模式来解决。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h3 id=&#34;关于headless&#34;&gt;关于Headless&lt;/h3&gt;
 &lt;p&gt;Service在集群内部被访问，有两种方式&lt;/p&gt;
 &lt;ul&gt;
@@ -11636,7 +11657,134 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;检查网络是否有问题，一般先检查Master节点的Service DNS是否正常、kube-dns(coreDns)的运行状态和日志；&lt;/p&gt;
 &lt;p&gt;当无法通过ClusterIP访问Service访问时，检查Service是否有Endpoints，检查Kube-proxy是否正确运行；&lt;/p&gt;
 &lt;p&gt;最后检查宿主机上的iptables。&lt;/p&gt;
-&lt;h2 id=&#34;ingress&#34;&gt;Ingress&lt;/h2&gt;
+&lt;h3 id=&#34;endpoints的作用&#34;&gt;EndPoints的作用&lt;/h3&gt;
+&lt;h3 id=&#34;关于服务发现&#34;&gt;关于服务发现&lt;/h3&gt;
+&lt;p&gt;Kubernetes支持两种服务发现：环境变量和DNS服务&lt;/p&gt;
+&lt;h4 id=&#34;环境变量&#34;&gt;环境变量&lt;/h4&gt;
+&lt;p&gt;创建Service时，会在Service selector的Pod中的容器注入同一namespace下所有service的IP和端口作为环境变量，该环境变量会随着Service的IP和端口的改变而改变，但设置到容器里的环境变量不会。&lt;/p&gt;
+&lt;p&gt;可以使用&lt;code&gt;kubectl exec -it {pod名字} -n {名称空间 env}&lt;/code&gt;查看，HOST为service的cluster-IP&lt;/p&gt;
+&lt;p&gt;Kubernetes会设置两类环境变量：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;service环境变量&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;na&#34;&gt;{service名称}_SERVICE_HOST&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;172.20.97.162&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;{service名称}_SERVICE_PORT&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;8080&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Docker Link环境变量&lt;/p&gt;
+&lt;p&gt;DockerLink的作用：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;同一个宿主机上的多个docker容器之间如果想进行通信，可以通过使用容器的ip地址来通信，也可以通过宿主机的ip加上容器暴露出的端口号来通信，前者会导致ip地址的硬编码，不方便迁移，并且容器重启后ip地址会改变，除非使用固定的ip，后者的通信方式比较单一，只能依靠监听在暴露出的端口的进程来进行有限的通信。通过docker的link机制可以通过一个name来和另一个容器通信，link机制方便了容器去发现其它的容器并且可以安全的传递一些连接信息给其它的容器。&lt;/p&gt;
+&lt;p&gt;使用时需要先连接容器，使用命令&lt;code&gt;docker run -d --name {容器名称} --link {另一个容器名称}&lt;/code&gt;，之后在容器内即可使用对方容器的名称进行通信&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;na&#34;&gt;{service名称}_PORT_8080_TCP_ADDR&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;172.20.97.162&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;{service名称}_PORT_8080_TCP_PORT&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;8080&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;{service名称}_PORT_8080_TCP_PROTO&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;tcp&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;{service名称}_PORT&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;tcp://10.100.251.57:8080&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;{service名称}_PORT_8080_TCP&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;tcp://10.100.251.57:8080&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;然后，服务即可通过环境变量获取要访问的服务的IP和端口，但是这种服务发现方式有一些&lt;strong&gt;缺点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;先前的服务必须先运行起来，否则环境变量无法被注入，导致Pod无法使用该环境变量&lt;/li&gt;
+&lt;li&gt;如果依赖的service被删了或绑定了新地址，环境变量不会被修改，仍然使用旧有地址&lt;/li&gt;
+&lt;li&gt;只有在同一namespace下的Pod内才可以使用此环境变量进行访问，不同namespace下无法通过变量访问&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;dns服务&#34;&gt;DNS服务&lt;/h4&gt;
+&lt;p&gt;一般情况下，会使用CoreDNS作为Kubernetes集群的DNS，CoreDNS默认配置的缓存时间是30s，增大cache时间对域名解析TTL敏感型的应用有一定的影响，会延缓应用感知域名解析配置变更时间。&lt;/p&gt;
+&lt;p&gt;Kubernetes 通过修改每个 Pod 中每个容器的域名解析配置文件&lt;code&gt;/etc/resolv.conf&lt;/code&gt; 来达到服务发现的目的。&lt;/p&gt;
+&lt;p&gt;比如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# /etc/resolv.conf&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;nameserver 172.20.0.10&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 主机名查询列表，默认只包含本地域名，阈值为6个，256个字符&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;search {名称空间}.svc.cluster.local svc.cluster.local cluster.local us-west-2.compute.internal&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 阈值为 15&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;options ndots:5&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 等待 DNS 服务器响应的超时时间，单位为秒。阈值为 30 s。&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;options timeout: 30&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 向同一个 DNS 服务器发起重试的次数，单位为次。阈值为 5。&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;options attempts: 1&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;其含义为：DNS服务器为172.20.0.10，当查询的关键词中的 . 的数量少于5个，则根据search中配置的域名进行查询，当查询都没有返回正确响应时再尝试查询关键词本身，比如执行&lt;code&gt;host -v cn.bing.com&lt;/code&gt;，会得到&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;na&#34;&gt;Trying &amp;#34;cn.bing.com.{名称空间}.svc.cluster.local&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;Trying &amp;#34;cn.bing.com.svc.cluster.local&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;Trying &amp;#34;cn.bing.com.cluster.local&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;Trying &amp;#34;cn.bing.com.us-west-2.compute.internal&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;Trying &amp;#34;cn.bing.com&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;...&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;coreDNS会监听集群内所有ServiceAPI，以在服务不可用时移除记录，在新服务创建时插入新记录，记录存储在coreDNS的本地缓存中。&lt;/p&gt;
+&lt;p&gt;Kubernates的DNS服务支持Service的A记录、SRV记录（用于通用化地定位服务）和CNAME记录。&lt;/p&gt;
+&lt;p&gt;当设置了service并select了一类pod之后，DNS服务就会产生以下A记录和SRV记录&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;na&#34;&gt;{service名称}.{名称空间}.svc.cluster.local. 5 IN A 10.100.71.56&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;_http._tcp.{service名称}.{名称空间}.svc.cluster.local. 30 IN SRV 10 100 443 {service名称}.{名称空间}.svc.cluster.local.&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;如果是headless service，则生成的A记录如下&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;na&#34;&gt;{service名称}.{名称空间}.svc.cluster.local. 5 IN A 192.168.62.111&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;{service名称}.{名称空间}.svc.cluster.local. 5 IN A 192.168.62.112&lt;/span&gt;
+&lt;span class=&#34;na&#34;&gt;{service名称}.{名称空间}.svc.cluster.local. 5 IN A 192.168.62.113&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;ingress&#34;&gt;Ingress&lt;/h2&gt;
 &lt;p&gt;工作在第七层，应用层，即一般代理Http流量。&lt;/p&gt;
 &lt;p&gt;作用与Service类似，主要是用于对多个service的包装，作为service的service，设置一个统一的负载均衡（这样可以避免每个Service都设置一个LB，也可以避免因为节点扩缩容导致service的端口变化需要修改访问配置），设置Ingress rule，进行反向代理，实现的是Http负责均衡。&lt;/p&gt;
 &lt;p&gt;Ingress是反向代理的规则，Ingress Controller是负责解析Ingress的规则后进行转发。可以理解为Nginx，本质是将请求通过不同的规则进行路由转发。常见的Ingress Class实现有Nginx-Ingress-Controller、AWS-LB-Ingress-Controller，使用Ingress时会在集群中创建对应的controller pod。&lt;/p&gt;
@@ -13680,8 +13828,8 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;p&gt;参考&lt;a class=&#34;link&#34; href=&#34;http://www.runoob.com/http/http-status-codes.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;HTTP状态码&lt;/a&gt;&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;301：永久移动请求的网页已永久移动到新位置，即永久重定向；返回信息会包括新的URI，浏览器会自动定向到新URI。今后任何新的请求都应使用新的URI代替，新的URI会放在响应header的Location字段中；搜索引擎会抓取新内容同时也将旧地址修改为新地址&lt;/li&gt;
-&lt;li&gt;302：临时移动请求的网页暂时跳转到其他页面，即暂时重定向；旧地址的资源还在，只是重定向到临时的新地址中，对SEO有利，搜索引擎会抓取新内容保存旧地址&lt;/li&gt;
+&lt;li&gt;301：永久移动请求的网页已永久移动到新位置，即永久重定向；返回信息会包括新的URI，浏览器会自动定向到新URI。今后任何新的请求都应使用新的URI代替，新的URI会放在响应header的Location字段中；搜索引擎会抓取新内容同时也将旧地址修改为新地址。301调整默认会被浏览器cache，用户后续多次访问该url时会，浏览器会直接请求跳转地址。&lt;/li&gt;
+&lt;li&gt;302：临时移动请求的网页暂时跳转到其他页面，即暂时重定向；旧地址的资源还在，只是重定向到临时的新地址中，对SEO有利，搜索引擎会抓取新内容保存旧地址。如果在响应头中通过Cache-Control或Expires，也可以实现301中浏览器缓冲的效果。&lt;/li&gt;
 &lt;li&gt;502：Bad Gateway，作为网关或者代理工作的服务器尝试执行请求时，从上游服务器接收到无效的响应&lt;/li&gt;
 &lt;li&gt;503：Service Unavailable，服务不可用&lt;/li&gt;
 &lt;li&gt;504：Gateway Time-out，充当网关或代理的服务器，未及时从上游服务器收到请求&lt;/li&gt;

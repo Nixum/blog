@@ -139,8 +139,8 @@
 <p>比如：SADD命令只能用于Set，LPUSH命令只能用于List，而DEL、TTL又能用于所有键，要正确实现这些命令，就需要为不同类型的键设置不同的处理方式；另外，同一种数据类型可能由不同的数据结构实现，比如List，底层可能是压缩列表或者双向链表，因此还需要知道数据类型的编码方式。</p>
 <p><figure 
 	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.jpg" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.jpg"
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/RedisObject.png"
 			
 			
 			
@@ -220,8 +220,20 @@
 <li>当保存的是字符串时，如果字符串&lt;=44字节，RedisObject中元数据，指针和SDS是一块连续的内存区域，避免内存碎片</li>
 <li>当保存的是字符串时，如果字符串&gt;44字节，RedisObject会给SDS分配独立的空间，并用指针指向SDS</li>
 </ul>
-<p>![Redis String RedisObject: 来自极客时间Redis核心技术与实战](<a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String"  target="_blank" rel="noopener"
-    >https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String</a> RedisObject.png)</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String_RedisObject.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/Redis_String_RedisObject.png"
+			
+			
+			
+			loading="lazy"
+			alt="Redis String RedisObject: 来自极客时间Redis核心技术与实战">
+	</a>
+	
+	<figcaption>Redis String RedisObject: 来自极客时间Redis核心技术与实战</figcaption>
+	
+</figure></p>
 <p>当使用String类型时，且value的类型是String时，如果value的长度太小，可能会出现元数据的大小比数据本身的大小还大，造成额外的内存开销。如果能替换成Long类型，实际存储的大小会大大降低。</p>
 <h3 id="哈希表">哈希表</h3>
 <p>但无论值是什么类型的，所有的键值对会保存在<strong>全局哈希表</strong>中，便于快速找到对应的Key，哈希桶只会保存键值对的指针。全局哈希表中的桶每个元素entry由三个8字节指针组成，分别为key、value、next，但实际会占32字节，因为内存分配库jemalloc会分配最接近24的2的幂次数，所以是32，以减少频繁的分配次数。</p>
