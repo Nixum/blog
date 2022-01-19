@@ -1174,8 +1174,15 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>一般是pod指定一个访问端口和label，Service的selector指明绑定的Pod，配置端口映射，Service并不直接连接Pod，而是在selector选中的Pod上产生一个Endpoints资源对象，通过Service的VIP就能访问它代理的Pod了。</p>
 </li>
 <li>
-<p>Service由kube-proxy组件 + kube-dns组件 + iptables共同实现。kube-proxy会为创建的service创建一条路由规则（由service到pod），并添加到宿主机的iptables中，所以请求经过Service会进行kube-proxy的转发。</p>
-<p>大量的Pod会产生大量的iptables导致性能问题，kube-proxy使用IPVS模式来解决。</p>
+<p>service负载分发策略有两种模式：</p>
+<ul>
+<li>
+<p>RoundRobin：轮询模式，即轮询将请求转发到后端的各个pod上（默认模式）</p>
+</li>
+<li>
+<p>SessionAffinity：基于客户端IP地址进行会话保持的模式，第一次客户端访问后端某个pod，之后的请求都转发到这个pod上</p>
+</li>
+</ul>
 </li>
 </ul>
 <h3 id="关于headless">关于Headless</h3>
@@ -1224,7 +1231,30 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>检查网络是否有问题，一般先检查Master节点的Service DNS是否正常、kube-dns(coreDns)的运行状态和日志；</p>
 <p>当无法通过ClusterIP访问Service访问时，检查Service是否有Endpoints，检查Kube-proxy是否正确运行；</p>
 <p>最后检查宿主机上的iptables。</p>
-<h3 id="endpoints的作用">EndPoints的作用</h3>
+<h3 id="endpoints的作用">endpoints的作用</h3>
+<p>当service使用了selector指定带有对应label的pod时，endpoint controller才会自动创建对应的endpoint对象，产生一个endpoints，endpoints信息存储在etcd中，用来记录一个service对应的所有pod的访问地址。</p>
+<p>endpoints controller的作用</p>
+<ul>
+<li>负责生成和维护所有endpoint对象的控制器；</li>
+<li>负责监听service和对应pod的变化；</li>
+<li>监听到service被删除，则删除和该service同名的endpoint对象；</li>
+<li>监听到新的service被创建，则根据新建service信息获取相关pod列表，然后创建对应endpoint对象；</li>
+<li>监听到service被更新，则根据更新后的service信息获取相关pod列表，然后更新对应endpoint对象；</li>
+<li>监听到pod事件，则更新对应的service的endpoint对象，将pod IP记录到endpoint中；</li>
+</ul>
+<h3 id="service的实现">Service的实现</h3>
+<p>Service由kube-proxy组件 + kube-dns组件(coreDNS) + iptables共同实现。kube-proxy会为创建的service创建一条路由规则（由service到pod），并添加到宿主机的iptables中，所以请求经过Service会进行kube-proxy的转发。</p>
+<p>kube-proxy采用iptables的方式配置负载均衡，基于iptables的kube-proxy的主要职责包括两大块：</p>
+<ul>
+<li>
+<p>侦听service更新事件，并更新service相关的iptables规则；</p>
+</li>
+<li>
+<p>侦听endpoint更新事件，更新endpoint相关的iptables规则（如 KUBE-SVC-链中的规则），然后将包请求转入endpoint对应的Pod；</p>
+<p>如果某个service尚没有Pod创建，那么针对此service的请求将会被丢弃。</p>
+</li>
+</ul>
+<p>大量的Pod会产生大量的iptables导致性能问题，kube-proxy使用IPVS模式来解决。</p>
 <h3 id="关于服务发现">关于服务发现</h3>
 <p>Kubernetes支持两种服务发现：环境变量和DNS服务</p>
 <h4 id="环境变量">环境变量</h4>
@@ -1278,7 +1308,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </ul>
 <h4 id="dns服务">DNS服务</h4>
 <p>一般情况下，会使用CoreDNS作为Kubernetes集群的DNS，CoreDNS默认配置的缓存时间是30s，增大cache时间对域名解析TTL敏感型的应用有一定的影响，会延缓应用感知域名解析配置变更时间。</p>
-<p>Kubernetes 通过修改每个 Pod 中每个容器的域名解析配置文件<code>/etc/resolv.conf</code> 来达到服务发现的目的。</p>
+<p><strong>Kubernetes 通过修改每个 Pod 中每个容器的域名解析配置文件<code>/etc/resolv.conf</code> 来达到服务发现的目的</strong>。</p>
 <p>比如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1292,12 +1322,14 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
+</span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="c1"># /etc/resolv.conf</span>
+<span class="c1"># nameserver表示DNS服务器</span>
 <span class="na">nameserver 172.20.0.10</span>
-<span class="c1"># 主机名查询列表，默认只包含本地域名，阈值为6个，256个字符</span>
-<span class="na">search {名称空间}.svc.cluster.local svc.cluster.local cluster.local us-west-2.compute.internal</span>
+<span class="c1"># 主机名查询列表，默认只包含本地域名，阈值为6个，256个字符，会以 {名称空间}.svc.cluster.local、svc.cluster.local、cluster.local 3个后缀，最多进行8次查询 (IPV4和IPV6查询各四次) 才能得到正确解析结果</span>
+<span class="na">search {名称空间}.svc.cluster.local svc.cluster.local cluster.local</span>
 <span class="c1"># 阈值为 15</span>
 <span class="na">options ndots:5</span>
 <span class="c1"># 等待 DNS 服务器响应的超时时间，单位为秒。阈值为 30 s。</span>
@@ -1306,7 +1338,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <span class="na">options attempts: 1</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>其含义为：DNS服务器为172.20.0.10，当查询的关键词中的 . 的数量少于5个，则根据search中配置的域名进行查询，当查询都没有返回正确响应时再尝试查询关键词本身，比如执行<code>host -v cn.bing.com</code>，会得到</p>
+</div><p>nameserver指向的IP，就是 coreDNS的service的ClusterIP，所有的域名解析都需要经过coreDNS的ClusterIP来进行解析，不论是Kubernetes内部域名还是外部域名；</p>
+<p>coreDNS会监听集群内所有ServiceAPI，以在服务不可用时移除记录，在新服务创建时插入新记录，记录存储在coreDNS的本地缓存中。</p>
+<p>在这个<code>/etc/resolv.conf</code>里配置含义为：DNS服务器为172.20.0.10，当查询的关键词中的 <code>.</code> 的数量少于5个，则根据search中配置的域名进行查询，当查询都没有返回正确响应时再尝试查询关键词本身，比如执行<code>host -v cn.bing.com</code>，会得到</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -1325,8 +1359,17 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <span class="na">...</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>coreDNS会监听集群内所有ServiceAPI，以在服务不可用时移除记录，在新服务创建时插入新记录，记录存储在coreDNS的本地缓存中。</p>
-<p>Kubernates的DNS服务支持Service的A记录、SRV记录（用于通用化地定位服务）和CNAME记录。</p>
+</div><p>所以，直接请求集群内部同一namespace下的域名时效率最高，因为只需要查询一次即可找到，比如在同一namespace下直接<code>curl {服务service名} </code>的效率是比<code>curl {服务service名}.{namespace}</code>要高，因为少了一次域名查询。这种DNS查询解析叫非全限定域名查找，因为我们配置了<code>ndots=5</code>，所以当域名中<code>.</code> 的个数小于5个，就会走search查询解析，如果要使用全限定域名查找，则需要在域名后面加<code>.</code>，就不会走search查询解析了，比如当<code>cn.bing.com.</code>此时就只会查询一次了，查不到才会走search查询。也可以通过修改<code>ndots</code>的数量，来减少域名查询次数的问题，可以在Pod的配置中添加<code>dnsConfig</code>修改<code>ndots</code>的值。当容器内部的<code>/etc/resolv.config</code>都找不到时，就会使用宿主机的<code>/etc/resolv.config</code>进行查找。</p>
+<blockquote>
+<p>Kubernetes 集群中支持通过 dnsPolicy 字段为每个 Pod 配置不同的 DNS 策略。目前支持四种策略：</p>
+<ul>
+<li>ClusterFirst：通过集群 DNS 服务来做域名解析，Pod 内 /etc/resolv.conf 配置的 DNS 服务地址是集群 DNS 服务的 CoreDNS 地址。该策略是集群工作负载的默认策略；</li>
+<li>None：忽略集群 DNS 策略，需要您提供 dnsConfig 字段来指定 DNS 配置信息；</li>
+<li>Default：Pod 直接继承集群节点的域名解析配置。即在集群直接使用节点的 /etc/resolv.conf 文件；</li>
+<li>ClusterFirstWithHostNetwork：强制在 hostNetWork 网络模式下使用 ClusterFirst 策略（默认使用 Default 策略）</li>
+</ul>
+</blockquote>
+<p>另外，Kubernates的DNS服务支持Service的A记录、SRV记录（用于通用化地定位服务）和CNAME记录。</p>
 <p>当设置了service并select了一类pod之后，DNS服务就会产生以下A记录和SRV记录</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -2219,7 +2262,8 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
           <ol>
             <li><a href="#关于headless">关于Headless</a></li>
             <li><a href="#service的几种设置">Service的几种设置</a></li>
-            <li><a href="#endpoints的作用">EndPoints的作用</a></li>
+            <li><a href="#endpoints的作用">endpoints的作用</a></li>
+            <li><a href="#service的实现">Service的实现</a></li>
             <li><a href="#关于服务发现">关于服务发现</a>
               <ol>
                 <li><a href="#环境变量">环境变量</a></li>
