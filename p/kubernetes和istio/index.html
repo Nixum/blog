@@ -923,6 +923,14 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 第二阶段Mount：运行在每个节点上kubelet组件的内部，把第一步attach的远程磁盘 mount 到宿主机目录。这个控制循环叫VolumeManagerReconciler，运行在独立的Goroutine，不会阻塞kubelet主循环。</p>
 <p>完成这两步，PV对应的“持久化 Volume”就准备好了，Pod可以正常启动，将“持久化 Volume”挂载在容器内指定的路径。当需要卸载时，则先Unmount再进行Dettach。</p>
 </blockquote>
+<h3 id="访问模式">访问模式</h3>
+<p>由卷的提供商提供，比如AWS的EBS中的GP2、GP3磁盘，是ReadWriteOnce模式，所以一个卷只能被一个pod使用，否则会出现写冲突，即使用pod的复制集只能设置为1，且更新策略为recreate，保证只有一个pod使用才行；而如果是ReadWriteMany模式，比如AWS的EFS（EFS本质上是AWS对NFS的一次封装），则允许多个pod共享同一个持久卷</p>
+<ul>
+<li>ReadWriteOnce：卷可以被一个节点以读写方式挂载，允许同一个节点上的多个Pod访问；</li>
+<li>ReadOnlyMany：卷可以被多个节点以只读方式挂载；</li>
+<li>ReadWriteMany：卷可以被多个节点以读写方式挂载；</li>
+<li>ReadWriteOncePod：卷可以被单个 Pod 以读写方式挂载；</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -999,8 +1007,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">          </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l">10Gi</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
-</div><p>注意点：一般来说，一个卷只允许被挂在一个pod上，如果静态分配的PV，虽然也可以设置PVC和PV，但是pod的复制集只能有一个，且需要设置更新策略为recreate，保证只有一个pod使用该pv，否则会有写冲突；一般每个pod挂的是不同的卷。</p>
-<h2 id="控制器模型">控制器模型</h2>
+</div><h2 id="控制器模型">控制器模型</h2>
 <p>常见的控制器有Deployment、Job、CronbJob、ReplicaSet、StatefulSet、DaemonSet等</p>
 <h3 id="原理-2">原理</h3>
 <p>控制循环：在一个无限循环内不断的轮询集群中的对象，将其状态与期望的状态做对比后，对该对象采取相应的操作。实际状态来自集群本身，如Kubelet汇报的容器状态、节点状态，监控系统的监控数据；期望状态来自用户提交的yaml文件；对象X指的是Pod或是其他受控制器控制的对象。</p>
@@ -1195,9 +1202,10 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <h3 id="service的实现">Service的实现</h3>
 <p>Service由kube-proxy组件 + kube-dns组件(coreDNS) + iptables或IPVS共同实现。</p>
 <ol>
-<li>coreDNS创建时会调用kubelet修改每个节点的<code>/etc/resolv.conf</code>文件，添加coreDNS的service的clusterIP作为DNS服务的IP。</li>
-<li>当kube-proxy监听到service和endpoints对象的创建和修改后，会更新一条由service到pod路由规则，并添加到宿主机的iptables中。</li>
-<li>通过service域名请求时，会先请求coreDNS服务获取对应service的clusterIP，再根据这个ip在iptables中转发到对应的pod，iptables会负责负载均衡。</li>
+<li>coreDNS创建时会调用kubelet修改每个节点的<code>/etc/resolv.conf</code>文件，添加coreDNS的service的clusterIP作为DNS服务的IP；</li>
+<li>coreDNS会监听service和endpoints的变化，缓存到内存中，主要是service名称与其clusterIP的映射；</li>
+<li>kube-proxy也会监听service和endpoints的变化，然后更新由service到pod路由规则，并添加到宿主机的iptables中；</li>
+<li>通过service域名请求时，会先请求coreDNS服务获取对应service的clusterIP，再根据这个ip在iptables中转发到对应的pod，iptables会负责负载均衡；</li>
 </ol>
 <p>kube-proxy只是controller，对iptables进行更新，基于iptables的kube-proxy的主要职责包括两大块：</p>
 <ul>
@@ -2012,6 +2020,8 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 <p>极客时间-ServiceMesh实战-马若飞</p>
 <p><a class="link" href="https://www.lixueduan.com/post/kubernetes/04-service-core/"  target="_blank" rel="noopener"
     >Service核心原理</a></p>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/80141656"  target="_blank" rel="noopener"
+    >KubeDNS和CoreDNS</a></p>
 
 </section>
 
@@ -2266,7 +2276,11 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
             <li><a href="#pod中的网络隔离">Pod中的网络隔离</a></li>
           </ol>
         </li>
-        <li><a href="#pvpvcstoageclass">PV、PVC、StoageClass</a></li>
+        <li><a href="#pvpvcstoageclass">PV、PVC、StoageClass</a>
+          <ol>
+            <li><a href="#访问模式">访问模式</a></li>
+          </ol>
+        </li>
         <li><a href="#控制器模型">控制器模型</a>
           <ol>
             <li><a href="#原理-2">原理</a></li>
@@ -2399,10 +2413,6 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
                 Goroutine
             </a>
         
-            <a href="/tags/go%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
-                Go内存模型
-            </a>
-        
             <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
                 Go并发
             </a>
@@ -2533,6 +2543,10 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
         
             <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA/" class="font_size_1">
                 分布式理论
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9B%B8%E5%85%B3/" class="font_size_1">
+                分布式相关
             </a>
         
     </div>
