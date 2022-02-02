@@ -8,11 +8,11 @@
     <language>en-us</language>
     <lastBuildDate>Mon, 22 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/go%E5%B9%B6%E5%8F%91/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Go并发</title>
-      <link>http://nixum.cc/p/go%E5%B9%B6%E5%8F%91/</link>
+      <title>Go Sync包相关</title>
+      <link>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
-      <guid>http://nixum.cc/p/go%E5%B9%B6%E5%8F%91/</guid>
+      <guid>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</guid>
       <description>[TOC]
 变量可见性 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
 happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。

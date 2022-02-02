@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Go sync包 on Nixum Blog</title>
+    <link>http://nixum.cc/tags/go-sync%E5%8C%85/</link>
+    <description>Recent content in Go sync包 on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 22 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/go-sync%E5%8C%85/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Go Sync包相关</title>
+      <link>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</guid>
+      <description>[TOC]
+变量可见性 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
+happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。
+Go不像Java有volatile关键字实现CPU屏障来保证指令不重排，而是使用不同架构的内存屏障指令来实现同一的并发原语。
+Go只保证goroutine内部重排对读写顺序没有影响，如果存在共享变量的访问，则影响另一个goroutine。因此当有多个goroutine对共享变量的操作时，需要保证对该共享变量操作的happens-before顺序。
+证heppen before的手段   init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。
+  全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。
+init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。
+当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数
+  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37  var ( a = c + b // == 9  b = f() // == 4  c = f() // == 5  d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description>
+    </item>
+    
+  </channel>
+</rss>

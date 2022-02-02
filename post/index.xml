@@ -79,6 +79,18 @@ Mount Namespace与rootfs(根文件系统) 挂载在容器根目录上、用来�
     </item>
     
     <item>
+      <title>Go Context和Channel</title>
+      <link>http://nixum.cc/p/go-context%E5%92%8Cchannel/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go-context%E5%92%8Cchannel/</guid>
+      <description>[TOC]
+Context 一个接口，包含如下方法，主要用于实现主协程对子协程的控制，作用包括取消执行、设置超时时间、携带键值对等
+1 2 3 4 5 6 7 8 9 10  type Context interface { // 获取到期时间，如果没有，ok则返回false 	Deadline() (deadline time.Time, ok bool) // 返回一个chan，表示取消信号，如果通道关闭则代表该 Context 已经被取消；如果返回的为 nil，则代表该 Context 是一个永远不会被取消的 Context。  Done() &amp;lt;-chan struct{} // 返回该 Context 被取消的原因。如果只使用 Context 包的 Context 类型的话，那么只可能返回 Canceled （代表被明确取消）或者 DeadlineExceeded （因超时而取消）  Err() error // 获取Context中的键值对 	Value(key interface{}) interface{} }   一个demo，引用：通知多个子goroutine退出运行
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73  package main import ( &amp;#34;context&amp;#34; &amp;#34;crypto/md5&amp;#34; &amp;#34;fmt&amp;#34; &amp;#34;io/ioutil&amp;#34; &amp;#34;net/http&amp;#34; &amp;#34;sync&amp;#34; &amp;#34;time&amp;#34; ) type favContextKey string func main() { wg := &amp;amp;sync.</description>
+    </item>
+    
+    <item>
       <title>Go Goroutine和GC</title>
       <link>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
@@ -89,11 +101,11 @@ Runtime  不同于Java，Go没有虚拟机，很多东西比如自动GC、对操
     </item>
     
     <item>
-      <title>Go并发</title>
-      <link>http://nixum.cc/p/go%E5%B9%B6%E5%8F%91/</link>
+      <title>Go Sync包相关</title>
+      <link>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
-      <guid>http://nixum.cc/p/go%E5%B9%B6%E5%8F%91/</guid>
+      <guid>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</guid>
       <description>[TOC]
 变量可见性 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
 happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。
