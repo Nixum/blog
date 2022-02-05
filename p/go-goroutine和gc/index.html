@@ -151,9 +151,7 @@ if (!doNotTrack) {
 <li>build成可执行文件时，Runtime会和用户代码一起进行打包。</li>
 </ul>
 <h1 id="pprof">pprof</h1>
-<ul>
-<li>pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能</li>
-</ul>
+<p>pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能</p>
 <table>
 <thead>
 <tr>
@@ -202,7 +200,10 @@ if (!doNotTrack) {
 </table>
 <ul>
 <li>
-<p><code>go tool pprof -http=:8080 profile文件名</code>，打开web终端，左上角view里就有各种视图</p>
+<p><code>curl  http://ip:port/debug/pprof/{上面列表的功能} &gt; profile文件名</code> 把此时的统计下载下来；</p>
+</li>
+<li>
+<p><code>go tool pprof -http=:8080 profile文件名</code>，打开web终端，左上角view里就有各种视图；</p>
 </li>
 <li>
 <p>关于火焰图</p>

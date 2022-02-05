@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    6 minute read
+                    10 minute read
                 </time>
             </div>
         
@@ -275,9 +275,8 @@ if (!doNotTrack) {
 </li>
 <li>此外还有Mutex / RWMutex、WaitGroup、Once、atomic</li>
 </ul>
-<h1 id="并发包">并发包</h1>
-<h2 id="mutex---互斥锁">Mutex - 互斥锁</h2>
-<h3 id="数据结构">数据结构</h3>
+<h1 id="mutex---互斥锁">Mutex - 互斥锁</h1>
+<h2 id="数据结构">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -306,7 +305,26 @@ if (!doNotTrack) {
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="基本">基本</h3>
+</div><p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/go_mutex_state.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/go_mutex_state.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<ul>
+<li>mutexLocked 对应右边低位第一个bit，1 代表锁被占用，0代表锁空闲</li>
+<li>mutexWoken 对应右边低位第二个bit，1 表示已唤醒，0表示未唤醒</li>
+<li>mutexStarving 对应右边低位第三个bit，1 代表锁处于饥饿模式，0代表锁处于正常模式</li>
+<li>mutexWaiterShift 值为3，根据 <code>mutex.state &gt;&gt; mutexWaiterShift</code> 得到当前阻塞的<code>goroutine</code>数目，最多可以阻塞<code>2^29</code>个<code>goroutine</code>。</li>
+<li>starvationThresholdNs 值为1e6纳秒，也就是1毫秒，当等待队列中队首goroutine等待时间超过<code>starvationThresholdNs</code>也就是1毫秒，mutex进入饥饿模式。</li>
+</ul>
+<h2 id="基本">基本</h2>
 <ul>
 <li>
 <p>只有Lock和Unlock两个方法，用于锁定临界区</p>
@@ -315,7 +333,11 @@ if (!doNotTrack) {
 <p>Mutex的零值是没有goroutine等待的未加锁状态，不会因为没有初始化而出现空指针或者无法获取到锁的情况，so无需额外的初始化，直接声明变量即可使用<code>var lock sync.Mutex</code>，或者是在结构体里的属性，均无需初始化</p>
 </li>
 <li>
-<p>如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待的队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；如果此时有新的goroutine也在获取锁，会参与到获取锁的竞争中，如果等待队列中的goroutine等待超过1ms，则会加入队头优先获取锁，新来的goroutine加入到队尾，以此解决等待的goroutine的饥饿问题。</p>
+<p>锁有两种模式：正常模式和饥饿模式</p>
+<p>正常模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；</p>
+<p>如果此时有新的goroutine也在获取锁，会参与到获取锁的竞争中，这是非公平的，因为新请求锁的goroutine是在CPU上被运行，并且数量也可能很多，所以被唤醒的goroutine获取锁的概率并不大，所以，如果等待队列中的goroutine等待超过1ms，则会优先加入到队列的头部，如果超过1ms都没有获取到锁，则进入饥饿模式；</p>
+<p>饥饿模式下，锁的所有权会直接从释放锁的goroutine转交给队首的goroutine，新请求锁的goroutine就算锁的空闲状态也不会去获取锁，也不会自旋，直接加入等待队列的队尾，以此解决等待的goroutine的饥饿问题；</p>
+<p>恢复为正常模式的条件：一个goroutine获取锁后，当前goroutine是队列的最后一个，拿锁的耗时小于1ms；</p>
 </li>
 <li>
 <p>Unlock方法可以被任意goroutine调用，释放锁，即使它本身没有持有这个锁，so写的时候要牢记，谁申请锁，就该谁释放锁，保证在一个方法内被调用</p>
@@ -337,23 +359,360 @@ if (!doNotTrack) {
 <p>​	3.给获取锁的goroutine设置token，进行标记</p>
 </li>
 </ul>
-<h3 id="lock方法">Lock方法</h3>
+<h2 id="lock方法">Lock方法</h2>
 <ol>
-<li>调用Lock的goroutine通过CAS的方式获取锁，如果获取到了直接返回，否则进入lockSlow方法</li>
-<li>在lockSlow方法内，意味着锁已经被持有，当前调用Lock方法的goroutine正在等待，且非饥饿状态，其首先会自旋，尝试获取锁，而无需休眠，主要是在当临界区耗时很短的场景下提高性能</li>
-<li>非饥饿状态下抢锁，先在state锁标志位+1，如果锁已经被持有或者此时是饥饿状态，state的waiter的数量+1，进入等待</li>
-<li>如果此时是饥饿状态，并且锁还被持有，state设置为饥饿状态，清除mutexWoken标记，表示非唤醒状态</li>
-<li>使用3中的锁位，CAS尝试加锁，如果成功，检查原来的锁是未加锁状态，并且也不是饥饿状态，则成功获取锁，返回</li>
-<li>如果是未加锁状态，判断是否是第一次加入waiter队列（通过waitStartTime变量），如果是，则加入队尾，如果不是首次，则加入到队首(设置sema的值)，阻塞等待，直至被唤醒（因为锁被释放了）</li>
-<li>唤醒后，如果是饥饿状态（即当前时间 - waitStartTime &gt; 1ms），在state锁标志位+1，waiter数-1，获取锁，然后判断没有其他waiter或者此goroutine等待时间没有超过1ms，清除饥饿标记</li>
+<li>
+<p>调用Lock的goroutine通过CAS的方式获取锁，如果获取到了直接返回，否则进入lockSlow方法，lockSlow方法主要是通过自旋等待锁的释放；</p>
+<p>goroutine本身进入自旋的条件比较苛刻：</p>
+<ul>
+<li>
+<p>互斥锁只有在普通模式才能进入自旋；</p>
+</li>
+<li>
+<p><code>runtime.sync_runtime_canSpin</code>需要返回true：</p>
+</li>
+</ul>
+<ol>
+<li>运行在多 CPU 的机器上；</li>
+<li>当前 Goroutine 为了获取该锁进入自旋的次数小于四次；</li>
+<li>当前机器上至少存在一个正在运行的处理器 P 并且处理的运行队列为空；</li>
 </ol>
-<h3 id="unlock方法">Unlock方法</h3>
+</li>
+<li>
+<p>在lockSlow方法内，意味着锁已经被持有，当前调用Lock方法的goroutine正在等待，且非饥饿状态，其首先会自旋，尝试获取锁，无需休眠，否则进入 3</p>
+</li>
+<li>
+<p>不满足自旋时，当前锁可能有如下几种状态：</p>
+<ul>
+<li>锁还没有被释放，锁处于正常状态</li>
+<li>锁还没有被释放， 锁处于饥饿状态</li>
+<li>锁已经被释放， 锁处于正常状态</li>
+<li>锁已经被释放， 锁处于饥饿状态</li>
+</ul>
+</li>
+<li>
+<p>非饥饿状态下抢锁，新的goroutine尝试获取锁，如果是饥饿状态，则将锁直接给等待队列的队首goroutine；</p>
+</li>
+<li>
+<p>如果锁被获取，或者是饥饿状态，waiter数量 + 1</p>
+</li>
+<li>
+<p>当此goroutine被唤醒，要么获取到锁，要么进入休眠</p>
+</li>
+<li>
+<p>如果old state状态是未被锁，且非饥饿状态，表明当前goroutine获取到了锁，结束</p>
+</li>
+<li>
+<p>判断当前goroutine是新加入的还是被唤醒的，新加入的放到等待队列的尾部，刚被唤醒的加入等待队列的头部，通过信号量阻塞，直到当前goroutine被唤醒</p>
+</li>
+<li>
+<p>判断当前state是否是饥饿状态，如果不是则唤醒当前goroutine，继续循环</p>
+</li>
+<li>
+<p>如果当前state是饥饿状态，当前goroutine设置锁，waiter数量 - 1，如果当前goroutine是队列中最后一个goroutine，清除饥饿状态，获取锁，结束</p>
+</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Mutex</span><span class="p">)</span> <span class="nf">Lock</span><span class="p">()</span> <span class="p">{</span>
+	<span class="c1">// cas的方式获取锁，获取到之后立即返回
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">CompareAndSwapInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">mutexLocked</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">race</span><span class="p">.</span><span class="nx">Enabled</span> <span class="p">{</span>
+			<span class="nx">race</span><span class="p">.</span><span class="nf">Acquire</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">m</span><span class="p">))</span>
+		<span class="p">}</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="c1">// 获取不到锁，说明已被其他goroutine获取到了锁，此时会尝试通过自旋的方式等待锁的释放
+</span><span class="c1"></span>	<span class="nx">m</span><span class="p">.</span><span class="nf">lockSlow</span><span class="p">()</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Mutex</span><span class="p">)</span> <span class="nf">lockSlow</span><span class="p">()</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">waitStartTime</span> <span class="kt">int64</span>
+	<span class="nx">starving</span> <span class="o">:=</span> <span class="kc">false</span>
+    <span class="c1">// 当前goroutine是否被唤醒
+</span><span class="c1"></span>	<span class="nx">awoke</span> <span class="o">:=</span> <span class="kc">false</span>
+	<span class="nx">iter</span> <span class="o">:=</span> <span class="mi">0</span>
+	<span class="nx">old</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
+	<span class="k">for</span> <span class="p">{</span>
+		<span class="c1">// 判断当前state已被锁，且非饥饿状态，且能自旋（能否自旋的条件见上）
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="p">(</span><span class="nx">mutexLocked</span><span class="p">|</span><span class="nx">mutexStarving</span><span class="p">)</span> <span class="o">==</span> <span class="nx">mutexLocked</span> <span class="o">&amp;&amp;</span> <span class="nf">runtime_canSpin</span><span class="p">(</span><span class="nx">iter</span><span class="p">)</span> <span class="p">{</span>
+			<span class="c1">// 自旋过程中如果发现state还没有设置woken标识，则进行设置，标记自己被唤醒
+</span><span class="c1"></span>            <span class="c1">// 自旋是为了让其他goroutine在释放锁后能第一时间唤醒此goroutine
+</span><span class="c1"></span>			<span class="k">if</span> <span class="p">!</span><span class="nx">awoke</span> <span class="o">&amp;&amp;</span> <span class="nx">old</span><span class="o">&amp;</span><span class="nx">mutexWoken</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">old</span><span class="o">&gt;&gt;</span><span class="nx">mutexWaiterShift</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span>
+				<span class="nx">atomic</span><span class="p">.</span><span class="nf">CompareAndSwapInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="nx">old</span><span class="p">,</span> <span class="nx">old</span><span class="p">|</span><span class="nx">mutexWoken</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nx">awoke</span> <span class="p">=</span> <span class="kc">true</span>
+			<span class="p">}</span>
+            <span class="c1">// 进入自旋
+</span><span class="c1"></span>			<span class="nf">runtime_doSpin</span><span class="p">()</span>
+			<span class="nx">iter</span><span class="o">++</span>
+			<span class="nx">old</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
+			<span class="k">continue</span>
+		<span class="p">}</span>
+		<span class="nx">new</span> <span class="o">:=</span> <span class="nx">old</span>
+		<span class="c1">// 如果此时是非饥饿状态，state设置为持有锁状态
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="nx">mutexStarving</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+			<span class="nx">new</span> <span class="o">|=</span> <span class="nx">mutexLocked</span>
+		<span class="p">}</span>
+        <span class="c1">// 如果已经持有锁 或者 是饥饿状态，state的waiter数量+1
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="p">(</span><span class="nx">mutexLocked</span><span class="p">|</span><span class="nx">mutexStarving</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+			<span class="nx">new</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span><span class="nx">mutexWaiterShift</span>
+		<span class="p">}</span>
+		<span class="c1">// 如果此时是饥饿状态，还持有锁，state设置为饥饿状态
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">starving</span> <span class="o">&amp;&amp;</span> <span class="nx">old</span><span class="o">&amp;</span><span class="nx">mutexLocked</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+			<span class="nx">new</span> <span class="o">|=</span> <span class="nx">mutexStarving</span>
+		<span class="p">}</span>
+        <span class="c1">// goroutine被唤醒，state设置为非唤醒状态
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">awoke</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="nx">new</span><span class="o">&amp;</span><span class="nx">mutexWoken</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+				<span class="nf">throw</span><span class="p">(</span><span class="s">&#34;sync: inconsistent mutex state&#34;</span><span class="p">)</span>
+			<span class="p">}</span>
+			<span class="nx">new</span> <span class="o">&amp;^=</span> <span class="nx">mutexWoken</span>
+		<span class="p">}</span>
+        <span class="c1">// cas更新锁的状态
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">CompareAndSwapInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="nx">old</span><span class="p">,</span> <span class="nx">new</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// 如果old不是饥饿状态也不是被锁状态，表明当前goroutine已通过cas获取到了锁，break
+</span><span class="c1"></span>			<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="p">(</span><span class="nx">mutexLocked</span><span class="p">|</span><span class="nx">mutexStarving</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+				<span class="k">break</span>
+			<span class="p">}</span>
+			<span class="c1">// 如果之前已经在等了，就排在队首
+</span><span class="c1"></span>			<span class="nx">queueLifo</span> <span class="o">:=</span> <span class="nx">waitStartTime</span> <span class="o">!=</span> <span class="mi">0</span>
+            <span class="c1">// 如果之前没在等，则初始化等待时间
+</span><span class="c1"></span>			<span class="k">if</span> <span class="nx">waitStartTime</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+				<span class="nx">waitStartTime</span> <span class="p">=</span> <span class="nf">runtime_nanotime</span><span class="p">()</span>
+			<span class="p">}</span>
+            <span class="c1">// 该方法会不断尝试获取锁并陷入休眠等待信号量的释放，一旦当前 Goroutine 可以获取信号量，它就会立刻返回
+</span><span class="c1"></span>			<span class="nf">runtime_SemacquireMutex</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">sema</span><span class="p">,</span> <span class="nx">queueLifo</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="c1">// 如果当前goroutine是饥饿状态，或者已经等待超过1ms，就设置为饥饿状态
+</span><span class="c1"></span>			<span class="nx">starving</span> <span class="p">=</span> <span class="nx">starving</span> <span class="o">||</span> <span class="nf">runtime_nanotime</span><span class="p">()</span><span class="o">-</span><span class="nx">waitStartTime</span> <span class="p">&gt;</span> <span class="nx">starvationThresholdNs</span>
+			<span class="nx">old</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
+            <span class="c1">// 如果是饥饿模式
+</span><span class="c1"></span>			<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="nx">mutexStarving</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+				<span class="c1">// 如果goroutine被唤醒，且处于饥饿状态，锁的所有权转移给当前goroutine
+</span><span class="c1"></span>				<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="p">(</span><span class="nx">mutexLocked</span><span class="p">|</span><span class="nx">mutexWoken</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">old</span><span class="o">&gt;&gt;</span><span class="nx">mutexWaiterShift</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+					<span class="nf">throw</span><span class="p">(</span><span class="s">&#34;sync: inconsistent mutex state&#34;</span><span class="p">)</span>
+				<span class="p">}</span>
+                <span class="c1">// 当前goroutine获取锁，waiter数量-1
+</span><span class="c1"></span>				<span class="nx">delta</span> <span class="o">:=</span> <span class="nb">int32</span><span class="p">(</span><span class="nx">mutexLocked</span> <span class="o">-</span> <span class="mi">1</span><span class="o">&lt;&lt;</span><span class="nx">mutexWaiterShift</span><span class="p">)</span>
+                <span class="c1">// 如果当前goroutine非饥饿状态，或者 当前goroutine是队列中最后一个goroutine
+</span><span class="c1"></span>				<span class="k">if</span> <span class="p">!</span><span class="nx">starving</span> <span class="o">||</span> <span class="nx">old</span><span class="o">&gt;&gt;</span><span class="nx">mutexWaiterShift</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">{</span>
+					<span class="c1">// 退出饥饿模式
+</span><span class="c1"></span>					<span class="nx">delta</span> <span class="o">-=</span> <span class="nx">mutexStarving</span>
+				<span class="p">}</span>
+				<span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="nx">delta</span><span class="p">)</span>
+				<span class="k">break</span>
+			<span class="p">}</span>
+            <span class="c1">// 不是饥饿模式，就把当前goroutine设置为被唤醒
+</span><span class="c1"></span>			<span class="nx">awoke</span> <span class="p">=</span> <span class="kc">true</span>
+			<span class="nx">iter</span> <span class="p">=</span> <span class="mi">0</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="c1">// cas不成功，没有拿到锁，锁被其他goroutine获取或者锁没有被释放，更新状态，重新循环
+</span><span class="c1"></span>			<span class="nx">old</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+
+	<span class="k">if</span> <span class="nx">race</span><span class="p">.</span><span class="nx">Enabled</span> <span class="p">{</span>
+		<span class="nx">race</span><span class="p">.</span><span class="nf">Acquire</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">m</span><span class="p">))</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="unlock方法">Unlock方法</h2>
 <ol>
 <li>将state的锁位-1，如果state=0，即此时没有加锁，且没有正在等待获取锁的goroutine，则直接结束方法，如果state != 0，执行unlockSlow方法</li>
 <li>如果Mutex处于饥饿状态，直接唤醒等待队列中的waiter</li>
 <li>如果Mutex处于正常状态，如果没有waiter，或者已经有在处理的情况，则直接释放锁，state锁位-1，返回；否则，waiter数-1，设置唤醒标记，通过CAS解锁，唤醒在等待锁的goroutine（此时新老goroutine一起竞争锁）</li>
 </ol>
-<h3 id="基于mutex的拓展">基于Mutex的拓展</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Mutex</span><span class="p">)</span> <span class="nf">Unlock</span><span class="p">()</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">race</span><span class="p">.</span><span class="nx">Enabled</span> <span class="p">{</span>
+		<span class="nx">_</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
+		<span class="nx">race</span><span class="p">.</span><span class="nf">Release</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">m</span><span class="p">))</span>
+	<span class="p">}</span>
+    <span class="c1">// 修改state的状态为释放锁
+</span><span class="c1"></span>	<span class="nx">new</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="o">-</span><span class="nx">mutexLocked</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">new</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="c1">// 说明此时没有成功解锁
+</span><span class="c1"></span>		<span class="nx">m</span><span class="p">.</span><span class="nf">unlockSlow</span><span class="p">(</span><span class="nx">new</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Mutex</span><span class="p">)</span> <span class="nf">unlockSlow</span><span class="p">(</span><span class="nx">new</span> <span class="kt">int32</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="nx">new</span><span class="o">+</span><span class="nx">mutexLocked</span><span class="p">)</span><span class="o">&amp;</span><span class="nx">mutexLocked</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nf">throw</span><span class="p">(</span><span class="s">&#34;sync: unlock of unlocked mutex&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+    <span class="c1">// 非饥饿模式下
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">new</span><span class="o">&amp;</span><span class="nx">mutexStarving</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nx">old</span> <span class="o">:=</span> <span class="nx">new</span>
+		<span class="k">for</span> <span class="p">{</span>
+			<span class="c1">// 如果没有等待的goroutine，或者 锁被获取了，或者锁是饥饿模式，或者有goroutine被唤醒
+</span><span class="c1"></span>			<span class="k">if</span> <span class="nx">old</span><span class="o">&gt;&gt;</span><span class="nx">mutexWaiterShift</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">old</span><span class="o">&amp;</span><span class="p">(</span><span class="nx">mutexLocked</span><span class="p">|</span><span class="nx">mutexWoken</span><span class="p">|</span><span class="nx">mutexStarving</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+				<span class="k">return</span>
+			<span class="p">}</span>
+			<span class="c1">// 这里说明此时锁的状态还是空闲，且没有goroutine被唤醒，且队列中有goroutine等待获取锁
+</span><span class="c1"></span>            <span class="c1">// 等待获取锁的goroutine数量-1，设置woken标识
+</span><span class="c1"></span>			<span class="nx">new</span> <span class="p">=</span> <span class="p">(</span><span class="nx">old</span> <span class="o">-</span> <span class="mi">1</span><span class="o">&lt;&lt;</span><span class="nx">mutexWaiterShift</span><span class="p">)</span> <span class="p">|</span> <span class="nx">mutexWoken</span>
+            <span class="c1">// 设置新的state，通过信号量唤醒一个阻塞的goroutine获取锁
+</span><span class="c1"></span>			<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">CompareAndSwapInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="nx">old</span><span class="p">,</span> <span class="nx">new</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nf">runtime_Semrelease</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">sema</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+				<span class="k">return</span>
+			<span class="p">}</span>
+			<span class="nx">old</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
+		<span class="p">}</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="c1">// 饥饿模式下，直接将锁的所有权给队首的goroutine
+</span><span class="c1"></span>        <span class="c1">// 此时的state还没加锁，被唤醒的goroutine会设置它，如果此时有新的goroutine来请求锁，因为还处于饥饿状态，就仍然认为还被锁，新来的goroutine不会抢到锁
+</span><span class="c1"></span>		<span class="nf">runtime_Semrelease</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">sema</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="基于mutex的拓展">基于Mutex的拓展</h2>
 <ul>
 <li>可重入锁</li>
 <li>增加tryLock方法，通过返回true或false来表示获取锁成功或失败，主要用于控制获取锁失败后的行为，而不用阻塞在方法调用上</li>
@@ -361,8 +720,8 @@ if (!doNotTrack) {
 <li>增加可观测性指标，比如等待锁的goroutine的数量，需要使用unsafe.Pointer方法获取Mutex中的state的值，解析出正在等待的goroutine的数量</li>
 <li>实现线程安全的队列，通过在出队和入队方法中使用Mutex保证线程安全</li>
 </ul>
-<h2 id="rwmutex---读写锁">RWMutex - 读写锁</h2>
-<h3 id="数据结构-1">数据结构</h3>
+<h1 id="rwmutex---读写锁">RWMutex - 读写锁</h1>
+<h2 id="数据结构-1">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -385,7 +744,7 @@ if (!doNotTrack) {
 <span class="kd">const</span> <span class="nx">rwmutexMaxReaders</span> <span class="p">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">30</span> <span class="c1">// 最大的reader数量
 </span></code></pre></td></tr></table>
 </div>
-</div><h3 id="基本-1">基本</h3>
+</div><h2 id="基本-1">基本</h2>
 <ul>
 <li>主要提升Mutex在读多写少的场景下的吞吐量，读时共享锁，写时排他锁，基于Mutex实现</li>
 <li>由5个方法构成：
@@ -401,24 +760,104 @@ if (!doNotTrack) {
 <li>必须先使用RLock / Lock方法才能使用RUnlock / Unlock方法，否则会panic，重复释放锁也会panic。</li>
 <li>可以利用RWMutex实现线程安全的map</li>
 </ul>
-<h3 id="rlock--runlock-方法">RLock / RUnlock 方法</h3>
+<h2 id="rlock--runlock-方法">RLock / RUnlock 方法</h2>
 <ol>
 <li>RLock时，对readerCount的值+1，判断是否&lt; 0，如果是，说明此时有writer在竞争锁或已持有锁，则将当前goroutine加入readerSem指向的队列中，进行等待，防止写锁饥饿。</li>
 <li>RUnlock时，对readerCount的值-1，判断是否&lt;0，如果是，说明当前有writer在竞争锁，调用rUnlockSlow方法，对readerWait的值-1，判断是否=0，如果是，说明当前goroutine是最后一个要解除读锁的，此时会唤醒要请求写锁的writer。</li>
 </ol>
-<h3 id="lock方法-1">Lock方法</h3>
+<h2 id="lock方法-1">Lock方法</h2>
 <p>RWMutex内部使用Mutex实现写锁互斥，解决多个writer间的竞争</p>
 <ol>
 <li>调用w的Lock方法加锁，防止其他writer上锁，反转 readerCount的值，使其变成负数（readerCount - rwmutexMaxReaders + rwmutexMaxReaders）告诉reader有writer要请求锁</li>
 <li>如果此时readerCount != 0，说明当前有reader持有读锁，需要记录需要等待完成的reader的数量，即readerWait的值（readerWaiter + 第1步算的readerCount的值），并且如果此时readerWait != 0，将当前goroutine加入writerSema指向的队列中，进行等待。直到有goroutine调用RUnlock方法且是最后一个释放锁时，才会被唤醒。</li>
 </ol>
-<h3 id="unlock方法-1">Unlock方法</h3>
+<h2 id="unlock方法-1">Unlock方法</h2>
 <ol>
 <li>反转readerCount的值（readerCount + rwmutexMaxReaders），使其变成reader的数量，唤醒这些reader</li>
 <li>调用w的Unlock方法释放当前goroutine的锁，让其他writer可以继续竞争。</li>
 </ol>
-<h2 id="waitgroup">WaitGroup</h2>
-<h3 id="数据结构-2">数据结构</h3>
+<h1 id="syncmap">sync.Map</h1>
+<h2 id="数据结构-2">数据结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Map</span> <span class="kd">struct</span> <span class="p">{</span>
+    <span class="c1">// 锁，用于保护dirty
+</span><span class="c1"></span>	<span class="nx">mu</span> <span class="nx">Mutex</span>
+	<span class="c1">// 存读的数据，只读，由dirty提升得到
+</span><span class="c1"></span>	<span class="nx">read</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">Value</span>
+	<span class="c1">// 包含最新写入的数据，并且在写的时候，会把read中未被删除的数据拷贝到该dirty中，
+</span><span class="c1"></span>	<span class="nx">dirty</span> <span class="kd">map</span><span class="p">[</span><span class="kd">interface</span><span class="p">{}]</span><span class="o">*</span><span class="nx">entry</span>
+    <span class="c1">// 从read中读数据时该值+1, 当len(dirty) == misses时，将dirty拷贝到read中
+</span><span class="c1"></span>	<span class="nx">misses</span> <span class="kt">int</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">readOnly</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">m</span>       <span class="kd">map</span><span class="p">[</span><span class="kd">interface</span><span class="p">{}]</span><span class="o">*</span><span class="nx">entry</span>
+	<span class="nx">amended</span> <span class="kt">bool</span> <span class="c1">// true表明dirty中存在read中没有的键值对
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="c1">// read和dirty都包含了*entry，里面的p是一个指针，read和dirty各自维护了一套key，但他们都指向同一个value
+</span><span class="c1"></span><span class="kd">type</span> <span class="nx">entry</span> <span class="kd">struct</span> <span class="p">{</span>
+    <span class="c1">// p的状态有三种：1.=nil，表示键值对已被删除；2.=expunged，表示该key被标记删除；3.=正常值
+</span><span class="c1"></span>    <span class="nx">p</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="基本-2">基本</h2>
+<ul>
+<li>
+<p>将map与RWMutex封装成一个结构体，使用读写锁封装map的各种操作即可</p>
+</li>
+<li>
+<p>有六个方法</p>
+<ul>
+<li>LoadOrStore：根据key获取value，如果该key存在且没有被标记为删除，则返回原来的value和true，不存在则进行store，返回该value和false</li>
+<li>Load：根据key获取value</li>
+<li>Delete：删除</li>
+<li>LoadAndDelete：根据key删除对应的键值对，如果可以存在，返回对应的value和true</li>
+<li>Range：遍历</li>
+<li>Store：添加key和value</li>
+</ul>
+</li>
+<li>
+<p>使用RWMutex封装的并发安全的map，因为锁的粒度太大，性能不会太好；通过减少锁的粒度和持有锁的时间，可以提升新能，常见的减少锁的粒度是将锁分片，将锁进行分片，分别控制map中不同的范围的key，类似JDK7中的ConcurrentHashMap的segment锁实现。</p>
+</li>
+<li>
+<p>官方出品的sync.Map，但它只有在部分特殊的场景里才有优势，比如一个只会增长的map，一个key只会被写一次，读很多次；或者 多个goroutine为不相交的键集读、写和重写键值对；</p>
+<p>sync.Map内部有两个map，一个只读read，一个可写dirty，对只读read的操作(读、更新、删除)不需要加锁，以此减少锁对性能的影响；</p>
+<p>写入键值对时，会优先修改read中的数据，如果read中存在则直接修改，因为read和dirty指向同一个value，所以直接修改一次即可；</p>
+<p>如果read中读不到，就会加锁读取dirty里的，同时增加miss的值(miss表示读取穿透的次数)，当miss的值=dirty的长度时，就会将dirty提升为read，然后清空dirty，避免总是从dirty中加锁读取；将dirty提升为read这个操作在load方法中执行；</p>
+<p>加锁读取dirty时，还要再检查read，确定read中真的不存在才会操作dirty；</p>
+<p>dirty提升为read时，只需简单的赋值即可，创建新的dirty时，需要遍历把read中非expunged的值赋给dirty；</p>
+<p>删除key时，只是对该key打上一个expunged标记，只有在将dirty提升为read时才会清理删除的数据；</p>
+<p>sync.Map没有len方法，要获取里面有多少个key只能遍历获取；</p>
+</li>
+</ul>
+<h1 id="waitgroup">WaitGroup</h1>
+<h2 id="数据结构-3">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -441,7 +880,12 @@ if (!doNotTrack) {
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="基本-2">基本</h3>
+</div><p>信号量的作用：</p>
+<ul>
+<li>当信号量&gt;0时，表示资源可用，获取信号量时系统自动将信号量减1；</li>
+<li>当信号量==0时，表示资源暂不可用，获取信号量时，当前线程会进入睡眠，当信号量为正时被唤醒。</li>
+</ul>
+<h2 id="基本-3">基本</h2>
 <ul>
 <li>state的值由32bit的值表示信号量，64bit的值表示计数和waiter的数量组成。因为原子操作只能64bit对齐，而计数值和waiter的数量是一个64bit的值，在64bit的编译器上，一次读取是64bit，刚好可以直接操作，但是如果是32bit的机器，一次只能读32bit，为了保证进行64bit对齐时一定能获取到计数值和waiter的值，在进行64bit的原子操作对齐时，第一次是对齐到了一个空32bit和第一个32bit的值，第二次对齐就能保证获取了。</li>
 <li>同RWMutex，WaitGroup的三个方法内还很多data race检查，保证并发时候共享数据的正确性，一旦检查出有问题，会直接panic</li>
@@ -452,23 +896,159 @@ if (!doNotTrack) {
 <li>noCopy是一个实现了Lock接口的结构体，且不对外暴露，其Lock方法和Unlock方法都是空实现，用于vet工具检查WaitGroup在使用过程中有没有被复制；当我们自定义的结构不想被复制使用时，也可以使用它。</li>
 <li>使用时要避免复制</li>
 </ul>
-<h3 id="add方法">Add方法</h3>
+<h2 id="add方法">Add方法</h2>
 <ol>
 <li>原子的将WaitGroup的计数值加到state上，如果当前的计数值 &gt; 0，或者 waiter的数量等于0，直接返回</li>
 <li>否则，即代表当前的计数值为0，但waiter的数量不一定为0，此时state的值就是waiter的数量</li>
 <li>将state的值设置为0，即waiter的数量设置为0，然后唤醒所有waiter</li>
 </ol>
-<h3 id="done方法">Done方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">wg</span> <span class="o">*</span><span class="nx">WaitGroup</span><span class="p">)</span> <span class="nf">state</span><span class="p">()</span> <span class="p">(</span><span class="nx">statep</span> <span class="o">*</span><span class="kt">uint64</span><span class="p">,</span> <span class="nx">semap</span> <span class="o">*</span><span class="kt">uint32</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">wg</span><span class="p">.</span><span class="nx">state1</span><span class="p">))</span><span class="o">%</span><span class="mi">8</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="p">(</span><span class="o">*</span><span class="kt">uint64</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">wg</span><span class="p">.</span><span class="nx">state1</span><span class="p">)),</span> <span class="o">&amp;</span><span class="nx">wg</span><span class="p">.</span><span class="nx">state1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="p">(</span><span class="o">*</span><span class="kt">uint64</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">wg</span><span class="p">.</span><span class="nx">state1</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="o">&amp;</span><span class="nx">wg</span><span class="p">.</span><span class="nx">state1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">wg</span> <span class="o">*</span><span class="nx">WaitGroup</span><span class="p">)</span> <span class="nf">Add</span><span class="p">(</span><span class="nx">delta</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">statep</span><span class="p">,</span> <span class="nx">semap</span> <span class="o">:=</span> <span class="nx">wg</span><span class="p">.</span><span class="nf">state</span><span class="p">()</span>
+	<span class="nx">state</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddUint64</span><span class="p">(</span><span class="nx">statep</span><span class="p">,</span> <span class="nb">uint64</span><span class="p">(</span><span class="nx">delta</span><span class="p">)</span><span class="o">&lt;&lt;</span><span class="mi">32</span><span class="p">)</span>
+	<span class="nx">v</span> <span class="o">:=</span> <span class="nb">int32</span><span class="p">(</span><span class="nx">state</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span> <span class="c1">// 计数器
+</span><span class="c1"></span>	<span class="nx">w</span> <span class="o">:=</span> <span class="nb">uint32</span><span class="p">(</span><span class="nx">state</span><span class="p">)</span> <span class="c1">// 等待计数器
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">v</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nb">panic</span><span class="p">(</span><span class="s">&#34;sync: negative WaitGroup counter&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+    <span class="c1">// 等待计数器不为0，说明已经执行了wait方法，此时不允许调用add方法
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">w</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">delta</span> <span class="p">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">v</span> <span class="o">==</span> <span class="nb">int32</span><span class="p">(</span><span class="nx">delta</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nb">panic</span><span class="p">(</span><span class="s">&#34;sync: WaitGroup misuse: Add called concurrently with Wait&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">v</span> <span class="p">&gt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">w</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+    <span class="c1">// 如果执行到这里，说明计数器为0，但等待计数器不为0
+</span><span class="c1"></span>	<span class="c1">// 说明此时发生了并发调用Add方法和wait方法，并发调用导致状态不一致
+</span><span class="c1"></span>	<span class="k">if</span> <span class="o">*</span><span class="nx">statep</span> <span class="o">!=</span> <span class="nx">state</span> <span class="p">{</span>
+		<span class="nb">panic</span><span class="p">(</span><span class="s">&#34;sync: WaitGroup misuse: Add called concurrently with Wait&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+    <span class="c1">// 状态位清零，唤醒等待的goroutine
+</span><span class="c1"></span>	<span class="o">*</span><span class="nx">statep</span> <span class="p">=</span> <span class="mi">0</span>
+	<span class="k">for</span> <span class="p">;</span> <span class="nx">w</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">w</span><span class="o">--</span> <span class="p">{</span>
+		<span class="nf">runtime_Semrelease</span><span class="p">(</span><span class="nx">semap</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="done方法">Done方法</h2>
 <ol>
 <li>调用Add方法，只是参数为-1，表示计数值 - 1，有一个waiter完成其任务；waiter指的是调用Wait方法的goroutine</li>
 </ol>
-<h3 id="wait方法">Wait方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">wg</span> <span class="o">*</span><span class="nx">WaitGroup</span><span class="p">)</span> <span class="nf">Done</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">wg</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="wait方法">Wait方法</h2>
 <ol>
 <li>循环内不断检测state的值，当其计数值为0时，说明所有任务已经完成，调用这个方法的goroutine不必继续等待，直接返回，结束该方法</li>
 <li>否则，说明此时还有任务没完成，调用该方法的goroutine成为waiter，把waiter的数量 + 1，加入等待队列，阻塞自己</li>
 </ol>
-<h2 id="cond--condition--waitnotify">Cond = condition + Wait/Notify</h2>
-<h3 id="数据结构-3">数据结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">wg</span> <span class="o">*</span><span class="nx">WaitGroup</span><span class="p">)</span> <span class="nf">Wait</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">statep</span><span class="p">,</span> <span class="nx">semap</span> <span class="o">:=</span> <span class="nx">wg</span><span class="p">.</span><span class="nf">state</span><span class="p">()</span>
+	<span class="k">for</span> <span class="p">{</span>
+		<span class="nx">state</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">LoadUint64</span><span class="p">(</span><span class="nx">statep</span><span class="p">)</span>
+		<span class="nx">v</span> <span class="o">:=</span> <span class="nb">int32</span><span class="p">(</span><span class="nx">state</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>
+		<span class="nx">w</span> <span class="o">:=</span> <span class="nb">uint32</span><span class="p">(</span><span class="nx">state</span><span class="p">)</span>
+        <span class="c1">// 计数器为0，说明goroutine执行结束
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">v</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+			<span class="k">return</span>
+		<span class="p">}</span>
+		<span class="c1">// 调用wait方法的goroutine的数目+1，此时调用Add方法时就能知道有多少goroutine在等待
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">CompareAndSwapUint64</span><span class="p">(</span><span class="nx">statep</span><span class="p">,</span> <span class="nx">state</span><span class="p">,</span> <span class="nx">state</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+			<span class="c1">// 阻塞等待，直至被唤醒
+</span><span class="c1"></span>			<span class="nf">runtime_Semacquire</span><span class="p">(</span><span class="nx">semap</span><span class="p">)</span>
+			<span class="k">if</span> <span class="o">*</span><span class="nx">statep</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+				<span class="nb">panic</span><span class="p">(</span><span class="s">&#34;sync: WaitGroup is reused before previous Wait has returned&#34;</span><span class="p">)</span>
+			<span class="p">}</span>
+			
+			<span class="k">return</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="cond--condition--waitnotify">Cond = condition + Wait/Notify</h1>
+<h2 id="数据结构-4">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -487,7 +1067,7 @@ if (!doNotTrack) {
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="基本-3">基本</h3>
+</div><h2 id="基本-4">基本</h2>
 <ul>
 <li>
 <p>初始化时，要指定使用的锁，比如Mutex</p>
@@ -509,8 +1089,8 @@ if (!doNotTrack) {
 <p>调用Wait后一定要检测等待条件是否满足，还需不需要继续等待，在等待的goroutine被唤醒不等于等待条件已满足，可能只是被某个goroutine唤醒而已，被唤醒时，只是得到了一次检测机会。</p>
 </li>
 </ul>
-<h2 id="once">Once</h2>
-<h3 id="数据结构-4">数据结构</h3>
+<h1 id="once">Once</h1>
+<h2 id="数据结构-5">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -525,7 +1105,7 @@ if (!doNotTrack) {
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="基本-4">基本</h3>
+</div><h2 id="基本-5">基本</h2>
 <ul>
 <li>sync.Once只有一个Do方法，入参是一个无参数无返回值的函数，当且仅当第一次调用Do方法的时候该函数才会执行，即使之后调用了n次、入参的值不一样都不会被执行</li>
 <li>可以将sync.Once与想要只初始化一次的对象封装成一个结构体，提供只初始化一次该值的方法，常用于初始化单例资源、并发访问只初始化一次的共享资源、需要延迟初始化的场景等</li>
@@ -568,26 +1148,8 @@ if (!doNotTrack) {
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="并发安全的map">并发安全的map</h2>
-<ul>
-<li>
-<p>将map与RWMutex封装成一个结构体，使用读写锁封装map的各种操作即可</p>
-</li>
-<li>
-<p>使用RWMutex封装的并发安全的map，因为锁的粒度太大，性能不会太好；通过减少锁的粒度和持有锁的时间，可以提升新能，常见的减少锁的粒度是将锁分片，将锁进行分片，分别控制map中不同的范围的key，类似JDK7中的ConcurrentHashMap的segment锁实现。</p>
-</li>
-<li>
-<p>官方出品的sync.Map，但它只有在部分特殊的场景里才有优势，比如一个只会增长的map，一个key只会被写一次，读很多次；或者 多个goroutine为不相交的键集读、写和重写键值对</p>
-<p>sync.Map内部有两个map，一个只读read，一个可写dirty，对只读read的操作(读、更新、删除)不需要加锁，以此减少锁对性能的影响。</p>
-<p>如果read中读不到，就会加锁读取dirty里的，同时增加miss的值(miss表示读取穿透的次数)，当miss的值=dirty的长度时，就会将dirty提升为read，然后清空dirty，避免总是从dirty中加锁读取</p>
-<p>加锁读取dirty时，还要再检查read，确定read中真的不存在才会操作dirty</p>
-<p>dirty提升为read时，只需简单的赋值即可，创建新的dirty时，需要遍历把read中非expunged的值赋给dirty</p>
-<p>删除key时，只是对该key打上一个expunged标记，只有在将dirty提升为read时才会清理删除的数据</p>
-<p>sync.Map没有len方法，要获取里面有多少个key只能遍历获取</p>
-</li>
-</ul>
-<h2 id="pool">Pool</h2>
-<h3 id="数据结构-5">数据结构</h3>
+</div><h1 id="pool">Pool</h1>
+<h2 id="数据结构-6">数据结构</h2>
 <p>![](<a class="link" href="https://github.com/Nixum/Java-Note/raw/master/picture/go"  target="_blank" rel="noopener"
     >https://github.com/Nixum/Java-Note/raw/master/picture/go</a> syncPool数据结构.png)</p>
 <ul>
@@ -597,7 +1159,7 @@ if (!doNotTrack) {
 <li>private字段代表一个缓存元素，且只能由相应的一个P存取，因为一个P同时只能执行一个goroutine，所以不会有并发问题</li>
 <li>shared字段可以被任意的P访问，但是只有本地的P次啊能pushHead/popHead，其他P可以popTail，相当于只有一个本地P作为生产者，多个P作为消费者，它由一个local-free的队列实现</li>
 </ul>
-<h3 id="基本-5">基本</h3>
+<h2 id="基本-6">基本</h2>
 <ul>
 <li>sync.Pool用于保存一组可独立访问的临时对象，它池化的对象如果没有被其他对象持有引用，可能会在未来某个时间点被回收掉</li>
 <li>sync.Pool是并发安全的，多个gotoutine可以并发调用它存取对象；</li>
@@ -607,7 +1169,7 @@ if (!doNotTrack) {
 <li>当Pool里没有元素可用时，Get方法会返回nil；可以向Pool中Put一个nil的值，Pool会将其忽略</li>
 <li>当使用Pool作为buffer池时，要注意buffer如果太大，reset后它就会占很大空间，引起内存泄漏，因此在回收元素时，需要检查大小，如果太大了就直接置为null，丢弃即可</li>
 </ul>
-<h3 id="get方法">Get方法</h3>
+<h2 id="get方法">Get方法</h2>
 <ol>
 <li>将当前goroutine固定在P上，优先从local的private字段取出一个元素，将private置为null</li>
 <li>如果取出的元素为null，从当前的local.shared的head中取出一个元素，如果还取不到，调用getSlow函数去其他shared中取</li>
@@ -615,12 +1177,12 @@ if (!doNotTrack) {
 <li>如果还取不到，则调用New函数生成一个，然后返回</li>
 </ol>
 <p>因为当前的goroutine被固定在了P上，在查找元素时不会被其他P执行</p>
-<h3 id="put方法">Put方法</h3>
+<h2 id="put方法">Put方法</h2>
 <ol>
 <li>如果Put进来的元素是null，直接返回</li>
 <li>固定当前goroutine，如果本地private没有值，直接设置，否则加入到shared中</li>
 </ol>
-<h2 id="原子操作">原子操作</h2>
+<h1 id="原子操作">原子操作</h1>
 <ul>
 <li>
 <p>依赖atomic包，因为没有泛型，目前该包支持int32、int64、uint32、unit64、uintptr、Pointer的原子操作，比如Add、CompareAndSwap、Swap、Load、Store等（Pointer不支持Add），对于有符号的数值来说，Add一个负数相当于减</p>
@@ -783,8 +1345,8 @@ if (!doNotTrack) {
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="weighted--semaphore信号量">Weighted = Semaphore信号量</h2>
-<h3 id="数据结构-6">数据结构</h3>
+</div><h1 id="weighted--semaphore信号量">Weighted = Semaphore信号量</h1>
+<h2 id="数据结构-7">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -803,7 +1365,7 @@ if (!doNotTrack) {
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="基本-6">基本</h3>
+</div><h2 id="基本-7">基本</h2>
 <ul>
 <li>
 <p>信号量中的PV操作，P：获取资源，如果获取不到，则阻塞，加入到等待队列中；V：释放资源，从等待队列中唤醒一个元素执行P操作</p>
@@ -829,20 +1391,20 @@ if (!doNotTrack) {
 <p>信号量的实现也可通过buffer为n的channel实现，只是一次只能请求一个资源，而Weighted一次可以请求多个</p>
 </li>
 </ul>
-<h3 id="acquire方法">Acquire方法</h3>
+<h2 id="acquire方法">Acquire方法</h2>
 <ol>
 <li>加锁，判断可用资源 &gt;= 入参所需的资源数，且没有waiter，说明资源足够，直接cur+上所需资源数，解锁返回</li>
 <li>如果所需资源数&gt;最大资源数，说明是不可能任务，解锁，依赖ctx的Done方法返回，否则一直等待</li>
 <li>如果资源数不够，将调用者加入等待队列，并创建一个read chan，用于通知唤醒，解锁</li>
 <li>等待唤醒有两种条件，一种是通过read chan唤醒，另一种是通过ctx.Done唤醒</li>
 </ol>
-<h3 id="release方法">Release方法</h3>
+<h2 id="release方法">Release方法</h2>
 <ol>
 <li>加锁，当前已使用资源数cur - 入参要释放的资源数，唤醒等待队列中的元素，解锁</li>
 <li>唤醒等待队列的元素时，会遍历waiters队列，按照先入先出的方式唤醒调用者，前提是释放的资源数要够队首的元素资源的要求，比如释放100个资源，但是队首元素要求101个资源，那队列中的所有等待者都将继续等待，直到队首元素出队，这样做是为了避免饥饿</li>
 </ol>
-<h2 id="singleflight">SingleFlight</h2>
-<h3 id="结构体">结构体</h3>
+<h1 id="singleflight">SingleFlight</h1>
+<h2 id="结构体">结构体</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -883,7 +1445,7 @@ if (!doNotTrack) {
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="基本-7">基本</h3>
+</div><h2 id="基本-8">基本</h2>
 <ul>
 <li>
 <p>SingleFlight可以合并多个请求为一个请求，再将该请求的结果返回给多个请求，从而达到合并并发请求的目的，减少并发调用的数量。比如有多个相同的读请求查库，那就可以合并成一个请求查库，再把结果响应回这多个请求中；或者是解决缓存击穿问题，降低对下游服务的并发压力</p>
@@ -897,8 +1459,8 @@ if (!doNotTrack) {
 <p>Forget方法：告诉Group忽略这个key，之后这个key的请求会执行入参函数，而不是等待前一个未完成的入参函数的结果</p>
 </li>
 </ul>
-<h2 id="cyclicbarrier---循环栅栏">CyclicBarrier - 循环栅栏</h2>
-<h3 id="数据结构-7">数据结构</h3>
+<h1 id="cyclicbarrier---循环栅栏">CyclicBarrier - 循环栅栏</h1>
+<h2 id="数据结构-8">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -929,13 +1491,13 @@ if (!doNotTrack) {
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h3 id="基本-8">基本</h3>
+</div><h2 id="基本-9">基本</h2>
 <ul>
 <li>类似Java的CyclicBarrier，允许一组goroutine相互等待，到达一个共同的执行点再继续往下执行；同时也可被重复使用。</li>
 <li>CyclicBarrier是一个接口，然后有两个初始化的方法，New方法，指定循环栅栏的参与者数量即可初始化；NewWithAction方法，除了指定参与者数量，第二个参数是一个函数，表示在最后一个参与者到达之后，但其他参与者还没放行之前，会调用该函数</li>
 <li>每个参与的goroutine都会调用Await方法进行阻塞，当调用Await方法的goroutine的个数=参与者的数量时，Await方法造成的阻塞才会解除</li>
 </ul>
-<h2 id="errgroup">ErrGroup</h2>
+<h1 id="errgroup">ErrGroup</h1>
 <ul>
 <li>
 <p>类似WaitGroup，只是功能更丰富，多了与Context集成，可以通过Context监控是否发生cancel；error可以向上传播，把子任务的错误传递给Wait的调用者</p>
@@ -953,11 +1515,18 @@ if (!doNotTrack) {
 <p>子任务如果发生panic会导致程序崩溃</p>
 </li>
 </ul>
-<h2 id="检测工具">检测工具</h2>
+<h1 id="检测工具">检测工具</h1>
 <ul>
 <li>go race detector：主要用于检测多个goroutine对共享变量的访问是否存在协程安全问题。编译器通过探测所有内存的访问，加入代码监视对内存地址的访问，在程序运行时，监控共享变量的非同步访问，出现race时，打印告警信息。比如在运行时加入race参数<code>go run -race main.go</code>，当执行到一些并发操作时，才会检测运行时是否有并发问题</li>
 <li>命令<code>go vet xxx.go</code>可以进行死锁检测</li>
 </ul>
+<h1 id="参考">参考</h1>
+<p><a class="link" href="https://www.cnblogs.com/ricklz/p/14535653.html"  target="_blank" rel="noopener"
+    >go中sync.Mutex源码解读</a></p>
+<p><a class="link" href="https://www.cnblogs.com/ricklz/p/14496612.html"  target="_blank" rel="noopener"
+    >go中waitGroup源码解读</a></p>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/344834329"  target="_blank" rel="noopener"
+    >深度解密Go语言之sync.map</a></p>
 
 </section>
 
@@ -1210,81 +1779,83 @@ if (!doNotTrack) {
         <li><a href="#证heppen-before的手段">证heppen before的手段</a></li>
       </ol>
     </li>
-    <li><a href="#并发包">并发包</a>
+    <li><a href="#mutex---互斥锁">Mutex - 互斥锁</a>
       <ol>
-        <li><a href="#mutex---互斥锁">Mutex - 互斥锁</a>
-          <ol>
-            <li><a href="#数据结构">数据结构</a></li>
-            <li><a href="#基本">基本</a></li>
-            <li><a href="#lock方法">Lock方法</a></li>
-            <li><a href="#unlock方法">Unlock方法</a></li>
-            <li><a href="#基于mutex的拓展">基于Mutex的拓展</a></li>
-          </ol>
-        </li>
-        <li><a href="#rwmutex---读写锁">RWMutex - 读写锁</a>
-          <ol>
-            <li><a href="#数据结构-1">数据结构</a></li>
-            <li><a href="#基本-1">基本</a></li>
-            <li><a href="#rlock--runlock-方法">RLock / RUnlock 方法</a></li>
-            <li><a href="#lock方法-1">Lock方法</a></li>
-            <li><a href="#unlock方法-1">Unlock方法</a></li>
-          </ol>
-        </li>
-        <li><a href="#waitgroup">WaitGroup</a>
-          <ol>
-            <li><a href="#数据结构-2">数据结构</a></li>
-            <li><a href="#基本-2">基本</a></li>
-            <li><a href="#add方法">Add方法</a></li>
-            <li><a href="#done方法">Done方法</a></li>
-            <li><a href="#wait方法">Wait方法</a></li>
-          </ol>
-        </li>
-        <li><a href="#cond--condition--waitnotify">Cond = condition + Wait/Notify</a>
-          <ol>
-            <li><a href="#数据结构-3">数据结构</a></li>
-            <li><a href="#基本-3">基本</a></li>
-          </ol>
-        </li>
-        <li><a href="#once">Once</a>
-          <ol>
-            <li><a href="#数据结构-4">数据结构</a></li>
-            <li><a href="#基本-4">基本</a></li>
-          </ol>
-        </li>
-        <li><a href="#并发安全的map">并发安全的map</a></li>
-        <li><a href="#pool">Pool</a>
-          <ol>
-            <li><a href="#数据结构-5">数据结构</a></li>
-            <li><a href="#基本-5">基本</a></li>
-            <li><a href="#get方法">Get方法</a></li>
-            <li><a href="#put方法">Put方法</a></li>
-          </ol>
-        </li>
-        <li><a href="#原子操作">原子操作</a></li>
-        <li><a href="#weighted--semaphore信号量">Weighted = Semaphore信号量</a>
-          <ol>
-            <li><a href="#数据结构-6">数据结构</a></li>
-            <li><a href="#基本-6">基本</a></li>
-            <li><a href="#acquire方法">Acquire方法</a></li>
-            <li><a href="#release方法">Release方法</a></li>
-          </ol>
-        </li>
-        <li><a href="#singleflight">SingleFlight</a>
-          <ol>
-            <li><a href="#结构体">结构体</a></li>
-            <li><a href="#基本-7">基本</a></li>
-          </ol>
-        </li>
-        <li><a href="#cyclicbarrier---循环栅栏">CyclicBarrier - 循环栅栏</a>
-          <ol>
-            <li><a href="#数据结构-7">数据结构</a></li>
-            <li><a href="#基本-8">基本</a></li>
-          </ol>
-        </li>
-        <li><a href="#errgroup">ErrGroup</a></li>
-        <li><a href="#检测工具">检测工具</a></li>
+        <li><a href="#数据结构">数据结构</a></li>
+        <li><a href="#基本">基本</a></li>
+        <li><a href="#lock方法">Lock方法</a></li>
+        <li><a href="#unlock方法">Unlock方法</a></li>
+        <li><a href="#基于mutex的拓展">基于Mutex的拓展</a></li>
       </ol>
     </li>
+    <li><a href="#rwmutex---读写锁">RWMutex - 读写锁</a>
+      <ol>
+        <li><a href="#数据结构-1">数据结构</a></li>
+        <li><a href="#基本-1">基本</a></li>
+        <li><a href="#rlock--runlock-方法">RLock / RUnlock 方法</a></li>
+        <li><a href="#lock方法-1">Lock方法</a></li>
+        <li><a href="#unlock方法-1">Unlock方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#syncmap">sync.Map</a>
+      <ol>
+        <li><a href="#数据结构-2">数据结构</a></li>
+        <li><a href="#基本-2">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#waitgroup">WaitGroup</a>
+      <ol>
+        <li><a href="#数据结构-3">数据结构</a></li>
+        <li><a href="#基本-3">基本</a></li>
+        <li><a href="#add方法">Add方法</a></li>
+        <li><a href="#done方法">Done方法</a></li>
+        <li><a href="#wait方法">Wait方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#cond--condition--waitnotify">Cond = condition + Wait/Notify</a>
+      <ol>
+        <li><a href="#数据结构-4">数据结构</a></li>
+        <li><a href="#基本-4">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#once">Once</a>
+      <ol>
+        <li><a href="#数据结构-5">数据结构</a></li>
+        <li><a href="#基本-5">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#pool">Pool</a>
+      <ol>
+        <li><a href="#数据结构-6">数据结构</a></li>
+        <li><a href="#基本-6">基本</a></li>
+        <li><a href="#get方法">Get方法</a></li>
+        <li><a href="#put方法">Put方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#原子操作">原子操作</a></li>
+    <li><a href="#weighted--semaphore信号量">Weighted = Semaphore信号量</a>
+      <ol>
+        <li><a href="#数据结构-7">数据结构</a></li>
+        <li><a href="#基本-7">基本</a></li>
+        <li><a href="#acquire方法">Acquire方法</a></li>
+        <li><a href="#release方法">Release方法</a></li>
+      </ol>
+    </li>
+    <li><a href="#singleflight">SingleFlight</a>
+      <ol>
+        <li><a href="#结构体">结构体</a></li>
+        <li><a href="#基本-8">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#cyclicbarrier---循环栅栏">CyclicBarrier - 循环栅栏</a>
+      <ol>
+        <li><a href="#数据结构-8">数据结构</a></li>
+        <li><a href="#基本-9">基本</a></li>
+      </ol>
+    </li>
+    <li><a href="#errgroup">ErrGroup</a></li>
+    <li><a href="#检测工具">检测工具</a></li>
+    <li><a href="#参考">参考</a></li>
   </ol>
 </nav>
                 </div>
