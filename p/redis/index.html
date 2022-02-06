@@ -336,14 +336,24 @@ if (!doNotTrack) {
 </ol>
 <p><a class="link" href="https://zhuanlan.zhihu.com/p/98030096"  target="_blank" rel="noopener"
     >一致性哈希参考</a></p>
-<h1 id="redis的单线程">Redis的单线程</h1>
-<p>Redis的单线程，指的是网络IO和键值对读写由一个线程来完成，其他的如持久化、异步删除、集群数据同步都有额外的线程完成。</p>
-<h2 id="原理">原理</h2>
-<p>Redis单线程之所以能处理得很快，得益于高效的数据结构，且也采用了<strong>多路复用机制</strong>，在网络IO操作中能并发处理大量客户端请求。监听 + 事件驱动 + 回调 的方式，处理易阻塞的accept和recv事件。</p>
+<h1 id="redis的线程模型">Redis的线程模型</h1>
+<blockquote>
+<p>对于一个 DB 来说，CPU 通常不会是瓶颈，因为大多数请求不会是 CPU 密集型的，而是 I/O 密集型。具体到 Redis 的话，如果不考虑 RDB/AOF 等持久化方案，Redis 是完全的纯内存操作，执行速度是非常快的，因此这部分操作通常不会是性能瓶颈，Redis 真正的性能瓶颈在于网络 I/O，也就是客户端和服务端之间的网络传输延迟，因此 Redis 选择了单线程的 I/O 多路复用来实现它的核心网络模型。</p>
+</blockquote>
+<h2 id="单线程模型">单线程模型</h2>
+<p>Redis的单线程，指的是网络IO和键值对读写由一个线程来完成，其他的如持久化、异步删除、集群数据同步都有额外的线程完成。Redis在6.0版本后才支持IO多线程的网络模型。</p>
+<p>Redis单线程之所以能处理得很快，得益于高效的数据结构，且也采用了<strong>多路复用机制</strong>，在网络IO操作中能并发处理大量客户端请求，同时为了支持多种数据结构，保证并发安全，单线程模型下避免加锁解锁带来额外的开销。</p>
+<p>监听 + 事件驱动 + 回调 的方式，处理易阻塞的accept和recv事件，是一个单Reactor模型，利用 epoll / select / kqueue 等多路复用技术，在单线程的事件循环中不断去处理事件（客户端请求）。</p>
 <p><a class="link" href="https://zhuanlan.zhihu.com/p/57089960?utm_source=wechat_session&amp;utm_medium=social&amp;utm_oi=632939468966072320"  target="_blank" rel="noopener"
     >一文揭秘单线程的Redis为什么这么快?</a></p>
-<p>总结一下就是：高效的数据结构和数据压缩、纯内存操作、非阻塞IO多路复用，避免频繁的上下文切换。</p>
+<p><a class="link" href="https://strikefreedom.top/multiple-threaded-network-model-in-redis"  target="_blank" rel="noopener"
+    >Redis 多线程网络模型全面揭秘</a></p>
+<p>总结一下就是：高效的数据结构和数据压缩、纯内存操作、非阻塞IO多路复用，避免频繁的上下文切换、避免同步机制的开销。</p>
+<h2 id="多线程模型">多线程模型</h2>
+<p>Redis 4.0之后引入多线程来做一些异步操作，比如以前<code>DEL</code>命令在删除big key和大量key时是阻塞操作，为了解决这个问题引入多线程使得部分命令支持多线程的异步操作，比如<code>UNLINK</code>、<code>FLUSHALL ASYNC</code>、<code>FLUSHDB ASYNC</code>，此时的网络IO模型仍然是单线程的（单Reactor模型）</p>
+<p>Redis 6.0之后才引入多线程的网络IO模型（多Reactor模型，但不是标准的多Reactor模型），总的流程还是跟单线程模型一样，只是把读取客户端命令和回写响应数据的操作交由I/O线程去执行异步化，<strong>I/O 线程仅仅是读取和解析客户端命令而不会真正去执行命令，客户端命令的执行最终还是要在主线程上完成</strong>；</p>
 <h2 id="影响性能的场景">影响性能的场景</h2>
+<p>关于big key：对于字符串类型，其value的大小超过10KB；集合类类型，其元素的个数数量超过10k；</p>
 <ul>
 <li>
 <p>对big key的操作，比如创建和删除，big key在分配内存和释放内存会比较耗时。big key意味着value很大，当进行全量查询返回、聚合操作、全量删除(因为要释放内存)时可能会阻塞主线程。</p>
@@ -408,7 +418,7 @@ if (!doNotTrack) {
 <h1 id="存储与持久化">存储与持久化</h1>
 <h2 id="rdb快照redis-database">RDB快照（Redis DataBase）</h2>
 <p>RDB快照由于保存的是数据，恢复起来会比AOF快（AOF保存的是命令），而且AOF是文本文件，RDB是二进制文件，所以RDB快照在网络传输、IO效率都比AOF好。</p>
-<h3 id="原理-1">原理</h3>
+<h3 id="原理">原理</h3>
 <p>将Redis中的数据全量保存的文件中，一般会使用子进程进行刷盘操作，不阻塞主线程，此时主线程仍然能处理命令。（<strong>先全量</strong>）</p>
 <p>此外，会使用<strong>Copy on Write机制（写时复制）</strong>，解决创建快照的过程中，原有数据被修改对RDB快照的影响。当主线程对原有数据进行修改前，这块数据会被复制一份（复制引用，由bgsave子进程操作），形成副本（此时会消耗两倍内存），由子进程将该副本写入RDB文件中，由于写的是引用，主线程修改后会同步到RDB中。（<strong>后增量</strong>）</p>
 <h3 id="相关命令">相关命令</h3>
@@ -444,7 +454,7 @@ if (!doNotTrack) {
 <p>always：此外AOF还能选择每接收一个写命令就追加写入到AOF文件中，虽然能避免不丢数据，但每个写命令都是在主线程上完成，且后面都跟着一个刷盘操作，对机器的负担较大，影响服务性能。</p>
 </li>
 </ul>
-<h3 id="原理-2">原理</h3>
+<h3 id="原理-1">原理</h3>
 <p>不同与MySQL的WAL机制，AOF是先执行命令将数据写入内存，再写入日志。因为AOF会记录Redis收到的每一条命令，并以文本的形式保存，如果先写日志，并不知道命令是否是正确的，因此先写内存，让系统执行成功后，才会记录到日志中，避免错误命令。</p>
 <h3 id="潜在风险-1">潜在风险</h3>
 <ul>
@@ -453,7 +463,7 @@ if (!doNotTrack) {
 </ul>
 <h3 id="重写机制">重写机制</h3>
 <p>一般用于<strong>避免AOF日志文件过大</strong>，毕竟如果文件太大会影响磁盘IO、重放会太耗时。</p>
-<h4 id="原理-3">原理</h4>
+<h4 id="原理-2">原理</h4>
 <p>AOF重写机制在重写时，Redis根据Redis现状创建一个新的AOF文件，读取Redis中所有键值对后进行写入，但在重写时不是原样copy，而是会对命令进行合并，以此减小文件大小。</p>
 <p>重写时，主线程会fork后台的bgrewriteiaof子进程，把<strong>主线程的内存拷贝一份给bgrewriteiaof子进程</strong>，其中也包括了Redis的最新数据，bgrewriteiaof子进程逐一写入重写日志，避免阻塞主线程。</p>
 <p>因为重写是在子进程中处理的，此时主线程仍然能处理客户端的命令，当接收到客户端的写命令时，<strong>会记录到AOF日志</strong>中，<strong>同时</strong>也会写进<strong>AOF重写日志</strong>的缓冲区，等子进程将拷贝数据写完后，再把缓冲区的数据刷入，完成后即可删除AOF文件，留下AOF重写文件。</p>
@@ -496,7 +506,7 @@ if (!doNotTrack) {
 <h2 id="哨兵机制">哨兵机制</h2>
 <p>哨兵机制会解决三个问题：1.判断主库是否宕机 2.选择哪个从库为主库 3.如何把新主库的信息通知给从库和客户端。</p>
 <p>使用<strong>哨兵模式</strong>（sentinel）来监听和管理Redis集群，存储集群配置，作用类似ZooKeeper，哨兵节点是一台特殊的Redis，功能有限，主要用来支持哨兵机制，哨兵节点有三个任务：监控、选主、通知。</p>
-<h3 id="原理-4">原理</h3>
+<h3 id="原理-3">原理</h3>
 <p><strong>哨兵节点一般设置3个及以上的奇数个，哨兵节点间是平级的，会互相监控</strong>。</p>
 <ul>
 <li>所有哨兵节点都会周期性的给所有主从库发送Ping命令检测Redis的主从节点是否正常运行，当有Redis节点出现问题时，进行通知。</li>
@@ -570,7 +580,7 @@ if (!doNotTrack) {
 <li>横向扩展：根据key，对Redis实例进行分片，增加Redis实例个数。</li>
 </ul>
 <h2 id="分片">分片</h2>
-<h3 id="原理-5">原理</h3>
+<h3 id="原理-4">原理</h3>
 <ul>
 <li>
 <p>将数据分散到集群的多个机器上，Redis里使用的概念是槽Slot，每个集群的槽数固定为16 * 1024 = 16384个，使用哈希分片算法对Key进行取模，计算方法：<code>HASH_SLOT = CRC16(Key) mod 16384</code>，余数为Key所在的槽。</p>
@@ -810,6 +820,11 @@ if (!doNotTrack) {
 <li>
 <p>推荐先更新数据库再删除缓存（也称为Cache Aside 模式），访问时再进行加载，虽然也可能出现3中的情况，比如读缓存时缓存失效，紧接着一个并发写操作，就有可能出现读操作覆盖了写操作后的数据更新，导致数据不一致，但实际上发生的概率不大，带来的影响会相对小一些，因为写操作通常会比读操作慢，再加上要锁表，而读操作必须在写操作前进入数据库操作，而又要晚于写操作更新缓存，条件就很苛刻了。</p>
 <p>如果删除缓存失败了，可以延迟任务进行删除重试，因为删除操作一般是幂等的，所以即使重复删除也没关系，另外，相比Read/Write Through模式（更新数据库后更新缓存操作），不会因为并发读写产生脏数据。还有由于会删除缓存，所以要注意缓存穿透问题。</p>
+<p>另外，即使使用了先更新数据库再删除缓存的模式，在主从同步延迟的场景也会导致不一致(对于其他模式也是)，解决方案仍然是延迟双删，只是sleep的时间最好等于延迟时间；</p>
+<p>如果还要强一致，就只能使用2PC、3PC、Raft之类的一致性协议或者分布式锁等方案来解决了，但是性能就保证不了了；</p>
+</li>
+<li>
+<p>另外的方案是利用数据库的能力 + 消息队列的方式，如根据MySQL的Bin log来更新缓存；</p>
 </li>
 </ol>
 <p><figure 
@@ -1096,9 +1111,10 @@ if (!doNotTrack) {
       </ol>
     </li>
     <li><a href="#与memcached的区别">与Memcached的区别</a></li>
-    <li><a href="#redis的单线程">Redis的单线程</a>
+    <li><a href="#redis的线程模型">Redis的线程模型</a>
       <ol>
-        <li><a href="#原理">原理</a></li>
+        <li><a href="#单线程模型">单线程模型</a></li>
+        <li><a href="#多线程模型">多线程模型</a></li>
         <li><a href="#影响性能的场景">影响性能的场景</a></li>
       </ol>
     </li>
@@ -1117,7 +1133,7 @@ if (!doNotTrack) {
       <ol>
         <li><a href="#rdb快照redis-database">RDB快照（Redis DataBase）</a>
           <ol>
-            <li><a href="#原理-1">原理</a></li>
+            <li><a href="#原理">原理</a></li>
             <li><a href="#相关命令">相关命令</a></li>
             <li><a href="#优点">优点</a></li>
             <li><a href="#潜在风险">潜在风险</a></li>
@@ -1126,11 +1142,11 @@ if (!doNotTrack) {
         <li><a href="#aofappend-only-file">AOF（Append Only File）</a>
           <ol>
             <li><a href="#aof配置项">AOF配置项</a></li>
-            <li><a href="#原理-2">原理</a></li>
+            <li><a href="#原理-1">原理</a></li>
             <li><a href="#潜在风险-1">潜在风险</a></li>
             <li><a href="#重写机制">重写机制</a>
               <ol>
-                <li><a href="#原理-3">原理</a></li>
+                <li><a href="#原理-2">原理</a></li>
                 <li><a href="#潜在风险-2">潜在风险</a></li>
               </ol>
             </li>
@@ -1149,7 +1165,7 @@ if (!doNotTrack) {
         <li><a href="#主从库命令传播时网络中断">主从库命令传播时网络中断</a></li>
         <li><a href="#哨兵机制">哨兵机制</a>
           <ol>
-            <li><a href="#原理-4">原理</a></li>
+            <li><a href="#原理-3">原理</a></li>
             <li><a href="#如何监控如何判断主库不可用">如何监控，如何判断主库不可用</a></li>
             <li><a href="#如何选举">如何选举</a></li>
             <li><a href="#如何通知">如何通知</a></li>
@@ -1170,7 +1186,7 @@ if (!doNotTrack) {
         <li><a href="#扩展">扩展</a></li>
         <li><a href="#分片">分片</a>
           <ol>
-            <li><a href="#原理-5">原理</a></li>
+            <li><a href="#原理-4">原理</a></li>
           </ol>
         </li>
       </ol>

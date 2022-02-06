@@ -9,7 +9,7 @@
 <meta property='og:description' content='不好归类的算在这一part'>
 <meta property='og:url' content='http://nixum.cc/p/%E5%85%B6%E4%BB%96/'>
 <meta property='og:site_name' content='Nixum Blog'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='定时任务' /><meta property='article:tag' content='session和cookie' /><meta property='article:tag' content='JWT' /><meta property='article:tag' content='压测调优' /><meta property='article:tag' content='常见业务方案' /><meta property='article:published_time' content='2020-09-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-09-03T00:00:00&#43;00:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='定时任务' /><meta property='article:tag' content='session和cookie' /><meta property='article:tag' content='JWT' /><meta property='article:tag' content='压测调优' /><meta property='article:tag' content='常见业务方案' /><meta property='article:tag' content='布隆过滤器' /><meta property='article:tag' content='淘汰算法' /><meta property='article:published_time' content='2020-09-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2021-09-03T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="其他">
 <meta name="twitter:description" content="不好归类的算在这一part">
     <link rel="shortcut icon" href="/img/favicon.ico" />
@@ -136,7 +136,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    3 minute read
+                    8 minute read
                 </time>
             </div>
         
@@ -649,8 +649,584 @@ value：无
 <li>考虑幂等；</li>
 <li>加入版本控制，加在URL上，或者请求头有个字段标识；</li>
 </ul>
-<h1 id="参考">参考</h1>
+<h1 id="布隆过滤器">布隆过滤器</h1>
+<p>本质上是基于hash的概率性数据结构，是一个很长的二进制数组，主要用于判断元素可能存在集合中，或者一定不在集合中。</p>
+<h2 id="原理-1">原理</h2>
+<ol>
+<li>有一个长度为m的bit数组，初始每个bit都是0，另外还有k个hash函数；</li>
+<li>当加入一个元素时，先调用k个hash函数得到k个结果，将这k个结果与bit数组长度取模得到k个数组下标，将这k个数组下标对应的值置为 1；</li>
+<li>查询元素时，同样经过上面步骤的计算，最终得到k个数组下标，判断这些下标对应的值是否为1，如果为1，说明元素可能存在，如果有一个不为1，说明元素一定不存在，返回结果；</li>
+</ol>
+<h2 id="误判率计算">误判率计算</h2>
+<blockquote>
+<p>涉及到3个重要的参数：</p>
+<ol>
+<li><code>m</code>表示bit数组的长度</li>
+<li><code>k</code>表示散列函数的个数</li>
+<li><code>n</code>表示插入的元素个数</li>
+</ol>
+<p>布隆过滤器中，一个元素插入后，某个bit为0的概率是<code>(1 − 1/m)^k</code></p>
+<p>n元素插入后，某个bit为0的概率是<code>(1 − 1/m)^(n*k)</code></p>
+<p>false positive的概率是<code>(1−(1−1/m)^n*k)^k</code></p>
+<p>因为需要的是<code>k</code>个不同的bit被设置成1，概率是大约是<code>(1−e^(−k*n/m))^k</code></p>
+</blockquote>
+<h2 id="实现">实现</h2>
+<p>可以基于redis实现，但这里只给出go版本的实现，支持并发安全</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">mod7</span>       <span class="p">=</span> <span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">1</span>
+	<span class="nx">bitPerByte</span> <span class="p">=</span> <span class="mi">8</span>
+<span class="p">)</span>
+
+<span class="kd">type</span> <span class="nx">Filter</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">lock</span>       <span class="o">*</span><span class="nx">sync</span><span class="p">.</span><span class="nx">RWMutex</span>
+	<span class="nx">concurrent</span> <span class="kt">bool</span>
+	<span class="c1">// 长度之所以要取2的指数是因为要将取模操作优化成与操作， % 等于 &amp;(2^n-1)
+</span><span class="c1"></span>	<span class="nx">m</span>     <span class="kt">uint64</span> <span class="c1">// bit array of m bits, m will be ceiling to power of 2
+</span><span class="c1"></span>	<span class="nx">n</span>     <span class="kt">uint64</span> <span class="c1">// number of inserted elements
+</span><span class="c1"></span>	<span class="nx">log2m</span> <span class="kt">uint64</span> <span class="c1">// log_2 of m
+</span><span class="c1"></span>	<span class="nx">k</span>     <span class="kt">uint64</span> <span class="c1">// the number of hash function
+</span><span class="c1"></span>	<span class="nx">keys</span>  <span class="p">[]</span><span class="kt">byte</span> <span class="c1">// byte array to store hash value
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">New</span><span class="p">(</span><span class="nx">size</span> <span class="kt">uint64</span><span class="p">,</span> <span class="nx">k</span> <span class="kt">uint64</span><span class="p">,</span> <span class="nx">race</span> <span class="kt">bool</span><span class="p">)</span> <span class="o">*</span><span class="nx">Filter</span> <span class="p">{</span>
+	<span class="nx">log2</span> <span class="o">:=</span> <span class="nb">uint64</span><span class="p">(</span><span class="nx">math</span><span class="p">.</span><span class="nf">Ceil</span><span class="p">(</span><span class="nx">math</span><span class="p">.</span><span class="nf">Log2</span><span class="p">(</span><span class="nb">float64</span><span class="p">(</span><span class="nx">size</span><span class="p">))))</span>
+	<span class="nx">filter</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">Filter</span><span class="p">{</span>
+		<span class="nx">m</span><span class="p">:</span>          <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="nx">log2</span><span class="p">,</span>
+		<span class="nx">log2m</span><span class="p">:</span>      <span class="nx">log2</span><span class="p">,</span>
+		<span class="nx">k</span><span class="p">:</span>          <span class="nx">k</span><span class="p">,</span>
+		<span class="nx">keys</span><span class="p">:</span>       <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="mi">1</span><span class="o">&lt;&lt;</span><span class="nx">log2</span><span class="p">),</span>
+		<span class="nx">concurrent</span><span class="p">:</span> <span class="nx">race</span><span class="p">,</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">filter</span><span class="p">.</span><span class="nx">concurrent</span> <span class="p">{</span>
+		<span class="nx">filter</span><span class="p">.</span><span class="nx">lock</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">sync</span><span class="p">.</span><span class="nx">RWMutex</span><span class="p">{}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">filter</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">f</span> <span class="o">*</span><span class="nx">Filter</span><span class="p">)</span> <span class="nf">Add</span><span class="p">(</span><span class="nx">data</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="o">*</span><span class="nx">Filter</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">f</span><span class="p">.</span><span class="nx">concurrent</span> <span class="p">{</span>
+		<span class="nx">f</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+		<span class="k">defer</span> <span class="nx">f</span><span class="p">.</span><span class="nx">lock</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="p">}</span>
+	<span class="nx">h</span> <span class="o">:=</span> <span class="nf">baseHash</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="nb">uint64</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">f</span><span class="p">.</span><span class="nx">k</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="nx">loc</span> <span class="o">:=</span> <span class="nf">location</span><span class="p">(</span><span class="nx">h</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span>
+		<span class="nx">slot</span><span class="p">,</span> <span class="nx">mod</span> <span class="o">:=</span> <span class="nx">f</span><span class="p">.</span><span class="nf">location</span><span class="p">(</span><span class="nx">loc</span><span class="p">)</span>
+		<span class="nx">f</span><span class="p">.</span><span class="nx">keys</span><span class="p">[</span><span class="nx">slot</span><span class="p">]</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="nx">mod</span>
+	<span class="p">}</span>
+	<span class="nx">f</span><span class="p">.</span><span class="nx">n</span><span class="o">++</span>
+	<span class="k">return</span> <span class="nx">f</span>
+<span class="p">}</span>
+
+<span class="c1">// location returns the bit position in byte array
+</span><span class="c1">// &amp; (f.m - 1) is the quick way for mod operation
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">f</span> <span class="o">*</span><span class="nx">Filter</span><span class="p">)</span> <span class="nf">location</span><span class="p">(</span><span class="nx">h</span> <span class="kt">uint64</span><span class="p">)</span> <span class="p">(</span><span class="kt">uint64</span><span class="p">,</span> <span class="kt">uint64</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">slot</span> <span class="o">:=</span> <span class="p">(</span><span class="nx">h</span> <span class="o">/</span> <span class="nx">bitPerByte</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="nx">f</span><span class="p">.</span><span class="nx">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+	<span class="nx">mod</span> <span class="o">:=</span> <span class="nx">h</span> <span class="o">&amp;</span> <span class="nx">mod7</span>
+	<span class="k">return</span> <span class="nx">slot</span><span class="p">,</span> <span class="nx">mod</span>
+<span class="p">}</span>
+
+<span class="c1">// baseHash returns the murmur3 128-bit hash
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">baseHash</span><span class="p">(</span><span class="nx">data</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="p">[]</span><span class="kt">uint64</span> <span class="p">{</span>
+	<span class="nx">a1</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span> <span class="c1">// to grab another bit of data
+</span><span class="c1"></span>	<span class="nx">hasher</span> <span class="o">:=</span> <span class="nx">murmur3</span><span class="p">.</span><span class="nf">New128</span><span class="p">()</span>
+	<span class="nx">hasher</span><span class="p">.</span><span class="nf">Write</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="c1">// #nosec
+</span><span class="c1"></span>	<span class="nx">v1</span><span class="p">,</span> <span class="nx">v2</span> <span class="o">:=</span> <span class="nx">hasher</span><span class="p">.</span><span class="nf">Sum128</span><span class="p">()</span>
+	<span class="nx">hasher</span><span class="p">.</span><span class="nf">Write</span><span class="p">(</span><span class="nx">a1</span><span class="p">)</span> <span class="c1">// #nosec
+</span><span class="c1"></span>	<span class="nx">v3</span><span class="p">,</span> <span class="nx">v4</span> <span class="o">:=</span> <span class="nx">hasher</span><span class="p">.</span><span class="nf">Sum128</span><span class="p">()</span>
+	<span class="k">return</span> <span class="p">[]</span><span class="kt">uint64</span><span class="p">{</span>
+		<span class="nx">v1</span><span class="p">,</span> <span class="nx">v2</span><span class="p">,</span> <span class="nx">v3</span><span class="p">,</span> <span class="nx">v4</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="淘汰算法">淘汰算法</h1>
+<h2 id="lru">LRU</h2>
+<p>java实现，非线程安全</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 非线程安全，注意每一次对节点有操作对需要同时操作 nodeMap和lruQueue
+</span><span class="c1">// LRU本质是利用 hashMap 和 双向链表 实现
+</span><span class="c1"></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">LRUCache</span> <span class="o">{</span>
+
+  <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Node</span><span class="o">&gt;</span> <span class="n">nodeMap</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="n">DoubleLinkedList</span> <span class="n">lruQueue</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+
+  <span class="kd">public</span> <span class="nf">LRUCache</span><span class="o">()</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">(</span><span class="n">3</span><span class="o">);</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="nf">LRUCache</span><span class="o">(</span><span class="kt">int</span> <span class="n">size</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">size</span> <span class="o">=</span> <span class="n">size</span><span class="o">;</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">nodeMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">lruQueue</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DoubleLinkedList</span><span class="o">();</span>
+  <span class="o">}</span>
+
+
+  <span class="kd">public</span> <span class="n">String</span> <span class="nf">get</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">Node</span> <span class="n">n</span> <span class="o">=</span> <span class="n">nodeMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">// 获取后直接放到到最前的位置
+</span><span class="c1"></span>    <span class="n">put</span><span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">key</span><span class="o">,</span> <span class="n">n</span><span class="o">.</span><span class="na">value</span><span class="o">);</span>
+    <span class="k">return</span> <span class="n">n</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">,</span> <span class="n">String</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">Node</span> <span class="n">newNode</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+    <span class="c1">// 如果包含，则放到最前
+</span><span class="c1"></span>    <span class="k">if</span> <span class="o">(</span><span class="n">nodeMap</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">key</span><span class="o">))</span> <span class="o">{</span>
+      <span class="n">lruQueue</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">nodeMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">key</span><span class="o">));</span>
+      <span class="n">lruQueue</span><span class="o">.</span><span class="na">addFirst</span><span class="o">(</span><span class="n">newNode</span><span class="o">);</span>
+      <span class="c1">// 记得更新map
+</span><span class="c1"></span>      <span class="n">nodeMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">newNode</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+      <span class="c1">// 如果满了，则移除最后一个
+</span><span class="c1"></span>      <span class="k">if</span> <span class="o">(</span><span class="n">size</span> <span class="o">&lt;=</span> <span class="n">lruQueue</span><span class="o">.</span><span class="na">size</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">Node</span> <span class="n">last</span> <span class="o">=</span> <span class="n">lruQueue</span><span class="o">.</span><span class="na">removeLast</span><span class="o">();</span>
+        <span class="n">nodeMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">last</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+      <span class="o">}</span>
+      <span class="n">nodeMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">newNode</span><span class="o">);</span>
+      <span class="n">lruQueue</span><span class="o">.</span><span class="na">addFirst</span><span class="o">(</span><span class="n">newNode</span><span class="o">);</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kd">class</span> <span class="nc">Node</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="n">String</span> <span class="n">key</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span> <span class="n">value</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">Node</span> <span class="n">pre</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">Node</span> <span class="n">next</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">Node</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">,</span> <span class="n">String</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">;</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="c1">// 封装双向链表方法，构建时要注意前后节点指向和空指针问题
+</span><span class="c1"></span>  <span class="kd">private</span> <span class="kd">class</span> <span class="nc">DoubleLinkedList</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="n">Node</span> <span class="n">head</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">Node</span> <span class="n">tail</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addFirst</span><span class="o">(</span><span class="n">Node</span> <span class="n">n</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">head</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">tail</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="n">count</span> <span class="o">++;</span>
+      <span class="n">n</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">head</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">head</span><span class="o">.</span><span class="na">pre</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="n">head</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">Node</span> <span class="nf">removeLast</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="n">Node</span> <span class="n">result</span> <span class="o">=</span> <span class="n">tail</span><span class="o">;</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">tail</span><span class="o">.</span><span class="na">pre</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">tail</span><span class="o">.</span><span class="na">pre</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+      <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">tail</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="n">count</span> <span class="o">--;</span>
+      <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Node</span> <span class="n">n</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="o">;</span>
+      <span class="o">}</span>
+      <span class="n">count</span> <span class="o">--;</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">pre</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">n</span><span class="o">.</span><span class="na">pre</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+      <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">next</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">.</span><span class="na">pre</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">pre</span><span class="o">;</span>
+      <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="n">tail</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">pre</span><span class="o">;</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">size</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="n">count</span><span class="o">;</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>golang实现</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="lfu">LFU</h2>
+<p>java实现，非线程安全</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * 频次最少使用
+</span><span class="cm"> * 设定容量，每次get key会修改使用次数和使用时间，当满容量时，移除次数最少的那个
+</span><span class="cm"> * 如果有多个key的使用次数一样，则移除使用时间最旧的那个
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">LFUCache</span> <span class="o">{</span>
+
+    <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">keyValMap</span><span class="o">;</span>
+    <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">key2FreqMap</span><span class="o">;</span>
+    <span class="c1">// 用linkHashSet来模拟使用时间
+</span><span class="c1"></span>    <span class="n">Map</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">LinkedHashSet</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">freq2KeysMap</span><span class="o">;</span>
+    <span class="kt">int</span> <span class="n">minFreq</span><span class="o">;</span>
+    <span class="kt">int</span> <span class="n">cap</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">LFUCache</span><span class="o">(</span><span class="kt">int</span> <span class="n">cap</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">keyValMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+        <span class="n">key2FreqMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+        <span class="n">freq2KeysMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">cap</span> <span class="o">=</span> <span class="n">cap</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">minFreq</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">get</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">keyValMap</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">key</span><span class="o">))</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="s">&#34;&#34;</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">increaseFreq</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">keyValMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">,</span> <span class="n">String</span> <span class="n">val</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">cap</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">keyValMap</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">key</span><span class="o">))</span> <span class="o">{</span>
+            <span class="n">keyValMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+            <span class="n">increaseFreq</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">cap</span> <span class="o">&lt;=</span> <span class="n">keyValMap</span><span class="o">.</span><span class="na">size</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">removeMinFreqKey</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="n">keyValMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+        <span class="n">key2FreqMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">1</span><span class="o">);</span>
+        <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">putIfAbsent</span><span class="o">(</span><span class="n">1</span><span class="o">,</span> <span class="k">new</span> <span class="n">LinkedHashSet</span><span class="o">&lt;&gt;());</span>
+        <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">1</span><span class="o">).</span><span class="na">add</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">minFreq</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kt">void</span> <span class="nf">increaseFreq</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">freq</span> <span class="o">=</span> <span class="n">key2FreqMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="n">key2FreqMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">freq</span><span class="o">+</span><span class="n">1</span><span class="o">);</span>
+        <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">freq</span><span class="o">).</span><span class="na">remove</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">putIfAbsent</span><span class="o">(</span><span class="n">freq</span> <span class="o">+</span> <span class="n">1</span><span class="o">,</span> <span class="k">new</span> <span class="n">LinkedHashSet</span><span class="o">&lt;&gt;());</span>
+        <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">freq</span> <span class="o">+</span> <span class="n">1</span><span class="o">).</span><span class="na">add</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">freq</span><span class="o">).</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">freq</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">freq</span> <span class="o">==</span> <span class="k">this</span><span class="o">.</span><span class="na">minFreq</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">this</span><span class="o">.</span><span class="na">minFreq</span><span class="o">++;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kt">void</span> <span class="nf">removeMinFreqKey</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">LinkedHashSet</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">keys</span> <span class="o">=</span> <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">minFreq</span><span class="o">);</span>
+        <span class="n">String</span> <span class="n">delKey</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="na">iterator</span><span class="o">().</span><span class="na">next</span><span class="o">();</span>
+        <span class="n">keys</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">delKey</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">keys</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">freq2KeysMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">minFreq</span><span class="o">);</span>
+            <span class="c1">// 这里无需更新 minFreq 的值，因为该方法是在插入新key时使用，此时minFreq一定是1
+</span><span class="c1"></span>        <span class="o">}</span>
+        <span class="n">keyValMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">delKey</span><span class="o">);</span>
+        <span class="n">key2FreqMap</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">delKey</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>golang实现</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"></code></pre></td></tr></table>
+</div>
+</div><h1 id="参考">参考</h1>
 <p>极客时间 - 后端存储实战</p>
+<p><a class="link" href="https://liangyaopei.github.io/2020/07/29/bloom-filter/"  target="_blank" rel="noopener"
+    >布隆过滤器原理及golang实现</a></p>
 
 </section>
 
@@ -668,6 +1244,10 @@ value：无
             <a href="/tags/%E5%8E%8B%E6%B5%8B%E8%B0%83%E4%BC%98/">压测调优</a>
         
             <a href="/tags/%E5%B8%B8%E8%A7%81%E4%B8%9A%E5%8A%A1%E6%96%B9%E6%A1%88/">常见业务方案</a>
+        
+            <a href="/tags/%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/">布隆过滤器</a>
+        
+            <a href="/tags/%E6%B7%98%E6%B1%B0%E7%AE%97%E6%B3%95/">淘汰算法</a>
         
     </section>
 
@@ -889,6 +1469,19 @@ value：无
         <li><a href="#不停机情况下更换数据库">不停机情况下更换数据库</a></li>
         <li><a href="#海量数据处理">海量数据处理</a></li>
         <li><a href="#api协议设计">API协议设计</a></li>
+      </ol>
+    </li>
+    <li><a href="#布隆过滤器">布隆过滤器</a>
+      <ol>
+        <li><a href="#原理-1">原理</a></li>
+        <li><a href="#误判率计算">误判率计算</a></li>
+        <li><a href="#实现">实现</a></li>
+      </ol>
+    </li>
+    <li><a href="#淘汰算法">淘汰算法</a>
+      <ol>
+        <li><a href="#lru">LRU</a></li>
+        <li><a href="#lfu">LFU</a></li>
       </ol>
     </li>
     <li><a href="#参考">参考</a></li>

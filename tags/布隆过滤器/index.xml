@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>布隆过滤器 on Nixum Blog</title>
+    <link>http://nixum.cc/tags/%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/</link>
+    <description>Recent content in 布隆过滤器 on Nixum Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 22 Sep 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>其他</title>
+      <link>http://nixum.cc/p/%E5%85%B6%E4%BB%96/</link>
+      <pubDate>Tue, 22 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E5%85%B6%E4%BB%96/</guid>
+      <description>[TOC]
+Quartz   分为三个部分：e
+ Job&amp;amp;Detial(任务)：定时任务的执行方法，与Trigger配套的 Trigger(触发器)：规定什么时候触发，与Job&amp;amp;Detail配套的 Scheduler(调度器)：单例，把Trigger丢里面由调度器调度，只需要一个Scheduler，配置不同的Trigger；可以理解成类似线程池的东西    原理：ScheduledThreadPoolExecutor线程池 + 通过Object类的wait()和notify()或者Condition类的await()\signal()进行等待和唤醒、锁保证线程安全 来进行调度
+Scheduler有两个调度线程：regular Scheduler Thread（执行常规调度）和Misfire Scheduler Thread（执行错失的任务），Regular Thread 轮询所有Trigger，如果有将要触发的Trigger（用wait和notifyAll实现），则从任务线程池中获取一个空闲线程，然后执行与改Trigger关联的job；Misfire Thraed则是扫描所有的trigger，查看是否有错失的，如果有的话，根据一定的策略进行处理
+  默认是并发的，即如果当前任务没有完成，会自动开一个任务执行
+  注意在分布式集群的情况下，多台机子有相同的定时任务，会出错，此时通过共享数据库的方式实现
+Quartz的解决方案：
+quartz集群分为水平集群和垂直集群，水平集群即将定时任务节点部署在不同的服务器，其最大的问题就是时钟同步问题，若时钟不能同步，则会导致集群中各个节点状态紊乱，造成不可预知的后果；垂直集群则是集群各节点部署在同一台服务器，时钟同步自然不是问题，但存在单点故障问题，服务器宕机会严重影响服务的可用性
+在各个节点会上报任务，存到数据库中，执行时会从数据库中取出触发器来执行，如果触发器的名称和执行时间相同，则只有一个节点去执行此任务。
+如果此节点执行失败，则此任务则会被分派到另一节点执行，中途也会自动检查失效的定时调度，发现不成功的，其他节点立马接过来继续完成定时任务。Quartz有11个定时任务调度表
+  参考
+Quartz原理解密
+深入解读Quartz的原理
+Quartz 2.2 的实现原理和运行过程
+其他定时器  Timer：这是java自带的java.util.Timer类，这个类允许你调度一个java.util.TimerTask任务。使用这种方式可以让你的程序按照某一个频度执行，但不能在指定时间运行。一般用的较少。单线程，任务一多会阻塞；一个任务出异常其他任务都受影响；受系统时间影响 ScheduledExecutorService：也jdk自带的一个类；是基于线程池设计的定时任务类,每个调度任务都会分配到线程池中的一个线程去执行,也就是说,任务是并发执行,互不影响。线程池+延时队列DelayedQueue(数组、最小堆, 最近要执行的任务放在堆顶) 实现，如果堆顶任务时间未到就阻塞（通过自旋+condition.await\signal实现）。不受系统时间影响 Spring 中的 @Schedule 注解  参考：Java 定时任务实现原理详解
+Java优先级队列DelayedWorkQueue原理分析
+CORS 浏览器的同源政策的同源指的是：协议相同、域名相同、端口相同，如果非同源，有三种行为会受到限制：Cookie、LocalStorage和IndexDB无法读取；DOM无法获得、AJAX请求不能发送。
+前后端分离的场景下，由于浏览器的同源策略，导致浏览器内的请求不同的源的后端是会失败，常见的解决跨域方法是使用CORS，现在常见的web框架都支持CORS，开启即可。
+解决跨域的方法除了CORS，还有jsonp，不过已经很少使用了，jsonp本质是利用浏览器允许加载不同源的js文件即标签等，将跨域请求标签里，返回一段可执行的js代码，其中包含了请求结果，通常是json格式，前端通过返回的js代码执行回调获取结果。
+详情见 跨域资源共享 CORS 详解
+对于跨域产生的问题，如CSRF跨域请求攻击的解决方案，可参考：美团:如何防止csrf
+session和cookie   首先Http是无状态的，因此需要通过session、cookie来达到记录用户状态的目的。
+  传统的session、cookie：session存用户信息，保存在服务端中，cookie里存session对应的sessionId，保存在客户端中，用于找到对应的session，每次请求都会带上该cookie来表示此用户。</description>
+    </item>
+    
+  </channel>
+</rss>
