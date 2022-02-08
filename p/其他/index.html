@@ -136,7 +136,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    8 minute read
+                    13 minute read
                 </time>
             </div>
         
@@ -932,7 +932,7 @@ value：无
 </span><span class="lnt">115
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 非线程安全，注意每一次对节点有操作对需要同时操作 nodeMap和lruQueue
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="c1">// 注意每一次对节点有操作对需要同时操作 nodeMap和lruQueue
 </span><span class="c1">// LRU本质是利用 hashMap 和 双向链表 实现
 </span><span class="c1"></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">LRUCache</span> <span class="o">{</span>
 
@@ -1049,16 +1049,241 @@ value：无
 <span class="o">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>golang实现</p>
+</div><p>golang实现，非并发安全，下面这种写法是平铺了双向链表，链表的长度通过map的长度计算得到</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">LRUCache</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">nodeMap</span>  <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">Node</span>
+	<span class="nx">head</span>     <span class="o">*</span><span class="nx">Node</span>
+	<span class="nx">tail</span>     <span class="o">*</span><span class="nx">Node</span>
+	<span class="nx">cap</span>      <span class="kt">int</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">Node</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">key</span>   <span class="kt">string</span>
+	<span class="nx">val</span>   <span class="kt">string</span>
+	<span class="nx">next</span>  <span class="o">*</span><span class="nx">Node</span>
+	<span class="nx">pre</span>   <span class="o">*</span><span class="nx">Node</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewLRUCache</span><span class="p">(</span><span class="nx">capacity</span> <span class="kt">int</span><span class="p">)</span> <span class="nx">LRUCache</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nx">LRUCache</span><span class="p">{</span><span class="nx">nodeMap</span><span class="p">:</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">Node</span><span class="p">),</span> <span class="nx">cap</span><span class="p">:</span> <span class="nx">capacity</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lru</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">Get</span><span class="p">(</span><span class="nx">key</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="nx">existNode</span><span class="p">,</span> <span class="nx">exist</span> <span class="o">:=</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">exist</span> <span class="p">{</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nf">remove</span><span class="p">(</span><span class="nx">existNode</span><span class="p">)</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nf">addFirst</span><span class="p">(</span><span class="nx">existNode</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nx">existNode</span><span class="p">.</span><span class="nx">val</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="s">&#34;&#34;</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lru</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">Put</span><span class="p">(</span><span class="nx">key</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">val</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="nx">existNode</span><span class="p">,</span> <span class="nx">exist</span> <span class="o">:=</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">exist</span> <span class="p">{</span>
+        <span class="nx">existNode</span><span class="p">.</span><span class="nx">val</span> <span class="p">=</span> <span class="nx">val</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nf">remove</span><span class="p">(</span><span class="nx">existNode</span><span class="p">)</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nf">addFirst</span><span class="p">(</span><span class="nx">existNode</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">newNode</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">node</span><span class="p">{</span><span class="nx">key</span><span class="p">:</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">val</span><span class="p">:</span> <span class="nx">val</span><span class="p">}</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="p">=</span> <span class="nx">newNode</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nf">addFirst</span><span class="p">(</span><span class="nx">newNode</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">)</span> <span class="p">&gt;</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">cap</span> <span class="p">{</span>
+        <span class="nb">delete</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">,</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">.</span><span class="nx">key</span><span class="p">)</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nf">remove</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lru</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">addFirst</span><span class="p">(</span><span class="nx">n</span> <span class="o">*</span><span class="nx">Node</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">n</span><span class="p">.</span><span class="nx">pre</span> <span class="p">=</span> <span class="kc">nil</span>
+    <span class="nx">n</span><span class="p">.</span><span class="nx">next</span> <span class="p">=</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span>
+    <span class="k">if</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span><span class="p">.</span><span class="nx">pre</span> <span class="p">=</span> <span class="nx">n</span>
+    <span class="p">}</span>
+    <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span> <span class="p">=</span> <span class="nx">n</span>
+    <span class="k">if</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span> <span class="p">=</span> <span class="nx">n</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">.</span><span class="nx">next</span> <span class="p">=</span> <span class="kc">nil</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lru</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">remove</span><span class="p">(</span><span class="nx">n</span> <span class="o">*</span><span class="nx">Node</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="nx">n</span> <span class="o">==</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span> <span class="p">{</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span> <span class="p">=</span> <span class="nx">n</span><span class="p">.</span><span class="nx">next</span>
+        <span class="k">if</span> <span class="nx">n</span><span class="p">.</span><span class="nx">next</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+            <span class="nx">n</span><span class="p">.</span><span class="nx">next</span><span class="p">.</span><span class="nx">pre</span> <span class="p">=</span> <span class="kc">nil</span>
+        <span class="p">}</span>
+        <span class="nx">n</span><span class="p">.</span><span class="nx">next</span> <span class="p">=</span> <span class="kc">nil</span>
+        <span class="k">return</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="nx">n</span> <span class="o">==</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span> <span class="p">{</span>
+        <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span> <span class="p">=</span> <span class="nx">n</span><span class="p">.</span><span class="nx">pre</span>
+        <span class="nx">n</span><span class="p">.</span><span class="nx">pre</span><span class="p">.</span><span class="nx">next</span> <span class="p">=</span> <span class="kc">nil</span>
+        <span class="nx">n</span><span class="p">.</span><span class="nx">pre</span> <span class="p">=</span> <span class="kc">nil</span>
+        <span class="k">return</span>
+    <span class="p">}</span>
+    <span class="nx">n</span><span class="p">.</span><span class="nx">pre</span><span class="p">.</span><span class="nx">next</span> <span class="p">=</span> <span class="nx">n</span><span class="p">.</span><span class="nx">next</span>
+    <span class="nx">n</span><span class="p">.</span><span class="nx">next</span><span class="p">.</span><span class="nx">pre</span> <span class="p">=</span> <span class="nx">n</span><span class="p">.</span><span class="nx">pre</span>
+<span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="lfu">LFU</h2>
+</div><p>关于并发安全，最简单的实现就是在调用Get和Put方法时加读写锁，但是这种做法锁的粒度比较大，每次会锁住整个底层的双向链表和map，导致在高并发情况下吞吐量不高，优化的思路就是对map分片，通过分片上锁来减小锁的粒度，然后再双向链表节点的操作上进行优化。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">New</span><span class="p">(</span><span class="nx">capacity</span> <span class="kt">int</span><span class="p">)</span> <span class="nx">LRUCache</span> <span class="p">{</span>
+	<span class="nx">shards</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">LRUCacheShard</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">256</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="nx">shards</span><span class="p">[</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;%02x&#34;</span><span class="p">,</span> <span class="nx">i</span><span class="p">)]</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">LRUCacheShard</span><span class="p">{</span>
+			<span class="nx">Cap</span><span class="p">:</span>  <span class="nx">capacity</span><span class="p">,</span>
+			<span class="nx">Keys</span><span class="p">:</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">int</span><span class="p">]</span><span class="o">*</span><span class="nx">list</span><span class="p">.</span><span class="nx">Element</span><span class="p">),</span>
+			<span class="nx">List</span><span class="p">:</span> <span class="nx">list</span><span class="p">.</span><span class="nf">New</span><span class="p">(),</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">LRUCache</span><span class="p">{</span>
+		<span class="nx">shards</span><span class="p">:</span> <span class="nx">shards</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">Get</span><span class="p">(</span><span class="nx">key</span> <span class="kt">int</span><span class="p">)</span> <span class="kt">int</span> <span class="p">{</span>
+	<span class="nx">shard</span> <span class="o">:=</span> <span class="nx">c</span><span class="p">.</span><span class="nf">GetShard</span><span class="p">(</span><span class="nx">key</span><span class="p">)</span>
+	<span class="nx">shard</span><span class="p">.</span><span class="nf">RLock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">shard</span><span class="p">.</span><span class="nf">RUnlock</span><span class="p">()</span>
+	<span class="err">……</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">Put</span><span class="p">(</span><span class="nx">key</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">value</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+  	<span class="nx">shard</span> <span class="o">:=</span> <span class="nx">c</span><span class="p">.</span><span class="nf">GetShard</span><span class="p">(</span><span class="nx">key</span><span class="p">)</span>
+	<span class="nx">shard</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">shard</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="err">……</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">GetShard</span><span class="p">(</span><span class="nx">key</span> <span class="kt">int</span><span class="p">)</span> <span class="p">(</span><span class="nx">shard</span> <span class="o">*</span><span class="nx">LRUCacheShard</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">hasher</span> <span class="o">:=</span> <span class="nx">sha1</span><span class="p">.</span><span class="nf">New</span><span class="p">()</span>
+  <span class="nx">hasher</span><span class="p">.</span><span class="nf">Write</span><span class="p">([]</span><span class="nb">byte</span><span class="p">(</span><span class="nx">key</span><span class="p">))</span>
+  <span class="nx">shardKey</span> <span class="o">:=</span>  <span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;%x&#34;</span><span class="p">,</span> <span class="nx">hasher</span><span class="p">.</span><span class="nf">Sum</span><span class="p">(</span><span class="kc">nil</span><span class="p">))[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+  <span class="k">return</span> <span class="nx">c</span><span class="p">.</span><span class="nx">shards</span><span class="p">[</span><span class="nx">shardKey</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中，在Get方法中，如果存在，还需要修改key所在节点的位置，直接调put即可，当然这种方式的粒度还是比较大，再次优化的思路是对map的操作还是得上锁，但对双向链表的操作无需上锁，双向链表移动节点和删除节点可以同时操作，可以通过两个channel实现，<a class="link" href="https://github.com/halfrost/LeetCode-Go/blob/master/template/CLRUCache.go"  target="_blank" rel="noopener"
+    >参考</a></p>
+<h2 id="lfu">LFU</h2>
 <p>java实现，非线程安全</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1147,10 +1372,10 @@ value：无
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">LFUCache</span> <span class="o">{</span>
 
     <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">keyValMap</span><span class="o">;</span>
-    <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">key2FreqMap</span><span class="o">;</span>
-    <span class="c1">// 用linkHashSet来模拟使用时间
-</span><span class="c1"></span>    <span class="n">Map</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">LinkedHashSet</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">freq2KeysMap</span><span class="o">;</span>
-    <span class="kt">int</span> <span class="n">minFreq</span><span class="o">;</span>
+    <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">key2FreqMap</span><span class="o">;</span> <span class="c1">// key和使用频率的映射
+</span><span class="c1"></span>    <span class="c1">// 用LinkHashSet来模拟使用时间，使用LinkHashSet还有一个目的是便于根据key进行删除
+</span><span class="c1"></span>    <span class="n">Map</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">LinkedHashSet</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">freq2KeysMap</span><span class="o">;</span> <span class="c1">// 使用频率和key的映射
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">minFreq</span><span class="o">;</span>
     <span class="kt">int</span> <span class="n">cap</span><span class="o">;</span>
 
     <span class="kd">public</span> <span class="nf">LFUCache</span><span class="o">(</span><span class="kt">int</span> <span class="n">cap</span><span class="o">)</span> <span class="o">{</span>
@@ -1216,17 +1441,382 @@ value：无
 <span class="o">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>golang实现</p>
+</div><p>golang实现，非并发安全，利用 优先级队列（最小堆） + map实现，使用的是go自带的heap数据结构，通过Item数组结构实现</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code></code></pre></td>
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kn">import</span> <span class="s">&#34;container/heap&#34;</span>
+
+<span class="kd">type</span> <span class="nx">LFUNode</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">val</span>   <span class="kt">string</span>
+	<span class="nx">key</span>   <span class="kt">string</span>
+	<span class="nx">freq</span>  <span class="kt">int</span> <span class="c1">// 用于优先级，key的使用频率
+</span><span class="c1"></span>	<span class="nx">count</span> <span class="kt">int</span> <span class="c1">// 用于当freq相同时的比较淘汰，总的获取次数，类似时间戳的概念
+</span><span class="c1"></span>	<span class="nx">index</span> <span class="kt">int</span> <span class="c1">// 最小堆中元素的下标，用于重建最小堆.
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">PriorityQueue</span> <span class="p">[]</span><span class="o">*</span><span class="nx">LFUNode</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">pq</span> <span class="nx">PriorityQueue</span><span class="p">)</span> <span class="nf">Len</span><span class="p">()</span> <span class="kt">int</span> <span class="p">{</span> <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nx">pq</span><span class="p">)</span> <span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">pq</span> <span class="nx">PriorityQueue</span><span class="p">)</span> <span class="nf">Less</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">j</span> <span class="kt">int</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+	<span class="c1">// 优先根据使用频率排列，相等时才使用count，从小到大排序
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">freq</span> <span class="o">==</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">j</span><span class="p">].</span><span class="nx">freq</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">count</span> <span class="p">&lt;</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">j</span><span class="p">].</span><span class="nx">count</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">freq</span> <span class="p">&lt;</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">j</span><span class="p">].</span><span class="nx">freq</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">pq</span> <span class="nx">PriorityQueue</span><span class="p">)</span> <span class="nf">Swap</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">j</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">pq</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">j</span><span class="p">]</span> <span class="p">=</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">j</span><span class="p">],</span> <span class="nx">pq</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span>
+	<span class="nx">pq</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">index</span> <span class="p">=</span> <span class="nx">i</span>
+	<span class="nx">pq</span><span class="p">[</span><span class="nx">j</span><span class="p">].</span><span class="nx">index</span> <span class="p">=</span> <span class="nx">j</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">pq</span> <span class="o">*</span><span class="nx">PriorityQueue</span><span class="p">)</span> <span class="nf">Push</span><span class="p">(</span><span class="nx">x</span> <span class="kd">interface</span><span class="p">{})</span> <span class="p">{</span>
+	<span class="nx">n</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="o">*</span><span class="nx">pq</span><span class="p">)</span>
+	<span class="nx">node</span> <span class="o">:=</span> <span class="nx">x</span><span class="p">.(</span><span class="o">*</span><span class="nx">LFUNode</span><span class="p">)</span>
+	<span class="nx">node</span><span class="p">.</span><span class="nx">index</span> <span class="p">=</span> <span class="nx">n</span>
+	<span class="o">*</span><span class="nx">pq</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="o">*</span><span class="nx">pq</span><span class="p">,</span> <span class="nx">node</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">pq</span> <span class="o">*</span><span class="nx">PriorityQueue</span><span class="p">)</span> <span class="nf">Pop</span><span class="p">()</span> <span class="kd">interface</span><span class="p">{}</span> <span class="p">{</span>
+	<span class="nx">old</span> <span class="o">:=</span> <span class="o">*</span><span class="nx">pq</span>
+	<span class="nx">n</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nx">old</span><span class="p">)</span>
+	<span class="nx">node</span> <span class="o">:=</span> <span class="nx">old</span><span class="p">[</span><span class="nx">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+	<span class="nx">old</span><span class="p">[</span><span class="nx">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">=</span> <span class="kc">nil</span>  <span class="c1">// 防止内存泄露
+</span><span class="c1"></span>	<span class="nx">node</span><span class="p">.</span><span class="nx">index</span> <span class="p">=</span> <span class="o">-</span><span class="mi">1</span> <span class="c1">// pop时重置下标保证安全
+</span><span class="c1"></span>	<span class="o">*</span><span class="nx">pq</span> <span class="p">=</span> <span class="nx">old</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nx">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+	<span class="k">return</span> <span class="nx">node</span>
+<span class="p">}</span>
+
+<span class="c1">// 更新最小堆里的元素
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">pq</span> <span class="o">*</span><span class="nx">PriorityQueue</span><span class="p">)</span> <span class="nf">update</span><span class="p">(</span><span class="nx">node</span> <span class="o">*</span><span class="nx">LFUNode</span><span class="p">,</span> <span class="nx">value</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">frequency</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">count</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">node</span><span class="p">.</span><span class="nx">val</span> <span class="p">=</span> <span class="nx">value</span>
+	<span class="nx">node</span><span class="p">.</span><span class="nx">count</span> <span class="p">=</span> <span class="nx">count</span>
+	<span class="nx">node</span><span class="p">.</span><span class="nx">freq</span> <span class="p">=</span> <span class="nx">frequency</span>
+	<span class="nx">heap</span><span class="p">.</span><span class="nf">Fix</span><span class="p">(</span><span class="nx">pq</span><span class="p">,</span> <span class="nx">node</span><span class="p">.</span><span class="nx">index</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c1">// ==========================================
+</span><span class="c1"></span><span class="kd">type</span> <span class="nx">LFUCache</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">cap</span>      <span class="kt">int</span>
+	<span class="nx">pq</span>       <span class="nx">PriorityQueue</span>
+	<span class="nx">nodeMap</span>  <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">LFUNode</span>
+	<span class="nx">counter</span>  <span class="kt">int</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewLFUCache</span><span class="p">(</span><span class="nx">capacity</span> <span class="kt">int</span><span class="p">)</span> <span class="nx">LFUCache</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nx">LFUCache</span><span class="p">{</span>
+		<span class="nx">pq</span><span class="p">:</span>       <span class="nx">PriorityQueue</span><span class="p">{},</span>
+		<span class="nx">nodeMap</span><span class="p">:</span>  <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">LFUNode</span><span class="p">,</span> <span class="nx">capacity</span><span class="p">),</span>
+		<span class="nx">cap</span><span class="p">:</span>      <span class="nx">capacity</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lfu</span> <span class="o">*</span><span class="nx">LFUCache</span><span class="p">)</span> <span class="nf">Get</span><span class="p">(</span><span class="nx">key</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">cap</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="s">&#34;&#34;</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">ok</span> <span class="p">{</span>
+		<span class="nx">lfu</span><span class="p">.</span><span class="nx">counter</span><span class="o">++</span>
+		<span class="nx">lfu</span><span class="p">.</span><span class="nx">pq</span><span class="p">.</span><span class="nf">update</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">node</span><span class="p">.</span><span class="nx">val</span><span class="p">,</span> <span class="nx">node</span><span class="p">.</span><span class="nx">freq</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">counter</span><span class="p">)</span>
+		<span class="k">return</span> <span class="nx">node</span><span class="p">.</span><span class="nx">val</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="s">&#34;&#34;</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lfu</span> <span class="o">*</span><span class="nx">LFUCache</span><span class="p">)</span> <span class="nf">Put</span><span class="p">(</span><span class="nx">key</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">value</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">cap</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">lfu</span><span class="p">.</span><span class="nx">counter</span><span class="o">++</span>
+	<span class="c1">// 如果存在，增加 frequency，再调整堆
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">ok</span> <span class="p">{</span>
+		<span class="nx">lfu</span><span class="p">.</span><span class="nx">pq</span><span class="p">.</span><span class="nf">update</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">value</span><span class="p">,</span> <span class="nx">node</span><span class="p">.</span><span class="nx">freq</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">counter</span><span class="p">)</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="c1">// 如果不存在且缓存满了，需要删除。在 hashmap 和 pq 中删除。
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">lfu</span><span class="p">.</span><span class="nx">pq</span><span class="p">)</span> <span class="o">==</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">cap</span> <span class="p">{</span>
+		<span class="nx">node</span> <span class="o">:=</span> <span class="nx">heap</span><span class="p">.</span><span class="nf">Pop</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lfu</span><span class="p">.</span><span class="nx">pq</span><span class="p">).(</span><span class="o">*</span><span class="nx">LFUNode</span><span class="p">)</span>
+		<span class="nb">delete</span><span class="p">(</span><span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">,</span> <span class="nx">node</span><span class="p">.</span><span class="nx">key</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="c1">// 新建结点，在 hashmap 和 pq 中添加。
+</span><span class="c1"></span>	<span class="nx">node</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">LFUNode</span><span class="p">{</span>
+		<span class="nx">val</span><span class="p">:</span>   <span class="nx">value</span><span class="p">,</span>
+		<span class="nx">key</span><span class="p">:</span>   <span class="nx">key</span><span class="p">,</span>
+		<span class="nx">count</span><span class="p">:</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">counter</span><span class="p">,</span>
+	<span class="p">}</span>
+	<span class="nx">heap</span><span class="p">.</span><span class="nf">Push</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lfu</span><span class="p">.</span><span class="nx">pq</span><span class="p">,</span> <span class="nx">node</span><span class="p">)</span>
+	<span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="p">=</span> <span class="nx">node</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>另一个版本实现，利用go本身提供的双向链表，但是由于go没泛型，在类型推断方面导致整体性能不会很高</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">LFUCache2</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">nodeMap</span>       <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">list</span><span class="p">.</span><span class="nx">Element</span>
+	<span class="nx">freq2NodeList</span> <span class="kd">map</span><span class="p">[</span><span class="kt">int</span><span class="p">]</span><span class="o">*</span><span class="nx">list</span><span class="p">.</span><span class="nx">List</span>
+	<span class="nx">cap</span>           <span class="kt">int</span>
+	<span class="nx">min</span>           <span class="kt">int</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">node</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">key</span>       <span class="kt">string</span>
+	<span class="nx">value</span>     <span class="kt">string</span>
+	<span class="nx">freq</span>      <span class="kt">int</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewLFUCache2</span><span class="p">(</span><span class="nx">capacity</span> <span class="kt">int</span><span class="p">)</span> <span class="nx">LFUCache2</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nx">LFUCache2</span><span class="p">{</span><span class="nx">nodeMap</span><span class="p">:</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">list</span><span class="p">.</span><span class="nx">Element</span><span class="p">),</span>
+		<span class="nx">freq2NodeList</span><span class="p">:</span>    <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">int</span><span class="p">]</span><span class="o">*</span><span class="nx">list</span><span class="p">.</span><span class="nx">List</span><span class="p">),</span>
+		<span class="nx">cap</span><span class="p">:</span>      <span class="nx">capacity</span><span class="p">,</span>
+		<span class="nx">min</span><span class="p">:</span>      <span class="mi">0</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lfu</span> <span class="o">*</span><span class="nx">LFUCache2</span><span class="p">)</span> <span class="nf">Get</span><span class="p">(</span><span class="nx">key</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="nx">value</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="s">&#34;&#34;</span>
+	<span class="p">}</span>
+	<span class="nx">currentNode</span> <span class="o">:=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">Value</span><span class="p">.(</span><span class="o">*</span><span class="nx">node</span><span class="p">)</span>
+	<span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="nx">currentNode</span><span class="p">.</span><span class="nx">freq</span><span class="p">].</span><span class="nf">Remove</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span>
+	<span class="nx">currentNode</span><span class="p">.</span><span class="nx">freq</span><span class="o">++</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="nx">currentNode</span><span class="p">.</span><span class="nx">freq</span><span class="p">];</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+		<span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="nx">currentNode</span><span class="p">.</span><span class="nx">freq</span><span class="p">]</span> <span class="p">=</span> <span class="nx">list</span><span class="p">.</span><span class="nf">New</span><span class="p">()</span>
+	<span class="p">}</span>
+	<span class="nx">newList</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="nx">currentNode</span><span class="p">.</span><span class="nx">freq</span><span class="p">]</span>
+	<span class="nx">newNode</span> <span class="o">:=</span> <span class="nx">newList</span><span class="p">.</span><span class="nf">PushFront</span><span class="p">(</span><span class="nx">currentNode</span><span class="p">)</span>
+	<span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="p">=</span> <span class="nx">newNode</span>
+	<span class="k">if</span> <span class="nx">currentNode</span><span class="p">.</span><span class="nx">freq</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">min</span> <span class="o">&amp;&amp;</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="nx">currentNode</span><span class="p">.</span><span class="nx">freq</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nf">Len</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nx">lfu</span><span class="p">.</span><span class="nx">min</span><span class="o">++</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">currentNode</span><span class="p">.</span><span class="nx">value</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">lfu</span> <span class="o">*</span><span class="nx">LFUCache2</span><span class="p">)</span> <span class="nf">Put</span><span class="p">(</span><span class="nx">key</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">value</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">cap</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="c1">// 如果存在，更新访问次数
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">currentValue</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">ok</span> <span class="p">{</span>
+		<span class="nx">currentNode</span> <span class="o">:=</span> <span class="nx">currentValue</span><span class="p">.</span><span class="nx">Value</span><span class="p">.(</span><span class="o">*</span><span class="nx">node</span><span class="p">)</span>
+		<span class="nx">currentNode</span><span class="p">.</span><span class="nx">value</span> <span class="p">=</span> <span class="nx">value</span>
+		<span class="nx">lfu</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="nx">key</span><span class="p">)</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="c1">// 如果不存在且缓存满了，需要删除
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">cap</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">currentList</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="nx">lfu</span><span class="p">.</span><span class="nx">min</span><span class="p">]</span>
+		<span class="nx">backNode</span> <span class="o">:=</span> <span class="nx">currentList</span><span class="p">.</span><span class="nf">Back</span><span class="p">()</span>
+		<span class="nb">delete</span><span class="p">(</span><span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">,</span> <span class="nx">backNode</span><span class="p">.</span><span class="nx">Value</span><span class="p">.(</span><span class="o">*</span><span class="nx">node</span><span class="p">).</span><span class="nx">key</span><span class="p">)</span>
+		<span class="nx">currentList</span><span class="p">.</span><span class="nf">Remove</span><span class="p">(</span><span class="nx">backNode</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="c1">// 新建结点，插入到 2 个 map 中
+</span><span class="c1"></span>	<span class="nx">lfu</span><span class="p">.</span><span class="nx">min</span> <span class="p">=</span> <span class="mi">1</span>
+	<span class="nx">currentNode</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">node</span><span class="p">{</span>
+		<span class="nx">key</span><span class="p">:</span>       <span class="nx">key</span><span class="p">,</span>
+		<span class="nx">value</span><span class="p">:</span>     <span class="nx">value</span><span class="p">,</span>
+		<span class="nx">freq</span><span class="p">:</span>      <span class="mi">1</span><span class="p">,</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+		<span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">=</span> <span class="nx">list</span><span class="p">.</span><span class="nf">New</span><span class="p">()</span>
+	<span class="p">}</span>
+	<span class="nx">newList</span> <span class="o">:=</span> <span class="nx">lfu</span><span class="p">.</span><span class="nx">freq2NodeList</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+	<span class="nx">newNode</span> <span class="o">:=</span> <span class="nx">newList</span><span class="p">.</span><span class="nf">PushFront</span><span class="p">(</span><span class="nx">currentNode</span><span class="p">)</span>
+	<span class="nx">lfu</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="p">=</span> <span class="nx">newNode</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
 </div>
 </div><h1 id="参考">参考</h1>
 <p>极客时间 - 后端存储实战</p>
 <p><a class="link" href="https://liangyaopei.github.io/2020/07/29/bloom-filter/"  target="_blank" rel="noopener"
     >布隆过滤器原理及golang实现</a></p>
+<p><a class="link" href="https://halfrost.com/lru_lfu_interview/"  target="_blank" rel="noopener"
+    >LRU / LFU 的青铜与王者</a></p>
 
 </section>
 
