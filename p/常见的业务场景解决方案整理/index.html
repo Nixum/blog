@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='记录一些自己遇到过的，感兴趣的业务场景的解决方案，不定期更新'><title>常见的业务场景解决方案整理</title>
+
+<link rel='canonical' href='http://nixum.cc/p/%E5%B8%B8%E8%A7%81%E7%9A%84%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E6%95%B4%E7%90%86/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='常见的业务场景解决方案整理'>
+<meta property='og:description' content='记录一些自己遇到过的，感兴趣的业务场景的解决方案，不定期更新'>
+<meta property='og:url' content='http://nixum.cc/p/%E5%B8%B8%E8%A7%81%E7%9A%84%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E6%95%B4%E7%90%86/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='业务' /><meta property='article:tag' content='解决方案' /><meta property='article:published_time' content='2021-05-14T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2022-01-15T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="常见的业务场景解决方案整理">
+<meta name="twitter:description" content="记录一些自己遇到过的，感兴趣的业务场景的解决方案，不定期更新">
+    <link rel="shortcut icon" href="/img/favicon.ico" />
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2D1N64V8VB"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-2D1N64V8VB', { 'anonymize_ip': false });
+}
+</script>
+
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" >
+                解决方案
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/%E5%B8%B8%E8%A7%81%E7%9A%84%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E6%95%B4%E7%90%86/">常见的业务场景解决方案整理</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        记录一些自己遇到过的，感兴趣的业务场景的解决方案，不定期更新
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">May 14, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    1 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <p>[TOC]</p>
+<h1 id="防止表单重复提交">防止表单重复提交</h1>
+<p><strong>场景</strong>：用户点击下单页面，跳转至下单页面，提交订单，此时有可能网络原因或者用户点击多次，导致订单重复提交。</p>
+<p><strong>解决</strong>：用户跳转至下单页前，会先获取订单号(也作为订单表主键)，将订单号绑定在下单页，利用数据库主键唯一的特性，让创建订单的操作变成幂等性。</p>
+<h1 id="解决aba问题">解决ABA问题</h1>
+<p>**场景：**类似MySQL的丢失更新，比如有操作1，操作2先后对记录A进行更新，操作1的响应丢失导致重试，此时操作2已经更新成功，操作1重试时会覆盖操作2的更新。</p>
+<p>**解决：**通过版本号解决，订单表增加一列作版本号，版本号可以使用递增序列、时间戳等，通过比较版本号来确定操作的先后顺序，更新成功时也需要更新版本号。</p>
+<h1 id="流量大数据量大的商品详情页数据存储">流量大、数据量大的商品详情页数据存储</h1>
+<p>**场景：**一般商品详情页都是访问量最大的页面，比如用户做商品对比、查看商品详情都需要，另外就是商品详情页一般涉及很多数据，如下，且后端存储的sku量也是巨大的，直接分多张表去存虽然可以实现，但是性能就一般了。</p>
+<pre tabindex="0"><code>商品
+├── 基本信息
+│    ├── 标题、副标题
+│    ├── 价格：原价、促销价
+│    └── 颜色、规格等
+├── 商品参数
+├── 商品介绍
+├── 图片视频
+来自其他系统的
+├── 促销信息
+├── 推荐商品
+├── 评论、评价
+├── 配送信息
+└── 店铺信息
+</code></pre><p>**解决：**分析不同的数据特性，比如有些数据是热点的、相对固定的、不常被修改的、需求变化不大的等各种维度去划分，进行不同存储。动态数据、实时数据还是照旧，该怎么处理怎么处理，其他的可以：</p>
+<ol>
+<li>
+<p>套一层缓存在数据库外面，查询数据先缓存后数据库</p>
+</li>
+<li>
+<p>针对每个不同的spu有不同的商品属性，则可以使用NoSQL来解决</p>
+</li>
+<li>
+<p>针对图片、视频等数据，使用对象存储、CDN解决，比如AWS S3，直接通过其提供的API进行访问，将这部分的压力转移到云服务厂商</p>
+</li>
+<li>
+<p>将相对固定的数据静态化，比如商品介绍，其包含了大量的文字、图片、视频等，可直接将这一部分保存成HTML文件中，访问时直接返回HTML文件，保存成HTML还可以配合CDN进行加速</p>
+</li>
+</ol>
+<h1 id="查询方面的优化">查询方面的优化</h1>
+<ul>
+<li>可以起一个SQL检查脚本，检查执行时间过长的SQL，如果超过指定时间的，进行记录和kill，再进行优化，把慢SQL解决掉，避免多个执行时间过长的SQL拖垮整个数据库。</li>
+<li>主从分离，读写分离，服务降级</li>
+<li>分析SQL执行和访问量间的关系，数据库CPU利用率变化</li>
+<li>MySQL单次查询扫描的数据量控制在千万级别内，单次扫描的数据量在百万级别是可以接受，理论上查询都应该使用索引，避免全表扫描</li>
+</ul>
+<h1 id="对象存储原理">对象存储原理</h1>
+<ul>
+<li>本质是一个规模很大的分布式Key-value集群，外加一个保存集群节点信息、文件信息和映射关系(统称为元数据)的节点集群，在最外层再加上一个Gateway来对外提供服务即可。</li>
+<li>针对图片、视频等大文件，在存储时会将其拆分成多个大小相等的块Block，一般是几十KB到几MB，便于管理，也可以分散到不同节点，提升并行读写性能。</li>
+<li>由于分成的块太小，数量多，一般也不是直接进行管理的，而是将一些块进行聚合，放到容器里，类似分片的概念，主从复制时，也是直接复制这些块即可，不用再复制多日志</li>
+</ul>
+<h1 id="跨系统数据实时同步">跨系统数据实时同步</h1>
+<ul>
+<li>采用Bin Log + MQ的方式，将上游数据实时同步到下游其他系统的数据库中，为了确保数据一致性，必须顺序读取Bin Log，因此MQ的主题也必须设置为只有一个分区，才能保证Bin Log有序。</li>
+<li>当下游系统想要扩展消费能力时，不可盲目增加同步线程数和MQ主题分区，由于Bin Log的顺序性，要确保多线程消费时，不会对数据产生影响，所以可以将具有因果一致性的Bin Log发布给同一主题分区，才可以多线程同步消费。具体可参考MySQL 5.6版本后多线程处理Bin Log的做法。</li>
+</ul>
+<h1 id="不停机情况下更换数据库">不停机情况下更换数据库</h1>
+<ul>
+<li>利用Bin Log或者复制状态机理论，增加一个新库和同步服务。先将旧库上的数据快照同步到新库，对于旧库的新数据，使用同步服务进行同步复制</li>
+<li>改造旧服务，增加双写新旧两个库的功能，添加功能开关，使其能够只写旧库、只写新库、同步双写的功能</li>
+<li>开关打至只写旧服务，利用同步服务同步数据，等改造后的旧服务能稳定运行，验证新旧两个库的数据是否一致；一致之后将改造后的旧服务的开关打至同步双写，关闭同步服务，此时仍然以数据写至旧库为主，写新库失败则进行人工干预，此外，双写时可能会存在数据不一致，此时需要针对这一小段时期上线数据对比与补偿服务，验证和补充新旧数据不一致问题；待最终稳定后，才将开关打至只写新服务，实现数据库替换的平滑过渡。</li>
+</ul>
+<h1 id="海量数据处理">海量数据处理</h1>
+<p>针对的是埋点数据、日志数据、访问数据、点击数据、监控数据等，一般采用先存储后计算的方式</p>
+<ul>
+<li>使用Kafka存储，上游系统将海量数据采集后发给KafKa，利用Kafka无限消息堆积和超高吞吐，存储数据，再由下游系统进行订阅消费即可。这种方案适合短时间的海量数据处理。关键词：分布式流数据存储。</li>
+<li>HDFS存储 + Hive查询 或者 ES查询</li>
+<li>针对监控数据，可以使用时序数据库，例如Prometheus</li>
+</ul>
+<h1 id="api协议设计">API协议设计</h1>
+<p>其实分成了API和协议两部分</p>
+<ul>
+<li>一般API会符合Restful规范，由行为 + 资源组合而成；</li>
+<li>协议一般就包含了请求/响应头和响应/请求体的内容，参数结构化，比如参数类型是Hash，就不要存成String，值是Hash的序列化后的字符串；</li>
+<li>响应结果要统一，尽量不要因为参数的不同而返回不同类型的响应结构，个人比较喜欢的做法是，在网络层面，如果接口没有问题，统一返回HTTP code是200，响应体里分为<code>code、msg、data</code>来表示业务响应；</li>
+<li>需要考虑认证和安全相关，比如是否需要签名、票据、token等</li>
+<li>多服务之间，保证风格一致</li>
+<li>考虑幂等；</li>
+<li>加入版本控制，加在URL上，或者请求头有个字段标识；</li>
+</ul>
+<h1 id="库存">库存</h1>
+<p>这里仅讨论分布式场景下的</p>
+<ul>
+<li>
+<p>库存字段设置为无符号整型，这样在扣到负数时会报错，不过得看具体的数据库实现</p>
+</li>
+<li>
+<p>悲观锁，利用数据库的锁机制：比如MySQL的 <code>for update</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="k">begin</span><span class="p">;</span><span class="w"> </span><span class="c1">-- 开启事务
+</span><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">sku_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="k">update</span><span class="p">;</span><span class="w"> </span><span class="c1">-- 获取并设置排他锁
+</span><span class="c1"></span><span class="k">update</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">扣减数量</span><span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">sku_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="k">commit</span><span class="p">;</span><span class="w"> </span><span class="c1">-- 提交事务
+</span></code></pre></td></tr></table>
+</div>
+</div><p>或者直接</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="k">update</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">扣减数量</span><span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">sku_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="err">扣减数量</span><span class="p">;</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>或者</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="k">update</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="err">扣减数量</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">扣减数量</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="k">end</span><span class="p">;</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>但这种方案会把压力转移到数据库，吞吐量并不高。</p>
+</li>
+<li>
+<p>乐观锁，版本号 + cas + 自旋，也可以利用数据库的能力实现</p>
+<p>获取到版本号后，在应用层自旋，执行以下语句</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="k">update</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">扣减数量</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">sku_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;12345&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>库存扣减主要是包含两部分，超卖校验、扣减数据的持久化，因此，可以分离这两部分，只要超卖校验能通过，直接改库即可，可以利用Redis单线程操作并发安全的能力，把库存存在Redis中实现校验</p>
+<p>比如每次扣减库存时，对存在Redis中的数据进行incryby扣减（或者先查询后扣减，需要使用Lua脚本保证原子），如果返回的数量大于0，说明库存够，之后可以同步或异步把值更新到数据库即可；</p>
+</li>
+<li>
+<p>分布式锁实现，应用层对sku_id上分布式锁，再进行库存判断</p>
+</li>
+<li>
+<p>实际库存和冻结库存，不过这个属于业务上的处理，从实际库存转移到冻结库存仍然有可能出现超卖的情况，这种一般是为了解决在下订单直接扣库存，可能会导致被恶意下单，或者在支付时扣库存扣失败了但是订单仍然存在，属于用户体验上的问题了，所以才衍生出在下订单时将实际库存值扣减，加到冻结库存，支付时才真正的减库存，否则在过期时再把冻结库存补回实际库存。</p>
+</li>
+</ul>
+<h1 id="秒杀">秒杀</h1>
+<p>秒杀主要是要解决两个问题：并发读 和 并发写，还有就是针对意外有一些兜底的方案，比如高可用，另外就是针对这种高并发的场景，最好的做法就是削减请求数，在业务流程的前端尽可能的拦截流量、削峰来达到降低后端的压力。</p>
+<h2 id="架构原则">架构原则</h2>
+<ul>
+<li>响应的数据要尽量少：比如返回的HTML页面、接口数据，因为涉及到编码、序列化、反序列化、数据库的操作等，会比较消耗资源；</li>
+<li>请求数要尽量少：请求数一多就会产生很多连接，一个请求可以获取完所有数据，就不要分多次获取，像一些CSS文件和JS文件可以合并获取；</li>
+<li>请求经过的服务或者依赖的服务要尽量少：请求每经过一个服务，都会增加不可靠性，也会产生网络连接，消耗资源；依赖服务支持被降级，以此减少对主流程的影响；</li>
+<li>避免单点，支持动态扩容：服务最好是无状态设计，方便迁移到不同配置的机器，也方便动态扩容数量；</li>
+</ul>
+<p>针对秒杀场景：</p>
+<ul>
+<li>将秒杀服务独立，避免对其他服务的影响</li>
+<li>对热点数据（如库存、商品）进行缓存，提高读性能</li>
+<li>秒杀答题，防止秒杀器抢单；限流保护，对后端进行保护</li>
+<li>对秒杀页面进行动静分离，用户刷新仅刷新部分模块</li>
+</ul>
+<h2 id="动静分离方案">动静分离方案</h2>
+<ul>
+<li>
+<p>静态数据可以缓存到CDN、用户浏览器、服务端缓存，甚至可以以URL为key，缓存整个HTTP响应；</p>
+<p>缓存静态数据时要注意几个点：</p>
+<ul>
+<li>分离跟浏览器相关的数据，比如是否已登录、登录的身份等，这些数据可以通过请求获取</li>
+<li>分离时间，服务端输出的时间也通过动态请求获取</li>
+<li>异步化地域因素，页面上跟地域相关的数据也通过动态请求获取</li>
+<li>去掉cookie，缓存的静态数据不能包含有cookie</li>
+</ul>
+</li>
+<li>
+<p>动态数据处理有两种方案：</p>
+<ul>
+<li>ESI方案：服务端渲染，由服务端将静态数据与动态数据结合完成之后返回给客户端</li>
+<li>CSI方案：前端渲染，前端ajax请求获取json数据，再进行整合呈现</li>
+</ul>
+</li>
+<li>
+<p>缓存的存储：</p>
+<ul>
+<li>
+<p>本机内存：好处是没有网络、序列化等带来的损耗，坏处是缓存管理不便，会加大服务的内存使用</p>
+</li>
+<li>
+<p>统一的Cache层：好处是管理方便，减少多应用接入Cache的成本，共享内存也能最大化利用到内存，坏处是会带来网络损耗，Cache机器的宕机会导致缓存不可用</p>
+</li>
+<li>
+<p>CDN：使用CDN要注意几个问题：比如缓存失效时间问题，数据分散到不同地区的CDN带来的命中率问题，还有就是当数据有更新时，如何快速分发到不同地区的CDN；</p>
+<p>一般来说，只有那些靠近访问量比较集中的地区，离主站比较远，CDN节点到主站的网络比较稳定的CDN节点才适合放缓存数据，像商品详情的数据，就适合放到CDN的二级Cache，让用户请求先回源CDN的二级Cache，没命中再回源主站获取数据比较合适</p>
+<p>使用CDN有几个好处，可以把整个页面缓存在用户浏览器中，强制刷新页面也会请求CDN，所以静态数据比较适合放到CDN上面</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="热点数据-与-缓存">热点数据 与 缓存</h2>
+<p>热点分为 热点操作 和 热点数据，热点数据又分为静态热点数据和动态热点数据</p>
+<ul>
+<li>
+<p>静态热点数据</p>
+<p>指能够被提前预测的数据，比如提前得知要秒杀的商品，或者分析用户行为、订单记录、购物车记录、TopN被搜索的商品等，判断哪些有可能是热点商品，给这些商品打上标签；</p>
+<p>对于静态热点数据，可以直接缓存</p>
+</li>
+<li>
+<p>动态热点数据</p>
+<p>指不能被提前预测，在系统运行过程中临时产生的数据，比如某商品因为某条短视频火了，导致它在短时间内被大量抢购，这种商品的发现一般是异步分析，通过分析商品被访问的路径的次数，提前识别哪些商品的访问量高，来给这些商品打上标签；</p>
+<p>对于动态热点数据，由于其临时性，可以采用LRU，或者对动态热点数据缓存分片解决；</p>
+</li>
+<li>
+<p>对于这些热点数据，可以把它们与普通的数据进行隔离，比如系统隔离，将参加秒杀活动的请求导向不同的域名，指向不同的集群，处理这些热点数据的服务独立部署（但实际上不会把整套系统都部署，这样成本太大，独立部署这些服务后，对于公共服务就需要有能区分请求分发的逻辑了，比如根据商品id，知道它是秒杀商品，就能把它转发给专门处理秒杀的服务）；数据隔离，为这些热点数据单独设立Cache层和数据库等，避免影响普通业务流程。</p>
+</li>
+</ul>
+<h2 id="流量削峰">流量削峰</h2>
+<p>流量削峰主要是为了让服务端处理变得更加平稳，节省服务器的资源，通过延缓用户请求的发出，减少和过滤一些无效的请求，避免后端服务一下子处理很多请求。</p>
+<ul>
+<li>
+<p>消息队列，FIFO处理请求；请求序列化成文件，再按顺序读取；这里排队主要是针对服务间请求的排队，而不是用户请求直接经过消息队列。</p>
+</li>
+<li>
+<p>用户操作延缓：比如购买时增加答题机制，验证码等，通过将发起请求的操作拉长，避免短时间内大量请求；</p>
+</li>
+<li>
+<p>分层过滤</p>
+<blockquote>
+<ul>
+<li>将动态请求的读数据缓存在Web端，过滤掉无效的数据；</li>
+<li>对请求进行校验，如判断用户是否具有秒杀资格、商品状态是否正常、秒杀活动是否结束、请求是否非法等；</li>
+<li>对读数据不做强一致校验，减少因校验产生的瓶颈问题；</li>
+<li>对写数据进行基于时间的合理分片，过滤掉过期的失效请求；</li>
+<li>对写数据进行限流保护，将超出系统承载能力的请求过滤掉；</li>
+<li>对写数据进行强一致校验，比如库存，只保留有效数据；</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h2 id="秒杀中的减库存">秒杀中的减库存</h2>
+<p>减库存一般有三种模式：下单成功减库存；支付成功时减库存；下单预扣库存，支付真正减库存；</p>
+<p>下单成功减库存方式逻辑比较简单，性能也比较占优势，如果是追求极致性能的秒杀活动可以选择这种模式。</p>
+<p>秒杀活动中，库存是一个热点数据，交易的各个环节都涉及到对库存的查询，针对读请求，可以不需要那么精确，把库存数据放到缓存里可以大大提升查询性能，对库存的处理主要是难在写操作。</p>
+<p>如果没有复杂的sku库存和总库存的联动关系，扣库存逻辑完全可以在缓存里执行，如果要用到事务，还是得在数据库中执行。</p>
+<p>为了避免对数据库中其他正常业务逻辑的影响，一般会把秒杀商品独立成库，针对商品id进行分表分库，尽量减少锁带来的影响，关键服务独立部署，对于无需独立部署的服务，可以根据商品id进行hash分组转发到独立部署的服务，避免影响其他业务。</p>
+<p>然后就是要解决并发锁的问题，一种是在应用层，按照商品维度设置队列顺序执行，减少同一台机器对数据库同一行记录进行操作的并发度，同时也能控制单个商品占用数据库的连接数，防止热点商品占用太多数据库连接；另一种是在数据库层面排队，对单行记录做并发排队。</p>
+<h2 id="兜底方案">兜底方案</h2>
+<ul>
+<li>服务降级：比如当秒杀的TPS达到设定的量级之后，成交记录的获取展示从20条降级到只展示5条，不相干的业务服务临时不展示，只保证核心业务线的正常流转</li>
+<li>限流、熔断</li>
+</ul>
+<h1 id="短链">短链</h1>
+<h1 id="feed流">feed流</h1>
+<p>关注与被关注的消息推送</p>
+<h1 id="弹幕">弹幕</h1>
+<h1 id="参考">参考</h1>
+<p>极客时间 - 后端存储实战</p>
+<p>极客时间 - 秒杀系统设计</p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E4%B8%9A%E5%8A%A1/">业务</a>
+        
+            <a href="/tags/%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">解决方案</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    <section class="article-lastmod">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+        <span>
+            Last updated on Jan 15, 2022 00:00 UTC
+        </span>
+    </section></footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2022 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#防止表单重复提交">防止表单重复提交</a></li>
+    <li><a href="#解决aba问题">解决ABA问题</a></li>
+    <li><a href="#流量大数据量大的商品详情页数据存储">流量大、数据量大的商品详情页数据存储</a></li>
+    <li><a href="#查询方面的优化">查询方面的优化</a></li>
+    <li><a href="#对象存储原理">对象存储原理</a></li>
+    <li><a href="#跨系统数据实时同步">跨系统数据实时同步</a></li>
+    <li><a href="#不停机情况下更换数据库">不停机情况下更换数据库</a></li>
+    <li><a href="#海量数据处理">海量数据处理</a></li>
+    <li><a href="#api协议设计">API协议设计</a></li>
+    <li><a href="#库存">库存</a></li>
+    <li><a href="#秒杀">秒杀</a>
+      <ol>
+        <li><a href="#架构原则">架构原则</a></li>
+        <li><a href="#动静分离方案">动静分离方案</a></li>
+        <li><a href="#热点数据-与-缓存">热点数据 与 缓存</a></li>
+        <li><a href="#流量削峰">流量削峰</a></li>
+        <li><a href="#秒杀中的减库存">秒杀中的减库存</a></li>
+        <li><a href="#兜底方案">兜底方案</a></li>
+      </ol>
+    </li>
+    <li><a href="#短链">短链</a></li>
+    <li><a href="#feed流">feed流</a></li>
+    <li><a href="#弹幕">弹幕</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/context%E5%8E%9F%E7%90%86/" class="font_size_1">
+                context原理
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                Go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                Go GC
+            </a>
+        
+            <a href="/tags/go-slice%E5%92%8Cmap%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Go slice和map原理
+            </a>
+        
+            <a href="/tags/go-sync%E5%8C%85/" class="font_size_1">
+                Go sync包
+            </a>
+        
+            <a href="/tags/goroutine/" class="font_size_1">
+                Goroutine
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Go并发
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+            <a href="/tags/spring-security/" class="font_size_1">
+                Spring Security
+            </a>
+        
+            <a href="/tags/springboot/" class="font_size_1">
+                SpringBoot
+            </a>
+        
+            <a href="/tags/springmvc/" class="font_size_1">
+                SpringMVC
+            </a>
+        
+            <a href="/tags/tcp/" class="font_size_1">
+                TCP
+            </a>
+        
+            <a href="/tags/udp/" class="font_size_1">
+                UDP
+            </a>
+        
+            <a href="/tags/uml/" class="font_size_1">
+                UML
+            </a>
+        
+            <a href="/tags/zookeeper/" class="font_size_1">
+                zookeeper
+            </a>
+        
+            <a href="/tags/%E4%B8%9A%E5%8A%A1/" class="font_size_1">
+                业务
+            </a>
+        
+            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="font_size_1">
+                分布式事务
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+
+    </body>
+</html>
