@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    1 minute read
+                    2 minute read
                 </time>
             </div>
         
@@ -277,9 +277,33 @@ if (!doNotTrack) {
 </div>
 </div></li>
 <li>
-<p>库存扣减主要是包含两部分，超卖校验、扣减数据的持久化，因此，可以分离这两部分，只要超卖校验能通过，直接改库即可，可以利用Redis单线程操作并发安全的能力，把库存存在Redis中实现校验</p>
-<p>比如每次扣减库存时，对存在Redis中的数据进行incryby扣减（或者先查询后扣减，需要使用Lua脚本保证原子），如果返回的数量大于0，说明库存够，之后可以同步或异步把值更新到数据库即可；</p>
-</li>
+<p>（建议使用，其他方案都不建议，数据库方案是性能比较差，分布式锁方案是可靠性比较差）库存扣减主要是包含两部分，超卖校验、扣减数据的持久化，因此，可以分离这两部分，只要超卖校验能通过，直接改库即可，可以利用Redis单线程操作并发安全的能力，把库存存在Redis中实现校验。</p>
+<p>比如每次扣减库存时，对存在Redis中的数据进行decrby扣减（或者先查询后扣减，需要使用Lua脚本保证原子），如果返回的数量大于0，说明库存够，之后可以同步或异步把值更新到数据库即可，但要注意的是，本方案不支持回滚；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="n">lua脚本的方案</span><span class="err">，预先将脚本存到</span><span class="n">redis</span><span class="err">，调用时只需传入返回的</span><span class="n">sha1的值即可</span><span class="err">，无需每次都传一遍</span><span class="n">lua脚本</span>
+<span class="c1">-- 查询活动库存，其中KEYS[1]为传入的参数1，即库存key</span>
+<span class="kd">local</span> <span class="n">c_s</span> <span class="o">=</span> <span class="n">redis.call</span><span class="p">(</span><span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="c1">-- 判断活动库存是否充足，其中KEYS[2]为传入的参数2，即当前抢购数量</span>
+<span class="kr">if</span> <span class="ow">not</span> <span class="n">c_s</span> <span class="ow">or</span> <span class="n">tonumber</span><span class="p">(</span><span class="n">c_s</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tonumber</span><span class="p">(</span><span class="n">KEYS</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="kr">then</span>
+   <span class="kr">return</span> <span class="mi">0</span>
+<span class="kr">end</span>
+<span class="c1">-- 如果活动库存充足，则进行扣减操作。其中KEYS[2]为传入的参数2，即当前抢购数量</span>
+<span class="n">redis.call</span><span class="p">(</span><span class="s1">&#39;decrby&#39;</span><span class="p">,</span><span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
 <li>
 <p>分布式锁实现，应用层对sku_id上分布式锁，再进行库存判断</p>
 </li>
@@ -370,7 +394,7 @@ if (!doNotTrack) {
 <blockquote>
 <ul>
 <li>将动态请求的读数据缓存在Web端，过滤掉无效的数据；</li>
-<li>对请求进行校验，如判断用户是否具有秒杀资格、商品状态是否正常、秒杀活动是否结束、请求是否非法等；</li>
+<li>对请求进行校验，如判断用户是否具有秒杀资格、商品状态是否正常、秒杀活动是否结束、请求是否非法，判断对用户是否限购等；</li>
 <li>对读数据不做强一致校验，减少因校验产生的瓶颈问题；</li>
 <li>对写数据进行基于时间的合理分片，过滤掉过期的失效请求；</li>
 <li>对写数据进行限流保护，将超出系统承载能力的请求过滤掉；</li>
@@ -386,15 +410,47 @@ if (!doNotTrack) {
 <p>如果没有复杂的sku库存和总库存的联动关系，扣库存逻辑完全可以在缓存里执行，如果要用到事务，还是得在数据库中执行。</p>
 <p>为了避免对数据库中其他正常业务逻辑的影响，一般会把秒杀商品独立成库，针对商品id进行分表分库，尽量减少锁带来的影响，关键服务独立部署，对于无需独立部署的服务，可以根据商品id进行hash分组转发到独立部署的服务，避免影响其他业务。</p>
 <p>然后就是要解决并发锁的问题，一种是在应用层，按照商品维度设置队列顺序执行，减少同一台机器对数据库同一行记录进行操作的并发度，同时也能控制单个商品占用数据库的连接数，防止热点商品占用太多数据库连接；另一种是在数据库层面排队，对单行记录做并发排队。</p>
+<p>剩下的就跟上面库存的方案差不多了</p>
 <h2 id="兜底方案">兜底方案</h2>
 <ul>
 <li>服务降级：比如当秒杀的TPS达到设定的量级之后，成交记录的获取展示从20条降级到只展示5条，不相干的业务服务临时不展示，只保证核心业务线的正常流转</li>
 <li>限流、熔断</li>
 </ul>
 <h1 id="短链">短链</h1>
+<p>本质上就是给长网址发号，映射成短网址，访问时通过301跳转；</p>
+<p>短码一般都由<code>[a-zA-Z0-9]</code>这62个字符组成，一般不超过8位，6位的短码就可以有<code>(26+26+10)^6 = 56800235584，568亿</code>个了。</p>
+<p>短码生成方案：</p>
+<ul>
+<li>
+<p>利用数据库生成自增id，但因为有序，容易被遍历出来，不过可以通过对生成的自增id做签名或者62位进制生成最后的短码解决；</p>
+<p>或者使用多个Redis自增，只要将自增的步长设置成不一样就不会产生冲突了，只是要维护数据的持久化和奔溃恢复；</p>
+<p>或者发号器预生成一批序号，预生成主要是解决冲突问题，来一个长网址就分配一个；</p>
+<p>或者直接UUID、雪花算法生成短码；</p>
+<p>或者利用数据库唯一索引，自己通过随机数生成短码实现；</p>
+</li>
+<li>
+<p>摘要算法生成，比如对长网址直接md5，哈希等，不过要解决冲突，比如利用数据库唯一索引，冲突的时候可以在原始字符串上加上预定义的字符串，重新哈希存入判断，直到插入即可；</p>
+</li>
+</ul>
+<p>常用的方案是使用 自增id + 进制转换的方式进行，可以直接数据库自增，也可以用发号器生成id、分布式id等；</p>
+<p>生成短码之后，将 原始长网址、短码、短网址、有效时间 存入数据库，之后根据映射进行跳转即可；</p>
+<p>提升查询性能就上缓存，全量保存不太显示，可以只保存最近一段时间的，然后LRU淘汰即可；</p>
+<p>长链转短链可以一对一也可以一对多，一对一的话可以判断库里是否存在时可以使用布隆过滤器；</p>
+<p>关于跳转：</p>
+<blockquote>
+<p>301是永久重定向，302是临时重定向。短地址一经生成就不会变化，所以用301是符合http语义的。同时浏览器会对301请求进行缓存，可以减轻服务器压力。</p>
+<p>使用301有利于SEO， Google，百度等搜索引擎，搜索的时候会直接展示真实地址，但此时就无法统计到短地址被点击的次数了，也无法收集用户的Cookie，User Agent 等信息，这些信息可以用来做很多有意思的大数据分析，也是短网址服务商的主要盈利来源，如果需要利用这些信息，就得使用302。</p>
+</blockquote>
 <h1 id="feed流">feed流</h1>
 <p>关注与被关注的消息推送</p>
 <h1 id="弹幕">弹幕</h1>
+<p>用户进入视频 / 直播间 页面，拉取正在观看视频的用户列表，接收持续发布的弹幕消息，自己发消息</p>
+<h2 id="客户端轮询">客户端轮询</h2>
+<p>用户在前端写入消息，消息发完服务端，为消息赋完序号后，直接丢给kafka，下游服务消费kafa的消息，将消息存入Redis（以Zadd的方式写入，score消息的小队时间）；</p>
+<p>前端每2s向后端发起轮询，后端查询Redis返回；</p>
+<h2 id="websocket">Websocket</h2>
+<p>此方案最佳，CDN + 长连接(websocket) 广播给用户，原理跟聊天室差不多；</p>
+<p>与上面的方案差不多，只是把前端轮询部分替换成了由后端与前端建立长连接后进行推送</p>
 <h1 id="参考">参考</h1>
 <p>极客时间 - 后端存储实战</p>
 <p>极客时间 - 秒杀系统设计</p>
@@ -624,7 +680,12 @@ if (!doNotTrack) {
     </li>
     <li><a href="#短链">短链</a></li>
     <li><a href="#feed流">feed流</a></li>
-    <li><a href="#弹幕">弹幕</a></li>
+    <li><a href="#弹幕">弹幕</a>
+      <ol>
+        <li><a href="#客户端轮询">客户端轮询</a></li>
+        <li><a href="#websocket">Websocket</a></li>
+      </ol>
+    </li>
     <li><a href="#参考">参考</a></li>
   </ol>
 </nav>
