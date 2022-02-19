@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    10 minute read
+                    11 minute read
                 </time>
             </div>
         
@@ -571,10 +571,6 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">two-containers</span><span class="w">
 </span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Never</span><span class="w">
-</span><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">shared-data</span><span class="w">
-</span><span class="w">    </span><span class="nt">hostPath</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/data</span><span class="w">
 </span><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
 </span><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx-container</span><span class="w">
 </span><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
@@ -588,6 +584,10 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">      </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/pod-data</span><span class="w">
 </span><span class="w">      </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">]</span><span class="w">
 </span><span class="w">      </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;echo Hello from the debian container &gt; /pod-data/ index.html&#34;</span><span class="p">]</span><span class="w">
+</span><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">shared-data</span><span class="w">
+</span><span class="w">    </span><span class="nt">hostPath</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/data</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
 </div><p>声明了两个容器，都挂载了shared-data这个Volume，且该Volume是hostPath，对应宿主机上的/data目录，所以么，nginx-container 可 以 从 它 的/usr/share/ nginx/html 目 录 中， 读取到debian-container生 成 的 index.html文件。</p>
@@ -979,6 +979,32 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="lnt">33
 </span><span class="lnt">34
 </span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
@@ -1016,6 +1042,32 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">      </span><span class="nt">resources</span><span class="p">:</span><span class="w"> 
 </span><span class="w">        </span><span class="nt">requests</span><span class="p">:</span><span class="w"> 
 </span><span class="w">          </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l">10Gi</span><span class="w">
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="c"># 声明要挂载的PV</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">PersistentVolume</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx-pv</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">capacity</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l">500Gi</span><span class="w">
+</span><span class="w">  </span><span class="nt">volumeMode</span><span class="p">:</span><span class="w"> </span><span class="l">Filesystem</span><span class="w">
+</span><span class="w">  </span><span class="nt">accessModes</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">ReadWriteMany</span><span class="w">
+</span><span class="w">  </span><span class="nt">persistentVolumeReclaimPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Retain</span><span class="w">
+</span><span class="w">  </span><span class="nt">storageClassName</span><span class="p">:</span><span class="w"> </span><span class="l">efs-sc</span><span class="w">
+</span><span class="w">  </span><span class="nt">csi</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">driver</span><span class="p">:</span><span class="w"> </span><span class="l">efs.csi.aws.com</span><span class="w">
+</span><span class="w">    </span><span class="nt">volumeHandle</span><span class="p">:</span><span class="w"> </span><span class="l">fs-09b712ab658f73e6f::fsap-xxx</span><span class="w">
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="c"># 声明要挂载的StorageClass</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">StorageClass</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">storage.k8s.io/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">efs-sc</span><span class="w">
+</span><span class="w"></span><span class="nt">provisioner</span><span class="p">:</span><span class="w"> </span><span class="l">efs.csi.aws.com</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
 </div><h2 id="控制器模型">控制器模型</h2>
@@ -1177,7 +1229,69 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>作用类似于Job类似于Pod，CronJob类似于Deployment</p>
 <p>CronJob使用 spec.schedule来控制，使用jobTemplate来定义job模板，spec.concurrencyPolicy来控制并行策略</p>
 <p>spec.concurrencyPolicy=Allow（一个Job没执行完，新的Job就能产生）、Forbid（新Job不会被创建）、Replace（新的Job会替换旧的，没有执行完的Job）</p>
-<h3 id="operator">Operator</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">batch/v1beta1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">CronJob</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">order-cronjob-auto-close-order</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">regoo</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">schedule</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;*/5 * * * *&#34;</span><span class="w">
+</span><span class="w">  </span><span class="nt">successfulJobsHistoryLimit</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">  </span><span class="nt">failedJobsHistoryLimit</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">  </span><span class="nt">concurrencyPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Forbid</span><span class="w">
+</span><span class="w">  </span><span class="nt">startingDeadlineSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">120</span><span class="w">
+</span><span class="w">  </span><span class="nt">jobTemplate</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">sidecar.istio.io/inject</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;false&#34;</span><span class="w">
+</span><span class="w">          </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w">        </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span>- <span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">curlimages/curl:7.77.0</span><span class="w">
+</span><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curl</span><span class="w">
+</span><span class="w">              </span><span class="nt">imagePullPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">IfNotPresent</span><span class="w">
+</span><span class="w">              </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;curl&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-X&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;POST&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;http://order:8080/order/schedule/auto_close_order&#34;</span><span class="p">]</span><span class="w">
+</span><span class="w">          </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">OnFailure</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="operator">Operator</h3>
 <p>本质是一个Deployment，会创建一个CRD，常用于简化StatefulSet的部署，用来管理有状态的Pod，维持拓扑状态和存储状态。需要编写与Kubernetes Matser交互的代码，才能实现自定义CRD的行为。</p>
 <h2 id="service">Service</h2>
 <ul>
@@ -1199,7 +1313,49 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </ul>
 </li>
 </ul>
-<h3 id="endpoints的作用">endpoints的作用</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Service</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">regoo</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">http</span><span class="w">
+</span><span class="w">      </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">TCP</span><span class="w">
+</span><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span><span class="w">      </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">NodePort</span><span class="w">
+</span><span class="w">  </span><span class="nt">sessionAffinity</span><span class="p">:</span><span class="w"> </span><span class="l">None</span><span class="w">
+</span><span class="w">  </span><span class="nt">externalTrafficPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Cluster</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="endpoints的作用">endpoints的作用</h3>
 <p>当service使用了selector指定带有对应label的pod时，endpoint controller才会自动创建对应的endpoint对象，产生一个endpoints，endpoints信息存储在etcd中，用来记录一个service对应的所有pod的访问地址。</p>
 <p>endpoints controller的作用</p>
 <ul>
@@ -1436,7 +1592,71 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 <p>作用与Service类似，主要是用于对多个service的包装，作为service的service，设置一个统一的负载均衡（这样可以避免每个Service都设置一个LB，也可以避免因为节点扩缩容导致service的端口变化需要修改访问配置），设置Ingress rule，进行反向代理，实现的是Http负责均衡。</p>
 <p>Ingress是反向代理的规则，Ingress Controller是负责解析Ingress的规则后进行转发。可以理解为Nginx，本质是将请求通过不同的规则进行路由转发。常见的Ingress Class实现有Nginx-Ingress-Controller、AWS-LB-Ingress-Controller，使用Ingress时会在集群中创建对应的controller pod。</p>
 <p>Ingress Controller可基于Ingress资源定义的规则将客户端请求流量直接转发到Service对应的后端Pod资源上（比如aws-lb-ingress-controller 的 IP mode），其会绕过Service资源，直接转发到Pod上，省去了kube-proxy实现的端口代理开销。</p>
-<h3 id="和istio-ingressgateway的区别">和Istio Ingressgateway的区别</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># 使用aws alb作为ingress，并将流量转发istio-ingressgateway service</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">extensions/v1beta1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Ingress</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">istio-system</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">istio-api</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">istio-api</span><span class="w">
+</span><span class="w">  </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">kubernetes.io/ingress.class</span><span class="p">:</span><span class="w"> </span><span class="l">alb</span><span class="w">
+</span><span class="w">    </span><span class="nt">alb.ingress.kubernetes.io/load-balancer-name</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;online-api&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">alb.ingress.kubernetes.io/target-type</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;instance&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">alb.ingress.kubernetes.io/listen-ports</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;[{&#34;HTTPS&#34;:443}, {&#34;HTTP&#34;:80}]&#39;</span><span class="w">
+</span><span class="w">    </span><span class="nt">alb.ingress.kubernetes.io/certificate-arn</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;xxx&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">alb.ingress.kubernetes.io/scheme</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;internet-facing&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">alb.ingress.kubernetes.io/tags</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;app=eks&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">alb.ingress.kubernetes.io/load-balancer-attributes</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;deletion_protection.enabled=true,access_logs.s3.enabled=true,access_logs.s3.bucket=regoo-logs,access_logs.s3.prefix=alb&#34;</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">rules</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">http</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">paths</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span>- <span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/*</span><span class="w">
+</span><span class="w">            </span><span class="nt">backend</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">serviceName</span><span class="p">:</span><span class="w"> </span><span class="l">istio-ingressgateway</span><span class="w">
+</span><span class="w">              </span><span class="nt">servicePort</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">          </span>- <span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/*</span><span class="w">
+</span><span class="w">            </span><span class="nt">backend</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">serviceName</span><span class="p">:</span><span class="w"> </span><span class="l">istio-ingressgateway</span><span class="w">
+</span><span class="w">              </span><span class="nt">servicePort</span><span class="p">:</span><span class="w"> </span><span class="m">443</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="和istio-ingressgateway的区别">和Istio Ingressgateway的区别</h3>
 <p>Istio Ingressgateway是Kubernate Ingress Controller的一种实现，能够支持更多方式的流量管理。</p>
 <table>
 <thead>
@@ -1694,22 +1914,45 @@ spec:
 <h2 id="配置相关">配置相关</h2>
 <h3 id="pod级别下的一些配置即当kind-pod">Pod级别下的一些配置，即当kind: Pod</h3>
 <p><strong>NodeSelector</strong>：将Pod和Node进行绑定的字段</p>
-<pre tabindex="0"><code>如：
-apiVersion: v1
-kind: Pod
-...
-spec:
- nodeSelector:
-   disktype: ssd
-</code></pre><p>表示该Pod只能运行在携带了disktype:ssd标签的节点上，否则它将调度失败</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span><span class="w"></span><span class="nn">...</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w"> </span><span class="nt">nodeSelector</span><span class="p">:</span><span class="w">
+</span><span class="w">   </span><span class="nt">disktype</span><span class="p">:</span><span class="w"> </span><span class="l">ssd</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>表示该Pod只能运行在携带了disktype:ssd标签的节点上，否则它将调度失败</p>
 <p><strong>HostAliases</strong>：定义了Pod的hosts文件（比如/etc/hosts）里的内容</p>
-<pre tabindex="0"><code>spec:
-  hostAliases:
-  - ip: &quot;10.1.2.3&quot;
-    hostnames:
-    - &quot;foo.remote&quot;
-    - &quot;bar.remote&quot;
-</code></pre><p>表示在/etc/hosts文件的内容是将 ip 10.1.2.3映射为 foo.remote和bar.remote</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">hostAliases</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- <span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;10.1.2.3&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">hostnames</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="s2">&#34;foo.remote&#34;</span><span class="w">
+</span><span class="w">    </span>- <span class="s2">&#34;bar.remote&#34;</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>表示在/etc/hosts文件的内容是将 ip 10.1.2.3映射为 foo.remote和bar.remote</p>
 <p><strong>shareProcessNamespace</strong>: true，Pod里面的容器共享PID namespace，即在同一个Pod里的容器可以相互看到对方</p>
 <p><strong>hostNetwork</strong>: true、hostIPC: true、hostPID: true表示共享宿主机的network、IPC、namespace</p>
 <p><strong>ImagePullPolicy</strong>=alaways(默认)、never、ifNotPresent，每次创建Pod都会${value}拉取镜像</p>
@@ -1752,89 +1995,211 @@ spec:
 </div>
 </div><p>在lifecycle里的postStart，指的是容器启动后，要执行的操作，但是它不是串行的，即在docker的ENTRYPOINT命令执行后就开始执行了，此时ENTRYPOINT命令执行的动作可能还没完成；preStart，指的是在容器被杀死之前，要执行的操作，只有这个动作执行完成，才允许容器被杀死</p>
 <h2 id="常用命令">常用命令</h2>
-<pre tabindex="0"><code>查看所有Pod
-kubectl get pod -A
-
-查看所有configMap
-kubectl get configmap -A
-
-查看某个configmap的内容
-kubectl describe configmap confing名字 -n 命名空间
-
-将更新的configmap内容更新到etcd中
-kubectl apply -f 文件名
-
-删除名字为xxx，namespace为yyy的pod
-kubectl delete pods xxx -n yyy
-
-查看所有Pod以及ip之类的信息
-kubectl get pods --all-namespaces -o wide
-
-进入pod里，并打开sh命令行
-kubectl exec -it pod名称 -n [名称空间] sh
-进入pod里的指定容器AA
-kubectl exec -it pod名称 -c 容器名称 sh
-
-查看pod 的event
-kubectl get event -n [名称空间]
-
-查看容器日志
-kubectl logs [pod名称] -n [名称空间] -c[pod内容器名称] -f
-
-查看pod的yaml内容
-kubectl get pod [pod名称] -n osaas -o yaml
-
-以yaml格式查看configmap的内容
-kubectl get cm [configmap的名称] -n [命名空间] -o yaml
-
-
-对于处于terminating的pod或namespace的删除方法
-1. 将对应的pod或namespace转成json形式，将属性finalizers改为[]
-kubectl get [pod或namespace] [对应的名称]  -o json |jq '.spec = {&quot;finalizers&quot;:[]}' &gt; json文件名.json
-2.打开另一个窗口，起一个代理
-kubectl proxy --port=8081
-3.访问kubelet接口进行删除
-curl -k -H &quot;Content-Type: application/json&quot; -X PUT --data-binary @json文件.json 127.0.0.1:8081/api/v1/[pod或namespaces]/[对应的名称]/finalize
-或者：
-删除状态为Terminating的命名空间
-kubectl get ns [命名空间的值] -o json &gt; xxxx.json，修改finialize为空数组[]
-kubectl replace --raw &quot;/api/v1/namespaces/[命名空间的值]/finalize&quot; -f xxx.json
-
-
-删除指定命名空间下所有资源例如pod、deployment、svc，包括里面所有副本
-delete all -n [命名空间] --all
-
-删除命名空间下的event
-kubectl delete events -n [命名空间] --all
-
-启动busybox调试网络
-kubectl run -it --rm --restart=Never busybox --image=busybox sh
-
-查看node标签
-kubectl get nodes --show-labels
-
-给node设置标签
-kubectl label nodes [node名称] disktype=ssd
-
-删除节点
-1. 先排干上面的pod
-kubectl drain [node名称] --delete-local-data --force --ignore-daemonsets
-2. 删除
-kubectl delete node [node名称]
-如果误驱逐节点，进行恢复
-kubectl uncordon [node名称]
-
-
-将镜像打成压缩包
-docker save -o 压缩包名字  镜像名字:标签
-还原成镜像
-docker load &lt; 压缩包名字
-直接使用命令，不保持容器启动
-docker run --rm --name kubectl bitnami/kubectl:latest version
-
-启动时修改entrypoint
-docker run --rm -it --entrypoint env 镜像:tag /bin/bash
-</code></pre><h1 id="servicemersh">ServiceMersh</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span><span class="lnt">96
+</span><span class="lnt">97
+</span><span class="lnt">98
+</span><span class="lnt">99
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="l">查看所有Pod</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get pod -A</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看所有configMap</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get configmap -A</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看某个configmap的内容</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl describe configmap confing名字 -n 命名空间</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">将更新的configmap内容更新到etcd中</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl apply -f 文件名</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">删除名字为xxx，namespace为yyy的pod</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl delete pods xxx -n yyy</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看所有Pod以及ip之类的信息</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get pods --all-namespaces -o wide</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">进入pod里，并打开sh命令行</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl exec -it pod名称 -n [名称空间] sh</span><span class="w">
+</span><span class="w"></span><span class="l">进入pod里的指定容器AA</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl exec -it pod名称 -c 容器名称 sh</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看pod 的event</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get event -n [名称空间]</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看容器日志</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl logs [pod名称] -n [名称空间] -c[pod内容器名称] -f</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看pod的yaml内容</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get pod [pod名称] -n osaas -o yaml</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">以yaml格式查看configmap的内容</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get cm [configmap的名称] -n [命名空间] -o yaml</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">对于处于terminating的pod或namespace的删除方法</span><span class="w">
+</span><span class="w"></span><span class="m">1</span><span class="l">. 将对应的pod或namespace转成json形式，将属性finalizers改为[]</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get [pod或namespace] [对应的名称]  -o json |jq &#39;.spec = {&#34;finalizers&#34;:[]}&#39; &gt; json文件名.json</span><span class="w">
+</span><span class="w"></span><span class="m">2.</span><span class="l">打开另一个窗口，起一个代理</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl proxy --port=8081</span><span class="w">
+</span><span class="w"></span><span class="m">3.</span><span class="l">访问kubelet接口进行删除</span><span class="w">
+</span><span class="w"></span><span class="l">curl -k -H &#34;Content-Type: application/json&#34; -X PUT --data-binary @json文件.json 127.0.0.1:8081/api/v1/[pod或namespaces]/[对应的名称]/finalize</span><span class="w">
+</span><span class="w"></span><span class="l">或者：</span><span class="w">
+</span><span class="w"></span><span class="l">删除状态为Terminating的命名空间</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get ns [命名空间的值] -o json &gt; xxxx.json，修改finialize为空数组[]</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl replace --raw &#34;/api/v1/namespaces/[命名空间的值]/finalize&#34; -f xxx.json</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">删除指定命名空间下所有资源例如pod、deployment、svc，包括里面所有副本</span><span class="w">
+</span><span class="w"></span><span class="l">delete all -n [命名空间] --all</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">删除命名空间下的event</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl delete events -n [命名空间] --all</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">启动busybox调试网络</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl run -it --rm --restart=Never busybox --image=busybox sh</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看node标签</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl get nodes --show-labels</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">给node设置标签</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl label nodes &lt;your-node-name&gt; disktype=ssd</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">删除节点</span><span class="w">
+</span><span class="w"></span><span class="m">1</span><span class="l">. 先排干上面的pod</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl drain node名称 --delete-local-data --force --ignore-daemonsets</span><span class="w">
+</span><span class="w"></span><span class="m">2</span><span class="l">. 删除</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl delete node node名称 </span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">将镜像打成压缩包</span><span class="w">
+</span><span class="w"></span><span class="l">docker save -o 压缩包名字  镜像名字:标签</span><span class="w">
+</span><span class="w"></span><span class="l">还原成镜像</span><span class="w">
+</span><span class="w"></span><span class="l">docker load &lt; 压缩包名字</span><span class="w">
+</span><span class="w"></span><span class="l">直接使用命令，不保持容器启动</span><span class="w">
+</span><span class="w"></span><span class="l">docker run --rm --name kubectl bitnami/kubectl:latest version</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">启动时修改entrypoint</span><span class="w">
+</span><span class="w"></span><span class="l">docker run --rm -it --entrypoint env 镜像:tag /bin/bash</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">构建镜像</span><span class="w">
+</span><span class="w"></span><span class="l">docker build -t xxx:tag .</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">从容器里复制文件出来</span><span class="w">
+</span><span class="w"></span><span class="l">docker cp 容器id:/容器内文件路径/文件名 /宿主机路径/文件名</span><span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">修改envoy的日志级别</span><span class="w">
+</span><span class="w"></span><span class="l">curl -XPOST http://localhost:15000/logging?level=debug</span><span class="w">
+</span><span class="w"></span><span class="l">curl -XPOST http://localhost:15000/logging?level=info</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看istio整个服务网格的配置</span><span class="w">
+</span><span class="w"></span><span class="l">istioctl proxy-config routes [istio-ingressgateway pod的名字] -n istio-system</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">滚动更新</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl patch deployment $APP-stable -n $NAMESPACE --patch &#39;{&#34;spec&#34;: {&#34;template&#34;: {&#34;metadata&#34;: {&#34;labels&#34;:{&#34;cm&#34;:&#34;stable&#34;},&#34;annotations&#34;: {&#34;version/config&#34;: &#34;&#39;$DATE&#39;&#34; }}}}}&#39;</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">复制pod里的文件到当前机器</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl cp [pod名字]:[work_dir]/文件名 -n [名称空间] -c [容器名称] ./复制后的文件名</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h1 id="servicemersh">ServiceMersh</h1>
 <h2 id="基本-1">基本</h2>
 <p>Service Mesh本质上是分布式的微服务<strong>网络控制的代理</strong>，以side car的方式实现：通过envoy+iptable对流量进行劫持，通过对流量的控制，实现诸如注册中心、负载均衡器、路由策略、熔断降级、限流、服务追踪等功能，而不需要耦合在具体的业务服务中，而Istio是其中一种实现。</p>
 <p>优点：</p>
@@ -1921,7 +2286,127 @@ docker run --rm -it --entrypoint env 镜像:tag /bin/bash
 </li>
 </ul>
 <p>Sidecar使用Envoy，代理服务的端口和协议。</p>
-<h2 id="应用场景">应用场景</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Gateway</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">public-api-gateway</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">regoo</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">istio-ingressgateway</span><span class="w">
+</span><span class="w">    </span><span class="nt">istio</span><span class="p">:</span><span class="w"> </span><span class="l">ingressgateway</span><span class="w">
+</span><span class="w">  </span><span class="c"># 入口配置</span><span class="w">
+</span><span class="w">  </span><span class="nt">servers</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">port</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">number</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">http</span><span class="w">
+</span><span class="w">        </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">HTTP</span><span class="w">
+</span><span class="w">      </span><span class="nt">hosts</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="s2">&#34;api.xxx.com&#34;</span><span class="w">
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">VirtualService</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">regoo</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="c"># 只允许请求来自该host的流量</span><span class="w">
+</span><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="s2">&#34;*&#34;</span><span class="w">
+</span><span class="w">  </span><span class="c"># 绑定Gateway</span><span class="w">
+</span><span class="w">  </span><span class="nt">gateways</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">public-api-gateway</span><span class="w">
+</span><span class="w">  </span><span class="nt">http</span><span class="p">:</span><span class="w">
+</span><span class="w">  	</span><span class="c"># 路由匹配</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">match</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">uri</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l">/order/v1</span><span class="w">
+</span><span class="w">      </span><span class="nt">route</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">destination</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">port</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">number</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span><span class="w">            </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w">            </span><span class="nt">subset</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">DestinationRule</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">regoo</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">order</span><span class="w">
+</span><span class="w">  </span><span class="nt">subsets</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
+</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="应用场景">应用场景</h2>
 <ol>
 <li>
 <p>VirtualService和DestinationRule：按服务版本路由、按比例切分流量、根据匹配规则进行路由(比如请求头必须包含xx)、路由策略(如负载均衡，连接池)</p>
