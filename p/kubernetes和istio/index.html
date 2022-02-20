@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    11 minute read
+                    12 minute read
                 </time>
             </div>
         
@@ -144,6 +144,7 @@ if (!doNotTrack) {
     <section class="article-content">
     <p>[TOC]</p>
 <h1 id="kubernetes">Kubernetes</h1>
+<p>当前Kubernetes社区对外宣传是单个集群最多支持5000个节点，Pod总数不超过150k，容器总数不超过300k，单节点Pod数量不超过100个。</p>
 <h2 id="基本">基本</h2>
 <p><figure 
 	>
@@ -159,24 +160,71 @@ if (!doNotTrack) {
 </figure></p>
 <p><strong>容器的本质是进程，Kubernetes相当于操作系统</strong>，管理这些进程组。</p>
 <ul>
-<li>CNI：Container Network Interface，容器网络接口规范，如 Flannel、Calico、AWS VPC CNI</li>
-<li>kubelet：负责创建、管理各个节点上运行时的容器和Pod，这个交互依赖CRI的远程调用接口，通过Socket和容器运行时通信。
-kubelet 还通过 gRPC 协议同一个叫作 Device Plugin 的插件进行交互。这个插件，是 Kubernetes 项目用来管理 GPU 等宿主机物理设备的主要组件
-kubelet 的另一个重要功能，则是调用网络插件和存储插件为容器配置网络和持久化存储，交互的接口是CNI和CSI</li>
-<li>CRI：Container Runtime Interface，容器运行时的各项核心操作的接口规范，是一组gRPC接口。包含两类服务，镜像服务和运行时服务。镜像服务提供下载、检查和删除镜像的RPC接口；运行时服务包含用于管理容器生命周期，与容器交互的调用的RPC接口（exec / attach / port-forward等）。dockershim、containerd、cri-o都是遵循CRI的容器运行时，称为高层级运行时。</li>
-<li>CSI：Container Storage Interface，容器存储的接口规范，如PV、PVC</li>
-<li>OCI：Open Container Initiative，容器运行时和镜像操作规范，镜像规范规定高层级运行时会下载一个OCI镜像，并把它解压称OCI运行时文件系统包；运行时规范描述如何从OCI运行时文件系统包运行容器程序，并且定义其配置、运行环境和生命周期。定义新容器的namespaces、cgroups和根文件系统；它的一个参考实现是runC，称为底层级运行时。</li>
-<li>CRD：Custom Resource Definition，自定义的资源对象，即yaml文件中的Kind，如Operator就是实现CRD的控制器，之后直接使用Operator创建的CRD声明对象即可使用</li>
-<li>Master节点作用：编排、管理、调度用户提交的作业
+<li>
+<p>CNI：Container Network Interface，容器网络接口规范，如 Flannel、Calico、AWS VPC CNI</p>
+</li>
+<li>
+<p>CRI：Container Runtime Interface，容器运行时的各项核心操作的接口规范，是一组gRPC接口。包含两类服务，镜像服务和运行时服务。镜像服务提供下载、检查和删除镜像的RPC接口；运行时服务包含用于管理容器生命周期，与容器交互的调用的RPC接口（exec / attach / port-forward等）。dockershim、containerd、cri-o都是遵循CRI的容器运行时，称为高层级运行时。</p>
+</li>
+<li>
+<p>CSI：Container Storage Interface，容器存储的接口规范，如PV、PVC</p>
+</li>
+<li>
+<p>OCI：Open Container Initiative，容器运行时和镜像操作规范，镜像规范规定高层级运行时会下载一个OCI镜像，并把它解压称OCI运行时文件系统包；运行时规范描述如何从OCI运行时文件系统包运行容器程序，并且定义其配置、运行环境和生命周期。定义新容器的namespaces、cgroups和根文件系统；它的一个参考实现是runC，称为底层级运行时。</p>
+</li>
+<li>
+<p>CRD：Custom Resource Definition，自定义的资源对象，即yaml文件中的Kind，如Operator就是实现CRD的控制器，之后直接使用Operator创建的CRD声明对象即可使用</p>
+<p>每一个对象都包含两个嵌套对象来描述规格（Spec）和状态（Status），对象的规格就算我们期望的目标状态，而状态描述了对象当前状态，这一部分由Kubernetes本身提供和管理，通过describe才能看到Status的信息。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Deployment</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">metav1</span><span class="p">.</span><span class="nx">TypeMeta</span> <span class="s">`json:&#34;,inline&#34;`</span>
+	<span class="nx">metav1</span><span class="p">.</span><span class="nx">ObjectMeta</span> <span class="s">`json:&#34;metadata,omitempty&#34; protobuf:&#34;bytes,1,opt,name=metadata&#34;`</span>
+
+	<span class="nx">Spec</span> <span class="nx">DeploymentSpec</span> <span class="s">`json:&#34;spec,omitempty&#34; protobuf:&#34;bytes,2,opt,name=spec&#34;`</span>
+	<span class="nx">Status</span> <span class="nx">DeploymentStatus</span> <span class="s">`json:&#34;status,omitempty&#34; protobuf:&#34;bytes,3,opt,name=status&#34;`</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>Master节点作用：编排、管理、调度用户提交的作业</p>
 <ul>
-<li>Scheduler：编排和调度Pod，基本原理是通过监听api-server获取待调度的pod，然后基于一系列筛选和评优，为pod分配最佳的node节点。</li>
-<li>APIServer：提供集群对外访问的API接口实现对集群资源的CRUD以及watch，是集群中各个组件数据交互和通信的枢纽，当收到一个创建pod的请求时会进行认证、限速、授权、准入机制等检查后，写入etcd。</li>
+<li>Scheduler：编排和调度Pod，基本原理是通过监听api-server获取待调度的pod，然后基于一系列筛选和评优，为pod分配最佳的node节点，在每次需要调度Pod时执行。</li>
+<li>APIServer：提供集群对外访问的API接口实现对集群资源的CRUD以及watch，是集群中各个组件数据交互和通信的枢纽，当收到一个创建pod的请求时会进行认证、限速、授权、准入机制等检查后，写入etcd。唯一一个与etcd集群通信的组件。</li>
 <li>Controller Manager：管理控制器的，比如Deployment、Job、CronbJob、RC、StatefulSet、Daemon等，核心思想是监听、比较资源实际状态与期望状态是否一致，否则进行协调。</li>
 </ul>
 </li>
-<li>Device Plugin：管理节点上的硬件设备，比如GPU</li>
-<li>Kube-Proxy：作为daemonset部署在每个节点上，主要用于为Pod创建代理服务，从API-Server获取所有service信息，创建Endpoints，转发service到Pod间的请求，默认使用iptables模式，但当service数量变多时有性能问题，1.8版本后使用IPVS模式提升性能</li>
-<li>coreDNS：低版本的kubernetes使用kube-dns，1.12后默认使用coreDNS，用于实现域名查找功能</li>
+<li>
+<p>Device Plugin：管理节点上的硬件设备，比如GPU</p>
+</li>
+<li>
+<p>Worker节点作用：运行或执行用户作业</p>
+<ul>
+<li>
+<p>kubelet：负责创建、管理各个节点上运行时的容器和Pod，这个交互依赖CRI的远程调用接口，通过Socket和CRI通信；</p>
+<p>周期性地从API Server接收新的或者修改的Pod规范并且保证节点傻瓜的Pod和其他容器的正常运行，保证节点会向目标状态迁移，向Master节点发送宿主机的健康状态；</p>
+<p>kubelet 还通过 gRPC 协议同一个叫作 Device Plugin 的插件进行交互。这个插件，是 Kubernetes 项目用来管理 GPU 等宿主机物理设备的主要组件；
+kubelet 的另一个重要功能，则是调用网络插件和存储插件为容器配置网络和持久化存储，交互的接口是CNI和CSI；</p>
+</li>
+<li>
+<p>Kube-Proxy：作为daemonset部署在每个节点上，负责宿主机的子网管理，用于为Pod创建代理服务，同时也能将服务暴露给外部，其原理就是在多个隔离的网络中把请求转发给正确的Pod或容器；</p>
+<p>从API-Server获取所有service信息，创建Endpoints，转发service到Pod间的请求，默认使用iptables模式，但当service数量变多时有性能问题，1.8版本后使用IPVS模式提升性能；</p>
+</li>
+</ul>
+</li>
+<li>
+<p>coreDNS：低版本的kubernetes使用kube-dns，1.12后默认使用coreDNS，用于实现域名查找功能</p>
+</li>
 </ul>
 <h2 id="调度器scheduler">调度器Scheduler</h2>
 <p>主要职责就是为新创建的Pod寻找合适的节点，默认调度器会先调用一组叫Predicate的调度算法检查每个Node，再调用一组叫Priority的调度算法为上一步结果里的每个Node打分，将新创建的Pod调度到得分最高的Node上。</p>
@@ -376,6 +424,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <h3 id="原理-1">原理</h3>
 <p>由于不同容器间可能存在依赖关系（如启动顺序的依赖），因此k8s会起一个中间容器Infra容器，来关联其他容器，infra容器一定是最先起的，其他容器通过Join Network Namespace的方式与Infa容器进行关联。</p>
 <p>一个 Pod 只有一个 IP 地址，由Pod内容器共享，Pod 的生命周期只跟 Infra 容器一致，Infra管理共享资源。</p>
+<p>kubelet会为每个节点上创建一个基本的cbr0网桥，并为每一个Pod创建veth虚拟网络设备，绑定一个IP地址，同一个Pod中的所有容器会通过这个网络设备共享网络，从而能通过localhost相互访问彼此暴露的端口和服务。</p>
 <p>对于initContainer命令的作用是按配置顺序最先执行，执行完之后才会执行container命令，例如，对war包所在容器使用initContainer命令，将war包复制到挂载的卷下后，再执行tomcat的container命令启动tomcat以此来启动web应用，这种先启动一个辅助容器来完成一些独立于主进程（主容器）之外的工作，称为sidecar，边车</p>
 <p>Pod可以理解为一个机器，容器是里面的进程，凡是调度、网络、储存、安全相关、跟namespace相关的属性，都是Pod级别的</p>
 <h3 id="pod在k8s中的生命周期">Pod在K8s中的生命周期</h3>
@@ -648,7 +697,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>最后，才是Guaranteed类别。并且，Kubernetes会保证只有当Guaranteed类别的Pod的资源使用量超过了其limits的限制，或者宿主机本身正处于Memory Pressure状态时，Guaranteed的Pod才可能被选中进行Eviction操 作。</p>
 </blockquote>
 <h3 id="pod中的健康检查">Pod中的健康检查</h3>
-<p>对于Web应用，最简单的就是由Web应用提供健康检查的接口，我们在定义的API对象的时候设置定时请求来检查运行在容器中的web应用是否健康</p>
+<p>对于Web应用，最简单的就是由Web应用提供健康检查的接口，我们在定义的API对象的时候设置定时请求来检查运行在容器中的web应用是否健康，主要是为了防止服务未启动完成就被打入流量或者长时间未响应依然没有重启等问题。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -665,7 +714,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nn">...</span><span class="w">
 </span><span class="w"></span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
-</span><span class="w">     </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">
+</span><span class="w">     </span><span class="nt">httpGet</span><span class="p">:</span><span class="w"> </span><span class="c"># 除此之外还有Exec、TCPSocket两种不同的probe方式</span><span class="w">
 </span><span class="w">       </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/healthz</span><span class="w">
 </span><span class="w">       </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
 </span><span class="w">       </span><span class="nt">httpHeaders</span><span class="p">:</span><span class="w">
@@ -918,16 +967,22 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </li>
 <li>
 <p>StorageClass：创建PV的模板，只有同属于一个StorageClass的PV和PVC，才可以绑定在一起，K8s内默认有一个名字为空串的DefaultStorageClass。</p>
-<p>StorageClass用于自动创建PV，StorageClass的定义比PV更加通用，一个StorageClass可以对应多个PV，这样就无需手动创建多个PV了。</p>
+<p>StorageClass用于<strong>自动</strong>创建PV，StorageClass的定义比PV更加通用，一个StorageClass可以对应多个PV，这样就无需手动创建多个PV了。</p>
 </li>
 </ul>
-<p>PVC与PV的绑定条件：</p>
+<p>集群中的每一个卷在被Pod使用时都会经历四个操作：附着Attach、挂载Mount、卸载Unmount和分离Detach；</p>
+<blockquote>
+<p>如果 Pod 中使用的是 EmptyDir、HostPath 这种类型的卷，那么这些卷并不会经历附着和分离的操作，它们只会被挂载和卸载到某一个的 Pod 中； EmptyDir、HostPath、ConfigMap 和 Secret，这些卷与所属的 Pod 具有相同的生命周期，对于ConfigMap和Sercet，在挂载时会创建临时的volume，随着Pod的删除而删除，而不会影响本身的ConfigMap和Secret对象；</p>
+<p>如果使用的云服务商提供的存储服务，这些持久卷只有附着到某一个节点之后才可以被挂在到相应的目录下，不过在其他节点使用这些卷时，该存储资源需要先与当前的节点分离。</p>
+</blockquote>
+<h3 id="pvc与pv的绑定条件">PVC与PV的绑定条件</h3>
 <ol>
 <li>PV和PVC的spec字段要匹配，比如存储的大小</li>
 <li>PV和PVC的storageClassName字段必须一样</li>
 </ol>
 <blockquote>
-<p>用户提交请求创建pod，Kubernetes发现这个pod声明使用了PVC，那就靠PersistentVolumeController帮它找一个PV配对。</p>
+<p>Volume 的创建和管理在 Kubernetes 中主要由卷管理器 VolumeManager 和 AttachDetachController 和 PVController三个组件负责。其中VolumeManager 会负责卷的创建和管理的大部分工作，而 AttachDetachController 主要负责对集群中的卷进行 Attach 和 Detach，PVController 负责处理持久卷的变更。</p>
+<p>当用户提交请求创建pod，Kubernetes发现这个pod声明使用了PVC，那就靠PersistentVolumeController帮它找一个PV配对。</p>
 <p>如果没有现成的PV，就去找对应的StorageClass，帮它新创建一个PV，然后和PVC完成绑定。</p>
 <p>新创建的PV，还只是一个API 对象，需要经过“两阶段处理”变成宿主机上的“持久化 Volume”才真正有用：
 第一阶段Attach：由运行在master上的AttachDetachController负责，为这个PV完成 Attach 操作，为宿主机挂载远程磁盘；
@@ -935,12 +990,18 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>完成这两步，PV对应的“持久化 Volume”就准备好了，Pod可以正常启动，将“持久化 Volume”挂载在容器内指定的路径。当需要卸载时，则先Unmount再进行Dettach。</p>
 </blockquote>
 <h3 id="访问模式">访问模式</h3>
-<p>由卷的提供商提供，比如AWS的EBS中的GP2、GP3磁盘，是ReadWriteOnce模式，所以一个卷只能被一个pod使用，否则会出现写冲突，即使用pod的复制集只能设置为1，且更新策略为recreate，保证只有一个pod使用才行；而如果是ReadWriteMany模式，比如AWS的EFS（EFS本质上是AWS对NFS的一次封装），则允许多个pod共享同一个持久卷</p>
+<p>由卷的提供商提供，比如AWS的EBS中的GP2、GP3磁盘，是ReadWriteOnce模式，所以一个卷只能被一个节点使用，否则会出现写冲突，即使用pod的复制集只能设置为1，且更新策略为recreate，保证只有一个pod使用才行；而如果是ReadWriteMany模式，比如AWS的EFS（EFS本质上是AWS对NFS的一次封装），则允许多个pod共享同一个持久卷</p>
 <ul>
 <li>ReadWriteOnce：卷可以被一个节点以读写方式挂载，允许同一个节点上的多个Pod访问；</li>
 <li>ReadOnlyMany：卷可以被多个节点以只读方式挂载；</li>
 <li>ReadWriteMany：卷可以被多个节点以读写方式挂载；</li>
 <li>ReadWriteOncePod：卷可以被单个 Pod 以读写方式挂载；</li>
+</ul>
+<h3 id="回收策略">回收策略</h3>
+<p>当PVC对象被删除时，kubernetes就需要对卷进行回收。</p>
+<ul>
+<li>Retain：保留PV中的数据，如果PV想被重新使用，系统管理员就需要删除被使用的PV对象，并手动清除存储和相关存储上的数据。</li>
+<li>Delete：PV和相关的存储会被自动删除，如果当前PV上的数据确实不再需要，使用此策略可以节省手动处理的时间并快速释放无用的资源。</li>
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1071,7 +1132,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span></code></pre></td></tr></table>
 </div>
 </div><h2 id="控制器模型">控制器模型</h2>
-<p>常见的控制器有Deployment、Job、CronbJob、ReplicaSet、StatefulSet、DaemonSet等</p>
+<p>常见的控制器有Deployment、Job、CronbJob、ReplicaSet、StatefulSet、DaemonSet等，他们是用于创建和管理Pod的实例，能够在集群层面提供复制、发布以及健康检查等功能，这些控制器都运行在Kubernetes集群的Master节点上，这些控制器会随Controller Manager的启动而运行，监听集群状态的变更来调整对应对象的状态。</p>
 <h3 id="原理-2">原理</h3>
 <p>控制循环：在一个无限循环内不断的轮询集群中的对象，将其状态与期望的状态做对比后，对该对象采取相应的操作。实际状态来自集群本身，如Kubelet汇报的容器状态、节点状态，监控系统的监控数据；期望状态来自用户提交的yaml文件；对象X指的是Pod或是其他受控制器控制的对象。</p>
 <div class="highlight"><div class="chroma">
@@ -1100,135 +1161,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </div>
 </div><p>与事件驱动的区别：事件驱动是被动型，接收到事件就执行相应的操作，事件是一次性，因此操作失败比较难处理，控制循环是不对轮询操作值只状态与期望一致的</p>
 <h3 id="deployment">Deployment</h3>
-<p>最基本的控制器对象，管理Pod的工具，比如管理多个相同Pod的实例，滚动更新</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
-</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
-</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx-deployment</span><span class="w">
-</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span><span class="w"></span><span class="c"># 通过spec.selector.matchLabels根据Pod的标签选择Pod</span><span class="w">
-</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
-</span><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
-</span><span class="w"></span><span class="c"># 上面的部分定义了控制内容，判断实际与期望，并进行相应的操作，下面是被控制的对象</span><span class="w">
-</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
-</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
-</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nginx:1.7.9</span><span class="w">
-</span><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
-</span></code></pre></td></tr></table>
-</div>
-</div><p>Deployment想要实现水平扩展/收缩，实际操控的是ReplicaSet对象，而ReplicaSet管理着定义数量的Pod，所以它是一种三层结构，Deployment -&gt; ReplicaSet -&gt; 多个平行的Pod，Deployment是一个两层控制器，Deployment控制的是ReplocaSet的版本，ReplicaSet控制的是Pod的数量。</p>
-<p>ReplicaSet表示版本，比如上面那份配置，replicas:2是一个版本，replicas:3是一个版本，这里是因为数量不同产生两个版本，每一个版本对应着一个ReplicaSet，由Deployment管理。</p>
-<p>当我们修改Deployment的replicas字段时，会触发水平扩展/收缩，修改template.Image或者版本号时，就会触发滚动更新。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
-</span><span class="lnt">9
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># 设置更新策略</span><span class="w">
-</span><span class="w"></span><span class="nn">...</span><span class="w">
-</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="l">...</span><span class="w">
-</span><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> 
-</span><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">RollingUpdate</span><span class="w"> </span><span class="c"># 滚动更新策略</span><span class="w">
-</span><span class="w">    </span><span class="nt">rollingUpdate</span><span class="p">:</span><span class="w"> 
-</span><span class="w">      </span><span class="nt">maxSurge</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">  </span><span class="c"># 指定Desired数量，</span><span class="w">
-</span><span class="w">      </span><span class="nt">maxUnavailable</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 一次更新中，可以删除的旧的Pod的数量</span><span class="w">
-</span></code></pre></td></tr></table>
-</div>
-</div><p>滚动更新相关命令</p>
-<ul>
-<li>使用<code>kubectl describe deploy xxx -n yyy</code>或者<code>kubectl rollout status deploy xxx -n yyy</code>即可查看滚动更新的流程；</li>
-<li>当新的版本有问题时，使用<code>kubectl rollout undo deploy xxx [--to-revision=n]</code>回滚到上个版本；</li>
-<li>使用<code>kubectl rollout history</code>查看每次变更的版本，但最好在执行apply -f deployment.yaml后加上-record参数；</li>
-<li>如果不想每次修改都触发滚动更新，可以先使用<code>kubectl rollout pause deploy xx -n yy</code>暂停Ddeployment的行为，修改为yaml后使用<code>kubectl rollout resume deploy xx -n yy</code>恢复，让其只触发一次修改。</li>
-</ul>
-<p>Deployment只适合控制无状态的Pod，如果是Pod与Pod之间有依赖关系，或者有状态时，deployment就不能随便杀掉任意的Pod再起新的Pod，比如多个数据库实例，因为数据库数据是存在磁盘，如果杀掉后重建，会出现实例与数据关系丢失，因此就需要StatefulSet。</p>
-<h3 id="statefulset">StatefulSet</h3>
-<p>StatefulSet可以解决两种情况下的状态：</p>
-<ul>
-<li>
-<p>拓扑状态，如果PodA和PodB有启动的先后顺序，当它们被再次创建出来时也会按照这个顺序进行启动，且新创建的Pod和原来的Pod拥有同样的网络标识（比如DNS记录），保证在使用原来的方式通信也可行。</p>
-<p>StatefulSet通过Headless Service，使用这个DNS记录维持Pod的拓扑状态。在声明StatefulSet时，在spec.serviceName里指定Headless Service的名称，因为serviceName的值是固定的，StatefulSet在为Pod起名字的时候又会按顺序编号，为每个Pod生成一条DNS记录，通过DNS记录里的Pod编号来进行顺序启动。</p>
-<p>StatefulSet只会保证DNS记录不变，Pod对应的IP还是会随着重启发生改变的。</p>
-</li>
-<li>
-<p>存储状态，PodA第一次读取到的数据，隔了一段时间后读取到的仍然是同一份，无论其他有没有被重建过。</p>
-<p>StatefulSet通过PVC + PV + 编号的方式，实现 数据存储与Pod的绑定。每个Pod都会根据编号与对应的PVC绑定，当Pod被删除时，并不会删掉对应的PV，因此在起新的Pod的时候，会根据PVC找到原来的PV。</p>
-</li>
-</ul>
-<p>StatefulSet<strong>直接管理</strong>Pod，每个Pod不再认为只是复制集，而是会有hostname、名字、编号等的不同，并生成对应的带有相同编号的DNS记录，对应的带有相同编号的PVC，保证每个Pod都拥有独立的Volume。</p>
-<p>StatefulSet的滚动更新，会按照与Pod编号相反的顺序，逐一更新，如果发生错误，滚动更新会停止；StatefulSet支持按条件更新，通过对<code>spec.updateStrategy.rollingUpdate的partition字段</code>进行配置，也可实现金丝雀部署或灰度发布。</p>
-<p>StatefulSet可用于部署有状态的应用，比如有主从节点MySQL集群，在这个case中，虽然Pod会有相同的template，但是主从Pod里的sidecar执行的动作不一样，而主从Pod可以根据编号来实现，不同类型的Pod存储通过PVC + PV实现。</p>
-<h3 id="daemonset">DaemonSet</h3>
-<p>DaemonSet 的会在Kubernetes 集群里的每个节点都运行一个 Daemon Pod，每个节点只允许一个，当有新的节点加入集群后，该Pod会在新节点上被创建出来，节点被删除，该Pod也被删除。</p>
-<p>一般的Pod都需要节点准备好了(即node的状态是Ready)才可以调度上去，但是有些Pod需要在节点还没准备好的时候就需要部署上去，比如网络相关的Pod，因此需要使用DaemonSet。</p>
-<p>DaemonSet Controller通过 控制循环，在etcd上获取所有Node列表，判断节点上是否已经运行了标签为xxx的Pod，来保证每个节点上只有一个。可以通过在Pod上声明nodeSelector、nodeAffinity、tolerations字段告诉控制器如何选择node。</p>
-<ul>
-<li>在node上打上标签，即可通过nodeSelector选择对应的node；</li>
-<li>nodeAffinity的功能比nodeSelector强大，支持更加灵活的表达式来选择节点；</li>
-<li>tolerations来容忍Pod在被打上污点标签的节点也可以部署，因为一般有污点的节点是不允许将Pod部署在上面的。</li>
-</ul>
-<p>DaemonSet是<strong>直接管理</strong>Pod的，DaemonSet所管理的Pod的调度过程，都由它自己完成，而不是通过Kube-Scheduler完成， 是因为DaemonSet在创建Pod时，会为其增加spce.nodeName字段，此时以及明确了该Pod要运行在哪个节点，就不需要kube-scheduler来调度了，但也带了问题，无论节点可不可用，DaemonSet都会将该Pod往上面调度。</p>
-<p>DaemonSet的应用一般是网络插件的Agent组件、存储插件的Agent组件、节点监控组件、节点日志收集等。</p>
-<h3 id="job">Job</h3>
-<p>Job是一种特殊的Pod，即那些计算完成之后就退出的Pod，指状态变为complated</p>
-<p>Job 会使用这种携带了 UID 的 Label，为了避免不同 Job 对象所管理的 Pod 发生重合，Job是直接控制Pod的</p>
-<pre tabindex="0"><code>spec:
- backoffLimit: 5 //默认是6
- activeDeadlineSeconds: 100 //单位：秒
- parallelism: 2
- completions: 4
-</code></pre><p>backoffLimit表示失败后的重试次数，下一次重试的动作分别发生在10s、20s、40s</p>
-<p>activeDeadlineSeconds表示最长运行的时间，如果超过该限定时间，则会立即结束</p>
-<p>parallelism表示一个 Job 在任意时间最多可以启动多少个 Pod 同时运行</p>
-<p>completions表示 Job 至少要完成的 Pod 数目，即 Job 的最小完成数</p>
-<p>Job Controller 在控制循环中进行的调谐（Reconcile）操作，是根据实际在 Running 状态 Pod 的数目、已经成功退出的 Pod 的数目，以及 parallelism、completions 参数的值共同计算出在这个周期里，应该创建或者删除的 Pod 数目，然后调用 Kubernetes API 来执行这个操作，当Job执行完处于complate状态时，并不会退出</p>
-<h3 id="cronjob">CronJob</h3>
-<p>如果仍然使用Deployment管理，因为它会对退出的Pod进行滚动更新，所以并不合适，因此需要使用CronJob</p>
-<p>作用类似于Job类似于Pod，CronJob类似于Deployment</p>
-<p>CronJob使用 spec.schedule来控制，使用jobTemplate来定义job模板，spec.concurrencyPolicy来控制并行策略</p>
-<p>spec.concurrencyPolicy=Allow（一个Job没执行完，新的Job就能产生）、Forbid（新Job不会被创建）、Replace（新的Job会替换旧的，没有执行完的Job）</p>
+<p>最基本的控制器对象，管理Pod的工具，比如管理多个相同Pod的实例，Deployment和ReplicaSet都能控制Pod的数量，但一般我们使用的还是Deployment，因为其还有其他功能，比如滚动更新、回滚、暂停和恢复等。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -1261,6 +1194,278 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="lnt">28
 </span></code></pre></td>
 <td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx-deployment</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">paused</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="c"># 暂停：false</span><span class="w">
+</span><span class="w"></span><span class="c"># 通过spec.selector.matchLabels根据Pod的标签选择Pod</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w"></span><span class="c"># 上面的部分定义了控制内容，判断实际与期望，并进行相应的操作，下面是被控制的对象</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nginx:1.7.9</span><span class="w">
+</span><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">RollingUpdate</span><span class="w">
+</span><span class="w">    </span><span class="nt">rollingUpdate</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="c"># 可使用值也可以使用百分比，使用百分比时，与replca值相乘得到最终的值</span><span class="w">
+</span><span class="w">      </span><span class="nt">maxUnavailable</span><span class="p">:</span><span class="w"> </span><span class="m">25</span><span class="l">%</span><span class="w"> </span><span class="c"># 在更新过程中能够进入不可用状态的Pod的最大值</span><span class="w">
+</span><span class="w">      </span><span class="nt">maxSurge</span><span class="p">:</span><span class="w"> </span><span class="m">25</span><span class="l">%</span><span class="w"> </span><span class="c"># 能额外创建的Pod的个数</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>Deployment想要实现水平扩展/收缩，实际操控的是ReplicaSet对象，而ReplicaSet管理着定义数量的Pod，所以它是一种三层结构，Deployment -&gt; ReplicaSet -&gt; 多个平行的Pod，Deployment是一个两层控制器，Deployment控制的是RepliocaSet的版本，ReplicaSet控制的是Pod的数量。</p>
+<p>ReplicaSet表示版本，比如上面那份配置，replicas:2是一个版本，replicas:3是一个版本，这里是因为数量不同产生两个版本，每一个版本对应着一个ReplicaSet，由Deployment管理。</p>
+<p>当我们修改Deployment的replicas字段时，会触发水平扩展/收缩，修改template.Image或者版本号时，就会触发滚动更新。</p>
+<p>Controller Manager中的DeploymentController作为管理Deployment资源的控制器，会在启动时通过Informer监听Pod、ReplicaSet和Deployment的变更，一旦变更就会触发DeploymentController中的回调；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># 设置更新策略</span><span class="w">
+</span><span class="w"></span><span class="nn">...</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="l">...</span><span class="w">
+</span><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> 
+</span><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">RollingUpdate</span><span class="w"> </span><span class="c"># 滚动更新策略</span><span class="w">
+</span><span class="w">    </span><span class="nt">rollingUpdate</span><span class="p">:</span><span class="w"> 
+</span><span class="w">      </span><span class="nt">maxSurge</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">  </span><span class="c"># 指定Desired数量，</span><span class="w">
+</span><span class="w">      </span><span class="nt">maxUnavailable</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 一次更新中，可以删除的旧的Pod的数量</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>Deployment只适合控制无状态的Pod，如果是Pod与Pod之间有依赖关系，或者有状态时，deployment就不能随便杀掉任意的Pod再起新的Pod，比如多个数据库实例，因为数据库数据是存在磁盘，如果杀掉后重建，会出现实例与数据关系丢失，因此就需要StatefulSet。</p>
+<h3 id="statefulset">StatefulSet</h3>
+<p>StatefulSet可以解决两种情况下的状态：</p>
+<ul>
+<li>
+<p>拓扑状态，如果PodA和PodB有启动的先后顺序，当它们被再次创建出来时也会按照这个顺序进行启动，且新创建的Pod和原来的Pod拥有同样的网络标识（比如DNS记录），保证在使用原来的方式通信也可行。</p>
+<p>StatefulSet通过Headless Service，使用这个DNS记录维持Pod的拓扑状态。在声明StatefulSet时，在spec.serviceName里指定Headless Service的名称，因为serviceName的值是固定的，StatefulSet在为Pod起名字的时候又会按顺序编号，为每个Pod生成一条DNS记录，通过DNS记录里的Pod编号来进行顺序启动。</p>
+<p>StatefulSet只会保证DNS记录不变，Pod对应的IP还是会随着重启发生改变的。</p>
+</li>
+<li>
+<p>存储状态，PodA第一次读取到的数据，隔了一段时间后读取到的仍然是同一份，无论其他有没有被重建过。</p>
+<p>StatefulSet通过PVC + PV + 编号的方式，实现 数据存储与Pod的绑定。每个Pod都会根据编号与对应的PVC绑定，当Pod被删除时，并不会删掉对应的PV，因此在起新的Pod的时候，会根据PVC找到原来的PV。</p>
+</li>
+</ul>
+<p>StatefulSet<strong>直接管理</strong>Pod，每个Pod不再认为只是复制集，而是会有hostname、名字、编号等的不同，并生成对应的带有相同编号的DNS记录，对应的带有相同编号的PVC，保证每个Pod都拥有独立的Volume。</p>
+<p>StatefulSet的滚动更新，会按照与Pod编号相反的顺序，逐一更新，如果发生错误，滚动更新会停止；StatefulSet支持按条件更新，通过对<code>spec.updateStrategy.rollingUpdate的partition字段</code>进行配置，也可实现金丝雀部署或灰度发布。</p>
+<p>StatefulSet可用于部署有状态的应用，比如有主从节点MySQL集群，在这个case中，虽然Pod会有相同的template，但是主从Pod里的sidecar执行的动作不一样，而主从Pod可以根据编号来实现，不同类型的Pod存储通过PVC + PV实现。</p>
+<p>StatefulSet主要由StatefulSetController、StatefulSetControl和StatefulPodControl三个组件协作来完成StatefulSet的管理，StatefulSetController会同时从PodInformer和ReplicaSetInformer中接受增删查改事件并将事件推送到队列中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">StatefulSet</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">web</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">serviceName</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx&#34;</span><span class="w">
+</span><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">k8s.gcr.io/nginx-slim:0.8</span><span class="w">
+</span><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">www</span><span class="w">
+</span><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/usr/share/nginx/html</span><span class="w">
+</span><span class="w">  </span><span class="nt">volumeClaimTemplates</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- <span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">www</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">accessModes</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;ReadWriteOnce&#34;</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="w">      </span><span class="nt">resources</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">requests</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l">1Gi</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="daemonset">DaemonSet</h3>
+<p>DaemonSet 的会在Kubernetes 集群里的每个节点都运行一个 Daemon Pod，每个节点只允许一个，当有新的节点加入集群后，该Pod会在新节点上被创建出来，节点被删除，该Pod也被删除。</p>
+<p>一般的Pod都需要节点准备好了(即node的状态是Ready)才可以调度上去，但是有些Pod需要在节点还没准备好的时候就需要部署上去，比如网络相关的Pod，因此需要使用DaemonSet。</p>
+<p>DaemonSet Controller通过 控制循环，在etcd上获取所有Node列表，判断节点上是否已经运行了标签为xxx的Pod，来保证每个节点上只有一个。可以通过在Pod上声明nodeSelector、nodeAffinity、tolerations字段告诉控制器如何选择node。</p>
+<ul>
+<li>在node上打上标签，即可通过nodeSelector选择对应的node；</li>
+<li>nodeAffinity的功能比nodeSelector强大，支持更加灵活的表达式来选择节点；</li>
+<li>tolerations来容忍Pod在被打上污点标签的节点也可以部署，因为一般有污点的节点是不允许将Pod部署在上面的。</li>
+</ul>
+<p>DaemonSet是<strong>直接管理</strong>Pod的，DaemonSet所管理的Pod的调度过程，都由它自己完成，而不是通过Kube-Scheduler完成， 是因为DaemonSet在创建Pod时，会为其增加spce.nodeName字段，此时以及明确了该Pod要运行在哪个节点，就不需要kube-scheduler来调度了，但也带了问题，无论节点可不可用，DaemonSet都会将该Pod往上面调度。</p>
+<p>DaemonSet的应用一般是网络插件的Agent组件、存储插件的Agent组件、节点监控组件、节点日志收集等。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">DaemonSet</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">fluentd-elasticsearch</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">kube-system</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">fluentd-elasticsearch</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">fluentd-elasticsearch</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">fluentd-elasticsearch</span><span class="w">
+</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">k8s.gcr.io/fluentd-elasticsearch:1.20</span><span class="w">
+</span><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">varlog</span><span class="w">
+</span><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/var/log</span><span class="w">
+</span><span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">varlog</span><span class="w">
+</span><span class="w">        </span><span class="nt">hostPath</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/var/log</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="job">Job</h3>
+<p>Job是一种特殊的Pod，即那些计算完成之后就退出的Pod，指状态变为complated</p>
+<p>Job 会使用这种携带了 UID 的 Label，为了避免不同 Job 对象所管理的 Pod 发生重合，Job是直接控制Pod的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w"> </span><span class="nt">backoffLimit</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="l">//默认是6</span><span class="w">
+</span><span class="w"> </span><span class="nt">activeDeadlineSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="l">//单位：秒</span><span class="w">
+</span><span class="w"> </span><span class="nt">parallelism</span><span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w"> </span><span class="nt">completions</span><span class="p">:</span><span class="w"> </span><span class="m">4</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>backoffLimit表示失败后的重试次数，下一次重试的动作分别发生在10s、20s、40s</p>
+<p>activeDeadlineSeconds表示最长运行的时间，如果超过该限定时间，则会立即结束</p>
+<p>parallelism表示一个 Job 在任意时间最多可以启动多少个 Pod 同时运行</p>
+<p>completions表示 Job 至少要完成的 Pod 数目，即 Job 的最小完成数</p>
+<p>Job Controller 在控制循环中进行的调谐（Reconcile）操作，是根据实际在 Running 状态 Pod 的数目、已经成功退出的 Pod 的数目，以及 parallelism、completions 参数的值共同计算出在这个周期里，应该创建或者删除的 Pod 数目，然后调用 Kubernetes API 来执行这个操作，当Job执行完处于complate状态时，并不会退出</p>
+<h3 id="cronjob">CronJob</h3>
+<p>如果仍然使用Deployment管理，因为它会对退出的Pod进行滚动更新，所以并不合适，因此需要使用CronJob；</p>
+<p>作用类似于Job类似于Pod，CronJob类似于Deployment；</p>
+<p>Cronjob会每隔10s从api-server中取出资源并进行检查是否触发调度创建新的资源，so Cronjob并不能保证在准确的目标时间执行，有一定的滞后性；</p>
+<p>CronJob使用 spec.schedule来控制，使用jobTemplate来定义job模板，spec.concurrencyPolicy来控制并行策略</p>
+<p>spec.concurrencyPolicy=Allow（一个Job没执行完，新的Job就能产生）、Forbid（新Job不会被创建）、Replace（新的Job会替换旧的，没有执行完的Job）；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">batch/v1beta1</span><span class="w">
 </span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">CronJob</span><span class="w">
 </span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
@@ -1272,8 +1477,11 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">  </span><span class="nt">schedule</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;*/5 * * * *&#34;</span><span class="w">
 </span><span class="w">  </span><span class="nt">successfulJobsHistoryLimit</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
 </span><span class="w">  </span><span class="nt">failedJobsHistoryLimit</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">  </span><span class="nt">completions</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 当前任务要等待1个pod的成功执行</span><span class="w">
+</span><span class="w">  </span><span class="nt">parallelism</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 最多有1个并发执行的任务，此时所有任务会依次顺序进行，只有前一个成功才能执行下一个</span><span class="w">
 </span><span class="w">  </span><span class="nt">concurrencyPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Forbid</span><span class="w">
 </span><span class="w">  </span><span class="nt">startingDeadlineSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">120</span><span class="w">
+</span><span class="w">  </span><span class="nt">suspend</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="c"># 是否暂停</span><span class="w">
 </span><span class="w">  </span><span class="nt">jobTemplate</span><span class="p">:</span><span class="w">
 </span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
 </span><span class="w">      </span><span class="nt">template</span><span class="p">:</span><span class="w">
@@ -1304,6 +1512,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </li>
 <li>
 <p>一般是pod指定一个访问端口和label，Service的selector指明绑定的Pod，配置端口映射，Service并不直接连接Pod，而是在selector选中的Pod上产生一个Endpoints资源对象，通过Service的VIP就能访问它代理的Pod了。</p>
+</li>
+<li>
+<p>创建一个新的Service对象需要两大模块同时协作，一个是控制器，它需要在每次客户端创建新的Service对象时，生成其他用于暴露一组Pod的对象，即Endpoint，另一个是kube-proxy，它运行在集群的每个节点上，根据Service和Endpoint的变动改变节点上iptables或者ipvs中保存的规则。</p>
 </li>
 <li>
 <p>service负载分发策略有两种模式：</p>
@@ -1355,7 +1566,23 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span><span class="w">  </span><span class="nt">externalTrafficPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Cluster</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
-</div><h3 id="endpoints的作用">endpoints的作用</h3>
+</div><h3 id="kube-proxy">kube-proxy</h3>
+<p>Kubernetes集群中每一个节点都运行着一个kube-proxy，这个进程负责监听kubernetes主节点中Service的增加和删除事件并修改运行代理的配置，为节点内的客户端提供流量转发和负载均衡等功能，kube-proxy有三种模式：</p>
+<ul>
+<li>
+<p>userspace：运行在用户空间的代理，对于每一个Service都会在当前的节点上开启一个端口，所有连接到当前代理端口的请求都会被转发到service背后的一组pod上，本质上是在节点上添加iptable添加一条规则，通过iptables将流量转发给kube-proxy处理。</p>
+<p>如果选择userspace模式，每当有新的service被创建时，kube-proxy就会增加一条iptables记录并启动一个goroutine，前者用于将节点中服务对外发出的流量转发给kube-proxy，再由后者一系列goroutine将流量转发到目标的pod上。</p>
+</li>
+<li>
+<p>iptables：直接使用iptables转发当前节点上的全部流量，比userspace模式有更高的吞吐量。</p>
+<p>如果选择iptables模式，所有流量会先经过PREROUTING或者OUTPUT链 ，随后进入Kubernetes自定义的链入口KUBE_SERVICES、单个Service对应的链KUBE-SVC-XXX以及每个pod对应的链KUBE-SEP-XXX，经过这些链的处理，最终才能访问一个服务真正的IP地址。</p>
+</li>
+<li>
+<p>ipvs：解决在大量 Service 时，iptables 规则同步变得不可用的性能问题，ipvs 的实现虽然也基于 netfilter 的钩子函数，但是它却使用哈希表作为底层的数据结构并且工作在内核态，这也就是说 ipvs 在重定向流量和同步代理规则有着更好的性能。</p>
+<p>除了能够提升性能之外，ipvs 也提供了多种类型的负载均衡算法，除了最常见的 Round-Robin 之外，还支持最小连接、目标哈希、最小延迟等算法，能够很好地提升负载均衡的效率。</p>
+</li>
+</ul>
+<h3 id="endpoints的作用">Endpoints的作用</h3>
 <p>当service使用了selector指定带有对应label的pod时，endpoint controller才会自动创建对应的endpoint对象，产生一个endpoints，endpoints信息存储在etcd中，用来记录一个service对应的所有pod的访问地址。</p>
 <p>endpoints controller的作用</p>
 <ul>
@@ -1856,10 +2083,19 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 	</a>
 	
 </figure></p>
-<pre tabindex="0"><code>apiVersion: batch/v2alpha1
-kind: CronJob
-...
-</code></pre><p>以上面的配置为例，CronJob是API对象的资源类型、batch是组、v2alpha1是版本</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">batch/v2alpha1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">CronJob</span><span class="w">
+</span><span class="w"></span><span class="nn">...</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>以上面的配置为例，CronJob是API对象的资源类型、batch是组、v2alpha1是版本</p>
 <p>核心API对象如Pod、Node是没有Group的，k8s是直接在/api这个层级进行下一步的匹配</p>
 <p>过程步骤</p>
 <ol>
@@ -1871,26 +2107,56 @@ kind: CronJob
 </ol>
 <p>CRD（ Custom Resource Definition），一种API插件机制，允许用户在k8s中添加一个跟Pod、Node类型的，新的API资源，即kind为CustomResourceDefinition，类似于类的概念，这样就可以通过这个类，来创建属于这个类的实例(编写yaml文件)，这个实例就称为CR</p>
 <p>比如有CRD为</p>
-<pre tabindex="0"><code>apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: networks.samplecrd.k8s.io
-spec:
-  group: samplecrd.k8s.io
-  version: v1
-  names:
-    kind: Network
-    plural: networks
-  scope: Namespaced
-</code></pre><p>CR为</p>
-<pre tabindex="0"><code>apiVersion: samplecrd.k8s.io/v1
-kind: Network
-metadata:
-  name: example-network
-spec:
-  cidr: &quot;192.168.0.0/16&quot;
-  gateway: &quot;192.168.0.1&quot;
-</code></pre><p>其中的资源类型、组、版本号要一一对应</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apiextensions.k8s.io/v1beta1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">CustomResourceDefinition</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">networks.samplecrd.k8s.io</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">samplecrd.k8s.io</span><span class="w">
+</span><span class="w">  </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w">  </span><span class="nt">names</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Network</span><span class="w">
+</span><span class="w">    </span><span class="nt">plural</span><span class="p">:</span><span class="w"> </span><span class="l">networks</span><span class="w">
+</span><span class="w">  </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l">Namespaced</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>CR为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">samplecrd.k8s.io/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Network</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">example-network</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">cidr</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;192.168.0.0/16&#34;</span><span class="w">
+</span><span class="w">  </span><span class="nt">gateway</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;192.168.0.1&#34;</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>其中的资源类型、组、版本号要一一对应</p>
 <p>上面这些操作只是告诉k8s怎么认识yaml文件，接着就需要编写代码，让k8s能够通过yaml配置生成API对象，以及如何使用这些配置的字段属性了，接着，还需要编写操作该API对象的控制器</p>
 <p>控制器的原理：</p>
 <p><figure 
@@ -1997,105 +2263,116 @@ spec:
 <h2 id="常用命令">常用命令</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span><span class="lnt">23
-</span><span class="lnt">24
-</span><span class="lnt">25
-</span><span class="lnt">26
-</span><span class="lnt">27
-</span><span class="lnt">28
-</span><span class="lnt">29
-</span><span class="lnt">30
-</span><span class="lnt">31
-</span><span class="lnt">32
-</span><span class="lnt">33
-</span><span class="lnt">34
-</span><span class="lnt">35
-</span><span class="lnt">36
-</span><span class="lnt">37
-</span><span class="lnt">38
-</span><span class="lnt">39
-</span><span class="lnt">40
-</span><span class="lnt">41
-</span><span class="lnt">42
-</span><span class="lnt">43
-</span><span class="lnt">44
-</span><span class="lnt">45
-</span><span class="lnt">46
-</span><span class="lnt">47
-</span><span class="lnt">48
-</span><span class="lnt">49
-</span><span class="lnt">50
-</span><span class="lnt">51
-</span><span class="lnt">52
-</span><span class="lnt">53
-</span><span class="lnt">54
-</span><span class="lnt">55
-</span><span class="lnt">56
-</span><span class="lnt">57
-</span><span class="lnt">58
-</span><span class="lnt">59
-</span><span class="lnt">60
-</span><span class="lnt">61
-</span><span class="lnt">62
-</span><span class="lnt">63
-</span><span class="lnt">64
-</span><span class="lnt">65
-</span><span class="lnt">66
-</span><span class="lnt">67
-</span><span class="lnt">68
-</span><span class="lnt">69
-</span><span class="lnt">70
-</span><span class="lnt">71
-</span><span class="lnt">72
-</span><span class="lnt">73
-</span><span class="lnt">74
-</span><span class="lnt">75
-</span><span class="lnt">76
-</span><span class="lnt">77
-</span><span class="lnt">78
-</span><span class="lnt">79
-</span><span class="lnt">80
-</span><span class="lnt">81
-</span><span class="lnt">82
-</span><span class="lnt">83
-</span><span class="lnt">84
-</span><span class="lnt">85
-</span><span class="lnt">86
-</span><span class="lnt">87
-</span><span class="lnt">88
-</span><span class="lnt">89
-</span><span class="lnt">90
-</span><span class="lnt">91
-</span><span class="lnt">92
-</span><span class="lnt">93
-</span><span class="lnt">94
-</span><span class="lnt">95
-</span><span class="lnt">96
-</span><span class="lnt">97
-</span><span class="lnt">98
-</span><span class="lnt">99
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="l">查看所有Pod</span><span class="w">
@@ -2167,6 +2444,17 @@ spec:
 </span><span class="w"></span><span class="l">kubectl drain node名称 --delete-local-data --force --ignore-daemonsets</span><span class="w">
 </span><span class="w"></span><span class="m">2</span><span class="l">. 删除</span><span class="w">
 </span><span class="w"></span><span class="l">kubectl delete node node名称 </span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看滚动更新的流程</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl describe deploy [deploy名称] -n [名称空间]或者kubectl rollout status deploy [deploy名称] -n [名称空间]</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">当新的版本有问题时，回滚到上个版本</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl rollout undo deploy [deploy名称] [--to-revision=n]</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">查看每次变更的版本，但最好在执行apply -f deployment.yaml后加上-record参数；</span><span class="w">
+</span><span class="w"></span><span class="l">kubectl rollout history</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="l">如果不想每次修改都触发滚动更新，可以先使用`kubectl rollout pause deploy xx -n yy`暂停Ddeployment的行为，修改为yaml后使用`kubectl rollout resume deploy xx -n yy`恢复，让其只触发一次修改。</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="l">将镜像打成压缩包</span><span class="w">
 </span><span class="w"></span><span class="l">docker save -o 压缩包名字  镜像名字:标签</span><span class="w">
@@ -2518,6 +2806,22 @@ spec:
     >Service核心原理</a></p>
 <p><a class="link" href="https://zhuanlan.zhihu.com/p/80141656"  target="_blank" rel="noopener"
     >KubeDNS和CoreDNS</a></p>
+<p><a class="link" href="https://draveness.me/kubernetes-volume/"  target="_blank" rel="noopener"
+    >详解 Kubernetes Volume 的实现原理</a></p>
+<p><a class="link" href="https://draveness.me/kubernetes-replicaset/"  target="_blank" rel="noopener"
+    >详解 Kubernetes ReplicaSet 的实现原理</a></p>
+<p><a class="link" href="https://draveness.me/kubernetes-garbage-collector/"  target="_blank" rel="noopener"
+    >详解 Kubernetes 垃圾收集器的实现原理</a></p>
+<p><a class="link" href="https://draveness.me/kubernetes-daemonset/"  target="_blank" rel="noopener"
+    >详解 Kubernetes DaemonSet 的实现原理</a></p>
+<p><a class="link" href="https://draveness.me/kubernetes-deployment/"  target="_blank" rel="noopener"
+    >详解 Kubernetes Deployment 的实现原理</a></p>
+<p><a class="link" href="https://draveness.me/kubernetes-service/"  target="_blank" rel="noopener"
+    >详解 Kubernetes Service 的实现原理</a></p>
+<p><a class="link" href="https://draveness.me/kubernetes-pod/"  target="_blank" rel="noopener"
+    >详解 Kubernetes Pod 的实现原理</a></p>
+<p><a class="link" href="https://draveness.me/understanding-kubernetes/"  target="_blank" rel="noopener"
+    >谈 Kubernetes 的架构设计与实现原理</a></p>
 
 </section>
 
@@ -2774,7 +3078,9 @@ spec:
         </li>
         <li><a href="#pvpvcstoageclass">PV、PVC、StoageClass</a>
           <ol>
+            <li><a href="#pvc与pv的绑定条件">PVC与PV的绑定条件</a></li>
             <li><a href="#访问模式">访问模式</a></li>
+            <li><a href="#回收策略">回收策略</a></li>
           </ol>
         </li>
         <li><a href="#控制器模型">控制器模型</a>
@@ -2790,7 +3096,8 @@ spec:
         </li>
         <li><a href="#service">Service</a>
           <ol>
-            <li><a href="#endpoints的作用">endpoints的作用</a></li>
+            <li><a href="#kube-proxy">kube-proxy</a></li>
+            <li><a href="#endpoints的作用">Endpoints的作用</a></li>
             <li><a href="#service的实现">Service的实现</a></li>
             <li><a href="#关于headless">关于Headless</a></li>
             <li><a href="#service的几种设置">Service的几种设置</a></li>

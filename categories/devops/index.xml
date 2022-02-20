@@ -14,13 +14,16 @@
       
       <guid>http://nixum.cc/p/kubernetes%E5%92%8Cistio/</guid>
       <description>[TOC]
-Kubernetes 基本  
+Kubernetes 当前Kubernetes社区对外宣传是单个集群最多支持5000个节点，Pod总数不超过150k，容器总数不超过300k，单节点Pod数量不超过100个。
+基本  
 容器的本质是进程，Kubernetes相当于操作系统，管理这些进程组。
- CNI：Container Network Interface，容器网络接口规范，如 Flannel、Calico、AWS VPC CNI kubelet：负责创建、管理各个节点上运行时的容器和Pod，这个交互依赖CRI的远程调用接口，通过Socket和容器运行时通信。 kubelet 还通过 gRPC 协议同一个叫作 Device Plugin 的插件进行交互。这个插件，是 Kubernetes 项目用来管理 GPU 等宿主机物理设备的主要组件 kubelet 的另一个重要功能，则是调用网络插件和存储插件为容器配置网络和持久化存储，交互的接口是CNI和CSI CRI：Container Runtime Interface，容器运行时的各项核心操作的接口规范，是一组gRPC接口。包含两类服务，镜像服务和运行时服务。镜像服务提供下载、检查和删除镜像的RPC接口；运行时服务包含用于管理容器生命周期，与容器交互的调用的RPC接口（exec / attach / port-forward等）。dockershim、containerd、cri-o都是遵循CRI的容器运行时，称为高层级运行时。 CSI：Container Storage Interface，容器存储的接口规范，如PV、PVC OCI：Open Container Initiative，容器运行时和镜像操作规范，镜像规范规定高层级运行时会下载一个OCI镜像，并把它解压称OCI运行时文件系统包；运行时规范描述如何从OCI运行时文件系统包运行容器程序，并且定义其配置、运行环境和生命周期。定义新容器的namespaces、cgroups和根文件系统；它的一个参考实现是runC，称为底层级运行时。 CRD：Custom Resource Definition，自定义的资源对象，即yaml文件中的Kind，如Operator就是实现CRD的控制器，之后直接使用Operator创建的CRD声明对象即可使用 Master节点作用：编排、管理、调度用户提交的作业  Scheduler：编排和调度Pod，基本原理是通过监听api-server获取待调度的pod，然后基于一系列筛选和评优，为pod分配最佳的node节点。 APIServer：提供集群对外访问的API接口实现对集群资源的CRUD以及watch，是集群中各个组件数据交互和通信的枢纽，当收到一个创建pod的请求时会进行认证、限速、授权、准入机制等检查后，写入etcd。 Controller Manager：管理控制器的，比如Deployment、Job、CronbJob、RC、StatefulSet、Daemon等，核心思想是监听、比较资源实际状态与期望状态是否一致，否则进行协调。   Device Plugin：管理节点上的硬件设备，比如GPU Kube-Proxy：作为daemonset部署在每个节点上，主要用于为Pod创建代理服务，从API-Server获取所有service信息，创建Endpoints，转发service到Pod间的请求，默认使用iptables模式，但当service数量变多时有性能问题，1.8版本后使用IPVS模式提升性能 coreDNS：低版本的kubernetes使用kube-dns，1.12后默认使用coreDNS，用于实现域名查找功能  调度器Scheduler 主要职责就是为新创建的Pod寻找合适的节点，默认调度器会先调用一组叫Predicate的调度算法检查每个Node，再调用一组叫Priority的调度算法为上一步结果里的每个Node打分，将新创建的Pod调度到得分最高的Node上。
-原理  
-  第一个控制循环叫Informer Path，它会启动一系列Informer，监听etcd中的Pod、Node、Service等与调度相关的API对象的变化，将新创建的Pod添加进调度队列，默认的调度队列是优先级队列；
-此外，还会对调度器缓存进行更新，因为需要尽最大可能将集群信息Cache化，以提高两个调度算法组的执行效率，调度器只有在操作Cache时，才会加锁。
-  第二个控制循环叫Scheduling Path，是负责Pod调度的主循环，它会不断从调度队列里出队一个Pod，调用Predicate算法进行过滤，得到可用的Node，Predicate算法需要的Node信息，都是从Cache里直接拿到；</description>
+  CNI：Container Network Interface，容器网络接口规范，如 Flannel、Calico、AWS VPC CNI
+  CRI：Container Runtime Interface，容器运行时的各项核心操作的接口规范，是一组gRPC接口。包含两类服务，镜像服务和运行时服务。镜像服务提供下载、检查和删除镜像的RPC接口；运行时服务包含用于管理容器生命周期，与容器交互的调用的RPC接口（exec / attach / port-forward等）。dockershim、containerd、cri-o都是遵循CRI的容器运行时，称为高层级运行时。
+  CSI：Container Storage Interface，容器存储的接口规范，如PV、PVC
+  OCI：Open Container Initiative，容器运行时和镜像操作规范，镜像规范规定高层级运行时会下载一个OCI镜像，并把它解压称OCI运行时文件系统包；运行时规范描述如何从OCI运行时文件系统包运行容器程序，并且定义其配置、运行环境和生命周期。定义新容器的namespaces、cgroups和根文件系统；它的一个参考实现是runC，称为底层级运行时。
+  CRD：Custom Resource Definition，自定义的资源对象，即yaml文件中的Kind，如Operator就是实现CRD的控制器，之后直接使用Operator创建的CRD声明对象即可使用
+每一个对象都包含两个嵌套对象来描述规格（Spec）和状态（Status），对象的规格就算我们期望的目标状态，而状态描述了对象当前状态，这一部分由Kubernetes本身提供和管理，通过describe才能看到Status的信息。
+1 2 3 4 5 6 7  type Deployment struct { metav1.TypeMeta `json:&amp;#34;,inline&amp;#34;` metav1.ObjectMeta `json:&amp;#34;metadata,omitempty&amp;#34; protobuf:&amp;#34;bytes,1,opt,name=metadata&amp;#34;` Spec DeploymentSpec `json:&amp;#34;spec,omitempty&amp;#34; protobuf:&amp;#34;bytes,2,opt,name=spec&amp;#34;` Status DeploymentStatus `json:&amp;#34;status,omitempty&amp;#34; protobuf:&amp;#34;bytes,3,opt,name=status&amp;#34;` }     Master节点作用：编排、管理、调度用户提交的作业</description>
     </item>
     
   </channel>
