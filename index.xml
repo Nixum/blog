@@ -3770,7 +3770,15 @@ Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com&amp;#34;&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;</description>
+&lt;/div&gt;&lt;h1 id=&#34;timer&#34;&gt;Timer&lt;/h1&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.cyhone.com/articles/analysis-of-golang-timer/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://www.cyhone.com/articles/analysis-of-golang-timer/&lt;/a&gt;&lt;/p&gt;
+&lt;h1 id=&#34;时间轮&#34;&gt;时间轮&lt;/h1&gt;
+&lt;p&gt;概念理解：https://zhuanlan.zhihu.com/p/121483218&lt;/p&gt;
+&lt;p&gt;golang实现：https://lk668.github.io/2021/04/05/2021-04-05-%E6%89%8B%E6%8A%8A%E6%89%8B%E6%95%99%E4%BD%A0%E5%A6%82%E4%BD%95%E7%94%A8golang%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AAtimewheel/&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.luozhiyun.com/archives/444&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://www.luozhiyun.com/archives/444&lt;/a&gt;&lt;/p&gt;
+</description>
         </item>
         <item>
         <title>Go Goroutine和GC</title>
@@ -4502,6 +4510,8 @@ Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com&amp;#34;&lt;/span&gt;
     &gt;垃圾回收&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://yousec995.github.io/2021/07/25/Goroutine%E5%8E%9F%E7%90%86/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;goroutine原理|YouSec&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.luozhiyun.com/archives/448&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;详解Go语言调度循环源码实现&lt;/a&gt;&lt;/p&gt;
 </description>
         </item>
         <item>
