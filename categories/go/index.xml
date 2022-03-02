@@ -8,6 +8,19 @@
     <language>en-us</language>
     <lastBuildDate>Mon, 22 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/categories/go/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>Gin框架原理</title>
+      <link>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</guid>
+      <description>[TOC]
+标准库net/http demo:
+定义了一个路由 /hello，绑定了一个handler，输出当前path，ListenAndServe方法启动web服务，第一个参数表示监听的端口，第二个参数代表 处理所有的HTTP请求 的实例，等于nil时会使用默认的DefaultServeMux。
+该demo是基于标准库实现的Web框架入口。
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17  func main() { http.HandleFunc(&amp;#34;/hello&amp;#34;, func (w http.ResponseWriter, req *http.Request) { fmt.Fprintf(w, &amp;#34;URL.Path = %q\n&amp;#34;, req.URL.Path) }) log.Fatal(http.ListenAndServe(&amp;#34;:8080&amp;#34;, nil)) } // http.ListenAndServe()方法第二个参数的实现： type Handler interface { ServeHTTP(ResponseWriter, *Request) } // 注册handler默认使用DefaultServeMux，与ListenAndServe第二个参数使用的处理器一致。 // 将path和对应的handler方法保存在DefaultServeMux的map中，等请求进来进行匹配处理。 func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) { DefaultServeMux.HandleFunc(pattern, handler) }   http.</description>
+    </item>
+    
+    <item>
       <title>Go Context和Channel</title>
       <link>http://nixum.cc/p/go-context%E5%92%8Cchannel/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
