@@ -501,6 +501,7 @@ if (!doNotTrack) {
 <blockquote>
 <p>在 Gin 框架中，路由规则被分成了最多 9 棵前缀树，每一个 HTTP Method对应一棵「前缀树」，树的节点按照 URL 中的 / 符号进行层级划分，URL 支持 :name 形式的名称匹配，还支持<code> *subpath</code> 形式的路径通配符。</p>
 <p>每个节点都会挂一系列的handler组成的处理链来处理匹配到的请求。</p>
+<p>之所以要使用前缀树，是为了支持如<code>/hello/:name</code>这种动态路由，路径上的每一段<code>/{名字}</code>作为前缀树的一个节点，通过树结构查询，如果中间某一层节点不匹配，则直接结束查询。</p>
 </blockquote>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -581,9 +582,15 @@ if (!doNotTrack) {
 </span><span class="lnt">75
 </span><span class="lnt">76
 </span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Engine</span> <span class="kd">struct</span> <span class="p">{</span>
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// engine与Route人Group相互持有的目的是为了实现分组路由时，注册到同一棵路由前缀树
+</span><span class="c1">// 并且可以使得中间件既可以注册在全路径上，也可以注册在分组上
+</span><span class="c1"></span><span class="kd">type</span> <span class="nx">Engine</span> <span class="kd">struct</span> <span class="p">{</span>
   <span class="nx">RouterGroup</span>
   <span class="o">...</span>
 <span class="p">}</span>
@@ -600,12 +607,13 @@ if (!doNotTrack) {
 </span><span class="c1"></span>    <span class="nx">absolutePath</span> <span class="o">:=</span> <span class="nx">group</span><span class="p">.</span><span class="nf">calculateAbsolutePath</span><span class="p">(</span><span class="nx">relativePath</span><span class="p">)</span>
     <span class="c1">// 组装成handlers chain
 </span><span class="c1"></span>    <span class="nx">handlers</span> <span class="p">=</span> <span class="nx">group</span><span class="p">.</span><span class="nf">combineHandlers</span><span class="p">(</span><span class="nx">handlers</span><span class="p">)</span>
-    <span class="c1">// 构建前缀树
+    <span class="c1">// 构建路由前缀树
 </span><span class="c1"></span>    <span class="nx">group</span><span class="p">.</span><span class="nx">engine</span><span class="p">.</span><span class="nf">addRoute</span><span class="p">(</span><span class="nx">httpMethod</span><span class="p">,</span> <span class="nx">absolutePath</span><span class="p">,</span> <span class="nx">handlers</span><span class="p">)</span>
     <span class="k">return</span> <span class="nx">group</span><span class="p">.</span><span class="nf">returnObj</span><span class="p">()</span>
 <span class="p">}</span>
 
-<span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">handleHTTPRequest</span><span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+<span class="c1">// 当收到客户端请求时，在前缀树种找到对应的路由handler，处理请求
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">handleHTTPRequest</span><span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
 	<span class="nx">httpMethod</span> <span class="o">:=</span> <span class="nx">c</span><span class="p">.</span><span class="nx">Request</span><span class="p">.</span><span class="nx">Method</span>
 	<span class="nx">rPath</span> <span class="o">:=</span> <span class="nx">c</span><span class="p">.</span><span class="nx">Request</span><span class="p">.</span><span class="nx">URL</span><span class="p">.</span><span class="nx">Path</span>
 	<span class="nx">unescape</span> <span class="o">:=</span> <span class="kc">false</span>
@@ -622,13 +630,14 @@ if (!doNotTrack) {
 			<span class="k">continue</span>
 		<span class="p">}</span>
 		<span class="nx">root</span> <span class="o">:=</span> <span class="nx">t</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">root</span>
-		<span class="c1">// Find route in tree
+		<span class="c1">// 获取对应的handler
 </span><span class="c1"></span>		<span class="nx">value</span> <span class="o">:=</span> <span class="nx">root</span><span class="p">.</span><span class="nf">getValue</span><span class="p">(</span><span class="nx">rPath</span><span class="p">,</span> <span class="nx">c</span><span class="p">.</span><span class="nx">Params</span><span class="p">,</span> <span class="nx">unescape</span><span class="p">)</span>
 		<span class="k">if</span> <span class="nx">value</span><span class="p">.</span><span class="nx">handlers</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
 			<span class="nx">c</span><span class="p">.</span><span class="nx">handlers</span> <span class="p">=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">handlers</span>
 			<span class="nx">c</span><span class="p">.</span><span class="nx">Params</span> <span class="p">=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">params</span>
 			<span class="nx">c</span><span class="p">.</span><span class="nx">fullPath</span> <span class="p">=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">fullPath</span>
-			<span class="nx">c</span><span class="p">.</span><span class="nf">Next</span><span class="p">()</span>
+            <span class="c1">// 执行handler方法
+</span><span class="c1"></span>			<span class="nx">c</span><span class="p">.</span><span class="nf">Next</span><span class="p">()</span>
 			<span class="nx">c</span><span class="p">.</span><span class="nx">writermem</span><span class="p">.</span><span class="nf">WriteHeaderNow</span><span class="p">()</span>
 			<span class="k">return</span>
 		<span class="p">}</span>
@@ -663,6 +672,53 @@ if (!doNotTrack) {
 </code></pre></td></tr></table>
 </div>
 </div><h1 id="中间件">中间件</h1>
+<p>gin的中间件指的是handler方法，所有的中间件包括请求处理的handler都要满足这种方法签名:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">HandlerFunc</span> <span class="kd">func</span><span class="p">(</span><span class="o">*</span><span class="nx">Context</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>跟着路由一起注册后，调用<code>RouterGroup</code>的<code>combineHandlers</code>方法，将这些handler组成一个<code>HandlersChain</code>，本质上是<code>[]HandlerFunc</code>，当请求进来时，通过路径找到对应的<code>HandlersChain</code>，注入到context中，调用Next方法处理请求。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 执行HandlersChain
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="nf">Next</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">c</span><span class="p">.</span><span class="nx">index</span><span class="o">++</span>
+	<span class="k">for</span> <span class="nx">c</span><span class="p">.</span><span class="nx">index</span> <span class="p">&lt;</span> <span class="nb">int8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nx">c</span><span class="p">.</span><span class="nx">handlers</span><span class="p">))</span> <span class="p">{</span>
+		<span class="nx">c</span><span class="p">.</span><span class="nx">handlers</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">index</span><span class="p">](</span><span class="nx">c</span><span class="p">)</span>
+		<span class="nx">c</span><span class="p">.</span><span class="nx">index</span><span class="o">++</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在gin中，context的<code>Next方法</code>是会增加<code>HandlersChain</code>索引值，执行下一个方法，而<code>Abort方法</code>是直接更新<code>HandlersChain</code>索引值到一个比较大的数字，使得循环调用结束， Abort() 方法并不是通过 panic 的方式中断执行流，执行 Abort() 方法之后，当前函数内后面的代码逻辑还会继续执行。</p>
+<p>gin就是通过context的Next方法和Abort方法，使得执行<code>HandlersChain</code>方法时可以嵌套执行：先从前往后顺序执行<code>HandlersChain</code>中在Next方法前的逻辑，直到最后一个，然后再从后往前执行Next方法后的逻辑。</p>
+<h1 id="gincontext">gin.Context</h1>
+<ul>
+<li>主要是包装请求<code>*http.Request</code>、响应<code>http.ResponseWriter</code>，让用户无需知道太多细节，比如消息头、消息体、状态码，消息类型等，直接提供现成包装好的方法比如<code>context.Json()</code>；</li>
+<li>Context 会随着每一个请求的出现而产生，请求的结束而销毁，和当前请求强相关的信息都应由 Context 承载，比如动态路由<code>/hello/:name</code>中的name参数；</li>
+<li>为处理请求的handler方法提供统一的入参，使得context可以持有处理请求的一系列handler方法，实现中间件处理逻辑；</li>
+</ul>
+<h1 id="参考">参考</h1>
+<p><a class="link" href="https://geektutu.com/post/gee.html"  target="_blank" rel="noopener"
+    >极客兔兔 - Web框架 - Gee</a></p>
+<p><a class="link" href="https://cloud.tencent.com/developer/article/1404356"  target="_blank" rel="noopener"
+    >轻量级 Web 框架 Gin 结构分析</a></p>
+<p><a class="link" href="https://cloud.tencent.com/developer/article/1877653?from=article.detail.1885821"  target="_blank" rel="noopener"
+    >gun源码阅读</a></p>
 
 </section>
 
@@ -926,6 +982,8 @@ if (!doNotTrack) {
     <li><a href="#gin对nethttp的封装">Gin对net/http的封装</a></li>
     <li><a href="#路由">路由</a></li>
     <li><a href="#中间件">中间件</a></li>
+    <li><a href="#gincontext">gin.Context</a></li>
+    <li><a href="#参考">参考</a></li>
   </ol>
 </nav>
                 </div>
