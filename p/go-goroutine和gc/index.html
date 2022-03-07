@@ -212,6 +212,8 @@ if (!doNotTrack) {
 <p>火焰图就是看顶层的哪个函数占据的宽度最大。只要有&quot;平顶&quot;（plateaus），就表示该函数可能存在性能问题。</p>
 </li>
 </ul>
+<h1 id="netpoller">netpoller</h1>
+<p>参考：https://strikefreedom.top/go-netpoll-io-multiplexing-reactor，讲得足够详细了</p>
 <h1 id="goroutine">Goroutine</h1>
 <h2 id="基本">基本</h2>
 <ul>
@@ -277,11 +279,12 @@ if (!doNotTrack) {
 <p>G：即goroutine，代码中的<code>go func{}</code>，代表一个待执行的任务</p>
 <ul>
 <li>一个G最多占有CPU 10ms，防止其他G饿死。</li>
+<li>每个Goroutine都有自己独立的栈存放当前的运行内存及状态，当G被调离CPU时，调度器会负责把CPU寄存器的值保存在G对象的成员变量中，当G被调度运行起来时，调度器又会负责把G对象的成员变量所保存的寄存器的值恢复到CPU的寄存器中。</li>
 </ul>
-<p>栈扩张：每一个G都有自己的栈空间，为了避免G过多导致使用过多的内存，一开始只会分配给G一块很小的栈空间，比如2k，当函数发现栈空间不足时，就会申请一块新的栈空间并把原来的栈内容复制过去，这就是G中_Gcopystack状态，64位机器最大是1GB，32位为256MB</p>
+<p>栈扩张：每一个G都有自己的栈空间，为了避免G过多导致使用过多的内存，一开始只会分配给G一块很小的栈空间，比如2k，当函数发现栈空间不足时，就会申请一块新的栈空间并把原来的栈内容复制过去，这就是G中_Gcopystack状态，64位机器最大是1GB，32位为256MB。</p>
 </li>
 <li>
-<p>M：即machine，操作系统的线程，由操作系统的调度器调度和管理。每个线程有一个TLS（Thread-Local Storage），用于保存线程中的本地数据，用于获取系统线程中当前的G和G所属的M实例。</p>
+<p>M：即machine，操作系统的线程，与一个内核线程绑定，由操作系统的调度器调度和管理。每个线程有一个TLS（Thread-Local Storage），用于保存线程中的本地数据，比如栈的起止位置、当前正在执行的G、M本身是否空闲等信息、通过指针维持与P结构体实例对象的绑定关系、获取系统线程中当前的G和G所属的M实例等；</p>
 <ul>
 <li>
 <p>M的数量不一定和P匹配，可以设置多个M，M和P绑定后才可运行，多余的M会处于休眠状态；</p>
@@ -302,7 +305,7 @@ if (!doNotTrack) {
 <p>P的个数取决于<strong>GOMAXPROCS</strong>，默认使用CPU的个数，这些P会绑定到不同内核线程，尽量提升性能，让每个核都有代码在跑。在确定了P的最大数量n后，当程序运行时，创建n个P，P代表代表并发度；</p>
 </li>
 <li>
-<p>P包含一个LRQ(Local Run Queue本地运行队列)，保存P需要执行的goroutine的队列。<strong>LRQ是一个长度为256的环形数组</strong>，有head和tail两个序号，当数量达到256时，新创建的goroutine会保存在GRQ中，LRQ中随机一半G也放到GRQ中；</p>
+<p>P包含一个LRQ（Local Run Queue本地运行队列），保存P需要执行的goroutine的队列。<strong>LRQ是一个长度为256的环形数组</strong>，有head和tail两个序号，当数量达到256时，新创建的goroutine会保存在GRQ中，LRQ中随机一半G也放到GRQ中；</p>
 <p>当在G0中产生G1，此时会G1会优先加入当前的LRQ队列，保证其在同一个M上执行；</p>
 </li>
 <li>
@@ -321,6 +324,7 @@ if (!doNotTrack) {
 <p>空闲的P链表：当无G可运行时，拥有P的M会释放P并进入休眠状态，释放的P会变成空闲状态，加入到空闲的P链表中，也保存在全局变量sched中，当M被唤醒时，其持有的P也会重新进入运行状态。</p>
 </li>
 </ul>
+<p>GRQ、空闲M链表、空闲P链表、复用G列表等都存放在schedt结构体中，该结构体在整个go程序中只有一个实例对象，是一个全局变量。</p>
 <blockquote>
 <p>go中还有特殊的M和G, 它们是M0和G0.</p>
 <p>M0是启动程序后的主线程, 这个M对应的实例会在全局变量M0中, 不需要在heap上分配；</p>
@@ -335,7 +339,7 @@ if (!doNotTrack) {
 <p>持有P的M会执行G，执行完G后会先判断是否满足61次调用，如果是，则先从GRQ中获取，否则继续从P的LRQ中继续获取G进行消费；之所以先有次数判断，是为了防止GRQ里的G被饿死；</p>
 <p>当发现P的LRQ中没有其他G可执行时，则会从GRQ里获取G放入本地队列，获取数量<code>n = min(len(GQ)/GOMAXPROCS + 1, len(GQ/2))</code>，一次不会获取太多，保证其他M在GRQ中有G可拿，<strong>获取时会加锁</strong>；</p>
 <p>当P发现自己的LRQ、GRQ都没有G了，则会随机从其他P的LRQ尾部中窃取一半的G放到自己的LRQ，通过CAS获取；（<strong>work stealing 工作窃取</strong>）</p>
-<p>如果LRQ、GRQ、其他P的LRQ都没有G时，会从netpuller(网络轮询器)上进行work stealing；</p>
+<p>如果LRQ、GRQ、其他P的LRQ都没有G时，会从netpoller(网络轮询器)上进行work stealing；</p>
 </li>
 <li>
 <p>当P的LRQ满时，会把当前P的LRQ前一半的G打乱顺序后转移到GRQ；</p>
@@ -1129,6 +1133,7 @@ if (!doNotTrack) {
   <ol>
     <li><a href="#runtime">Runtime</a></li>
     <li><a href="#pprof">pprof</a></li>
+    <li><a href="#netpoller">netpoller</a></li>
     <li><a href="#goroutine">Goroutine</a>
       <ol>
         <li><a href="#基本">基本</a></li>
