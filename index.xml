@@ -13503,9 +13503,9 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;h2 id=&#34;cap理论&#34;&gt;CAP理论&lt;/h2&gt;
 &lt;p&gt;CAP特性&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;C：Consistency，一致性，数据状态转化一致，写操作完成后的读操作，可以获取到最新的值&lt;/li&gt;
-&lt;li&gt;A：Availability，可用性，指的是服务一直可用，可以正常响应&lt;/li&gt;
-&lt;li&gt;P：Partition tolerance，分区容错，指的是当有节点故障不连通时，就会分区，但仍然能对外提供服务&lt;/li&gt;
+&lt;li&gt;C：Consistency，一致性，数据状态转化一致，写操作完成后的读操作，可以&lt;strong&gt;获取到最新的值&lt;/strong&gt;；&lt;/li&gt;
+&lt;li&gt;A：Availability，可用性，指的是服务一直可用，可以&lt;strong&gt;正常响应&lt;/strong&gt;，或者在规定时间内可以获取到响应；&lt;/li&gt;
+&lt;li&gt;P：Partition tolerance，分区容错，指的是当有节点故障不连通时(比如网络出问题)，就会&lt;strong&gt;分区，但仍然能对外提供服务&lt;/strong&gt;；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;矛盾在于这三个特性不能同时满足，比如&lt;/p&gt;
 &lt;blockquote&gt;
@@ -13516,7 +13516,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/blockquote&gt;
 &lt;p&gt;所以，一般只会满足其中两个&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;1、满足CA舍弃P，也就是满足一致性和可用性，舍弃容错性。但是这也就意味着你的系统不是分布式的了，因为涉及分布式的想法就是把功能分开，部署到不同的机器上。&lt;/p&gt;
+&lt;p&gt;1、满足CA舍弃P，也就是满足一致性和可用性，舍弃容错性。但是这也就意味着你的系统不是分布式的了，因为涉及分布式的想法就是把功能分开，部署到不同的机器上，而且如果出现了分区错误，必定会导致部分功能不可用，此时也无法满足A，所以 P 其实是必然存在的。&lt;/p&gt;
 &lt;p&gt;2、满足CP舍弃A，也就是满足一致性和容错性，舍弃可用性。如果你的系统允许有段时间的访问失效等问题，这个是可以满足的。就好比多个人并发买票，后台网络出现故障，你买的时候系统就崩溃了。&lt;/p&gt;
 &lt;p&gt;3、满足AP舍弃C，也就是满足可用性和容错性，舍弃一致性。这也就是意味着你的系统在并发访问的时候可能会出现数据不一致的情况。&lt;/p&gt;
 &lt;/blockquote&gt;
@@ -13618,11 +13618,11 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：commit阶段，正式提交发出后，如果有的参与者没有收到，或者参与者提交/回滚的确认信息没有返回，即参与者的回应超时&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;解决方法&lt;/strong&gt;：协调者或者参与者进行重试，或者把参与者标记为问题节点移除集群&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;解决方法&lt;/strong&gt;：协调者或者参与者进行重试，或者把参与者标记为问题节点移除集群后回滚&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：当处于prepare阶段和commit阶段之间时，协调者挂掉或重启，会导致协调者收不到参与者的响应，此时协调者就不清楚接下来的commit要发送什么请求过去，或者就不发请求过去了，导致参与者一直阻塞&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;解决办法&lt;/strong&gt;：协调者维护一份事务日志，以方便宕机重启后恢复原来的状态，但无法为参与者设置超时自动操作，因为它并不知道commit阶段自己要进行commit还是回滚&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：当处于prepare阶段和commit阶段之间时，协调者挂掉或重启，会导致协调者收不到参与者的响应，此时协调者就不清楚commit阶段要发送什么请求过去，或者就不发请求过去了，导致参与者一直阻塞&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;解决办法&lt;/strong&gt;：协调者维护一份事务日志，以方便宕机重启后恢复原来的状态，比如重新向参与者查询结果，但无法为参与者设置超时自动操作，因为它并不知道commit阶段自己要进行commit还是回滚&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：当处于prepare阶段和commit阶段之间时，参与者挂掉后，接收不到协调者的请求，不知道接下来要执行commit还是回滚，协调者也无法在参与者挂掉后进行回滚操作&lt;/p&gt;
@@ -13630,27 +13630,47 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;二3pc&#34;&gt;二、3PC&lt;/h2&gt;
-&lt;p&gt;3pc实际上就是将commit阶段拆成两步，preCommit相当于一次保险阶段，作用类似于2pc的二阶段，但是它不是正真的提交&lt;/p&gt;
+&lt;p&gt;3pc实际上就是将prepare阶段拆成两步，preCommit相当于一次保险阶段，作用类似于2pc的二阶段，但是它不是正真的提交&lt;/p&gt;
 &lt;h3 id=&#34;正常情况下-1&#34;&gt;正常情况下&lt;/h3&gt;
 &lt;p&gt;&lt;strong&gt;canCommit阶段&lt;/strong&gt;：协调者向参与者发送请求，参与者开启事务执行操作，成功完成后响应Yes，否则响应No。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;preCommit阶段&lt;/strong&gt;：协调者收到所有参与者的Yes响应，发送操作请求给所有参与者，告诉所有参与者进行预提交状态。如果参与者能收到PreCommit请求，意味着它知道大家都同意提交了，即使不commit阶段丢失，参与者也可以在超时之后进行事务提交。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;preCommit阶段&lt;/strong&gt;：协调者收到所有参与者的Yes响应，发送操作请求给所有参与者，告诉所有参与者进行预提交状态。如果参与者能收到PreCommit请求，意味着它知道大家都同意提交了，即使在commit阶段出现问题，参与者也可以在超时之后进行事务提交。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;commit阶段&lt;/strong&gt;：协调者收到所有参与者的应答响应，向所有参与者发送commit请求，参与者收到后提交事务。&lt;/p&gt;
 &lt;h3 id=&#34;异常情况下-1&#34;&gt;异常情况下&lt;/h3&gt;
 &lt;p&gt;如果在preCommit阶段到commit阶段之间，协调者挂了，参与者会在超时后进行事务提交&lt;/p&gt;
 &lt;h2 id=&#34;三tcc&#34;&gt;三、TCC&lt;/h2&gt;
-&lt;p&gt;补偿事务，每一个操作都要有对应的确认和补偿，类似于2pc，但2pc在于DB层面，TCC在于业务层面，每个业务逻辑都需要实现try-confirm-cancel的操作&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Try阶段&lt;/strong&gt;：对于操作的数据行，增加字段表示其状态，表示正在操作，预留必须的资源&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Confirm阶段&lt;/strong&gt;：只操作预留资源，将try阶段中表示数据状态的字段修改为确认状态，表示已经完成操作，&lt;strong&gt;操作需要幂等&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Cancel阶段&lt;/strong&gt;：将try阶段进行的操作进行回滚&lt;/p&gt;
-&lt;p&gt;通过不断重试，并发的时候还是需要分布式锁&lt;/p&gt;
+&lt;p&gt;补偿事务，每一个操作都要有对应的确认和补偿，类似于2pc，但2pc在于DB层面，TCC在于业务层面，每个业务逻辑都需要实现try-confirm-cancel的操作。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Try阶段&lt;/strong&gt;：对于操作的数据行，增加字段表示其状态，表示正在操作，预留必须的资源；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Confirm阶段&lt;/strong&gt;：只操作预留资源，将try阶段中表示数据状态的字段修改为确认状态，表示已经完成操作，&lt;strong&gt;操作需要幂等；&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Cancel阶段&lt;/strong&gt;：将try阶段进行的操作进行回滚；&lt;/p&gt;
+&lt;p&gt;通过不断重试，并发的时候还是需要分布式锁，TCC主要是保证业务逻辑的完整性。&lt;/p&gt;
 &lt;p&gt;比如，在订单创建并减库存的场景中，&lt;/p&gt;
 &lt;p&gt;Try阶段：订单创建时发出订单创建的事件，此时订单状态是创建中，库存服务接收到后，并不是直接减库存，而是先冻结库存，将要扣减的库存数冻结起来，订单创建完成；&lt;/p&gt;
 &lt;p&gt;Confirm阶段：订单支付完成后，发出订单支付完成的事件，库存服务接收到后，才是真正的减库存&lt;/p&gt;
-&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Confirm%e6%b5%81%e7%a8%8b.png&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Confirm%e6%b5%81%e7%a8%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Confirm%e6%b5%81%e7%a8%8b.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;p&gt;Cancel阶段：如果在Try阶段出错，则对已执行Try请求的服务执行回滚，对库存进行回滚&lt;/p&gt;
-&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Cancel%e6%b5%81%e7%a8%8b.png&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Cancel%e6%b5%81%e7%a8%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCC_Try-Cancel%e6%b5%81%e7%a8%8b.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;h2 id=&#34;四本地消息表&#34;&gt;四、本地消息表&lt;/h2&gt;
 &lt;p&gt;适合解决分布式最终一致性问题。&lt;/p&gt;
 &lt;h3 id=&#34;正常情况下-2&#34;&gt;正常情况下&lt;/h3&gt;
@@ -13665,15 +13685,36 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;利用状态机实现，它将一系列分布式操作转化成一系列的本地事务，在每一个本地事务中我们都会更新数据库并且向集群中的其他服务发送一条新的消息来触发下一个本地事务；一旦本地事务因违法业务逻辑而失败，那就会立即触发一系列回滚操作来撤回之前本地事务造成的副作用。&lt;/p&gt;
 &lt;p&gt;SAGA分为协同和编排两种模式，协同是非中心化的，通过各个服务的本地事务触发下一个服务的本地事务来实现；编排是通过一个中心化的协调节点，来追踪所有子任务的调用情况，根据任务的调用情况来决定调用对应的补偿方案，并在网络请求出现超时时进行重试；&lt;/p&gt;
 &lt;h2 id=&#34;六简单通过可靠消息和最终一致性方案实现&#34;&gt;六、简单通过可靠消息和最终一致性方案实现&lt;/h2&gt;
-&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8f%af%e9%9d%a0%e6%80%a7%e6%b6%88%e6%81%af&amp;#43;%e6%9c%80%e7%bb%88%e4%b8%80%e8%87%b4%e6%80%a7%e7%9a%84%e5%88%86%e5%b8%83%e5%bc%8f%e4%ba%8b%e5%8a%a1.png&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;另外，在可靠消息服务中，更新数据库里的消息和将消息发送给MQ这一个步骤必须保证原子。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8f%af%e9%9d%a0%e6%80%a7%e6%b6%88%e6%81%af&amp;#43;%e6%9c%80%e7%bb%88%e4%b8%80%e8%87%b4%e6%80%a7%e7%9a%84%e5%88%86%e5%b8%83%e5%bc%8f%e4%ba%8b%e5%8a%a1.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%8f%af%e9%9d%a0%e6%80%a7%e6%b6%88%e6%81%af&amp;#43;%e6%9c%80%e7%bb%88%e4%b8%80%e8%87%b4%e6%80%a7%e7%9a%84%e5%88%86%e5%b8%83%e5%bc%8f%e4%ba%8b%e5%8a%a1.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;另外，&lt;strong&gt;在可靠消息服务中，更新数据库里的消息和将消息发送给MQ这一个步骤必须保证原子&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;一般可靠消息服务可以和MQ一起组合，待确认消息算半消息，其实这种实现就是RocketMQ&lt;/p&gt;
 &lt;p&gt;几个可能出现的问题：&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;上游服务给可靠消息服务发送待确认消息的过程中出现问题，此时上游服务可以感知调用异常，就可以直接不执行之后的流程了。&lt;/li&gt;
-&lt;li&gt;上游服务操作完本地数据库后，通知可靠消息服务确认消息或删除消息时出现问题，此时该消息在可靠消息服务里是待确认状态，在可靠消息服务里定时轮询待确认状态的消息，调用上游服务的接口判断这个消息的状态即可；如果上游响应该消息成功，可靠消息服务将消息投递到MQ即可，否则，将该消息删除。&lt;/li&gt;
-&lt;li&gt;下游服务一直消费消息一直失败，有两种方案：1. 可以设置消息可被消费的次数，超过这个次数进死信队列，后面人工干预即可；2. 由于该条消息在可靠消息服务里一直是已发送状态，始终未完成，此时可靠消息服务在后台可以有定时任务，将这些消息重新丢到MQ里让下游消费即可，当然下游服务消息是需要保证幂等的。&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;上游服务给可靠消息服务发送待确认消息的过程中出现问题，此时上游服务可以感知调用异常，就可以直接不执行之后的流程了。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;上游服务操作完本地数据库后，通知可靠消息服务确认消息或删除消息时出现问题，此时该消息在可靠消息服务里是待确认状态，在可靠消息服务里&lt;strong&gt;定时轮询待确认状态的消息，调用上游服务的接口判断这个消息的状态即可&lt;/strong&gt;；&lt;/p&gt;
+&lt;p&gt;如果上游响应该消息成功，可靠消息服务将消息投递到MQ即可，否则，将该消息删除。&lt;/p&gt;
+&lt;p&gt;像RocketMQ就把这个操作做进了MQ里，这种待确认的消息就叫&lt;strong&gt;半消息&lt;/strong&gt;。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;下游服务一直消费消息一直失败，有两种方案：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; 1. 可以设置消息可被消费的次数，超过这个次数进死信队列，后面人工干预即可；
+ 2. 由于该条消息在可靠消息服务里一直是已发送状态，始终未完成，此时可靠消息服务在后台可以有定时任务，将这些消息重新丢到MQ里让下游消费即可，当然下游服务消息是需要保证幂等的；
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2 id=&#34;参考&#34;&gt;参考：&lt;/h2&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/21994882&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
@@ -13696,15 +13737,26 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
     &gt;https://www.cnblogs.com/jajian/p/10014145.html&lt;/a&gt;&lt;/p&gt;
 &lt;h1 id=&#34;分布式算法&#34;&gt;分布式算法&lt;/h1&gt;
 &lt;p&gt;为了避免单点故障，常见的多副本复制方案有两种：&lt;/p&gt;
+&lt;h2 id=&#34;去中心化复制如gossip&#34;&gt;去中心化复制，如Gossip&lt;/h2&gt;
+&lt;p&gt;一个n个复制集节点的集群中，任意节点都可以接收写请求，但一个成功的写请求需要w个节点确认，读操作也必须查询至少r个节点。可用性高，但容易造成写冲突。&lt;/p&gt;
+&lt;p&gt;简单来讲，就是一个节点会周期、随机的将事件广播给其他节点，其他节点收到后也会周期性的广播给其他节点，最终集群上所有节点都能收到消息，是一种去中心化，最终一致性的算法，压力不在来自主节点，而是所有节点都均衡负载，扩展性很好，即使有新节点加入，最终也会被广播到。&lt;/p&gt;
+&lt;p&gt;当会有个拜占庭问题，就是如果有一个恶意传播节点，将会打乱原本的传播&lt;/p&gt;
+&lt;p&gt;除了复制方案，另一种是共识算法如Paxos或Raft，保证集群节点高可用和数据一致性。&lt;/p&gt;
 &lt;h2 id=&#34;主从复制如mysqlredis&#34;&gt;主从复制，如MySQL、Redis&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;全同步复制：主节点收到一个写请求后，必须等到全部从节点确认返回后，才能返回给客户端成功，一个节点故障将导致整个系统不可用。保证一致性，但可用性不高。&lt;/li&gt;
 &lt;li&gt;异步复制：主节点收到一个写请求，立马返回给客户端，异步将请求转发给各个从节点，但主节点如果还未将请求进行转发就故障了，就会导致数据丢失。保证可用性，但一致性不高。&lt;/li&gt;
-&lt;li&gt;半同步复制：主节点收到一个写请求后，至少有一个从节点收到数据，就可以返回客户端，在一致性和可用性上比较平衡。&lt;/li&gt;
+&lt;li&gt;半同步复制：主节点收到一个写请求后，至少有一个从节点或者超过半数节点收到数据，就可以返回客户端，在一致性和可用性上比较平衡。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2 id=&#34;去中心化复制如gossip&#34;&gt;去中心化复制，如Gossip&lt;/h2&gt;
-&lt;p&gt;一个n个复制集节点的集群中，任意节点都可以接收写请求，但一个成功的写请求需要w个节点确认，读操作也必须查询至少r个节点。可用性高，但容易造成写冲突。&lt;/p&gt;
-&lt;p&gt;除了复制方案，另一种是共识算法如Paxos或Raft，保证集群节点高可用和数据一致性。&lt;/p&gt;
+&lt;h2 id=&#34;paxos算法&#34;&gt;Paxos算法&lt;/h2&gt;
+&lt;h2 id=&#34;raft算法&#34;&gt;Raft算法&lt;/h2&gt;
+&lt;p&gt;感觉像与ZAB协议类似，具体有时间再整理&lt;/p&gt;
+&lt;p&gt;当Leader宕机之后，只有拥有最新日志的Follower才有资格称为Leader。&lt;/p&gt;
+&lt;p&gt;关于日志检查，当Follower上的日志与leader不一致时，Leader先找到Follower同它日志一致的index，将其后边的日志一条条覆盖在Follower上。&lt;/p&gt;
+&lt;p&gt;参考：&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/32052223&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Raft算法详解&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://raft.github.io/raftscope/index.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Raft动画演示&lt;/a&gt;&lt;/p&gt;
 &lt;h1 id=&#34;分布式锁&#34;&gt;分布式锁&lt;/h1&gt;
 &lt;h2 id=&#34;利用数据库唯一约束&#34;&gt;利用数据库唯一约束&lt;/h2&gt;
 &lt;p&gt;在数据库新建一个锁表，然后通过操作该表中的数据来实现，表的字段为客户端ID、加锁次数、资源的key，加锁次数 + 客户端ID可以判断是否可重入。&lt;/p&gt;
@@ -13783,7 +13835,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;RedLock与Redission实现，有空再进行补充，先把RedLock的基本思想简单描述一下&lt;/p&gt;
 &lt;p&gt;假设有5个Redis节点，&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;加锁时，顺序再5个节点上申请锁，使用同样的key、value、超时时间，申请锁的超时时间，因为需要同时请求多个节点，避免加锁时间花费过长&lt;/li&gt;
+&lt;li&gt;加锁时，顺序在5个节点上申请锁，使用同样的key、value、超时时间，申请锁的超时时间，因为需要同时请求多个节点，避免加锁时间花费过长&lt;/li&gt;
 &lt;li&gt;当在3个节点上成功申请到锁，且申请锁消耗的时间 小于 锁的有效时间，就算申请成功。申请锁消耗的时间采用获得锁的当下时间减去加锁请求时的时间戳得到&lt;/li&gt;
 &lt;li&gt;锁申请到后，锁的有效时间 = 锁的过期时间 - 申请锁获得的时间&lt;/li&gt;
 &lt;li&gt;如果申请锁失败了，申请成功锁的节点会执行解锁操作，进行重置&lt;/li&gt;
@@ -13877,7 +13929,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;一般可以自己调整时间戳、机器id、序列号的位数来控制ID的并发量、使用年限等，满足不同的场景，机器ID可以自己配置在节点上、配置中心、数据库。&lt;/p&gt;
 &lt;p&gt;优点：简单方便，整型易操作，有需要还可以将整型进行进制转化，转成字符串类型的id&lt;/p&gt;
 &lt;p&gt;缺点：因为使用到了时间，如果节点上的时钟回拨，会导致ID重复；如果服务部署在docker内，获取时间和机器id要注意；由于机器不同，生成的id是自增的，但是不一定连续；而且还有个问题，前端js是没有long类型的，整型最多支持53位，所以如果返回给前端还要做一次转化。&lt;/p&gt;
-&lt;p&gt;为了timestamp有时间限制，可以允许 sequence 段溢出。 溢出的部分会加到 timestamp 段上去。这样即使在时间戳精度范围内 sequence 耗尽了，也不用阻塞请求，同时也确保即使机器时钟回拨导致的id重复，但这种有个坏处是无法通过id解析出正确的时间戳。&lt;/p&gt;
+&lt;p&gt;可以允许 sequence 段溢出，溢出的部分会加到 timestamp 段上去，这样即使在时间戳精度范围内 sequence 耗尽了，也不用阻塞请求，同时也确保即使机器时钟回拨导致的id重复，但这种有个坏处是无法通过id解析出正确的时间戳。&lt;/p&gt;
 &lt;h2 id=&#34;利用etcd&#34;&gt;利用ETCD&lt;/h2&gt;
 &lt;p&gt;etcd 能满足不会丢失的，多副本，强一致的全部需求。两种方案：&lt;/p&gt;
 &lt;ol&gt;
@@ -13912,20 +13964,7 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;h2 id=&#34;利用redis&#34;&gt;利用Redis&lt;/h2&gt;
 &lt;p&gt;使用Redis的incr命令来实现原子性的自增和返回&lt;/p&gt;
 &lt;p&gt;优点：简单方便&lt;/p&gt;
-&lt;p&gt;缺点：需要对id进行持久化，虽然Redis本身提供了RDB和AOF，但如果宕机了，仍然有可能出现重复ID，如果为Redis搭建集群，由于Redis主从复制时异步复制的，无法保证master宕机之前将最新的id同步给其他子节点，导致宕机恢复之后可能会产生重复的id，需要针对这种情况做特殊处理，比如当id重复时报特殊错误码，跳过这个错误的id区间&lt;/p&gt;
-&lt;h1 id=&#34;分布一致性算法&#34;&gt;分布一致性算法&lt;/h1&gt;
-&lt;h2 id=&#34;paxos算法&#34;&gt;Paxos算法&lt;/h2&gt;
-&lt;h2 id=&#34;raft算法&#34;&gt;Raft算法&lt;/h2&gt;
-&lt;p&gt;感觉像与ZAB协议类似，具体有时间再整理&lt;/p&gt;
-&lt;p&gt;当Leader宕机之后，只有拥有最新日志的Follower才有资格称为Leader。&lt;/p&gt;
-&lt;p&gt;关于日志检查，当Follower上的日志与leader不一致时，Leader先找到Follower同它日志一致的index，将其后边的日志一条条覆盖在Follower上。&lt;/p&gt;
-&lt;p&gt;参考：&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/32052223&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;Raft算法详解&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://raft.github.io/raftscope/index.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;Raft动画演示&lt;/a&gt;&lt;/p&gt;
-&lt;h2 id=&#34;gossip协议&#34;&gt;Gossip协议&lt;/h2&gt;
-&lt;p&gt;简单来讲，就是一个节点会周期、随机的将事件广播给其他节点，其他节点收到后也会周期性的广播给其他节点，最终集群上所有节点都能收到消息，是一种去中心化，最终一致性的算法，压力不在来自主节点，而是所有节点都均衡负载，扩展性很好，即使有新节点加入，最终也会被广播到。&lt;/p&gt;
-&lt;p&gt;当会有个拜占庭问题，就是如果有一个恶意传播节点，将会打乱原本的传播&lt;/p&gt;
+&lt;p&gt;缺点：需要对id进行持久化，虽然Redis本身提供了RDB和AOF，但如果宕机了，仍然有可能出现重复ID，如果为Redis搭建集群，由于Redis主从复制时异步复制的，无法保证master宕机之前将最新的id同步给其他子节点，导致宕机恢复之后可能会产生重复的id，需要针对这种情况做特殊处理，比如当id重复时报特殊错误码，跳过这个错误的id区间。&lt;/p&gt;
 </description>
         </item>
         <item>
