@@ -1652,7 +1652,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;服务主动探活&lt;/strong&gt;：服务注册到注册中心后，定时发送续租请求到注册中心，表明自己存活&lt;/p&gt;
-&lt;p&gt;优点：该方案可最大程度&lt;strong&gt;避免IP重用&lt;/strong&gt;导致节点在旧服务依然存活的问题(比如k8s环境)&lt;/p&gt;
+&lt;p&gt;优点：该方案可最大程度&lt;strong&gt;避免IP重用&lt;/strong&gt;导致的节点在旧服务依然存活的问题(比如k8s环境)&lt;/p&gt;
 &lt;p&gt;缺点：造成注册中心写操作变多，特别是在强一致性的注册中心上，频繁的节点变更会导致产生大量的通知事件，在同步到多个注册中心复制集时性能不佳；另外，仍然可能发生服务虽无法对外提供服务了，但仍然可以发送续租请求；面对不同的客户端需要提供不同语言的SDK&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -1693,10 +1693,8 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;调用方优先使用缓存的服务注册表，当接收到的服务注册表的节点过少时，放弃使用；&lt;/li&gt;
 &lt;li&gt;如果调用方重启了，内存中的数据不存在，可以走本地配置降级；&lt;/li&gt;
 &lt;li&gt;通过在load balancer中加入被动健康检查和主动健康检查来剔除服务注册表中失效的节点，保证服务注册表的可用性&lt;/li&gt;
-&lt;/ul&gt;
-&lt;ol&gt;
 &lt;li&gt;参考Service Mesh的Envoy设计，不完全信任注册中心推送过来的服务注册表；&lt;/li&gt;
-&lt;/ol&gt;
+&lt;/ul&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -1718,9 +1716,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;ol start=&#34;5&#34;&gt;
+&lt;ul&gt;
 &lt;li&gt;面对节点和服务频繁变更，导致广播风暴的场景，可以通过合并设定时间内产生的消息后再进行推送，目的是为了减少广播次数，但是这样会影响消息的时效性，要注意设定的时间不宜过长。&lt;/li&gt;
-&lt;/ol&gt;
+&lt;/ul&gt;
 &lt;h2 id=&#34;常见的注册中心区别&#34;&gt;常见的注册中心区别&lt;/h2&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -1808,45 +1806,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;这里再说下K8s提供的默认服务发现（1.12后默认使用coreDNS），通过为Pod挂一个Service 或者 Pod 定义了hostname + subdomain，k8s也会为其生成Pod的 DNS A记录，然后 k8s 会把 Service 或 Pod 产生的DNS记录写入 CoreDNS 的 cache 或者 ETCD 中，同时在Pod的/etc/resolv.conf文件中添加CoreDNS服务的访问配置，Pod即可通过名称进行访问（同一命名空间下可以直接使用Pod名称进行访问，不同命名空间需要 Pod名称.命名空间名称 访问，或者直接使用Service的DNS名称访问）。&lt;/p&gt;
+&lt;p&gt;这里再说下K8s提供的默认服务发现（1.12后默认使用coreDNS），通过为Pod挂一个 Service 或者 Pod 定义了hostname + subdomain，CoreDNS也会为其生成Pod的 DNS A记录，然后 CoreDNS 会把 Service 或 Pod 产生的DNS记录写入 CoreDNS 的 cache 或者 ETCD 中，同时在Pod的&lt;code&gt;/etc/resolv.conf&lt;/code&gt;文件中添加CoreDNS服务的访问配置，Pod即可通过 service 名称进行访问。&lt;/p&gt;
 &lt;p&gt;CoreDNS会监听集群内所有Service API，当服务不可用时移除记录，在新服务创建时插入新记录，这些记录会存储在CoreDNS的cache或者ETCD中。&lt;/p&gt;
 &lt;p&gt;参考：https://github.com/kubernetes/dns/blob/master/docs/specification.md&lt;/p&gt;
-&lt;p&gt;比如有如下 /etc/resolv.conf文件&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# /etc/resolv.conf&lt;/span&gt;
-nameserver 10.100.0.10  &lt;span class=&#34;c1&#34;&gt;# coreDNS的IP&lt;/span&gt;
-search cafe.svc.cluster.local svc.cluster.local cluster.local us-west-2.compute.internal
-options ndots:5
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;其含义是：DNS 服务器为 10.100.0.10，当查询关键词中 &lt;code&gt;.&lt;/code&gt; 的数量少于 5 个，则根据 search 中配置的域名进行查询，当查询都没有返回正确响应时再尝试直接查询关键词本身。&lt;/p&gt;
-&lt;p&gt;比如执行 host -v cn.bing.com 时会看到下面即此查询&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com.cafe.svc.cluster.local&amp;#34;&lt;/span&gt;
-Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com.svc.cluster.local&amp;#34;&lt;/span&gt;
-Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com.cluster.local&amp;#34;&lt;/span&gt;
-Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com.us-west-2.compute.internal&amp;#34;&lt;/span&gt;
-Trying &lt;span class=&#34;s2&#34;&gt;&amp;#34;cn.bing.com&amp;#34;&lt;/span&gt;
-...
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;h1 id=&#34;heading&#34;&gt;&lt;/h1&gt;
+&lt;p&gt;具体例子查看Kubernetes那篇文章Service服务发现部分的内容。&lt;/p&gt;
 </description>
         </item>
         <item>
@@ -16064,7 +16027,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;一般是pod指定一个访问端口和label，Service的selector指明绑定的Pod，配置端口映射，Service并不直接连接Pod，而是在selector选中的Pod上产生一个Endpoints资源对象，通过Service的VIP就能访问它代理的Pod了。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;创建一个新的Service对象需要两大模块同时协作，一个是控制器，它需要在每次客户端创建新的Service对象时，生成其他用于暴露一组Pod的对象，即Endpoint，另一个是kube-proxy，它运行在集群的每个节点上，根据Service和Endpoint的变动改变节点上iptables或者ipvs中保存的规则。&lt;/p&gt;
+&lt;p&gt;创建一个新的Service对象需要两大模块同时协作，一个是控制器，它需要在每次客户端创建新的Service对象时，生成其他用于暴露一组Pod的对象，即Endpoint；另一个是kube-proxy，它运行在集群的每个节点上，根据Service和Endpoint的变动改变节点上iptables或者ipvs中保存的规则。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;service负载分发策略有两种模式：&lt;/p&gt;
@@ -16120,11 +16083,11 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;Kubernetes集群中每一个节点都运行着一个kube-proxy，这个进程负责监听kubernetes主节点中Service的增加和删除事件并修改运行代理的配置，为节点内的客户端提供流量转发和负载均衡等功能，kube-proxy有三种模式：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;userspace：运行在用户空间的代理，对于每一个Service都会在当前的节点上开启一个端口，所有连接到当前代理端口的请求都会被转发到service背后的一组pod上，本质上是在节点上添加iptable添加一条规则，通过iptables将流量转发给kube-proxy处理。&lt;/p&gt;
+&lt;p&gt;userspace：运行在用户空间的代理，对于每一个Service都会在当前的节点上开启一个端口，所有连接到当前代理端口的请求都会被转发到service背后的一组pod上，本质上是在节点的iptable上添加一条规则，通过iptables将流量转发给kube-proxy处理。&lt;/p&gt;
 &lt;p&gt;如果选择userspace模式，每当有新的service被创建时，kube-proxy就会增加一条iptables记录并启动一个goroutine，前者用于将节点中服务对外发出的流量转发给kube-proxy，再由后者一系列goroutine将流量转发到目标的pod上。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;iptables：直接使用iptables转发当前节点上的全部流量，比userspace模式有更高的吞吐量。&lt;/p&gt;
+&lt;p&gt;iptables：（默认）直接使用iptables转发当前节点上的全部流量，比userspace模式有更高的吞吐量。&lt;/p&gt;
 &lt;p&gt;如果选择iptables模式，所有流量会先经过PREROUTING或者OUTPUT链 ，随后进入Kubernetes自定义的链入口KUBE_SERVICES、单个Service对应的链KUBE-SVC-XXX以及每个pod对应的链KUBE-SEP-XXX，经过这些链的处理，最终才能访问一个服务真正的IP地址。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -16133,8 +16096,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;endpoints的作用&#34;&gt;Endpoints的作用&lt;/h3&gt;
-&lt;p&gt;当service使用了selector指定带有对应label的pod时，endpoint controller才会自动创建对应的endpoint对象，产生一个endpoints，endpoints信息存储在etcd中，用来记录一个service对应的所有pod的访问地址。&lt;/p&gt;
-&lt;p&gt;endpoints controller的作用&lt;/p&gt;
+&lt;p&gt;当service使用了selector指定带有对应label的pod时，endpoint controller才会自动创建对应的endpoint对象，产生一个endpoints，endpoints信息存储在etcd中，用来记录一个service对应的所有pod的访问地址；&lt;/p&gt;
+&lt;p&gt;说白了，因为pod ip比较容易变化，而endpoint的作用就是维护service和一组pod的映射。&lt;/p&gt;
+&lt;p&gt;endpoints controller的作用：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;负责生成和维护所有endpoint对象的控制器；&lt;/li&gt;
 &lt;li&gt;负责监听service和对应pod的变化；&lt;/li&gt;
@@ -16205,7 +16169,11 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;Service的本质是通过kube-proxy在宿主机上设置iptables规则、DNS映射，工作在第四层传输层。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;type=NodePort，暴露virtual IP，访问这个virtual IP的时候，会将请求转发到对应的Pod，默认下nodePort会使用主机的端口范围：30000 - 32767。&lt;/p&gt;
+&lt;p&gt;type=ClusterIP，此时该service只能在集群内部被访问，如果集群外想访问，只能通过kubernetes的proxy模式来访问，比如先开启&lt;code&gt;kubectl proxy --port=8080&lt;/code&gt;在本机打开集群访问的代理，然后通过该端口进行访问，kubernetes会帮我们转发到对应的pod上：&lt;code&gt;curl http://localhost:8080/api/v1/proxy/namespaces/{名称空间}/services/{service名称}/{path}&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;type=NodePort，集群外部使用 &lt;code&gt;{任何一个节点的IP}:{nodePort}&lt;/code&gt; 访问这个service，会将请求转发到对应的Pod，本质上是kube-proxy为该模式配置一条iptables规则；&lt;/p&gt;
+&lt;p&gt;默认下nodePort会使用主机的端口范围：30000 - 32767；&lt;/p&gt;
 &lt;p&gt;在这里，请求可能会经过SNAT操作，因为当client通过node2的地址访问一个Service，node2可能会负载均衡将请求转发给node1，node1处理完，经过SNAT，将响应返回给node2，再由node2响应回client，保证了client请求node2后得到的响应也是node2的，此时Pod只知道请求的来源，并不知道真正的发起方；&lt;/p&gt;
 &lt;p&gt;如果Service设置了spec.extrnalTrafficPolicy=local，Pod接收到请求，可以知道真正的外部发起方是谁了。&lt;/p&gt;
 &lt;/li&gt;
