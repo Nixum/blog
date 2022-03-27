@@ -483,6 +483,7 @@ PROJECTION：限定返回字段时候stage的返回
 </ul>
 </blockquote>
 <h3 id="checkpoint机制">checkpoint机制</h3>
+<p>checkpoint 相当于一个日志，记录上次checkpoint后相关数据文件的变化。</p>
 <h4 id="作用">作用</h4>
 <ul>
 <li>
@@ -510,6 +511,18 @@ PROJECTION：限定返回字段时候stage的返回
 	>
 	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint.png" >
 		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint_process.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint_process.png"
 			
 			
 			
@@ -636,7 +649,7 @@ PROJECTION：限定返回字段时候stage的返回
 <h3 id="journal日志与oplog日志的区别">journal日志与oplog日志的区别</h3>
 <ul>
 <li>
-<p><strong>journal日志</strong>：即redo log，由MongoDB引擎层使用，<strong>主要用于控制写操作是否立即持久化</strong>，因为如果发生写操作，mongo一般是先将写操作写入内存，在定时（默认是1分钟）将内存里的数据刷盘持久化。</p>
+<p><strong>journal日志</strong>：即redo log，由MongoDB引擎层使用，<strong>主要用于控制写操作是否立即持久化</strong>，因为如果发生写操作，mongo一般是先将写操作写入内存，在定时（默认是1分钟）通过check point机制将内存里的数据刷盘持久化。</p>
 <p>如果写操作的成功判定出现在写完内存后，如果此时宕机，将会丢失写操作的记录，如果判定发生在写完journal日志之后，如果宕机可以利用journal日志进行恢复。</p>
 <p>写入journal日志时，也是先写入内存，再定时（默认是100ms）写入磁盘</p>
 </li>

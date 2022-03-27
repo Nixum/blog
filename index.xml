@@ -353,6 +353,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;checkpoint机制&#34;&gt;checkpoint机制&lt;/h3&gt;
+&lt;p&gt;checkpoint 相当于一个日志，记录上次checkpoint后相关数据文件的变化。&lt;/p&gt;
 &lt;h4 id=&#34;作用&#34;&gt;作用&lt;/h4&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -380,6 +381,18 @@ PROJECTION：限定返回字段时候stage的返回
 	&gt;
 	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint.png&#34; &gt;
 		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint_process.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/MongoDB_checkpoint_process.png&#34;
 			
 			
 			
@@ -506,7 +519,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h3 id=&#34;journal日志与oplog日志的区别&#34;&gt;journal日志与oplog日志的区别&lt;/h3&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;journal日志&lt;/strong&gt;：即redo log，由MongoDB引擎层使用，&lt;strong&gt;主要用于控制写操作是否立即持久化&lt;/strong&gt;，因为如果发生写操作，mongo一般是先将写操作写入内存，在定时（默认是1分钟）将内存里的数据刷盘持久化。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;journal日志&lt;/strong&gt;：即redo log，由MongoDB引擎层使用，&lt;strong&gt;主要用于控制写操作是否立即持久化&lt;/strong&gt;，因为如果发生写操作，mongo一般是先将写操作写入内存，在定时（默认是1分钟）通过check point机制将内存里的数据刷盘持久化。&lt;/p&gt;
 &lt;p&gt;如果写操作的成功判定出现在写完内存后，如果此时宕机，将会丢失写操作的记录，如果判定发生在写完journal日志之后，如果宕机可以利用journal日志进行恢复。&lt;/p&gt;
 &lt;p&gt;写入journal日志时，也是先写入内存，再定时（默认是100ms）写入磁盘&lt;/p&gt;
 &lt;/li&gt;
@@ -6494,6 +6507,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h1 id=&#34;内存对齐&#34;&gt;内存对齐&lt;/h1&gt;
 &lt;p&gt;CPU读取数据时不会一个字节一个字节去读取，而是一块一块，块的大小可以是2、4、6、8、16字节，块大小称为内存访问粒度。32位CPU一次读取4个字节，64位CPU一次读取8个字节。&lt;/p&gt;
 &lt;p&gt;如果未进行内存对齐，会导致CPU进行两次内存访问，并且需要花费额外的时钟周期来处理对齐及运算，如果对齐了内存，一次读取就能访问完成，内存对齐可能会耗费额外的空间，但是可以加快读取效率，标准的空间换时间做法。&lt;/p&gt;
+&lt;p&gt;以32位CPU对齐为例：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -17408,32 +17422,35 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;比如一个page页中一个数据从 1 改到 2 ，再改到 3，物理日志记录最后一个值是 3 ，逻辑日志记录 1 -&amp;gt; 2, 2-&amp;gt;3 的过程。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;redo log重做日志&lt;/strong&gt;：InnoDB独有，物理日志，&lt;strong&gt;记录这个页做了什么改动&lt;/strong&gt;，使用&lt;strong&gt;二阶段提交&lt;/strong&gt;保证两份日志逻辑一致。当有日志要写入时，先写到redo log buffer后状态是prepare，binlog写入磁盘，事务提交，redo log改为commit状态，commit后才写进redo log(磁盘)，此时事务就算完成，即WAL机制。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;WAL机制&lt;/strong&gt;：执行事务时，将操作记录写入内存和日志，事务就完成了，此时数据可能还没写入磁盘，InnoDB会在合适的时机将内存里的数据刷入磁盘。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;redo log重做日志&lt;/strong&gt;：InnoDB独有，物理日志，&lt;strong&gt;记录这个页做了什么改动&lt;/strong&gt;，使用&lt;strong&gt;二阶段提交&lt;/strong&gt;保证两份日志逻辑一致。当有日志要写入时，先写到redo log buffer后状态是prepare，binlog写入磁盘，事务提交，redo log改为commit状态，commit后才写进redo log，此时事务就算完成。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;WAL机制&lt;/strong&gt;：执行事务时，将表数据写入内存和日志，事务就完成了，此时表数据可能还没写入磁盘，InnoDB会在合适的时机将内存里的数据刷入磁盘。WAL机制主要是解决CPU和磁盘速度的差异问题，也因为是先把数据写进内存，再写入磁盘，才需要redo log + 二阶段提交来解决崩溃数据丢失的问题，redo log同时也实现了事务的持久化。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;结合redo log的二阶段提交和WAL机制，整个流程就是：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;当有记录要更新时，先写进redo log buffer，状态是prepare，然后是bin log写入磁盘，事务提交，redo log更新为commit状态，并更新内存后，整个更新操作就算完成。&lt;/p&gt;
+&lt;p&gt;当有记录要更新时，数据修改前，先把老版本的数据写入undo log，然后先写进redo log buffer，状态是prepare，然后是bin log写入磁盘，事务提交，redo log更新为commit状态，并更新内存里的数据后，整个更新操作就算完成。&lt;/p&gt;
+&lt;p&gt;建议设置&lt;code&gt;innodb_flush_log_at_trx_commit=1&lt;/code&gt;，表示每次事务的redo log会写入buffer中，立即调一次 fsync 方法持久化到磁盘；所以一次更新操作之后，redo log文件就有两条日志，一条prepare，一条commit。&lt;/p&gt;
+&lt;p&gt;其他参数：&lt;code&gt;=0&lt;/code&gt;，表示每秒将redo log写入到buffer中，然后调用 fsync 方法将数据持久化到磁盘，但可能会丢失一秒的数据；&lt;code&gt;=2&lt;/code&gt;，表示每次事务的redo log会写入buffer，然后每秒调一次 fsync 方法持久化到硬盘。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;InnoDB在空闲的时候才真正的将内存中已更新的数据刷新到对应的page页，写入磁盘中。&lt;/p&gt;
-&lt;p&gt;因为更新redo log日志中的内容到真正的表数据对应的page页，涉及到分页或合并等操作，属于随机IO写入，比较费时，所以才先写redo log日志，再写磁盘，当数据写入磁盘后，对应的redo log日志文件里的内容才允许被覆盖。&lt;/p&gt;
+&lt;p&gt;InnoDB在空闲的时候才真正的将内存中已更新的表数据刷新到对应的page页，写入磁盘中，此时数据才真正落盘。&lt;/p&gt;
+&lt;p&gt;因为redo log格式固定，可以通过redo log buffer实现顺序写入磁盘，顺序IO写入速度快，而将表数据写入磁盘，需要更新redo log日志中的内容到表数据对应的page页，涉及到分页或合并等操作，属于随机IO写入，比较费时，所以才先写redo log日志，再把表数据写磁盘，当表数据写入磁盘后。&lt;/p&gt;
+&lt;p&gt;redo log里有一个叫LSN（log sequence number）作为检查点，表示在LSN之前的数据（缓冲池里的数据页、索引页）都已经持久化到磁盘了，redo log文件里在LSN检查点之前的内容才允许被覆盖。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;InnoDB的redo log是固定大小的，比如有一组4个文件组成的“环形队列”，一个文件写完就写下一个，4个轮转；首位指针表示当前记录的位置和当前擦除位置，擦除前会把记录更新到磁盘，这种能力也称为crash-safe；&lt;/p&gt;
-&lt;p&gt;建议设置&lt;code&gt;innodb_flush_log_at_trx_commit=1&lt;/code&gt;，表示每次事务的redo log会写入buffer中，立即调一次 fsync 方法持久化到磁盘；&lt;/p&gt;
-&lt;p&gt;其他参数：&lt;code&gt;=0&lt;/code&gt;，表示每秒将redo log写入到buffer中，然后调用 fsync 方法，将数据持久化到磁盘，但可能会丢失一秒的数据；&lt;code&gt;=2&lt;/code&gt;，表示每次事务的redo log会写入buffer，然后每秒调一次 fsync 方法持久化到硬盘。&lt;/p&gt;
+&lt;p&gt;InnoDB的redo log是固定大小的，比如有一组4个文件组成的“环形队列”，一个文件写完就写下一个，4个轮转；首位指针表示当前记录的位置和当前擦除位置，擦除前会把记录更新到磁盘；&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;bin log归档日志&lt;/strong&gt;：属于server层的日志，逻辑日志，&lt;strong&gt;记录所有逻辑操作&lt;/strong&gt;，追加写入，不会覆盖以前的日志，bin log有两种模式，statement 格式的话是记sql语句， row格式会记录行的内容，一般使用row，记录行变化前和变化后的数据，缺点是日志变大。从库是使用bin log进行备份的；&lt;/p&gt;
-&lt;p&gt;建议设置&lt;code&gt;sync_binlog=1&lt;/code&gt;，表示每次事务的bin log都会持久化到磁盘；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;bin log归档日志&lt;/strong&gt;：属于server层的日志，逻辑日志，&lt;strong&gt;记录所有逻辑操作&lt;/strong&gt;，追加写入，不会覆盖以前的日志，bin log有两种模式，statement 格式的话是记sql语句， row格式会记录行的内容，一般使用row，记录行变化前和变化后的数据，缺点是日志变大。用于主从复制和数据备份恢复；&lt;/p&gt;
+&lt;p&gt;bin log也是先写buff再写磁盘，建议设置&lt;code&gt;sync_binlog=1&lt;/code&gt;，表示每次事务的bin log都会持久化到磁盘；&lt;/p&gt;
+&lt;p&gt;其他参数：&lt;code&gt;=0&lt;/code&gt;，表示由系统判断何时刷盘，&lt;code&gt;=N&lt;/code&gt;，表示每N个事务完成才会刷盘；&lt;/p&gt;
 &lt;p&gt;redo log prepare、commit 的XID与bin log的XID实现关联，通过XID的关联，就能知道两份日志是否完整，从而实现crash-safe。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;可以&lt;strong&gt;只使用redo log来实现崩溃恢复&lt;/strong&gt;，由MySQL内部实现，但无法只使用bin log，原因是 InnoDB使用WAL机制，如果此时数据库崩溃，要依赖日志来恢复数据页，但是bin log并没有记录数据页的更新细节，而redo log因为环形写入的问题，无法对所有记录进行归档，仅仅只能实现崩溃恢复；&lt;/p&gt;
-&lt;p&gt;正常运行的情况下，数据页被修改到落盘，从头到尾操作的都是内存中的数据，操作记录只是顺带记录在redo log文件中，只有在奔溃恢复的场景下，如果InnoDB判断数据丢失了更新，就会从redo log文件中将数据恢复到内存，再从内存中将数据刷盘。redo log只是用于记录，真正刷盘的数据来自其他buffer。&lt;/p&gt;
+&lt;p&gt;只有当&lt;code&gt;innodb_flush_log_at_trx_commit=1&lt;/code&gt;和&lt;code&gt;sync_binlog=1&lt;/code&gt;，数据库才具备crash-safe的能力。&lt;/p&gt;
+&lt;p&gt;可以&lt;strong&gt;只使用redo log来实现崩溃恢复&lt;/strong&gt;，保证恢复后不会出现主从不一致的情况，由MySQL内部实现，但无法只使用bin log，原因是 InnoDB使用WAL机制，如果此时数据库崩溃，要依赖日志来恢复数据页，但是bin log并没有记录数据页的更新细节，而redo log因为环形写入的问题，无法对所有记录进行归档，仅仅只能实现崩溃恢复；InnoDB通过redo log的状态和比较与bin log的数据，来判断哪些数据需要进行崩溃恢复。&lt;/p&gt;
+&lt;p&gt;正常运行的情况下，数据页被修改到落盘，从头到尾操作的都是内存中的数据，操作记录只是顺带记录在redo log文件中，只有在奔溃恢复的场景下，如果InnoDB判断数据丢失了更新，才会从redo log文件中将数据恢复到内存，再从内存中将数据刷盘。redo log只是用于记录，真正刷盘的数据来自其他buffer。&lt;/p&gt;
 &lt;p&gt;备份时间的长短会影响日志文件的大小，文件的完整性，从而影响到恢复速度和恢复效果；&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;undo log回滚日志&lt;/strong&gt;：InnoDB独有，逻辑日志，主要用于事务失败时的回滚，以及MVCC中版本数据查看。当事务被提交后，并不会马上被删除，而是放到待清理链中，=到没有事务用到该版本信息时才可以清理。&lt;/li&gt;
@@ -18499,6 +18516,14 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://tech.meituan.com/2014/08/20/innodb-lock.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;Innodb中的事务隔离级别和锁的关系&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;&#34; &gt;极客时间 - MySQL实战45讲&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.cnblogs.com/hapjin/p/11521506.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;MySQL中的 redo 日志文件 &lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/javaanddonet/article/details/112596210&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;MySQL的日志 - redo log&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.cnblogs.com/lemon-flm/p/15307313.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;MySQL日志15问&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.cnblogs.com/mengxinJ/p/14211427.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;MySQL 中的WAL机制&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;后记&lt;/p&gt;
 &lt;p&gt;极客时间 - MySQL实战45讲真的是质量很高的讲MySQL的课程，非常推荐&lt;/p&gt;
 </description>
