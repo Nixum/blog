@@ -389,8 +389,9 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
 <p>聚集索引：InnoDB中的主键索引，每张表的主键构造一棵B+树，同时叶子节点中存放的即为整张表的行记录数据。一个表只能包含一个聚集索引，聚集索引通常提供更快的数据访问速度。</p>
 </li>
 <li>
-<p>非聚集索引：表中行的物理顺序与键值的逻辑顺序不匹配，查到记录对应的主键值 ，再使用主键的值通过聚集索引查找到需要的数据，这个过程也称为回表。</p>
+<p>非聚集索引：表中行的物理顺序与键值的逻辑顺序不匹配，查到记录对应的主键值 ，再使用主键的值通过聚集索引查找到需要的数据，这个过程也称为回表；即先通过普通索引找到主键，在通过主键找到数据。</p>
 <p>要细分的话可以分为普通索引，唯一索引，组合索引，全文索引这些。</p>
+<p>注：MyISAM无论主键索引还是二级索引都是非聚簇索引，而InnoDB的主键索引是聚簇索引，二级索引是非聚簇索引。我们自己建的索引基本都是非聚簇索引。</p>
 </li>
 <li>
 <p>稠密索引：每个索引对应一个值</p>
@@ -460,7 +461,7 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
 <blockquote>
 <p>B+树的磁盘读写代价更低：B+树的内部节点并没有指向关键字具体信息的指针，因此其内部节点相对B树更小，如果把所有同一内部节点的关键字存放在同一盘块中，那么盘块所能容纳的关键字数量也越多，一次性读入内存的需要查找的关键字也就越多，相对IO读写次数就降低了。</p>
 <p>B+树的查询效率更加稳定：B+树深度比较平均，由于非叶子点并不是最终指向文件内容的结点，而只是叶子结点中关键字的索引，任何关键字的查找必须走一条从根结点到叶子结点的路，即所有关键字查询的路径长度相同，因此每一个数据的查询效率相当。而B树查询的深度比较随机，比较适合定点查询，单次查询效率高。</p>
-<p>由于B+树的数据都存储在叶子结点中，分支结点均为索引，方便扫库，只需要扫一遍叶子结点即可，但是B树因为其分支结点同样存储着数据，我们要找到具体的数据，需要进行一次中序遍历按序来扫，所以B+树更加适合在区间查询的情况。</p>
+<p>由于B+树的数据都存储在叶子结点中，分支结点均为索引，方便扫库，顺序IO，只需要扫一遍叶子结点即可；但是B树因为其分支结点同样存储着数据，我们要找到具体的数据，需要进行一次中序遍历按序来扫，带来更多的随机IO。所以B+树更加适合在区间查询的情况。</p>
 <p>B树不适合遍历数据，B树比较合适查询单一记录，常用与NoSQL的索引结构，NoSQL一般是Key-value形式的存储，文档性一般是Json存储。</p>
 </blockquote>
 <h3 id="与二叉查找树avl树的比较">与二叉查找树、AVL树的比较</h3>
@@ -713,6 +714,13 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
 <p><strong>关于InnoDB的删除</strong>：</p>
 <p><code>innodb_file_per_table=OFF</code>：表示表数据放在系统共享表空间，=on表示各个表空间放在独立文件下，后缀名是 .ibd ，一般设置=on，便于管理。</p>
 <p>当我们使用delete删除数据时，InnoDB实际上是把数据页上的该数据标记为删除，表示该位置可以进行复用，此时磁盘上的文件并不会变小，当数据随机插入时会因为页分裂，分裂后的页可能存不满数据，就会标记某些位可复用，导致页的利用率不高，当有大量的增删时，会导致数据页存在大量空洞，为了压缩空间，此时的解决办法是重建表，一般使用<code>alter table [tableName] enging=InnoDB</code>达到重建的目的，MySQL会自动创建临时表，进行数据转存，交换表名，删除旧表，此时会阻塞，阻止增删改，<strong>5.56版本后使用onlineDDL机制</strong>，解决了这个问题，解决方法是使用redo log记录新插入的数据 + MDL读锁(写锁会退化) + IO + CPU</p>
+<p><strong>4大特性</strong>：</p>
+<ol>
+<li>插入缓冲：使用change buffer，对insert、delete、update、purge都有提升；</li>
+<li>双写机制：InnoDB在将buffer pool中的Dirty Page脏页刷到磁盘时，会先将dirty page刷到InnoDB ；tablespace中的一个区域，这个区域称为 Double Write Buffer，该区域大小 2MB ，每次写入 1MB，128个页，每个页16k，其中120个页为后台线程批量刷Dirty Page，还有8个也是为了前台起的single page flash线程，用户可以主动请求使用，迅速提升空余的空间，在像Double Write Buffer写入成功后，第二步是将数据分别刷到一个共享空间和真正应该存在的位置；</li>
+<li>自适应哈希索引：InnoDB会监控对表上辅助索引页的查询，如果发现建立hash索引可以提升性能，就会在缓冲池建立hash索引，提升查询性能；</li>
+<li>预读：用异步将磁盘中的页读取到buffer pool中，预读请求的所有页集中在一个范围内；</li>
+</ol>
 <h2 id="3memory">3.Memory</h2>
 <ul>
 <li>menory引擎的内存表不同于InnoDB的内部临时表，内存表是库内全局可见，写内存的，而innodb的内部临时表是写磁盘的，同一线程内可见，线程结束就会清空</li>
@@ -726,15 +734,38 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
 </ul>
 <h2 id="4myisam与innodb引擎区别">4.MyISAM与InnoDB引擎区别</h2>
 <ul>
-<li>MyISAM是非事务安全；InnoDB是事务安全型</li>
-<li>MyISAM的锁是表锁；InnoDB支持行锁</li>
-<li>MyISAM支持全文索引；InnoDB不支持（5.6版本后才支持）</li>
-<li>MyISAM适合 <code>SELECT</code> 密集型的表；InnoDB适合 <code>INSERT</code> 和 <code>UPDATE</code> 密集型的表</li>
-<li>MyISAM表是保存成文件形式，跨平台转移方便</li>
-<li>InnoDB表比MyISAM表安全</li>
-<li>MyISAM对于不会进行修改的表，支持压缩表，极大减少磁盘空间占用</li>
-<li>MyISAM 崩溃后发生损坏的概率比 InnoDB 高很多，而且恢复的速度也更慢；InnoDB支持安全恢复</li>
-<li>MyISAM不支持外键；InnoDB 支持外键，InnoDB 支持在线热备份</li>
+<li>
+<p>MyISAM是非事务安全；InnoDB是事务安全型</p>
+</li>
+<li>
+<p>MyISAM的锁是表锁；InnoDB支持行锁</p>
+</li>
+<li>
+<p>MyISAM支持全文索引；InnoDB不支持（5.6版本后才支持）</p>
+</li>
+<li>
+<p>MyISAM适合 <code>SELECT</code> 密集型的表；InnoDB适合 <code>INSERT</code> 和 <code>UPDATE</code> 密集型的表</p>
+</li>
+<li>
+<p>MyISAM表是保存成文件形式，跨平台转移方便</p>
+</li>
+<li>
+<p>InnoDB表比MyISAM表安全</p>
+</li>
+<li>
+<p>MyISAM对于不会进行修改的表，支持压缩表，极大减少磁盘空间占用</p>
+</li>
+<li>
+<p>MyISAM 崩溃后发生损坏的概率比 InnoDB 高很多，而且恢复的速度也更慢；InnoDB支持安全恢复</p>
+</li>
+<li>
+<p>MyISAM不支持外键；InnoDB 支持外键，InnoDB 支持在线热备份</p>
+</li>
+<li>
+<p>MyISAM是非聚集索引，使用B+Tree作为索引结构，索引和数据文件是分离的，索引保存的是数据文件的指针；</p>
+<p>InnoDB是聚集索引，数据文件是和（主键）索引绑在一起的，即索引 + 数据 = 整个表数据文件，通过主键索引到整个记录，必须要有主键；辅助索引是以建索引的字段为关键字索引到主键，查询时先查到主键，再通过主键查询到数据；</p>
+<p>即MyISAM的B+树主键索引和辅助索引的叶子节点都是数据文件的地址指针；InnoDB的B+树主键索引的叶子节点就是数据文件，辅助索引的叶子节点是主键的值；</p>
+</li>
 </ul>
 <h1 id="事务">事务</h1>
 <h2 id="1acid原则">1.ACID原则</h2>
@@ -1008,6 +1039,29 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
 <h1 id="大表优化">大表优化</h1>
 <p><a class="link" href="https://segmentfault.com/a/1190000006158186"  target="_blank" rel="noopener"
     >MySQL大表优化方案</a></p>
+<h2 id="大表建立索引">大表建立索引</h2>
+<p>当表的数据量很大，并且TPS也很高时，建立索引或者修改表结构会很慢，甚至出现死锁。</p>
+<ul>
+<li>
+<p>方案1：创建一张与原表结构相同的新表，在新表上创建索引，将原表改名，新表改成原表的名字，让新表承担业务，然后为老表新增索引，完了之后再交换表名，再将新表产生的数据导入到原表中。</p>
+<p>但是这种方式有个问题是如果要对老表的数据进行删改，会产生数据丢失，此过程可以通过建立触发器解决，有Percona Toolkit工具就可以自动完成上述过程，并且保证数据删改不丢失。</p>
+</li>
+<li>
+<p>方案2：在业务空闲的时候，在从库上的表建索引，等待主库和从库同步位点一致，切换主从即可。</p>
+</li>
+</ul>
+<h2 id="大量数据删除">大量数据删除</h2>
+<p>大量删除时，会锁表，业务高峰时还会CPU暴涨，导致数据库性能下降</p>
+<ul>
+<li>方案1：删除大表的多行数据时，会超出InnoDB block table size的限制，要做的就算减少锁表的时间，可可以选择不需要删除的数据，存到一张同名的空表里，重新命名原始表，新表使用原表名，删除原始表</li>
+<li>方案2：将批量删除的任务拆分成N个小删除任务，异步执行</li>
+<li>方案3：删除表上的索引，再删除数据，提升删除效率</li>
+</ul>
+<h2 id="cpu或io过高可能的原因">CPU或IO过高可能的原因</h2>
+<ul>
+<li>慢查询导致CPU飙升，QPS不高，查询效率低，需要扫描大量数据才能出结果导致，这种时候一般是<code>show processlist</code>查看当前执行的查询，kill掉慢查询对应的id</li>
+<li>慢查询，磁盘故障，不合理的配置+大量增删改导致IO升高，一般结合<code>performance_schema</code>查看MySQL各项指标，查看刷盘相关的参数配置是否合理，比如<code>sync_binlog</code>之类的</li>
+</ul>
 <h2 id="分库分表">分库分表</h2>
 <p>主要是为了解决数据量太大导致查询慢（一般可以分表，主从分离），还有高并发问题（一般是分库）。</p>
 <p>分表时一般分为水平拆分（对行，即数量，比如根据id哈希分散到不同的表）和垂直拆分（对列，即拆字段，或者直接将某些表独立成库）</p>
@@ -1060,17 +1114,17 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
 </ul>
 <p>bin log上会记录每台机子的server id，用于避免循环复制</p>
 <h3 id="具体步骤">具体步骤</h3>
-<p>每个MySQL数据库上都有这三个线程，<strong>默认是主服务器写完Bin Log后就算事务成功，Bin Log复制是异步执行。</strong></p>
+<p>每个MySQL数据库上都有这三个线程，<strong>默认是主服务器写完bin Log后就算事务成功，bin Log复制是异步执行。</strong></p>
 <ul>
 <li>
-<p><strong>binlog 线程</strong> ：负责将主库上的数据更改写入Bin Log。之后事务线程提交事务，响应成功给客户端。</p>
+<p><strong>binlog 线程</strong> ：负责将主库上的数据更改写入bin Log。之后事务线程提交事务，响应成功给客户端。</p>
 </li>
 <li>
-<p><strong>I/O 线程</strong> ：负责从主库上读取Bin Log，并写入从库的重放日志（replay log）中，主库也会创建一个log dump线程来异步发送Bin Log给从库；</p>
+<p><strong>I/O 线程</strong> ：负责从主库上读取bin Log，并写入从库的重放日志（relay log）中，主库也会创建一个log dump线程来异步发送bin Log给从库；</p>
 </li>
 <li>
-<p><strong>SQL 线程</strong> ：在从库里，负责将读取到的replay log日志并重放其中的 SQL 语句。MySQL 5.6前只支持单线程，5.6后改为多线程，SQL线程分为container对事务进行分发，调度不同的worker线程进行执行，分发策略：1、更新同一行的两个事务，必须被分发到同一个worker；2、同一个事务不能被拆开，必须在同一worker中执行</p>
-<p>从库在同步Bin Log时，必须保证Bin Log的顺序，才能确保数据一致性。</p>
+<p><strong>SQL 线程</strong> ：在从库里，负责将读取到的relay log日志并重放其中的 SQL 语句。MySQL 5.6前只支持单线程，5.6后改为多线程，SQL线程分为container对事务进行分发，调度不同的worker线程进行执行，分发策略：1、更新同一行的两个事务，必须被分发到同一个worker；2、同一个事务不能被拆开，必须在同一worker中执行</p>
+<p>从库在同步bin Log时，必须保证bin Log的顺序，才能确保数据一致性。</p>
 </li>
 </ul>
 <p><figure 
@@ -1087,7 +1141,7 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
 	<figcaption>MySQL主从复制</figcaption>
 	
 </figure></p>
-<p>默认情况下，由于是异步复制，无法保证数据第一时间复制到从库上，但如果采用同步复制，即等从库复制完主库的Bin Log后才响应给客户端，性能就太差了。</p>
+<p>默认情况下，由于是异步复制，无法保证数据第一时间复制到从库上，但如果采用同步复制，即等从库复制完主库的bin Log后才响应给客户端，性能就太差了。</p>
 <p>在MySQL 5.7后的版本，增加半同步复制(Semisynchronous Replication)，事务线程不用等到所有都复制成功才响应，只要一部分复制响应回来后即可响应给客户端，比如一主二从，等一从成功即可成功。配置<code>rpl_semi_sync_master_wait_no_slave</code>表示至少等待多少个从库复制成功才算成功。<code>rpl_semi_sync_master_wait_point</code>表示主库执行事务的线程是提交事务前等待复制(默认)，还是提交事务之后等待复制</p>
 <h3 id="主备延迟">主备延迟</h3>
 <p>当备库重放日志的速度小于主库产生bin log的速度，会出现主备延迟，可能的原因：</p>
@@ -1589,6 +1643,9 @@ group by 网站名称 <strong>having</strong> <strong>SUM(点击数)</strong>&gt
     </li>
     <li><a href="#大表优化">大表优化</a>
       <ol>
+        <li><a href="#大表建立索引">大表建立索引</a></li>
+        <li><a href="#大量数据删除">大量数据删除</a></li>
+        <li><a href="#cpu或io过高可能的原因">CPU或IO过高可能的原因</a></li>
         <li><a href="#分库分表">分库分表</a></li>
         <li><a href="#分片算法">分片算法</a></li>
         <li><a href="#sharding-key选择问题">Sharding Key选择问题</a></li>
