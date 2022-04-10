@@ -4420,6 +4420,20 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;h1 id=&#34;netpoller&#34;&gt;netpoller&lt;/h1&gt;
 &lt;p&gt;参考：https://strikefreedom.top/go-netpoll-io-multiplexing-reactor，讲得足够详细了&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.luozhiyun.com/archives/439&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://www.luozhiyun.com/archives/439&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/272891398&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://zhuanlan.zhihu.com/p/272891398&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;netpoller本质上是利用操作系统本身的非阻塞IO模型 + IO多路复用的封装，从而实现&lt;code&gt;goroutine-per-connection&lt;/code&gt;模式，使用同步编程模式达到异步执行的效果。&lt;/p&gt;
+&lt;p&gt;netpoller算是运行在go scheduler中的一个子系统，但它主要是处理网络请求的，使其不阻塞整个调度。&lt;/p&gt;
+&lt;p&gt;netpoller中的几个方法：&lt;code&gt;对epoll的封装 netpollinit、netpollopen、netpoll&lt;/code&gt;、&lt;code&gt;net.listen&lt;/code&gt;、&lt;code&gt;Listener.Accept&lt;/code&gt;、&lt;code&gt;Conn.Read / Conn.Write&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;这里记一下Go网络相关的goroutine是如何被规划调度的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;首先，client 连接 server 的时候，listener 通过 accept 调用接收新 connection，每一个新 connection 都启动一个 goroutine 处理，accept 调用会把该 connection 的 fd 连带所在的 goroutine 上下文信息封装注册到 epoll 的监听列表里去，当 goroutine 调用 &lt;code&gt;conn.Read&lt;/code&gt; 或者 &lt;code&gt;conn.Write&lt;/code&gt; 等需要阻塞等待的函数时，会被 &lt;code&gt;gopark&lt;/code&gt; 给封存起来并使之休眠，让 P 去执行本地调度队列里的下一个可执行的 goroutine，往后 Go scheduler 会在循环调度的 &lt;code&gt;runtime.schedule()&lt;/code&gt; 函数以及 sysmon 监控线程中调用 &lt;code&gt;runtime.netpoll&lt;/code&gt; 以获取可运行的 goroutine 列表并通过调用 injectglist 把剩下的 g 放入全局调度队列或者当前 P 本地调度队列去重新执行。&lt;/p&gt;
+&lt;p&gt;当IO事件发生之后，netpooler通过 &lt;code&gt;runtime.netpoll&lt;/code&gt; 即可在epoll监听列表获取到已就绪的fd列表对应的goroutine，具体：&lt;code&gt;runtime.netpoll&lt;/code&gt;会调用 &lt;code&gt;epollwait&lt;/code&gt; 等待发生了可读/可写事件的fd，循环 &lt;code&gt;epollwait&lt;/code&gt; 返回的事件列表，处理对应的事件类型，组装可运行的goroutine链表并返回。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;sysmon监控线程&lt;/code&gt;会在循环过程中检查距离上一次 &lt;code&gt;runtime.netpoll&lt;/code&gt; 被调用是否超过10ms，若是则回去调用它拿到可运行的goroutine列表并调用 injectglist 把 g 列表放入全局调度队列或者当前 P 本地调度队列等待被执行。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;即当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中&amp;hellip;  ；当IO可用时，在 epoll 的 &lt;code&gt;eventpoll.rdr&lt;/code&gt; 中等待的 G 会被放到 &lt;code&gt;eventpoll.rdllist&lt;/code&gt; 链表里并通过 &lt;code&gt;netpoll&lt;/code&gt; 中的 &lt;code&gt;epoll_wait&lt;/code&gt; 系统调用返回放置到GRQ或者 P 的LRQ，标记为 &lt;code&gt;_Grunnable&lt;/code&gt; ，等待 P 绑定 M 恢复执行。&lt;/p&gt;
 &lt;h1 id=&#34;goroutine&#34;&gt;Goroutine&lt;/h1&gt;
 &lt;h2 id=&#34;基本&#34;&gt;基本&lt;/h2&gt;
 &lt;ul&gt;
@@ -4505,7 +4519,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程需要的上下文，（局部计算资源，用于在同一线程写多个goroutine的切换），负责调度线程上的LRQ，是实现从N：1到N：M映射的关键。存在的意义在于工作窃取算法。&lt;/p&gt;
+&lt;p&gt;P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程需要的上下文，（局部计算资源，用于在同一线程写多个goroutine的切换），负责调度线程上的LRQ，是实现从N：1到N：M映射的关键，存在的意义在于工作窃取算法，同时也是为了保证在发生系统调用时，M阻塞，此时P就可以交给其他M继续执行。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;P的个数取决于&lt;strong&gt;GOMAXPROCS&lt;/strong&gt;，默认使用CPU的个数，这些P会绑定到不同内核线程，尽量提升性能，让每个核都有代码在跑。在确定了P的最大数量n后，当程序运行时，创建n个P，P代表代表并发度；&lt;/p&gt;
@@ -4566,6 +4580,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;运行时的G会尝试唤醒其他空闲的M和P进行组合，由于M和P由于刚被唤醒，进入自旋状态，G0发现P的本地队列没有G，则先去GRQ里进行working stealing，如果GRQ里没有，则去其他P的LRQ里working stealing；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;通过netpoller进行网络系统调用，调度器可以防止G在进行这些系统调用时阻塞M，使得M可以执行P的LRQ中的其他G，而不需要使用新的M，该G在netpoller执行完后，会重新回到之前P的LRQ中，等待调用。执行网络系统调用不需要额外的M，netpoller使用系统线程时刻处理一个有效的事件循环（通过linux上的epoll实现），即在这种场景下，G会和MP分离，G挂在了netpoller下。&lt;/p&gt;
+&lt;p&gt;如果是其他系统调用，如读取文件导致G被阻塞，此时不关netpoller什么事，这种阻塞使得G阻塞M，调度器会使得GM与P分离，而P使用新的M继续执行。&lt;/p&gt;
+&lt;p&gt;如果是让G执行一个sleep操作，导致M被阻塞，则由sysmon监控线程来监控那些长时间运行的G，然后设置可以抢占的标识符，别的G就可以抢占来执行。&lt;/p&gt;
 &lt;p&gt;这里有一个有趣的例子&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -4691,6 +4708,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;如果是多核的，有多个P，多个M，当有一个P处理完所有的G后，会先从GRQ中获取G，如果获取不到，就会从另一个P的LRQ里取走一半G，继续处理。&lt;/p&gt;
 &lt;h2 id=&#34;sysmon协程&#34;&gt;sysmon协程&lt;/h2&gt;
 &lt;p&gt;&lt;strong&gt;由sysmon协程进行协作式抢占&lt;/strong&gt;，对goroutine进行标记，执行goroutine时如果有标记就会让出CPU，对于syscall过久的P，会进行M和P的分配，防止P被占用过久影响调度。&lt;/p&gt;
+&lt;p&gt;sysmon协程运行在M上，且不需要P，它会每隔一段时间检查runtime，确保没有出现异常状态，也会触发调度、GC、检查死锁、获取下一个需要被触发的计时器、定时从netpoll中获取ready的G、打印调度和内存信息。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
 	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_sysmon_goroutine.png&#34; &gt;
@@ -5112,6 +5130,8 @@ PROJECTION：限定返回字段时候stage的返回
     &gt;详解Go语言调度循环源码实现&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://mp.weixin.qq.com/s?__biz=MzAxMTA4Njc0OQ==&amp;amp;mid=2651439356&amp;amp;idx=2&amp;amp;sn=264a3141ea9a4b29fe67ec06a17aeb99&amp;amp;chksm=80bb1e0eb7cc97181b81ae731d0d425dda1e9a8d503ff75f217a0d77bd9d0eb451555cb584a0&amp;amp;scene=21#wechat_redirect&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;GC模式图文全分析&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://jishuin.proginn.com/p/763bfbd5f194&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Golang 系统调用与阻塞处理&lt;/a&gt;&lt;/p&gt;
 </description>
         </item>
         <item>
@@ -11123,13 +11143,31 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;消息数据可以持久化或非持久化，在集群内共享，当有节点挂掉后，其他节点也可以通过这些共享的数据顶上。另外，也可通过定时任务定时对失败的消息进行补偿。&lt;/p&gt;
 &lt;p&gt;数据的持久化存储可以存储在文件系统 &amp;gt; 分布式KV &amp;gt; 分布式文件系统 &amp;gt; 数据库（速度上的排列，但可靠性就要反过来了）&lt;/p&gt;
 &lt;h2 id=&#34;如何解决消息重复问题保证消息幂等性&#34;&gt;如何解决消息重复问题，保证消息幂等性&lt;/h2&gt;
-&lt;p&gt;消息幂等，可以保证即使消息被重复消费也无所谓，一般来讲，重复发送总是存在的，要避免的是即使重复消费也能保证业务正确。要解决消息重复发送，除非允许消息丢失&lt;/p&gt;
+&lt;p&gt;消息幂等，可以保证即使消息被重复消费也无所谓，一般来讲，重复发送总是存在的，要避免的是即使重复消费也能保证业务正确。要解决消息重复发送，除非允许消息丢失，但很明显，消息不丢的优先级肯定更高。&lt;/p&gt;
+&lt;p&gt;消息重复消费需要解决3个问题：1.第一条消息已经消费成功了，第二条消息将直接成功；2.并发场景下，消息重复，击穿幂等挡板的问题；3.生产者发送重复的消息：重复的消息id一致或者不一致&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;常见实现幂等性方法&lt;/strong&gt;：&lt;/p&gt;
+&lt;p&gt;保证消息幂等一般是在消费者做，比如业务操作本身就是幂等的，不然就是在消息本身上做文章：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;保证消息幂等一般是在消费者做，消费者处理消息的时候将消息入库记录，利用数据库的唯一键约束实现，比如通过消息id + redis/MySQL/Mongo来判重。&lt;/li&gt;
-&lt;li&gt;更新数据时设置前置条件，如果满足该条件则更新数据，否则拒绝更新数据，在更新数据的同时，变更前置条件中需要判断的数据，这样当重复执行这个操作时，由于第一次更新已经修改了前置条件，不满足前置条件时，则不会重复执行更新数据的操作，比如给数据增加一个版本号，每次更新数据前，比较当前数据的版本号是否和消息中的版本号一致，如果不一致就拒绝更新数据，更新数据的同时，版本号+1，实现幂等更新。&lt;/li&gt;
-&lt;li&gt;在发送消息时，给消息指定一个全局唯一的ID，消费时，先根据这个ID检查这条消息是否被消费过，如果没消费过，才更新数据，然后标记消息为已消费。但该方案在分布式系统中比较复杂，高可用，高性能都有一定的影响，需要使用分布式锁或者分布式事务&lt;/li&gt;
-&lt;li&gt;对于无法处理的消息导致MQ重复发送，可以设置重复次数，过了重复次数将消息持久化到其他地方，比如死信队列，以后处理。&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;消费者处理消息的时候将消息入库记录，利用数据库的唯一键约束 + 事务来实现，比如事务开启时，先把消息入库，再进行其他业务操作，然后再提交事务，保证消息只被消费一次；&lt;/p&gt;
+&lt;p&gt;这种方案有局限性，一个它需要依赖关系型数据库，另一个是需要所有的操作都在同一个库里，保证在同一个库内，不允许跨库操作。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;基于上面那种方案，如果涉及到跨服务、库的调用，则可以将跨服务的操作也抽成一个消息，通过将对不同服务或库的操作也改成事务+消息的方式来做，就可以解决这个问题，但是会导致增加业务的复杂度。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;消息入库 + 消息TTL去重表 + 消息状态的方案：消费者接收到消息，插入消息去重表，并设置过期时间，如果插入成功，此时消息的状态为消费种，执行业务代码，成功后更新消息状态为已消费，然后发送ack，如果业务代码执行失败，则将消息从消息表删除，重新投递；如果消息一开始就插入失败了，判断消息的状态，如果消息状态是已消费，则返回ack，如果状态是消费中，则重新投递，之所以要多这一步是为了解决并发时候重复消息的问题；插入时设置过期时间，是为了解决消息重复投递时，每次都是看到消息是消费中的状态，导致消息最终去了死信的问题；&lt;/p&gt;
+&lt;p&gt;当然此方案中如果涉及到跨服务、库的调用，需要保证这一次调用也是幂等的，该方案仅仅是解决上面的方案中依赖关系型数据库和事务的问题。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;更新数据时设置前置条件，如果满足该条件则更新数据，否则拒绝更新数据，在更新数据的同时，变更前置条件中需要判断的数据，这样当重复执行这个操作时，由于第一次更新已经修改了前置条件，不满足前置条件时，则不会重复执行更新数据的操作，比如给数据增加一个版本号，每次更新数据前，比较当前数据的版本号是否和消息中的版本号一致，如果不一致就拒绝更新数据，更新数据的同时，版本号+1，实现幂等更新。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在发送消息时，给消息指定一个全局唯一的ID，消费时，先根据这个ID检查这条消息是否被消费过，如果没消费过，才更新数据，然后标记消息为已消费。但该方案在分布式系统中比较复杂，高可用，高性能都有一定的影响，需要使用分布式锁或者分布式事务&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;对于无法处理的消息导致MQ重复发送，可以设置重复次数，过了重复次数将消息持久化到其他地方，比如死信队列，以后处理。&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;如何保证消息顺序&#34;&gt;如何保证消息顺序&lt;/h2&gt;
 &lt;p&gt;100%的顺序消息的条件比较苛刻，需要允许消息丢失且生产者到消费者都是单点单线程，一般是保证在不丢消息的前提下，尽量减少重复消息，不保证投递顺序。。&lt;/p&gt;
@@ -17100,6 +17138,8 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;li&gt;部署复杂，比如跨集群、跨机房等一些复杂环境覆盖不易&lt;/li&gt;
 &lt;li&gt;每次网络请求会多一跳，带来一定的资源消耗和延时&lt;/li&gt;
 &lt;/ol&gt;
+&lt;p&gt;在没有Service Mesh的情况下，Kubernetes仅依靠kube-proxy + iptable + service + ingress来实现对流量的管理，管理的是进出集群的流量，而Service Mersh通过iptables + sidecar的方式控制的是进出pod的流量，控制的粒度会更细。&lt;/p&gt;
+&lt;p&gt;kube-proxy的设置是全局的，如果转发的pod不能正常服务，它不会自动尝试其他pod；另外，kube-proxy实现的是集群内多个pod实例之间的流量负载均衡，但无法对服务之间流量的精细化控制，比如灰度发布、蓝绿发布等。&lt;/p&gt;
 &lt;h1 id=&#34;istio&#34;&gt;Istio&lt;/h1&gt;
 &lt;p&gt;upstream和downstream是针对Envoy而言的，&lt;/p&gt;
 &lt;p&gt;upstream：Envoy发送请求给服务，发出的流量是upstream&lt;/p&gt;
@@ -17127,11 +17167,30 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;Istio分为控制平面control plane和数据平面data plane，控制面主要负责资源管理、配置下发、证书管理、控制数据面的行为等，数据面则负责流量出入口。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;控制平面&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;在低版本中分为Pilot、Mixer、Citadel；&lt;/p&gt;
-&lt;p&gt;Pilot负责配置下发，将配置文件转化为Istio可识别的配置项，分发给各个sidecar代理(piloy-agent)；&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Pilot负责配置下发，将配置文件转化为Istio可识别的配置项，分发给各个sidecar代理(piloy-agent)；Pilot能为sidecar提供服务发现、智能路由、流量管理、超时、重试、熔断灯功能，原理是将这些功能转化为路由规则配置，下发到各个sidecar中；&lt;/p&gt;
+&lt;p&gt;pilot有两个子组件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;pilot-discovery：是控制面与数据面的桥梁，从kubernetes中获取服务信息，如service、endpoint、pod、node的资源信息；监控istio控制面的信息，如vs、gw、dr等，将服务信息和流量规则信息转化为数据面可以理解的格式，通过xDS下发到各个sidecar中；&lt;/li&gt;
+&lt;li&gt;pilot-agent：根据API-Server中配置的信息生成sidecar配置文件，负责启动、监控sidecar进程，是istio-proxy的一部分，注入到pod中；&lt;/li&gt;
+&lt;li&gt;pilot-proxy：即pod中的sidecar-istio-proxy，负责流量代理，直接连接pilot-discovery，间接获取集群中各个微服务的注册情况；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;Citadel负责安全、授权认证，比如证书的分发和轮换，让sidecar代理两端实现双向TLS认证、访问授权；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Gallery负责配置管理，负责将istio组件与底层平台如Kubernetes获取用户配置的细节隔离开，对配置信息格式和正确性校验，将配置信息提供pilot使用，只与控制面的其他组件打交道，实现与底层平台解耦；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;sidecar injector：在为配置了istio自动注入的pod自动注入istio-proxy；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;Mixer负责从数据平面收集数据指标以及流量策略，是一种插件组件，插件提供了很好的扩展性，独立部署，但每次修改需要重新部署，之后1.1版本将插件模块独立一个adaptor和Gallery，但是Mixer由于需要频繁的与sidecar进行通信，又是部署在应用进程外的，因此性能不高。&lt;/p&gt;
-&lt;p&gt;Gallery负责对配置信息格式和正确性校验，将配置信息提供pilot使用。&lt;/p&gt;
-&lt;p&gt;高版本1.5后中分为将Pilot、Citadel、Gallery整合为istiod，同时istiod里也包含了CA、API-Server，配合ingressgateway、egressgateway&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;高版本1.5后中分为将Pilot、Citadel、Gallery整合为istiod，同时istiod里也包含了CA、API-Server，配合ingressgateway、egressgateway管理流量。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;数据平面&lt;/strong&gt;：Pod中的每个Envoy容器，即istio-proxy；Envoy会以side car的方式运行在Pod中，利用Pod中的所有容器共享同一个Network Namespace的特性，通过配置Pod里的iptables规则，管理进出Pod的流量。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
@@ -17145,6 +17204,31 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 	&lt;/a&gt;
 	
 &lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;istio-proxy的作用：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;客户端功能：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;发现和负载平衡。代理可以使用几个标准的服务发现和负载平衡API，以有效地将流量分配给服务。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;凭证注入。代理可以通过连接隧道或特定于协议的机制（例如HTTP请求的JWT令牌）注入客户端身份。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;连接管理。代理管理与服务的连接，处理运行状况检查，重试，故障转移和流控制。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;监控和记录。代理可以报告客户端指标并记录到混合器。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;服务器端功能：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;速率限制和流量控制。代理可以防止后端系统过载，并提供客户端感知的速率限制。&lt;/li&gt;
+&lt;li&gt;协议翻译。代理是gRPC网关，提供JSON-REST和gRPC之间的转换。&lt;/li&gt;
+&lt;li&gt;认证与授权。代理支持多种身份验证机制，并且可以使用客户端身份通过混合器执行授权检查。&lt;/li&gt;
+&lt;li&gt;监控和记录。代理可以报告服务器端指标并记录到混合器。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
 &lt;h2 id=&#34;自动注入实现&#34;&gt;自动注入实现&lt;/h2&gt;
 &lt;p&gt;依赖Kubernetes中的Dynamic Admission Control的功能，也叫Initializer。&lt;/p&gt;
 &lt;p&gt;Istio会将Envoy容器本身的定义，以configMap的方式进行保存，当用户提交自己的Pod时，Kubernetes就会通过类似git merge的方式将两份配置进行合并。这个合并的操作会由envoy-initializer的Pod来实现，该Pod使用 循环控制，不断获取用户新创建的Pod，进行配置合并。&lt;/p&gt;
@@ -19304,7 +19388,7 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;之所以要四次，是因为server收到Fin后，不能同时将ACK确认信号和FIN，有可能此时client有一些报文还没收完，如果client没有收到，server才有机会重发，所以第二、三次挥手不能合并。&lt;/p&gt;
-&lt;p&gt;关闭连接时，当收到对方的FIN报文时，仅仅表示对方不再发送数据了但是还能接收数据，己方也未必全部数据都发送给对方了，所以己方可以立即close，也可以发送一些数据给对方后，再发送FIN报文给对方来表示同意现在关闭连接，因此，己方ACK和FIN一般都会分开发送。&lt;/p&gt;
+&lt;p&gt;关闭连接时，当收到对方的FIN报文时，仅仅表示对方不再发送&lt;strong&gt;新数据&lt;/strong&gt;了但是还能发送或接收数据，己方也未必全部数据都发送给对方了，所以己方可以立即close，也可以发送一些数据给对方后，再发送FIN报文给对方来表示同意现在关闭连接，告知对方我知道你不会再发送新数据了，但我可未必，因此，己方ACK和FIN一般都会分开发送。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;挥手时，为什么client在发送最后一个ACK后进入Time-wait状态，为什么Time-wait状态必须等待2MSL的时间？&lt;/strong&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;主要是为了保证client发送的最后一个ACK报文能到达server。因为这个ACK报文可能丢失，此时server接收不到，那他就会重新发送FIN+ACK报文，client就能在这2MSL内收到这个重传的报文，再次进入2MSL等待时间，发送ACK给server，直到两者都进入closed状态。如果没有2MSL等待时间，而是client发送完报文直接关闭，就会出现server无法接收而导致无法进入closed状态。&lt;/li&gt;
@@ -19339,7 +19423,7 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/figure&gt;&lt;/p&gt;
 &lt;p&gt;端口号：用于找到对应的应用，TCP包是没有IP地址的，因为IP数据是网络层的事，所以只会有端口号；&lt;/p&gt;
 &lt;p&gt;序号：让包能顺序发送和接收，&lt;strong&gt;解决乱序问题&lt;/strong&gt;。三次握手除了确立双方建立连接，还有一件事是确立双方包的序列号，每一次连接都要有不同的序列号用于区别，序列号的起始通常是随时间，如果每次连接的序列号相同，可能会导致前一次连接的包发送到了下一次连接里；序号的增加和传输的字节数相关；&lt;/p&gt;
-&lt;p&gt;确认序列号：发出去的数据包时进行确认的标记，&lt;strong&gt;解决丢包问题&lt;/strong&gt;；&lt;/p&gt;
+&lt;p&gt;确认序列号：发出去的数据包时进行确认的标记，&lt;strong&gt;解决丢包问题&lt;/strong&gt;，接收方回复的ACK包的确认序号 = 发送方数据包的序号 + TCP的数据载荷字节数，注意此时的载荷数据可能是这一次报文的完整数据，也有可能是包含了上一次报文的部分数据和此次报文的部分数据；&lt;/p&gt;
 &lt;p&gt;状态位：客户端和服务端连接的状态，即包的类型，操控TCP的状态机；&lt;/p&gt;
 &lt;p&gt;窗口大小：&lt;strong&gt;解决流量控制问题&lt;/strong&gt;，标识自己当前的处理能力；&lt;/p&gt;
 &lt;h2 id=&#34;如何实现靠谱协议&#34;&gt;如何实现靠谱协议&lt;/h2&gt;
@@ -19381,23 +19465,29 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;p&gt;&lt;strong&gt;丢包问题：&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;发送方按顺序发送一系列的包，接收方接收这些包是中间一部分包没收到&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;产生原因&lt;/p&gt;
+&lt;li&gt;产生原因
 &lt;ul&gt;
-&lt;li&gt;中间这些包经过其他链路导致延时接收方还没收到、&lt;/li&gt;
-&lt;li&gt;接收方收到且发送了ACK给发送方，但是发送方没有收到ACK、&lt;/li&gt;
-&lt;li&gt;数据链路有点问题，数据包真的丢了、&lt;/li&gt;
-&lt;li&gt;因为顺序发送和接收问题，接收方后面的包收到了，但是前面的包还没收到，导致后面的包收到了也不能发送ACK给发送端&lt;/li&gt;
+&lt;li&gt;中间这些包经过其他链路导致延时接收方还没收到；&lt;/li&gt;
+&lt;li&gt;接收方收到且发送了ACK给发送方，但是发送方没有收到ACK；&lt;/li&gt;
+&lt;li&gt;数据链路有点问题，数据包真的丢了；&lt;/li&gt;
+&lt;li&gt;因为顺序发送和接收问题，接收方后面的包收到了，但是前面的包还没收到，导致后面的包收到了也不能发送ACK给发送端；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;所以，为了保证可靠传输，解决丢包问题，就需要保证当报文丢失，在一定次数内持续重试，直到成功，又要确保如果重传都失败了，及时放弃传输，避免死循环得问题。&lt;/p&gt;
+&lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;解决方法&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;超时重传，有自适应重传算法来决定超时时间，另外是每次重试的时间间隔会加倍，超过两次认为网络环境差，取消重传。&lt;/p&gt;
+&lt;p&gt;超时重传（Retransmission Timeout，RTO），超时重传有一个计时器，在报文发送出去后开始计时，如果在时限内收到回复的ACK，计时器就清零，如果在时限内还没收到ACK，就触发重传。&lt;/p&gt;
+&lt;p&gt;超时时间由自适应重传算法来决定，另外是每次重试的时间间隔会加倍，超过两次认为网络环境差，取消重传。超时重传主要解决丢包时干等回复ACK的问题。&lt;/p&gt;
+&lt;p&gt;RTO初始值是1秒，建立连接后，RTO会被动态计算，上限是2min，下限是200ms。RTO的设置尤为关键，设置过长，重发就慢，效率低性能差；设置过短，就会导致没有丢就重发，重发过快，就会增加网络拥塞，导致更多的超时，从而又导致更多的重发，因此无法设置成一个写死的值，而是通过RTT算法动态调整。&lt;/p&gt;
+&lt;p&gt;由于ACK本身没有ACK了，如果ACK发生丢失，ACK会视情况重传，比如，如果发送方收到了后续的ACK，就说明前面的内容都接收到了，就不会重传；如果没收到后续的ACK，则触发超时重传机制。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;还有一种快速重传机制，因为包是有顺序的，所以客户端可以检测出缺失的包，然后发送对应的冗余ACK给服务端，通过在服务端设置收到规定通过发送/接收冗余的ACK包的次数，如果达到了规定次数就指定需要重传的包，不用等超时时间。so 快速重传主要是解决超时问题。&lt;/p&gt;
+&lt;p&gt;还有一种快速重传机制，因为包是有顺序的，所以客户端可以检测出缺失的包，然后发送对应的冗余ACK（称为DupAck）给服务端，通过在服务端设置收到规定通过发送/接收冗余的ACK包的次数（一般是3个），如果达到了规定次数就把序号等于这个ACK号的包进行重传，不等超时时间，so 快速重传主要是解决超时问题。&lt;/p&gt;
+&lt;p&gt;快速重传的触发条件是：收到3个或以上的重复ACK，即DupACK&lt;/p&gt;
 &lt;p&gt;比如：接收端中间漏收了Seq2，后面又接收到了Seq3、4、5，那就会在接收时重复发送ACK2，发送端收到重复的ACK后就会重新发送Seq2了&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
@@ -19411,9 +19501,10 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 	&lt;/a&gt;
 	
 &lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;接收端接收的报文只有字节的长度，回复报文时的确认号，只能是连续字节数的最后一个位置，如果有相同长度的报文ABC按顺序发送给接收端，但是A丢了，接收端收到BC后会回复3个相同长度的确认号，导致发送方得把ABC重传一遍，SACK就是为了解决这个问题存在。&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;在Linux中，还有一种SACK机制，它会在TCP头里加一个SACK的东西，SACK还是基于快速重传的ACK，只是SACK会把接收端收到的所有包的序列，都反馈给发送端，发送端根据遗漏的ACK序号，进行重传。&lt;/p&gt;
-&lt;p&gt;另外，还有个D-SACK（D指的是Duplicate），使用SACK来告诉发送方有哪些数据被重复接收了，其使用SACK的第一个段来做标志：&lt;/p&gt;
+&lt;p&gt;在Linux中的SACK机制，它会在TCP头里加一个SACK（Selective ACK）的东西，SACK还是基于快速重传的ACK，只是SACK会把接收端收到的所有包的序列，都反馈给发送端，发送端根据遗漏的ACK序号，进行重传。SACK部分最多只能容纳4个块。&lt;/p&gt;
+&lt;p&gt;另外，还有个D-SACK（Duplicate SACK），使用SACK来告诉发送方有哪些数据被重复接收了，其使用SACK的第一个段来做标志：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;如果SAKC的第一个段范围被ACK覆盖，就是D-SACK&lt;/p&gt;
@@ -19440,7 +19531,6 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;超时重传中，timeout（RTO）的设置尤为关键，设置过长，重发就慢，效率低性能差；设置过短，就会导致没有丢就重发，重发过快，就会增加网络拥塞，导致更多的超时，从而又导致更多的重发，因此无法设置成一个写死的值，而是通过RTT算法动态调整。&lt;/p&gt;
 &lt;h3 id=&#34;流量控制&#34;&gt;流量控制&lt;/h3&gt;
 &lt;p&gt;TCP&lt;strong&gt;需要解决可靠传输和包的乱序问题，就需要知道网络实际的数据处理带宽或数据处理速度，才不会引起网络拥塞，导致丢包，so需要做流量控制&lt;/strong&gt;。在TCP的包头中通过Window字段控制，这个字段是接收端每次ACK时会告诉发送端自己还有多少缓冲区可以接收数据，于是发送端就可以根据这个接收端的处理能力来发送数据，而不会导致接收端处理不过来。滑动窗口需要依赖发送端和接收端。&lt;/p&gt;
 &lt;p&gt;实现滑动窗口，发送端和接收端在进行数据交互时，会商定滑动窗口的大小，&lt;strong&gt;在对于包的确认时会携带一个窗口的大小&lt;/strong&gt;，通过该窗口大小来实现流量控制（或者时不时发送一个窗口探测的数据段来确认双方的窗口大小），当发送方和接收方的滑动窗口大小为0时，发送方会定时发送窗口探测数据包，来更新窗口大小，即Zero Window。&lt;/p&gt;
@@ -19457,13 +19547,51 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;ul&gt;
 &lt;li&gt;产生原因：对资源的需求超过了可用的资源，网络吞吐量下降，如果网络出现拥塞，数据包将会丢失或延迟到达，发送方以为发送失败又会继续重传，从而导致网络拥塞程度更高。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;TCP通过数据包发送和确认的&lt;strong&gt;往返时间&lt;/strong&gt;，丢包率来判断是否拥塞，使用&lt;strong&gt;滑动窗口&lt;/strong&gt;来进行拥塞控制，控制发送方的发送速率，避免包丢失和超时重传。&lt;/p&gt;
+&lt;p&gt;TCP通过数据包发送和确认的&lt;strong&gt;往返时间RTT&lt;/strong&gt;，丢包率来判断是否拥塞，使用&lt;strong&gt;滑动窗口&lt;/strong&gt;来进行拥塞控制，控制发送方的发送速率，避免包丢失和超时重传。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;解决方法：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;慢开始 + 拥塞避免，一开始慢慢的发送，逐渐增大发送速率（线性上升直至网络最佳值），再慢下来依次重复&lt;/li&gt;
-&lt;li&gt;快重传 + 快恢复，当拥塞发生时，减少超时重传的使用，而是使用快速重传机制&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;慢开始 + 拥塞避免，一开始慢慢的发送，逐渐增大发送速率（线性上升直至网络最佳值），再慢下来依次重复。&lt;/p&gt;
+&lt;p&gt;慢开始阶段，TCP连接每收到一个数据的ACK（不包括重复的ACK），拥塞窗口就增加一个MSS(最大报文大小)，即一个RTT后MSS翻倍增加，当达到了慢开始的阈值，增长速度就会放缓，进入拥塞避免阶段，变成了每过一个RTT，拥塞窗口就会增长一个MSS；&lt;/p&gt;
+&lt;p&gt;每一个TCP连接独立维护自己的拥塞窗口，拥塞窗口一般比MSS大，一般是MSS的某个倍数，MSS的上限一般是1460，一个窗口就是n个MSS；&lt;/p&gt;
+&lt;p&gt;拥塞避免时会重复慢开始A，每次反复都会对拥塞窗口进行减半，在再次进入慢开始+拥塞避免，所以，慢开始不止在TCP连接启动时发生，也有可能在传输过程中反复发生。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP_%e6%85%a2%e5%bc%80%e5%a7%8b&amp;#43;%e6%8b%a5%e5%a1%9e%e9%81%bf%e5%85%8d.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP_%e6%85%a2%e5%bc%80%e5%a7%8b&amp;#43;%e6%8b%a5%e5%a1%9e%e9%81%bf%e5%85%8d.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			alt=&#34;慢开始&amp;#43;拥塞避免&#34;&gt;
+	&lt;/a&gt;
+	
+	&lt;figcaption&gt;慢开始+拥塞避免&lt;/figcaption&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;快重传 + 快恢复，当拥塞发生时，减少超时重传的使用，而是使用快速重传机制。&lt;/p&gt;
+&lt;p&gt;TCP每发送一个报文，就会启动一个超时计时器，如果在限定时间内没有收到这个报文的ACK，发送方就会认为报文丢失，此时就会进行超时重传，一般最小的超时重传时间是200ms，为了解决每次丢包都要等待200ms或者更长的时间才会重传的问题，TCP就会采用快速重传，一旦发送方收到3次重复确认，就不用等超时计时器了，会直接重传这个报文。&lt;/p&gt;
+&lt;p&gt;在Reno拥塞控制算法中，TCP在遇到拥塞点后，不会反复进行慢开始+拥塞避免，而是拥塞窗口减半，直接进入快速重传，不进入慢开始，保持跟拥塞避免医院的线性增长，直到下一个拥塞点。&lt;/p&gt;
+&lt;p&gt;网络上的限速，原理其实就是设置拥塞窗口的上限，当超过限制，就会丢弃这些报文，主动进入拥塞避免阶段，确保传输速度。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e6%8b%a5%e5%a1%9e_%e5%bf%ab%e9%80%9f%e6%81%a2%e5%a4%8d.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e6%8b%a5%e5%a1%9e_%e5%bf%ab%e9%80%9f%e6%81%a2%e5%a4%8d.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			alt=&#34;快恢复&#34;&gt;
+	&lt;/a&gt;
+	
+	&lt;figcaption&gt;快恢复&lt;/figcaption&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;为了实现上面两种机制，TCP使用BBR拥塞算法，来达到高带宽和低延时的平衡&lt;/p&gt;
 &lt;/li&gt;
