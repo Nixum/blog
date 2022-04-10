@@ -18643,6 +18643,7 @@ group by 网站名称 &lt;strong&gt;having&lt;/strong&gt; &lt;strong&gt;SUM(点�
 &lt;li&gt;提升一个slave为新master&lt;/li&gt;
 &lt;li&gt;使得其他的slave连接到新的master进行复制&lt;/li&gt;
 &lt;/ol&gt;
+&lt;h1 id=&#34;其他&#34;&gt;其他&lt;/h1&gt;
 &lt;h2 id=&#34;自增主键&#34;&gt;自增主键&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
