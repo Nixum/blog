@@ -211,6 +211,10 @@ if (!doNotTrack) {
 <li>HDFS存储 + Hive查询 或者 ES查询</li>
 <li>针对监控数据，可以使用时序数据库，例如Prometheus</li>
 </ul>
+<h1 id="大文件在有限内存内排序">大文件在有限内存内排序</h1>
+<p>多路归并排序：将所有原文件按照内存最大大小读取并进行排序，输出到新的、多个的文件中，然后对这些新的已排序的小文件进行归并排序。</p>
+<p><a class="link" href="https://www.cnblogs.com/GarrettWale/p/14478347.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/GarrettWale/p/14478347.html</a></p>
 <h1 id="api协议设计">API协议设计</h1>
 <p>其实分成了API和协议两部分</p>
 <ul>
@@ -720,6 +724,7 @@ if (!doNotTrack) {
     <li><a href="#跨系统数据实时同步">跨系统数据实时同步</a></li>
     <li><a href="#不停机情况下更换数据库">不停机情况下更换数据库</a></li>
     <li><a href="#海量数据处理">海量数据处理</a></li>
+    <li><a href="#大文件在有限内存内排序">大文件在有限内存内排序</a></li>
     <li><a href="#api协议设计">API协议设计</a></li>
     <li><a href="#库存">库存</a></li>
     <li><a href="#秒杀">秒杀</a>

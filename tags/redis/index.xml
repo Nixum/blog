@@ -14,12 +14,15 @@
       
       <guid>http://nixum.cc/p/redis/</guid>
       <description>[TOC]
-数据类型及结构 数据类型 Redis所有类型有一个顶层的数据结构叫RedisObject，这个RedisObject底层对应着具体对象类型和其编码方式。
+数据类型及结构 数据类型  String：简单动态字符串(SDS) List：压缩列表（元素数量小于512，且k所有元素的长度都小于64字节） + 双向链表（其他情况使用） Hash：压缩列表（元素数量小于512，且key和value字符串长度都小于64字节） + 哈希表（其他情况使用） Set：数组（带有编码类型字段，所以元素可以使用整型表示，少于默认的512个时使用）+ 哈希表（key为set中的元素，value为null，其他情况使用） ZSet：压缩列表（元素小于128个，且所有元素的长度小于64字节时使用） + 跳表 （其他情况使用）  具体的分为5种基本类型和3种特殊类型：
+String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet
+String类型下还有一种扩展类型：Bitmap。原理：String类型会保存二进制字节数组，对于这个字节数组的每个bit来表示一个元素的二值状态。
+此外还有扩展类型：HyperLogLog、Geo
+底层数据结构 Redis所有类型有一个顶层的数据结构叫RedisObject，这个RedisObject底层对应着具体对象类型和其编码方式。
 之所以有RedisObject对象，是因为每种不同的数据类型有不同的编码方式和结构，Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，还需要根据数据类型的不同编码进行多态处理。
 比如：SADD命令只能用于Set，LPUSH命令只能用于List，而DEL、TTL又能用于所有键，要正确实现这些命令，就需要为不同类型的键设置不同的处理方式；另外，同一种数据类型可能由不同的数据结构实现，比如List，底层可能是压缩列表或者双向链表，因此还需要知道数据类型的编码方式。
  
-1 2 3 4 5 6 7 8 9 10 11 12 13  typedef struct redisObject { // 类型，如String、List  unsigned type:4; // 编码方式：SDS、压缩列表  unsigned encoding:4; // LRU - 24位, 记录最后一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）  unsigned lru:LRU_BITS; // LRU_BITS: 24  // 引用计数，新创建对象时值为1，当对该对象进行共享时值+1，使用完一个对象后值-1，=0时被GC回收  int refcount; // 指向底层数据结构实例，具体的实例，由type和encoding决定  void *ptr; } robj;    当执行一个处理数据类型命令的时候，redis执行以下步骤
- 根据给定的key，在数据库字典中查找和他相对应的redisObject，如果没找到，就返回NULL； 检查redisObject的type属性和执行命令所需的类型是否相符，如果不相符，返回类型错误； 根据redisObject的encoding属性所指定的编码，选择合适的操作函数来处理底层的数据结构； 返回数据结构的操作结果作为命令的返回值   Redis本身还会预分配一些值对象，比如响应结果OK、ERROR，还有包括0在内，所有小于REDIS_SHARED_INTEGERS（默认值是10k）的所有整数，共享对象只能被字典或双向链表这类带有指针的数据结果使用。</description>
+1 2 3 4 5 6 7 8 9 10 11 12 13  typedef struct redisObject { // 类型，如String、List  unsigned type:4; // 编码方式：SDS、压缩列表  unsigned encoding:4; // LRU - 24位, 记录最后一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）  unsigned lru:LRU_BITS; // LRU_BITS: 24  // 引用计数，新创建对象时值为1，当对该对象进行共享时值+1，使用完一个对象后值-1，=0时被GC回收  int refcount; // 指向底层数据结构实例，具体的实例，由type和encoding决定  void *ptr; } robj;    当执行一个处理数据类型命令的时候，redis执行以下步骤</description>
     </item>
     
   </channel>
