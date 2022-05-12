@@ -1275,14 +1275,25 @@ if (!doNotTrack) {
 </figure></p>
 <p>MHA方案采用半同步复制的方式，所以MySQL的版本要求至少是5.5，半同步复制机制保证master出问题的时候，至少有一台slave的数据是完整的，但在超时的情况下也会临时切换异步复制，保障业务的正常使用，直到一台slave追上同步进度，再继续切换成半同步复制模式。</p>
 <p>MHA还可以修复多个slave之间的日志差异，使得所有salve的数据保证数据最终一致性，保证至少可以从中选出一个master。</p>
-<p>流程：</p>
+<h3 id="故障转移流程">故障转移流程</h3>
 <ol>
-<li>从宕机的master中保存 bin log</li>
-<li>识别含有最新更新的slave</li>
-<li>应用差异的relay log到其他slave</li>
-<li>从master中保存 bin log</li>
-<li>提升一个slave为新master</li>
-<li>使得其他的slave连接到新的master进行复制</li>
+<li>MHA验证复制设置以及确认当前master状态</li>
+<li>监控master，检测到master宕机</li>
+<li>再次验证slave的配置</li>
+<li>开始恢复一台新master</li>
+<li>从宕机的master节点上通过SSH保存其bin log到Manager</li>
+<li>根据配置文件来选举出新的master，或者将含有数据同步最新位点的slave提升为master</li>
+<li>根据老master bin log生成差异日志，应用到新master上</li>
+<li>将其他的slave连接到新的master进行复制</li>
+</ol>
+<h3 id="快速切换master流程">快速切换master流程</h3>
+<ol>
+<li>MHA验证复制设置以及确认当前master状态</li>
+<li>确认新的master</li>
+<li>停止当前master的写操作</li>
+<li>等待其他slave追上当前master，直到数据复制进度无延迟</li>
+<li>确保新master可写</li>
+<li>让其他slave指向新master</li>
 </ol>
 <h1 id="其他">其他</h1>
 <h2 id="自增主键">自增主键</h2>
@@ -1716,7 +1727,12 @@ if (!doNotTrack) {
             <li><a href="#检测方法">检测方法</a></li>
           </ol>
         </li>
-        <li><a href="#高可用方案mha">高可用方案MHA</a></li>
+        <li><a href="#高可用方案mha">高可用方案MHA</a>
+          <ol>
+            <li><a href="#故障转移流程">故障转移流程</a></li>
+            <li><a href="#快速切换master流程">快速切换master流程</a></li>
+          </ol>
+        </li>
       </ol>
     </li>
     <li><a href="#其他">其他</a>

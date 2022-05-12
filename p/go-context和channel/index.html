@@ -362,7 +362,7 @@ if (!doNotTrack) {
 <p>有两种方式可触发取消：</p>
 <ol>
 <li>返回的CancelFunc被调用，此时会取消当前context和其所有的子context</li>
-<li>Done这个chan被close了，此时会从当前context和其所有的子context</li>
+<li>Done这个chan被close了，此时会取消当前context和其所有的子context</li>
 </ol>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
