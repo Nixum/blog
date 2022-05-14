@@ -148,7 +148,35 @@ if (!doNotTrack) {
 <p>happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。</p>
 <p>Go不像Java有volatile关键字实现CPU屏障来保证指令不重排，而是使用不同架构的内存屏障指令来实现同一的并发原语。</p>
 <p><strong>Go只保证goroutine内部重排对读写顺序没有影响</strong>，如果存在共享变量的访问，则影响另一个goroutine。因此当有多个goroutine对共享变量的操作时，需要保证对该共享变量操作的happens-before顺序。</p>
-<h2 id="证heppen-before的手段">证heppen before的手段</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 例子：
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">a</span><span class="p">,</span> <span class="nx">b</span> <span class="kt">int</span>
+<span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">a</span> <span class="o">:=</span> <span class="mi">5</span>
+    <span class="nx">b</span> <span class="o">:=</span> <span class="mi">1</span>
+<span class="p">}</span>
+<span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="nx">b</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">{}</span>
+    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">a</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="c1">// 当两个goroutine同时执行时，因为指令重排的缘故，第二个goroutine打印a可能是5，也可能是0
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="证heppens-before的手段">证heppens before的手段</h2>
 <ul>
 <li>
 <p>init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。</p>
@@ -333,8 +361,8 @@ if (!doNotTrack) {
 <p>Mutex的零值是没有goroutine等待的未加锁状态，不会因为没有初始化而出现空指针或者无法获取到锁的情况，so无需额外的初始化，直接声明变量即可使用<code>var lock sync.Mutex</code>，或者是在结构体里的属性，均无需初始化</p>
 </li>
 <li>
-<p>锁有两种模式：正常模式和饥饿模式</p>
-<p>正常模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；</p>
+<p>锁有两种模式：普通模式和饥饿模式</p>
+<p>普通模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；</p>
 <p>如果此时有新的goroutine也在获取锁，会参与到获取锁的竞争中，这是非公平的，因为新请求锁的goroutine是在CPU上被运行，并且数量也可能很多，所以被唤醒的goroutine获取锁的概率并不大，所以，如果等待队列中的goroutine等待超过1ms，则会优先加入到队列的头部，如果超过1ms都没有获取到锁，则进入饥饿模式；</p>
 <p>饥饿模式下，锁的所有权会直接从释放锁的goroutine转交给队首的goroutine，新请求锁的goroutine就算锁的空闲状态也不会去获取锁，也不会自旋，直接加入等待队列的队尾，以此解决等待的goroutine的饥饿问题；</p>
 <p>恢复为正常模式的条件：一个goroutine获取锁后，当前goroutine是队列的最后一个，拿锁的耗时小于1ms；</p>
@@ -346,7 +374,7 @@ if (!doNotTrack) {
 <p>必须先使用Lock方法才能使用Unlock方法，否则会panic，重复释放锁也会panic</p>
 </li>
 <li>
-<p>自旋的次数与自旋次数、cpu核数，p的数量有关</p>
+<p>自旋的次数与cpu核数，p的数量有关</p>
 </li>
 <li>
 <p>注意Mutex在使用时不能被复制，比如方法传参的没有使用指针，导致执行方法的参数时被复制</p>
@@ -355,7 +383,7 @@ if (!doNotTrack) {
 <p>Mutex是不可重入锁，获取锁的goroutine无法重复获取锁，因为Mutex本身不记录哪个goroutine拥有这把锁，因此如果要实现可重入锁，则需要对Mutex进行包装，实现Locker接口，同时记录获取锁的goroutine的id和重入次数</p>
 <p>获取goroutine id的方法：</p>
 <p>​	1.使用runtime.Stack()方法获取栈帧里的goroutine id</p>
-<p>​	2.获取运行时的g指针，反解出g的TLS结构，获取存在TLS结构中的goroutine id</p>
+<p>​	2.获取运行时的G指针，反解出G的TLS结构，获取存在TLS结构中的goroutine id</p>
 <p>​	3.给获取锁的goroutine设置token，进行标记</p>
 </li>
 </ul>
@@ -391,144 +419,139 @@ if (!doNotTrack) {
 </ul>
 </li>
 <li>
-<p>非饥饿状态下抢锁，新的goroutine尝试获取锁，如果是饥饿状态，则将锁直接给等待队列的队首goroutine；</p>
+<p>由于lock方法会被多个goroutine执行，所以锁的状态会不断变化，此时会生成当前goroutine的 new state</p>
+<ul>
+<li>如果是非饥饿状态，锁的new state设置为已持有锁</li>
+<li>如果已经持有锁，或者是饥饿状态，waiter数量 + 1</li>
+<li>如果已经持有锁，且是饥饿状态，锁的new state设置为饥饿状态</li>
+<li>如果当前goroutine被唤醒，锁的new state设置为唤醒状态</li>
+</ul>
 </li>
 <li>
-<p>如果锁被获取，或者是饥饿状态，waiter数量 + 1</p>
+<p>CAS<strong>更新当前锁的状态</strong>为new state，如果更新成功</p>
+<p>5.1. 如果锁的原状态old state是未被锁，且非饥饿状态，表明当前goroutine获取到了锁，<strong>退出结束</strong>
+5.2. 判断当前goroutine是新加入的还是被唤醒的，新加入的放到等待队列的尾部，刚被唤醒的加入等待队列的头部，通过信号量阻塞，直到当前goroutine被唤醒
+5.3. 从这里开始被唤醒的goroutine，都是表示是从阻塞队列里出来的。goroutine被唤醒后，判断当前state是否是饥饿状态，如果不是则更新锁的状态为被唤醒，表示有G被唤醒，继续循环，跳到 2
+5.4. 如果当前state是饥饿状态，当前goroutine获取锁，waiter数量 - 1，设置当前锁的状态是饥饿状态，如果当前goroutine是队列中最后一个goroutine，清除当前锁的饥饿状态，<strong>更新当前锁的状态和waiter数量，退出结束</strong></p>
 </li>
 <li>
-<p>当此goroutine被唤醒，要么获取到锁，要么进入休眠</p>
-</li>
-<li>
-<p>如果old state状态是未被锁，且非饥饿状态，表明当前goroutine获取到了锁，结束</p>
-</li>
-<li>
-<p>判断当前goroutine是新加入的还是被唤醒的，新加入的放到等待队列的尾部，刚被唤醒的加入等待队列的头部，通过信号量阻塞，直到当前goroutine被唤醒</p>
-</li>
-<li>
-<p>判断当前state是否是饥饿状态，如果不是则唤醒当前goroutine，继续循环</p>
-</li>
-<li>
-<p>如果当前state是饥饿状态，当前goroutine设置锁，waiter数量 - 1，如果当前goroutine是队列中最后一个goroutine，清除饥饿状态，获取锁，结束</p>
+<p>如果更新失败，设置old state 等于 当前锁的状态</p>
 </li>
 </ol>
+<p>当前goroutine能获取锁，是通过是否能成功修改锁的状态修改为持有锁实现的。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">  1
-</span><span class="lnt">  2
-</span><span class="lnt">  3
-</span><span class="lnt">  4
-</span><span class="lnt">  5
-</span><span class="lnt">  6
-</span><span class="lnt">  7
-</span><span class="lnt">  8
-</span><span class="lnt">  9
-</span><span class="lnt"> 10
-</span><span class="lnt"> 11
-</span><span class="lnt"> 12
-</span><span class="lnt"> 13
-</span><span class="lnt"> 14
-</span><span class="lnt"> 15
-</span><span class="lnt"> 16
-</span><span class="lnt"> 17
-</span><span class="lnt"> 18
-</span><span class="lnt"> 19
-</span><span class="lnt"> 20
-</span><span class="lnt"> 21
-</span><span class="lnt"> 22
-</span><span class="lnt"> 23
-</span><span class="lnt"> 24
-</span><span class="lnt"> 25
-</span><span class="lnt"> 26
-</span><span class="lnt"> 27
-</span><span class="lnt"> 28
-</span><span class="lnt"> 29
-</span><span class="lnt"> 30
-</span><span class="lnt"> 31
-</span><span class="lnt"> 32
-</span><span class="lnt"> 33
-</span><span class="lnt"> 34
-</span><span class="lnt"> 35
-</span><span class="lnt"> 36
-</span><span class="lnt"> 37
-</span><span class="lnt"> 38
-</span><span class="lnt"> 39
-</span><span class="lnt"> 40
-</span><span class="lnt"> 41
-</span><span class="lnt"> 42
-</span><span class="lnt"> 43
-</span><span class="lnt"> 44
-</span><span class="lnt"> 45
-</span><span class="lnt"> 46
-</span><span class="lnt"> 47
-</span><span class="lnt"> 48
-</span><span class="lnt"> 49
-</span><span class="lnt"> 50
-</span><span class="lnt"> 51
-</span><span class="lnt"> 52
-</span><span class="lnt"> 53
-</span><span class="lnt"> 54
-</span><span class="lnt"> 55
-</span><span class="lnt"> 56
-</span><span class="lnt"> 57
-</span><span class="lnt"> 58
-</span><span class="lnt"> 59
-</span><span class="lnt"> 60
-</span><span class="lnt"> 61
-</span><span class="lnt"> 62
-</span><span class="lnt"> 63
-</span><span class="lnt"> 64
-</span><span class="lnt"> 65
-</span><span class="lnt"> 66
-</span><span class="lnt"> 67
-</span><span class="lnt"> 68
-</span><span class="lnt"> 69
-</span><span class="lnt"> 70
-</span><span class="lnt"> 71
-</span><span class="lnt"> 72
-</span><span class="lnt"> 73
-</span><span class="lnt"> 74
-</span><span class="lnt"> 75
-</span><span class="lnt"> 76
-</span><span class="lnt"> 77
-</span><span class="lnt"> 78
-</span><span class="lnt"> 79
-</span><span class="lnt"> 80
-</span><span class="lnt"> 81
-</span><span class="lnt"> 82
-</span><span class="lnt"> 83
-</span><span class="lnt"> 84
-</span><span class="lnt"> 85
-</span><span class="lnt"> 86
-</span><span class="lnt"> 87
-</span><span class="lnt"> 88
-</span><span class="lnt"> 89
-</span><span class="lnt"> 90
-</span><span class="lnt"> 91
-</span><span class="lnt"> 92
-</span><span class="lnt"> 93
-</span><span class="lnt"> 94
-</span><span class="lnt"> 95
-</span><span class="lnt"> 96
-</span><span class="lnt"> 97
-</span><span class="lnt"> 98
-</span><span class="lnt"> 99
-</span><span class="lnt">100
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span><span class="lnt">96
+</span><span class="lnt">97
+</span><span class="lnt">98
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Mutex</span><span class="p">)</span> <span class="nf">Lock</span><span class="p">()</span> <span class="p">{</span>
 	<span class="c1">// cas的方式获取锁，获取到之后立即返回
 </span><span class="c1"></span>	<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">CompareAndSwapInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">mutexLocked</span><span class="p">)</span> <span class="p">{</span>
-		<span class="k">if</span> <span class="nx">race</span><span class="p">.</span><span class="nx">Enabled</span> <span class="p">{</span>
-			<span class="nx">race</span><span class="p">.</span><span class="nf">Acquire</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">m</span><span class="p">))</span>
-		<span class="p">}</span>
 		<span class="k">return</span>
 	<span class="p">}</span>
 	<span class="c1">// 获取不到锁，说明已被其他goroutine获取到了锁，此时会尝试通过自旋的方式等待锁的释放
 </span><span class="c1"></span>	<span class="nx">m</span><span class="p">.</span><span class="nf">lockSlow</span><span class="p">()</span>
 <span class="p">}</span>
 
-<span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Mutex</span><span class="p">)</span> <span class="nf">lockSlow</span><span class="p">()</span> <span class="p">{</span>
+<span class="c1">// 这个方法的代码，是会被多个G同时执行的
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Mutex</span><span class="p">)</span> <span class="nf">lockSlow</span><span class="p">()</span> <span class="p">{</span>
 	<span class="kd">var</span> <span class="nx">waitStartTime</span> <span class="kt">int64</span>
 	<span class="nx">starving</span> <span class="o">:=</span> <span class="kc">false</span>
     <span class="c1">// 当前goroutine是否被唤醒
@@ -550,22 +573,24 @@ if (!doNotTrack) {
 			<span class="nx">old</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
 			<span class="k">continue</span>
 		<span class="p">}</span>
-		<span class="nx">new</span> <span class="o">:=</span> <span class="nx">old</span>
-		<span class="c1">// 如果此时是非饥饿状态，state设置为持有锁状态
+        <span class="c1">// old是当前锁状态，new是期望锁状态
+</span><span class="c1"></span>		<span class="nx">new</span> <span class="o">:=</span> <span class="nx">old</span>
+		<span class="c1">// 如果此时是非饥饿状态，期望锁状态设置为持有锁
 </span><span class="c1"></span>		<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="nx">mutexStarving</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
 			<span class="nx">new</span> <span class="o">|=</span> <span class="nx">mutexLocked</span>
 		<span class="p">}</span>
-        <span class="c1">// 如果已经持有锁 或者 是饥饿状态，state的waiter数量+1
+        <span class="c1">// 如果已经持有锁 或者 是饥饿状态，state的waiter数量+1，表示当前goroutine在等待
 </span><span class="c1"></span>		<span class="k">if</span> <span class="nx">old</span><span class="o">&amp;</span><span class="p">(</span><span class="nx">mutexLocked</span><span class="p">|</span><span class="nx">mutexStarving</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
 			<span class="nx">new</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span><span class="nx">mutexWaiterShift</span>
 		<span class="p">}</span>
-		<span class="c1">// 如果此时是饥饿状态，还持有锁，state设置为饥饿状态
+		<span class="c1">// 如果此时是饥饿状态，还持有锁，期望锁状态设置为饥饿
 </span><span class="c1"></span>		<span class="k">if</span> <span class="nx">starving</span> <span class="o">&amp;&amp;</span> <span class="nx">old</span><span class="o">&amp;</span><span class="nx">mutexLocked</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
 			<span class="nx">new</span> <span class="o">|=</span> <span class="nx">mutexStarving</span>
 		<span class="p">}</span>
-        <span class="c1">// goroutine被唤醒，state设置为非唤醒状态
+        <span class="c1">// goroutine被唤醒，期望锁状态设置为唤醒
 </span><span class="c1"></span>		<span class="k">if</span> <span class="nx">awoke</span> <span class="p">{</span>
-			<span class="k">if</span> <span class="nx">new</span><span class="o">&amp;</span><span class="nx">mutexWoken</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+            <span class="c1">// 如果此时非唤醒，说明锁的状态不一致，抛错误
+</span><span class="c1"></span>			<span class="k">if</span> <span class="nx">new</span><span class="o">&amp;</span><span class="nx">mutexWoken</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
 				<span class="nf">throw</span><span class="p">(</span><span class="s">&#34;sync: inconsistent mutex state&#34;</span><span class="p">)</span>
 			<span class="p">}</span>
 			<span class="nx">new</span> <span class="o">&amp;^=</span> <span class="nx">mutexWoken</span>
@@ -582,9 +607,10 @@ if (!doNotTrack) {
 </span><span class="c1"></span>			<span class="k">if</span> <span class="nx">waitStartTime</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
 				<span class="nx">waitStartTime</span> <span class="p">=</span> <span class="nf">runtime_nanotime</span><span class="p">()</span>
 			<span class="p">}</span>
-            <span class="c1">// 该方法会不断尝试获取锁并陷入休眠等待信号量的释放，一旦当前 Goroutine 可以获取信号量，它就会立刻返回
+            <span class="c1">// 该方法会不断尝试获取锁并陷入休眠等待信号量的释放，一旦当前 goroutine 可以获取信号量，它就会立刻返回
 </span><span class="c1"></span>			<span class="nf">runtime_SemacquireMutex</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">sema</span><span class="p">,</span> <span class="nx">queueLifo</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="c1">// 如果当前goroutine是饥饿状态，或者已经等待超过1ms，就设置为饥饿状态
+            <span class="c1">// 走到这一步，说明当前goroutine是进过阻塞队列的，所以接下来在饥饿状态下会优先获取锁
+</span><span class="c1"></span>            <span class="c1">// 如果当前goroutine是饥饿状态，或者已经等待超过1ms，就设置为饥饿状态
 </span><span class="c1"></span>			<span class="nx">starving</span> <span class="p">=</span> <span class="nx">starving</span> <span class="o">||</span> <span class="nf">runtime_nanotime</span><span class="p">()</span><span class="o">-</span><span class="nx">waitStartTime</span> <span class="p">&gt;</span> <span class="nx">starvationThresholdNs</span>
 			<span class="nx">old</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
             <span class="c1">// 如果是饥饿模式
@@ -600,20 +626,17 @@ if (!doNotTrack) {
 					<span class="c1">// 退出饥饿模式
 </span><span class="c1"></span>					<span class="nx">delta</span> <span class="o">-=</span> <span class="nx">mutexStarving</span>
 				<span class="p">}</span>
-				<span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="nx">delta</span><span class="p">)</span>
+                <span class="c1">// 当前goroutine成功修改锁状态为持有锁
+</span><span class="c1"></span>				<span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">m</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span> <span class="nx">delta</span><span class="p">)</span>
 				<span class="k">break</span>
 			<span class="p">}</span>
-            <span class="c1">// 不是饥饿模式，就把当前goroutine设置为被唤醒
+            <span class="c1">// 不是饥饿模式，就把当前goroutine设置为被唤醒，自旋次数重置为0
 </span><span class="c1"></span>			<span class="nx">awoke</span> <span class="p">=</span> <span class="kc">true</span>
 			<span class="nx">iter</span> <span class="p">=</span> <span class="mi">0</span>
 		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
             <span class="c1">// cas不成功，没有拿到锁，锁被其他goroutine获取或者锁没有被释放，更新状态，重新循环
 </span><span class="c1"></span>			<span class="nx">old</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">state</span>
 		<span class="p">}</span>
-	<span class="p">}</span>
-
-	<span class="k">if</span> <span class="nx">race</span><span class="p">.</span><span class="nx">Enabled</span> <span class="p">{</span>
-		<span class="nx">race</span><span class="p">.</span><span class="nf">Acquire</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">m</span><span class="p">))</span>
 	<span class="p">}</span>
 <span class="p">}</span>
 </code></pre></td></tr></table>
@@ -1788,7 +1811,7 @@ if (!doNotTrack) {
   <ol>
     <li><a href="#变量可见性">变量可见性</a>
       <ol>
-        <li><a href="#证heppen-before的手段">证heppen before的手段</a></li>
+        <li><a href="#证heppens-before的手段">证heppens before的手段</a></li>
       </ol>
     </li>
     <li><a href="#mutex---互斥锁">Mutex - 互斥锁</a>
