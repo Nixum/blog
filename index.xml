@@ -5463,7 +5463,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h2 id=&#34;lock方法&#34;&gt;Lock方法&lt;/h2&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;调用Lock的goroutine通过CAS的方式获取锁，如果获取到了直接返回，否则进入lockSlow方法，lockSlow方法主要是通过自旋等待锁的释放；&lt;/p&gt;
+&lt;p&gt;调用Lock的goroutine通过CAS的方式获取锁，如果获取到了直接返回；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;否则进入lockSlow方法，lockSlow方法主要是通过自旋等待锁的释放；自旋是为了不让goroutine进入休眠，让其在一段时间内保持运行，忙等待快速获取锁；&lt;/p&gt;
 &lt;p&gt;goroutine本身进入自旋的条件比较苛刻：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -5492,7 +5495,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;由于lock方法会被多个goroutine执行，所以锁的状态会不断变化，此时会生成当前goroutine的 new state&lt;/p&gt;
+&lt;p&gt;由于lock方法会被多个goroutine执行，所以锁的状态会不断变化，此时会生成当前goroutine的 new state，期望状态&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;如果是非饥饿状态，锁的new state设置为已持有锁&lt;/li&gt;
 &lt;li&gt;如果已经持有锁，或者是饥饿状态，waiter数量 + 1&lt;/li&gt;
@@ -5668,7 +5671,7 @@ PROJECTION：限定返回字段时候stage的返回
 			&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 			&lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;^=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;mutexWoken&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-        &lt;span class=&#34;c1&#34;&gt;// cas更新锁的状态
+        &lt;span class=&#34;c1&#34;&gt;// cas更新锁的状态，这里锁的状态可能是4种中其中一种
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;atomic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;CompareAndSwapInt32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;state&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
             &lt;span class=&#34;c1&#34;&gt;// 如果old不是饥饿状态也不是被锁状态，表明当前goroutine已通过cas获取到了锁，break
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;			&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexLocked&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexStarving&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -5716,9 +5719,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;unlock方法&#34;&gt;Unlock方法&lt;/h2&gt;
 &lt;ol&gt;
-&lt;li&gt;将state的锁位-1，如果state=0，即此时没有加锁，且没有正在等待获取锁的goroutine，则直接结束方法，如果state != 0，执行unlockSlow方法&lt;/li&gt;
+&lt;li&gt;将state的锁位-1，如果state=0，即此时没有加锁，且没有正在等待获取锁的goroutine，则直接结束方法，如果state != 0，执行unlockSlow方法，唤醒等待的goroutine&lt;/li&gt;
 &lt;li&gt;如果Mutex处于饥饿状态，直接唤醒等待队列中的waiter&lt;/li&gt;
-&lt;li&gt;如果Mutex处于正常状态，如果没有waiter，或者已经有在处理的情况，则直接释放锁，state锁位-1，返回；否则，waiter数-1，设置唤醒标记，通过CAS解锁，唤醒在等待锁的goroutine（此时新老goroutine一起竞争锁）&lt;/li&gt;
+&lt;li&gt;如果Mutex处于正常状态，如果没有waiter，或者已经有在处理的waiter的情况，则直接释放锁，state锁位-1，返回；否则，waiter数-1，设置唤醒标记，通过CAS解锁，唤醒在等待锁的goroutine，此时新老goroutine一起竞争锁&lt;/li&gt;
 &lt;/ol&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -5763,13 +5766,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Mutex&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;Unlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;race&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Enabled&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-		&lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;state&lt;/span&gt;
-		&lt;span class=&#34;nx&#34;&gt;race&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Release&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Pointer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
     &lt;span class=&#34;c1&#34;&gt;// 修改state的状态为释放锁
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;atomic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;AddInt32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;state&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexLocked&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -5786,14 +5786,19 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexStarving&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 		&lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt;
 		&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-			&lt;span class=&#34;c1&#34;&gt;// 如果没有等待的goroutine，或者 锁被获取了，或者锁是饥饿模式，或者有goroutine被唤醒
+			&lt;span class=&#34;c1&#34;&gt;// 如果没有等待的goroutine，或者 锁有以下几种情况时，直接返回
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 1. 锁被其他goroutine获取了
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 2. 或者有等待的goroutine被唤醒，不用再唤醒其他goroutine，可以直接返回
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 3. 或者锁是饥饿模式，锁之后要直接交给等待队列队首的goroutine
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;			&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexWaiterShift&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;||&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexLocked&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexWoken&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexStarving&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 				&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt;
 			&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-			&lt;span class=&#34;c1&#34;&gt;// 这里说明此时锁的状态还是空闲，且没有goroutine被唤醒，且队列中有goroutine等待获取锁
+			&lt;span class=&#34;c1&#34;&gt;// 能走到这这里说明此时锁的状态还是空闲，
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 且没有goroutine被唤醒，且队列中有goroutine在等待获取锁
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 等待获取锁的goroutine数量-1，设置woken标识
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;			&lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexWaiterShift&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;mutexWoken&lt;/span&gt;
             &lt;span class=&#34;c1&#34;&gt;// 设置新的state，通过信号量唤醒一个阻塞的goroutine获取锁
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 此时可能会新老的waiter一起竞争
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;			&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;atomic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;CompareAndSwapInt32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;state&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 				&lt;span class=&#34;nf&#34;&gt;runtime_Semrelease&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;sema&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 				&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt;
@@ -5801,7 +5806,7 @@ PROJECTION：限定返回字段时候stage的返回
 			&lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;state&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-		&lt;span class=&#34;c1&#34;&gt;// 饥饿模式下，直接将锁的所有权给队首的goroutine
+		&lt;span class=&#34;c1&#34;&gt;// 饥饿模式下，直接将锁的所有权给队首的goroutine，即第二个参数为true
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 此时的state还没加锁，被唤醒的goroutine会设置它，如果此时有新的goroutine来请求锁，因为还处于饥饿状态，就仍然认为还被锁，新来的goroutine不会抢到锁
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nf&#34;&gt;runtime_Semrelease&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;sema&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -5816,6 +5821,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;增加可观测性指标，比如等待锁的goroutine的数量，需要使用unsafe.Pointer方法获取Mutex中的state的值，解析出正在等待的goroutine的数量&lt;/li&gt;
 &lt;li&gt;实现线程安全的队列，通过在出队和入队方法中使用Mutex保证线程安全&lt;/li&gt;
 &lt;/ul&gt;
+&lt;h2 id=&#34;关于mutex中的sema&#34;&gt;关于Mutex中的sema&lt;/h2&gt;
+&lt;p&gt;golang底层通过&lt;code&gt;runtime_SemacquireMutex&lt;/code&gt;和&lt;code&gt;runtime_Semrelease&lt;/code&gt;来实现阻塞协程切换和释放被阻塞协程重新运行等操作。&lt;/p&gt;
+&lt;p&gt;Mutex中的sema是一个信号量地址，在runtime中，有一个长度是251的全局semtable数组，每个元素是一棵平衡树的根，是sudog结构形成的一个协程列表。sematable会被多个协程操作，有并发问题，底层使用真正的锁，依赖操作系统实现，不能被用户使用。&lt;/p&gt;
+&lt;p&gt;Mutex通过sema字段，hash映射到semtable数组，从而知道goroutine被包装成sudog之后要存在semtable数组中的哪一棵平衡树上，以此就可以通过同一个信号量找到对应的在等待的协程队列。&lt;/p&gt;
 &lt;h1 id=&#34;rwmutex---读写锁&#34;&gt;RWMutex - 读写锁&lt;/h1&gt;
 &lt;h2 id=&#34;数据结构-1&#34;&gt;数据结构&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -5835,7 +5844,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;writerSem&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint32&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// writer信号量 
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;readerSem&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint32&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// reader信号量 
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;readerCount&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int32&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// reader的数量，可以是负数，负数表示此时有writer等待请求锁，此时会阻塞reader
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;readerWait&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int32&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// writer等待完成的reader的数量
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;readerWait&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int32&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// 等待读完成的reader的数量
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;span class=&#34;kd&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;rwmutexMaxReaders&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;30&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 最大的reader数量
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
@@ -5857,14 +5866,15 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;可以利用RWMutex实现线程安全的map&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;rlock--runlock-方法&#34;&gt;RLock / RUnlock 方法&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;仅对readerCount值进行原子操作&lt;/strong&gt;，还有就是操作当前goroutine和reader信号量&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;RLock时，对readerCount的值+1，判断是否&amp;lt; 0，如果是，说明此时有writer在竞争锁或已持有锁，则将当前goroutine加入readerSem指向的队列中，进行等待，防止写锁饥饿。&lt;/li&gt;
 &lt;li&gt;RUnlock时，对readerCount的值-1，判断是否&amp;lt;0，如果是，说明当前有writer在竞争锁，调用rUnlockSlow方法，对readerWait的值-1，判断是否=0，如果是，说明当前goroutine是最后一个要解除读锁的，此时会唤醒要请求写锁的writer。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2 id=&#34;lock方法-1&#34;&gt;Lock方法&lt;/h2&gt;
-&lt;p&gt;RWMutex内部使用Mutex实现写锁互斥，解决多个writer间的竞争&lt;/p&gt;
+&lt;p&gt;RWMutex&lt;strong&gt;内部使用Mutex实现写锁互斥&lt;/strong&gt;，解决多个writer间的竞争&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;调用w的Lock方法加锁，防止其他writer上锁，反转 readerCount的值，使其变成负数（readerCount - rwmutexMaxReaders + rwmutexMaxReaders）告诉reader有writer要请求锁&lt;/li&gt;
+&lt;li&gt;调用w的Lock方法加锁，防止其他writer上锁，反转 readerCount的值并更新到RWMutex中，使其变成负数（readerCount - rwmutexMaxReaders + rwmutexMaxReaders）告诉reader有writer要请求锁&lt;/li&gt;
 &lt;li&gt;如果此时readerCount != 0，说明当前有reader持有读锁，需要记录需要等待完成的reader的数量，即readerWait的值（readerWaiter + 第1步算的readerCount的值），并且如果此时readerWait != 0，将当前goroutine加入writerSema指向的队列中，进行等待。直到有goroutine调用RUnlock方法且是最后一个释放锁时，才会被唤醒。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2 id=&#34;unlock方法-1&#34;&gt;Unlock方法&lt;/h2&gt;
@@ -5925,10 +5935,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/div&gt;&lt;h2 id=&#34;基本-2&#34;&gt;基本&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;将map与RWMutex封装成一个结构体，使用读写锁封装map的各种操作即可&lt;/p&gt;
+&lt;p&gt;基本的并发安全map的实现：将map与RWMutex封装成一个结构体，使用读写锁封装map的各种操作即可。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;有六个方法&lt;/p&gt;
+&lt;p&gt;使用RWMutex封装的并发安全的map，因为锁的粒度太大，性能不会太好；通过减少锁的粒度和持有锁的时间，可以提升新能，常见的减少锁的粒度是将锁分片，将锁进行分片，分别控制map中不同的范围的key，类似JDK7中的ConcurrentHashMap的segment锁实现。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;官方出品的sync.Map，有六个方法：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;LoadOrStore：根据key获取value，如果该key存在且没有被标记为删除，则返回原来的value和true，不存在则进行store，返回该value和false&lt;/li&gt;
 &lt;li&gt;Load：根据key获取value&lt;/li&gt;
@@ -5939,19 +5952,54 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;使用RWMutex封装的并发安全的map，因为锁的粒度太大，性能不会太好；通过减少锁的粒度和持有锁的时间，可以提升新能，常见的减少锁的粒度是将锁分片，将锁进行分片，分别控制map中不同的范围的key，类似JDK7中的ConcurrentHashMap的segment锁实现。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
 &lt;p&gt;官方出品的sync.Map，但它只有在部分特殊的场景里才有优势，比如一个只会增长的map，一个key只会被写一次，读很多次；或者 多个goroutine为不相交的键集读、写和重写键值对；&lt;/p&gt;
 &lt;p&gt;sync.Map内部有两个map，一个只读read，一个可写dirty，对只读read的操作(读、更新、删除)不需要加锁，以此减少锁对性能的影响；&lt;/p&gt;
-&lt;p&gt;写入键值对时，会优先修改read中的数据，如果read中存在则直接修改，因为read和dirty指向同一个value，所以直接修改一次即可；&lt;/p&gt;
-&lt;p&gt;如果read中读不到，就会加锁读取dirty里的，同时增加miss的值(miss表示读取穿透的次数)，当miss的值=dirty的长度时，就会将dirty提升为read，然后清空dirty，避免总是从dirty中加锁读取；将dirty提升为read这个操作在load方法中执行；&lt;/p&gt;
-&lt;p&gt;加锁读取dirty时，还要再检查read，确定read中真的不存在才会操作dirty；&lt;/p&gt;
-&lt;p&gt;dirty提升为read时，只需简单的赋值即可，创建新的dirty时，需要遍历把read中非expunged的值赋给dirty；&lt;/p&gt;
-&lt;p&gt;删除key时，只是对该key打上一个expunged标记，只有在将dirty提升为read时才会清理删除的数据；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;sync.Map没有len方法，要获取里面有多少个key只能遍历获取；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
+&lt;h2 id=&#34;store方法&#34;&gt;Store方法&lt;/h2&gt;
+&lt;p&gt;创建新dirty时，将read中非删除的键值对赋值给dirty是在store方法中执行。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;更新或写入键值对时，先判断read中是否存在，如果存在，会自旋更新该键值对直到成功；&lt;/p&gt;
+&lt;p&gt;原因是read中的键值对，一定包含了dirty中的键值对，另外，read和dirty指向同一个value，所以直接修改一次即可；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果read中读不到，才会进行加锁；&lt;/p&gt;
+&lt;p&gt;加锁后再次判断read中是否存在，确定read中真的不存在才会操作dirty；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果read中存在，判断该key是否被删除，如果是，更新dirty的键值对，如果不是，更新read中的键值对；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果read中不存在，则读取dirty，判断dirty是否存在，存在则更新dirty的键值对；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果dirty不存在，且dirty中不存在有的键值对在read中没有，如果dirty为空，创建新dirty，同时需要遍历把read中非删除的键值对赋给dirty；更新read的值，表明dirty中存在read中没有的键值对；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;最后再将新的键值对添加到dirty中；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;解锁；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;load方法&#34;&gt;Load方法&lt;/h2&gt;
+&lt;p&gt;将dirty提升为read这个操作在load方法中执行。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;不加锁，优先读取read中的键值对，判断key是否存在，存在则返回；&lt;/li&gt;
+&lt;li&gt;如果read中不存在，且dirty中包含了read中不存在的键值对，加锁，再次读取read中的键值对；&lt;/li&gt;
+&lt;li&gt;判断read中的键值对是否存在，存在则返回；&lt;/li&gt;
+&lt;li&gt;如果read中不存在，且dirty中包含了read中不存在的键值对，查询dirty中是否存在；&lt;/li&gt;
+&lt;li&gt;同时增加miss的值(miss表示读取穿透的次数)，当miss的值等于dirty的长度时，就会将dirty提升为read，只需简单的赋值即可，然后将dirty置为null，重置miss数，避免总是从dirty中加锁读取；&lt;/li&gt;
+&lt;li&gt;解锁，将dirty中的查询结果返回；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;delete方法&#34;&gt;Delete方法&lt;/h2&gt;
+&lt;p&gt;删除key时，自旋，只是对该key打上一个expunged标记，真正的删除只有在将dirty提升为read时才会清理删除的数据；&lt;/p&gt;
+&lt;h2 id=&#34;loadorstore方法&#34;&gt;LoadOrStore方法&lt;/h2&gt;
+&lt;p&gt;基本上和Store方法一样，只是增多一点逻辑：如果该key存在且没有被标记为删除，则返回原来的value和true，不存在则进行store，返回该value和false。&lt;/p&gt;
 &lt;h1 id=&#34;waitgroup&#34;&gt;WaitGroup&lt;/h1&gt;
 &lt;h2 id=&#34;数据结构-3&#34;&gt;数据结构&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -5986,7 +6034,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;state的值由32bit的值表示信号量，64bit的值表示计数和waiter的数量组成。因为原子操作只能64bit对齐，而计数值和waiter的数量是一个64bit的值，在64bit的编译器上，一次读取是64bit，刚好可以直接操作，但是如果是32bit的机器，一次只能读32bit，为了保证进行64bit对齐时一定能获取到计数值和waiter的值，在进行64bit的原子操作对齐时，第一次是对齐到了一个空32bit和第一个32bit的值，第二次对齐就能保证获取了。&lt;/li&gt;
 &lt;li&gt;同RWMutex，WaitGroup的三个方法内还很多data race检查，保证并发时候共享数据的正确性，一旦检查出有问题，会直接panic&lt;/li&gt;
 &lt;li&gt;一开始设置WaitGroup的计数值必须大于等于0，否则会过不了data race检查，直接panic&lt;/li&gt;
-&lt;li&gt;Add的值必须=调用调用Done的次数，当Done的次数超过计数值，也会panic&lt;/li&gt;
+&lt;li&gt;Add的值必须 等于 调用Done的次数，当Done的次数超过计数值，也会panic&lt;/li&gt;
 &lt;li&gt;Wait方法的调用一定要晚于Add，否则会导致死锁&lt;/li&gt;
 &lt;li&gt;WaitGroup可以在计数值为0时可重复使用&lt;/li&gt;
 &lt;li&gt;noCopy是一个实现了Lock接口的结构体，且不对外暴露，其Lock方法和Unlock方法都是空实现，用于vet工具检查WaitGroup在使用过程中有没有被复制；当我们自定义的结构不想被复制使用时，也可以使用它。&lt;/li&gt;
@@ -6116,7 +6164,6 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;wg&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;WaitGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;Wait&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -6136,7 +6183,6 @@ PROJECTION：限定返回字段时候stage的返回
 			&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;statep&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 				&lt;span class=&#34;nb&#34;&gt;panic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;sync: WaitGroup is reused before previous Wait has returned&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 			&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-			
 			&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -6246,8 +6292,18 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/div&gt;
 &lt;/div&gt;&lt;h1 id=&#34;pool&#34;&gt;Pool&lt;/h1&gt;
 &lt;h2 id=&#34;数据结构-6&#34;&gt;数据结构&lt;/h2&gt;
-&lt;p&gt;![](&lt;a class=&#34;link&#34; href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;https://github.com/Nixum/Java-Note/raw/master/picture/go&lt;/a&gt; syncPool数据结构.png)&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_syncPool%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_syncPool%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;每次垃圾回收时，Pool会把victim中的对象移除，然后把local的数据给victim，local置为nil，如果此时有Get方法被调用，则会从victim中获取对象。通过这种方式，避免缓存元素被大量回收后再再次使用时新建很多对象&lt;/li&gt;
 &lt;li&gt;获取重用对象时，先从local中获取，获取不到再从victim中获取&lt;/li&gt;
