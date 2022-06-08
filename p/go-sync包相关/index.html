@@ -325,9 +325,9 @@ if (!doNotTrack) {
 </span><span class="c1"></span>	<span class="nx">sema</span>  <span class="kt">uint32</span>  <span class="c1">// 信号量变量，用来控制等待goroutine的阻塞休眠和唤醒
 </span><span class="c1"></span><span class="p">}</span>
 <span class="kd">const</span> <span class="p">(</span>
-	<span class="nx">mutexLocked</span> <span class="p">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="kc">iota</span> <span class="c1">// 持有锁的标记
-</span><span class="c1"></span>	<span class="nx">mutexWoken</span>  <span class="c1">// 唤醒标记
-</span><span class="c1"></span>	<span class="nx">mutexStarving</span> <span class="c1">// 饥饿标记
+	<span class="nx">mutexLocked</span> <span class="p">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="kc">iota</span> <span class="c1">// 持有锁的标记，此时被锁定
+</span><span class="c1"></span>	<span class="nx">mutexWoken</span>  <span class="c1">// 唤醒标记，从普通模式被唤醒
+</span><span class="c1"></span>	<span class="nx">mutexStarving</span> <span class="c1">// 饥饿标记，进入饥饿模式
 </span><span class="c1"></span>	<span class="nx">mutexWaiterShift</span> <span class="p">=</span> <span class="kc">iota</span>  <span class="c1">// 阻塞等待的waiter数量
 </span><span class="c1"></span>    <span class="nx">starvationThresholdNs</span> <span class="p">=</span> <span class="mf">1e6</span>
 <span class="p">}</span>

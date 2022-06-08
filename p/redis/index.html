@@ -871,6 +871,13 @@ if (!doNotTrack) {
 <li>List类型有提供BRPOP供消费者阻塞读取，避免循环读取带来的消耗；</li>
 <li>List类型有提供BRPOPLPUSH命令，让消费者读取时会把数据存入另一备份List中，用于避免消费者从List中移除消息读取时宕机，重启后可重新读取消息。</li>
 <li>List不支持消费组实现，无法避免生产速度大于消费速度的场景。</li>
+<li>通过 BLPOP 命令，在没有消息的时候，它会一直阻塞，直至有消息到来。</li>
+</ul>
+</li>
+<li>
+<p>实现延迟队列：</p>
+<ul>
+<li>使用ZSet，拿时间戳当score，调用ZADD命令生产消息，ZRANGEBYSOCRE命令获取N秒前的数据进行轮询处理。</li>
 </ul>
 </li>
 <li>
