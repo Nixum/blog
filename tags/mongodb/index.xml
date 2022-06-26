@@ -26,9 +26,10 @@ demo
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19  MySQL中的SELECTdepartment,count(null)asemp_QTYFROMUserWHEREgender=&amp;#39;female&amp;#39;GROUPBYdepartmentHAVINGcount(*)&amp;lt;10等价于mongo中的db.user.aggregate([{$match:{gender:&amp;#39;female&amp;#39;}},{$group:{_id:&amp;#39;$DEPARTMENT&amp;#39;,emp_qty:{$sum:1}}},{$match:{emp_qty:{$lt:10}}}])  几个比较特别的运算符
 $unwind：将查询到的数组展开
 $grouphLookup：图搜索
-$facet/$bucket: 分面搜索，根据不同范围条件，多个维度一次性进行分组输出
+$facet/$bucket：分面搜索，根据不同范围条件，多个维度一次性进行分组输出
 文档模型设计原则   传统关系型数据库设计，从概念模型 -》逻辑模型 -》物理模型，关系明确，遵循三范式（1.要有主键，列不可分，2.每列与主键相关，3.不能存在传递依赖(不允许字段冗余)），表现形式上，一对多关系，外键在多那张表上，多对多关系，会有第三张表来做关联
-对于文档模型，一般对应关系型数据库设计的逻辑模型阶段，通过嵌套实体数组，map或者引用字段来处理实体间的关系，字段冗余限制宽松</description>
+对于文档模型，一般对应关系型数据库设计的逻辑模型阶段，通过嵌套实体数组，map或者引用字段来处理实体间的关系，字段冗余限制宽松
+  实体间的关系，一对一使用嵌套map来表示；一对多使用嵌套数组表示；多对多使用嵌套数组+冗余字段来表示；此外，也可以通过嵌套数组存id + 另一张表来表示实体间的关系，通过id来进行联表（使用aggregate + $lookup）</description>
     </item>
     
   </channel>

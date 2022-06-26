@@ -107,9 +107,9 @@
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;几个比较特别的运算符&lt;/p&gt;
-&lt;p&gt;$unwind：将查询到的数组展开&lt;/p&gt;
-&lt;p&gt;$grouphLookup：图搜索&lt;/p&gt;
-&lt;p&gt;$facet/$bucket: 分面搜索，根据不同范围条件，多个维度一次性进行分组输出&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;$unwind&lt;/code&gt;：将查询到的数组展开&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;$grouphLookup&lt;/code&gt;：图搜索&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;$facet/$bucket&lt;/code&gt;：分面搜索，根据不同范围条件，多个维度一次性进行分组输出&lt;/p&gt;
 &lt;h1 id=&#34;文档模型设计原则&#34;&gt;文档模型设计原则&lt;/h1&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -117,8 +117,8 @@
 &lt;p&gt;对于文档模型，一般对应关系型数据库设计的逻辑模型阶段，通过嵌套实体数组，map或者引用字段来处理实体间的关系，字段冗余限制宽松&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;实体间的关系，一对一使用嵌套map来表示；一对多使用嵌套数组表示；多对多使用嵌套数组+冗余字段来表示；此外，也可以通过嵌套数组存id + 另一张表来表示实体间的关系，通过id来进行联表（使用aggregate + $lookup）&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：嵌套时要注意整个文档大小，限制是16M，读写比列，也要注意数组长度大小，一般会使用id引用模式来解决；&lt;strong&gt;$lookup只支持left outer join&lt;/strong&gt;，不支持分片表&lt;/p&gt;
+&lt;p&gt;实体间的关系，一对一使用嵌套map来表示；一对多使用嵌套数组表示；多对多使用嵌套数组+冗余字段来表示；此外，也可以通过嵌套数组存id + 另一张表来表示实体间的关系，通过id来进行联表（使用&lt;code&gt;aggregate + $lookup&lt;/code&gt;）&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：嵌套时要注意整个文档大小，限制是16M，读写比例，也要注意数组长度大小，一般会使用id引用模式来解决；&lt;strong&gt;$lookup只支持left outer join&lt;/strong&gt;，不支持分片表&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;模式套用：&lt;/p&gt;
@@ -301,7 +301,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;ul&gt;
 &lt;li&gt;将所有数据都存在内存中，只有少量的元数据和诊断日志、临时数据存储到磁盘文件；&lt;/li&gt;
 &lt;li&gt;文档级别的锁，同一时刻多个写操作可以修改同一个集合中的不同文档，修改同一文档时会上锁；&lt;/li&gt;
-&lt;li&gt;将数据库的数据、索引和操作日志等内容存储到内存中。可以通过参数&amp;ndash;inMemorySizeGB设置它占用的内存大小，默认为：50% of RAM - 1GB；&lt;/li&gt;
+&lt;li&gt;将数据库的数据、索引和操作日志等内容存储到内存中。可以通过参数&lt;code&gt;--inMemorySizeGB&lt;/code&gt;设置它占用的内存大小，默认为：50% of RAM - 1GB；&lt;/li&gt;
 &lt;li&gt;不需要单独的日志文件，不存在记录日志和等待数据持久化的问题。so宕机时，所有存储在内存中的数据都将会丢失；&lt;/li&gt;
 &lt;li&gt;数据虽然不会写入磁盘，但是会记录oplog；&lt;/li&gt;
 &lt;/ul&gt;
@@ -337,19 +337,14 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;p&gt;WiredTiger有一个块设备管理的模块，用来为page分配block。如果要定位某一行数据（key/value）的位置，可以先通过block的位置找到此page（相对于文件起始位置的偏移量），再通过page找到行数据的相对位置，最后可以得到行数据相对于文件起始位置的偏移量offsets。由于offsets是一个8字节大小的变量，所以WiredTiger磁盘文件的大小，其最大值可以非常大(264bit)。&lt;/p&gt;
 &lt;h3 id=&#34;数据在内存上的数据结构&#34;&gt;数据在内存上的数据结构&lt;/h3&gt;
-&lt;p&gt;按需将磁盘上的数据以Page为单位加载到内存&lt;/p&gt;
+&lt;p&gt;按需将磁盘上的数据以Page为单位加载到内存，一个page树就是一个checkpoint&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;内存里面B-Tree包含三种类型的page，即rootpage（根结点）、internal page（非叶子结点）和leaf page（叶子结点），前两者包含指向其子页的page index指针，不包含集合中的真正数据，leaf page包含集合中的真正数据即keys/values和指向父页的home指针；&lt;/p&gt;
+&lt;p&gt;内存里面B+Tree包含三种类型的page，即rootpage（根结点）、internal page（非叶子结点）和leaf page（叶子结点），前两者包含指向其子页的page index指针，不包含集合中的真正数据，leaf page包含集合中的真正数据即keys/values和指向父页的home指针；&lt;/p&gt;
+&lt;p&gt;leaf page还维护了三个数组：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;内存上的leaf page会维护一个&lt;code&gt;WT_ROW&lt;/code&gt;结构的数组变量，将保存从磁盘leaf page读取的keys/values值，每一条记录还有一个cell_offset变量，表示这条记录在page上的偏移量；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;内存上的leaf page会维护一个&lt;code&gt;WT_UPDATE&lt;/code&gt;结构的数组变量，每条被修改的记录都会有一个数组元素与之对应，如果某条记录被多次修改，则会将所有修改值以链表形式保存。（MVCC）&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;内存上的leaf page会维护一个&lt;code&gt;WT_INSERT_HEAD&lt;/code&gt;结构的数组变量，具体插入的data会保存在&lt;code&gt;WT_INSERT_HEAD&lt;/code&gt;结构中的&lt;code&gt;WT_UPDATE&lt;/code&gt;属性上，且通过key属性的offset和size可以计算出此条记录待插入的位置；同时，为了提高寻找待插入位置的效率，每个&lt;code&gt;WT_INSERT_HEAD&lt;/code&gt;变量以&lt;strong&gt;跳转链表&lt;/strong&gt;的形式构成。&lt;/p&gt;
-&lt;/li&gt;
+&lt;li&gt;WT_ROW数组，表示从磁盘加载进来的数据数组，每条记录还有一个cell_offset变量，表示这条记录在page上的偏移量&lt;/li&gt;
+&lt;li&gt;WT_UPDATE数组，记录数据加载之后到下一个checkpoint间被修改的数据，每条被修改的记录都有一个数组元素对应，多次修改时，所有修改值以链表的形式保存（MVCC，相当于内存级别的oplog）&lt;/li&gt;
+&lt;li&gt;WT_INSERT_HEAD数组，表示数据加载之后到下一个checkpoint间新增的数据，每个插入的数据以跳表的形式组成，提高插入效率。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;checkpoint机制&#34;&gt;checkpoint机制&lt;/h3&gt;
@@ -357,16 +352,17 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h4 id=&#34;作用&#34;&gt;作用&lt;/h4&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;将内存里面发生修改的数据写到数据文件进行持久化保存，确保数据一致性；&lt;/p&gt;
+&lt;p&gt;发生写操作时，只是将数据写入内存和journal日志，然后再通过check point机制将内存里面发生修改的数据写到数据文件进行持久化保存，确保数据一致性；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;实现数据库在某个时刻意外发生故障，再次启动时，缩短数据库的恢复时间；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;有点像MySQL中的change buffer + 持久化，优化写操作的速度和数据持久化的保证。&lt;/p&gt;
 &lt;h4 id=&#34;触发时机&#34;&gt;触发时机&lt;/h4&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;按一定时间周期：默认60s，执行一次checkpoint；&lt;/p&gt;
+&lt;p&gt;按一定时间周期：默认60s，执行一次checkpoint，所以DB宕机重启后可以快速恢复60s之前的数据，配合redo log(journal日志)恢复60s之后的数据；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;按一定日志文件大小：当 journal日志文件大小达到2GB（如果已开启），执行一次checkpoint；&lt;/p&gt;
@@ -404,7 +400,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;ol&gt;
 &lt;li&gt;
 &lt;p&gt;上排他锁，打开集合文件，读取最新的checkpoint数据；&lt;/p&gt;
-&lt;p&gt;集合文件会按checkponit指定的大小被截取，so如果此时发生系统故障，恢复时可能会丢失checkpoint之后的数据（如果没有开启journal）；&lt;/p&gt;
+&lt;p&gt;集合文件会按checkponit指定的大小被截取，so如果此时发生系统故障，恢复时可能会丢失checkpoint之后的数据（如果没有开启journal，如果有，是就会通过journal日志来重放）；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;在内存构造一棵包含root page的live tree，表示当前可修改的checkpoint结构，用来跟踪后面写操作引起的文件变化，其他历史的checkpoint信息只能进行读或删除；&lt;/p&gt;
@@ -430,10 +426,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;3.2版本有支持单文档原子操作了，主要是用在单文档嵌套更新上，默认自动的；4.0版本支持复制集多文档事务，4.2版本支持分片事务。&lt;/p&gt;
 &lt;p&gt;另外，Spring 5.1.1 / SpringBoot 2.x 以上 @Transactional可以支持Mongo，需要为TransactionManager注入MongoDBFactory&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;MVCC：以本次trancsaction_id+本次修改后的value组成一个结点，每次修改都会追加到链表的头部，每次读取时根据trancsaction_id和本次事务的snapshot来找到对应的历史版本，该链表挂在叶子结点的WT_UPDATE字段中&lt;/li&gt;
+&lt;li&gt;MVCC：以本次trancsaction_id + 本次修改后的value组成一个结点，每次修改都会追加到链表的头部，每次读取时根据trancsaction_id和本次事务的snapshot来找到对应的历史版本，该链表挂在叶子结点的WT_UPDATE字段中&lt;/li&gt;
 &lt;li&gt;snapshot：拉取当前事务之前的数据快照，确定当前事务哪些数据可见，哪些不可见，确定事务状态&lt;/li&gt;
 &lt;li&gt;operation_array：本次事务中已执行的操作列表，用于事务回滚，类似MySQL的undo log&lt;/li&gt;
-&lt;li&gt;redo log：记录当前操作&lt;/li&gt;
+&lt;li&gt;redo log，即journal日志：记录当前操作&lt;/li&gt;
 &lt;li&gt;trancsaction_id：全局唯一事务id，通过cas自增生成&lt;/li&gt;
 &lt;li&gt;全局事务管理器：管理系统所有事务，用数组保存所有历史事务对象transaction_array，用于snapshot的创建，扫描transaction_array时使用cas保证并发安全&lt;/li&gt;
 &lt;/ul&gt;
@@ -487,10 +483,17 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;WT的redo log是通过配置开启或者关闭的，MongoDB并没有使用WT的redolog来保证事务修改不丢，而是采用了WT的checkpoint和MongoDB复制集的功能结合来保证数据的完整性的。大致的细节是如果某个mongoDB实例宕机了，重启后通过MongoDB的复制协议将自己最新checkpoint后面的修改从其他的MongoDB实例复制过来。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;缓存实现&#34;&gt;缓存实现&lt;/h3&gt;
-&lt;p&gt;WT引擎内部使用LRU cache作为缓存模型，采用分段扫描和hazardpointer的淘汰机制，充分利用现代计算机超大内存容量的特性来提高事务读写并发。在高速不间断写入内存操作非常快，但是由于内存中的数据最终需要写入磁盘，因为写内存的速度远高于写磁盘，最终可能导致间歇性写挂起的现象出现。&lt;/p&gt;
+&lt;p&gt;WT引擎内部使用&lt;strong&gt;LRU cache作为缓存模型&lt;/strong&gt;，采用分段扫描和hazardpointer的淘汰机制，充分利用现代计算机超大内存容量的特性来提高事务读写并发。在高速不间断写入内存操作非常快，但是由于内存中的数据最终需要写入磁盘，因为写内存的速度远高于写磁盘，最终可能导致间歇性写挂起的现象出现。&lt;/p&gt;
+&lt;p&gt;WT内部将内存划分为3块：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;存储引擎内部的cache，默认大小是&lt;code&gt;MAX((RAM - 1G)/2, 256M)&lt;/code&gt;，即如果16G，就会有7.5G给WT内部当cache；&lt;/li&gt;
+&lt;li&gt;索引cache，默认500M；&lt;/li&gt;
+&lt;li&gt;文件系统cache，利用的是操作系统的文件系统缓存，目的是减少内存与磁盘的交互；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;当cache空间不足时，会进行淘汰，淘汰的时机由&lt;code&gt;eviction_target：内存使用量&lt;/code&gt;和&lt;code&gt;eviction_dirty_target：内存脏数据量&lt;/code&gt;来控制，超过一定的阈值后触发。&lt;/p&gt;
 &lt;p&gt;缓解读写挂起的方法：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;WT 2.8版本不在分为预前刷盘和checkpoint刷盘，而是采用逐个对B+树直接做checkpoint刷盘，避免evict page的拥堵，缓解OS cache缓冲太多的文件脏数据问题&lt;/li&gt;
+&lt;li&gt;WT 2.8版本不再分为预前刷盘和checkpoint刷盘，而是采用逐个对B+树直接做checkpoint刷盘，避免evict page的拥堵，缓解OS cache缓冲太多的文件脏数据问题&lt;/li&gt;
 &lt;li&gt;使用direct IO&lt;/li&gt;
 &lt;li&gt;多个磁盘存储，redo log文件单独放在一个磁盘上，数据放在另外的磁盘上，避免redo log和checkpoint发生刷盘竞争&lt;/li&gt;
 &lt;li&gt;使用SSD&lt;/li&gt;
@@ -510,7 +513,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;=all，需要全部节点确认，但如果同步时有节点挂了，此时写操作会被阻塞&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;journal参数&#34;&gt;journal参数&lt;/h3&gt;
-&lt;p&gt;写操作时，会先写到内存，在写入磁盘（journal日志文件和数据文件），参数journal字段来保证达到哪步操作才算成功，由配置文件里&lt;code&gt;storage.journal.enabled&lt;/code&gt;控制是否开启，&lt;code&gt;storage.journal.commitInternalMs&lt;/code&gt;决定刷盘时间间隔&lt;/p&gt;
+&lt;p&gt;写操作时，会先写到内存，再写入磁盘（journal日志文件和数据文件），参数journal字段来保证达到哪步操作才算成功，由配置文件里&lt;code&gt;storage.journal.enabled&lt;/code&gt;控制是否开启，&lt;code&gt;storage.journal.commitInternalMs&lt;/code&gt;决定刷盘时间间隔&lt;/p&gt;
 &lt;p&gt;使用：nosql语句里包含 {journal: {j: true}} 会保证每次写入都会进行刷盘&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;=true，表示写操作要落到journal日志文件才算成功&lt;/li&gt;
@@ -519,13 +522,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h3 id=&#34;journal日志与oplog日志的区别&#34;&gt;journal日志与oplog日志的区别&lt;/h3&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;journal日志&lt;/strong&gt;：即redo log，由MongoDB引擎层使用，&lt;strong&gt;主要用于控制写操作是否立即持久化&lt;/strong&gt;，因为如果发生写操作，mongo一般是先将写操作写入内存，在定时（默认是1分钟）通过check point机制将内存里的数据刷盘持久化。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;journal日志：即redo log &lt;strong&gt;，由MongoDB引擎层使用，&lt;strong&gt;主要用于控制写操作是否立即持久化&lt;/strong&gt;，因为如果发生写操作，mongo一般是先将写操作写入内存，在&lt;/strong&gt;定时（默认是1分钟）通过check point机制将内存里的数据刷盘持久化&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;如果写操作的成功判定出现在写完内存后，如果此时宕机，将会丢失写操作的记录，如果判定发生在写完journal日志之后，如果宕机可以利用journal日志进行恢复。&lt;/p&gt;
-&lt;p&gt;写入journal日志时，也是先写入内存，再定时（默认是100ms）写入磁盘&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;写入journal日志时，也是先写入内存，再定时（默认是100ms）写入磁盘&lt;/strong&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;oplog日志&lt;/strong&gt;：只用在主从复制集的使用，通过oplog来&lt;strong&gt;实现节点间的数据同步&lt;/strong&gt;，从节点获取主节点的oplog日志后进行重放，同步数据。oplog本身在MongoDB里是一个集合(表)&lt;/p&gt;
-&lt;p&gt;mongo的一次写操作，包括 1.将文档数据写进集合 2.更新集合的索引信息 3.写入oplog日志，（此时只是写入内存），这三个步骤是原子性的，要么成功要么失败。一次写操作可以是批量的也可以是单条，一次写操作对应一条journal日志。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;oplog日志&lt;/strong&gt;：只用在主从复制集的使用，通过&lt;strong&gt;oplog来实现节点间的数据同步&lt;/strong&gt;，从节点获取主节点的oplog日志后进行重放，同步数据。oplog本身在MongoDB里是一个集合&lt;/p&gt;
+&lt;p&gt;mongo的一次写操作，包括 1.将文档数据写进集合； 2.更新集合的索引信息； 3.写入oplog日志，（此时只是写入内存），这三个步骤是原子性的，要么成功要么失败。一次写操作可以是批量的也可以是单条，一次写操作对应一条journal日志。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;开启jourbal和writeConcern后的数据写入顺序&lt;/strong&gt;：&lt;/p&gt;
@@ -565,7 +568,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;作用：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;主要是防止分布式数据库脏读，这里脏读指的是，在一次写操作到达多数节点前读取了这个写操作，又由于故障之类的导致写操作回滚了，此时读到的数据就算脏读。&lt;/li&gt;
-&lt;li&gt;配合writeConcern=mahority来实现读写分离，向主节点写入数据，从节点也能读到数据&lt;/li&gt;
+&lt;li&gt;配合writeConcern=majority来实现读写分离，向主节点写入数据，从节点也能读到数据&lt;/li&gt;
 &lt;/ol&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -652,7 +655,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;
 &lt;p&gt;数据存储时会自动均衡，当mongo发现数据存储分布不均衡时，会做chunk迁移，chunk的概念类似MySQL中的页，一个chunk包含多个文档 = 一页中包含多行记录&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;chunk的大小默认是64M，如果超过，chunk会进行分裂，如果单位时间存储需求很大，设置更大的chunk。chunk的大小会影响迁移的速度，小的chunk迁移速度快，数据分别均匀，但是数据分裂频繁，路由节点消耗资源更多；大的chunk分裂少，但是迁移时更耗资源。&lt;/li&gt;
+&lt;li&gt;chunk的大小默认是64M，如果超过，chunk会进行分裂，如果单位时间存储需求很大，就设置更大的chunk。chunk的大小会影响迁移的速度，小的chunk迁移速度快，数据分配均匀，但是数据分裂频繁，路由节点消耗资源更多；大的chunk分裂少，但是迁移时更耗资源。&lt;/li&gt;
 &lt;li&gt;chunk的分裂和迁移非常消耗IO资源；&lt;/li&gt;
 &lt;li&gt;chunk在插入和更新时进行分裂，读数据不会分裂&lt;/li&gt;
 &lt;/ul&gt;
@@ -3695,16 +3698,16 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;上锁，保证线程安全，再次检查chan是否被close，如果被close，再往里发数据会触发 解锁，panic；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;同步发送 - &lt;strong&gt;优先发送等待接收的G&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;同步发送 - &lt;strong&gt;优先发送给等待接收的G&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;如果&lt;strong&gt;没被close，当recvq存在等待的接收者时&lt;/strong&gt;，通过&lt;code&gt;send()&lt;/code&gt;函数，取出第一个等待的goroutine，直接发送数据，不需要先放到buf中；&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;send()&lt;/code&gt;函数将因为等待数据的接收而阻塞的goroutine的状态从Gwaiting或者Gscanwaiting改为Grunnable，把goroutine绑定到P的LRQ中，&lt;strong&gt;等待下一轮调度&lt;/strong&gt;时会立即执行这个等待发送数据的goroutine；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;异步发送 - &lt;strong&gt;其次是buf区&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;异步发送 - &lt;strong&gt;其次是发送到buf区&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当recvq中没有等待的接收者，且buf区存在空余空间时&lt;/strong&gt;，会使用&lt;code&gt;chanbuf()&lt;/code&gt;函数获取sendx索引值，计算出下一个可以存储数据的位置，然后调用&lt;code&gt;typedmemmove()&lt;/code&gt;函数将要发送的数据拷贝到buff区，增加sendx索引和qcount计数器，完成之后解锁，返回成功；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;阻塞发送 - &lt;strong&gt;最后才是待发送队列&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;阻塞发送 - &lt;strong&gt;最后才是保存在待发送队列，阻塞&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当recvq中没有等待的接收者，且buf区已满或不存在buf区时&lt;/strong&gt;，会先调用&lt;code&gt;getg()&lt;/code&gt;函数获取正在发送者的goroutine，执行&lt;code&gt;acquireSudog()&lt;/code&gt;函数获取sudoG对象，设置此次阻塞发送的相关信息（如发送的channel、是否在select控制结构中和待发送数据的内存地址、发送数据的goroutine）&lt;/p&gt;
 &lt;p&gt;然后将该sudoG对象加入sendq队列，调用&lt;code&gt;goparkunlock()&lt;/code&gt;函数让当前发送者的goroutine进入等待状态，表示当前goroutine正在等待其他goroutine从channel中接收数据，等待调度器唤醒；&lt;/p&gt;
 &lt;p&gt;调度器唤醒后，将一些属性值设置为零，并释放sudog对象，表示向channel发送数据结束；&lt;/p&gt;
@@ -3955,19 +3958,19 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;上锁检查buf区大小：上锁，如果chan已经被close，且buf区没有数据，清除ep指针中的数据，解锁，返回selected为true，received为false；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;同步接收&lt;/p&gt;
+&lt;p&gt;同步接收 - &lt;strong&gt;如果无buf，消费发送等待队列中G的数据，如果buf满，先拿buf区的，发送的再加入&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当chan的sendq队列存在等待状态的goroutine时&lt;/strong&gt;（能拿到就说明要不就是buf区为0，要不就是buf区已满）&lt;/p&gt;
-&lt;p&gt;如果是无buf区的chan，直接使用&lt;code&gt;recv()&lt;/code&gt;函数从阻塞的发送者中获取数据；&lt;/p&gt;
-&lt;p&gt;如果是有buf区的chan，说明此时buf区已满，则先从buf区中获取可接收的数据（从buf区中copy到接收者的内存），然后从sendq队列的队首中读取待发送的数据，加入到buf区中（将发送者的数据copy到buf区），更新可接收和可发送的下标chan.recvx和sendx的值；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;如果是无buf区的chan&lt;/strong&gt;，直接使用&lt;code&gt;recv()&lt;/code&gt;函数从阻塞的发送者中获取数据；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;如果是有buf区的chan&lt;/strong&gt;，说明此时buf区已满，则先从buf区中获取可接收的数据（从buf区中copy到接收者的内存），然后从sendq队列的队首中读取待发送的数据，加入到buf区中（将发送者的数据copy到buf区），更新可接收和可发送的下标chan.recvx和sendx的值；&lt;/p&gt;
 &lt;p&gt;最后调用&lt;code&gt;goready()&lt;/code&gt;函数将等待发送数据而阻塞gorouotine的状态从Gwaiting 或者 Gscanwaiting 改变成 Grunnable，把goroutine绑定到P的LRQ中，&lt;strong&gt;等待下一轮调度时&lt;/strong&gt;立即释放这个等待发送数据的goroutine；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;异步接收&lt;/p&gt;
+&lt;p&gt;异步接收 - &lt;strong&gt;其次是消费buf区中的数据&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当channel的sendq队列没有等待状态的goroutine，且buf区存在数据时&lt;/strong&gt;，从channel的buf区中的recvx的索引位置接收数据，如果接收数据的内存地址不为空，会直接将缓冲区里的数据拷贝到内存中，清除buf区中的数据，递增recvx，递减qcount，完成数据接收；&lt;/p&gt;
 &lt;p&gt;这个和chansend共用一把锁，所以不会有并发问题；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;阻塞接收&lt;/p&gt;
+&lt;p&gt;阻塞接收 - &lt;strong&gt;最后才是保存在接收等待队列，阻塞&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当channel的sendq队列没有等待状态的goroutine，且buf区不存在数据时&lt;/strong&gt;，执行&lt;code&gt;acquireSudog()&lt;/code&gt;函数获取sudoG对象，设置此次阻塞发送的相关信息（如发送的channel、是否在select控制结构中和待发送数据的内存地址、发送数据的goroutine）&lt;/p&gt;
 &lt;p&gt;然后将该sudoG对象加入待发送recvq队列，调用&lt;code&gt;goparkunlock()&lt;/code&gt;函数让当前接收者的goroutine进入等待状态，表示当前goroutine正在等待其他goroutine从channel中发送数据，等待调度器唤醒；&lt;/p&gt;
 &lt;p&gt;goroutine被唤醒后，chan完成阻塞数据的接收，接收完成后进行基本的参数检查，解除chan的绑定，释放sudoG，表示接收数据完成；&lt;/p&gt;
@@ -4297,11 +4300,11 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;否则的话，如果 chan 不为 nil，chan 也没有 closed，设置chan的标记为close；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;释放所有的接收者：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;优先释放所有的接收者&lt;/strong&gt;：&lt;/p&gt;
 &lt;p&gt;将接收者等待队列中的sudoG对象加入到待清除队列glist中，这里会优先回收接收者，这样即使从close中的chan读取数据，也不会panic，最多读到默认值；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;释放所有发送者：
+&lt;p&gt;&lt;strong&gt;其次是释放所有发送者&lt;/strong&gt;：
 将发送者等待队列中的sudoG对象加入到待清除队列glist中，这里可能会发生panic，因为往一个close的chan中发送数据会panic；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -4480,7 +4483,7 @@ PROJECTION：限定返回字段时候stage的返回
         &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// block
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;fmt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Println&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;exit goroutine&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
     &lt;span class=&#34;p&#34;&gt;}()&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// 如果上面的协程任务处理的时间过长，触发下面select的超时机制，此时process函数返回，之后当上面的协程任务执行完之后，由于process已经执行完，下面result接收chan的值被回收，导致没有接收者，导致上面的协程任务一直卡在 ch &amp;lt;- true，进而导致goroutine泄漏。解决方案就是使用容量为1的ch即可。
+    &lt;span class=&#34;c1&#34;&gt;// 如果上面的协程任务处理的时间过长，触发下面select的超时机制，此时process函数返回，之后当上面的协程任务执行完之后，由于process已经执行完，下面result接收chan的值被回收，所以没有接收者，导致上面的协程任务一直卡在 ch &amp;lt;- true，进而导致goroutine泄漏。解决方案就是使用容量为1的ch即可。
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
     &lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
         &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;result&lt;/span&gt;
@@ -4584,11 +4587,11 @@ PROJECTION：限定返回字段时候stage的返回
     &gt;https://zhuanlan.zhihu.com/p/272891398&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;netpoller本质上是利用操作系统本身的非阻塞IO模型 + IO多路复用的封装，从而实现&lt;code&gt;goroutine-per-connection&lt;/code&gt;模式，使用同步编程模式达到异步执行的效果。&lt;/p&gt;
 &lt;p&gt;netpoller算是运行在go scheduler中的一个子系统，但它主要是处理网络请求的，使其不阻塞整个调度。&lt;/p&gt;
-&lt;p&gt;netpoller中的几个方法：&lt;code&gt;对epoll的封装 netpollinit、netpollopen、netpoll&lt;/code&gt;、&lt;code&gt;net.listen&lt;/code&gt;、&lt;code&gt;Listener.Accept&lt;/code&gt;、&lt;code&gt;Conn.Read / Conn.Write&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;netpoller中的几个方法：&lt;code&gt;对epoll的封装 netpollinit、netpollopen、netpoll&lt;/code&gt;、&lt;code&gt;net.listen&lt;/code&gt;、&lt;code&gt;Listener.Accept&lt;/code&gt;、&lt;code&gt;Conn.Read / Conn.Write&lt;/code&gt;，对网络的fd会设置成NonBlocking模式，根据不同的返回值设置G的状态，在M的调度、sysmon、gc STW结束等阶段会poll出ready的G进行运行或者添加到GRQ中。&lt;/p&gt;
 &lt;p&gt;这里记一下Go网络相关的goroutine是如何被规划调度的：&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;首先，client 连接 server 的时候，listener 通过 accept 调用接收新 connection，每一个新 connection 都启动一个 goroutine 处理，accept 调用会把该 connection 的 fd 连带所在的 goroutine 上下文信息封装注册到 epoll 的监听列表里去，当 goroutine 调用 &lt;code&gt;conn.Read&lt;/code&gt; 或者 &lt;code&gt;conn.Write&lt;/code&gt; 等需要阻塞等待的函数时，会被 &lt;code&gt;gopark&lt;/code&gt; 给封存起来并使之休眠，让 P 去执行本地调度队列里的下一个可执行的 goroutine，往后 Go scheduler 会在循环调度的 &lt;code&gt;runtime.schedule()&lt;/code&gt; 函数以及 sysmon 监控线程中调用 &lt;code&gt;runtime.netpoll&lt;/code&gt; 以获取可运行的 goroutine 列表并通过调用 injectglist 把剩下的 g 放入全局调度队列或者当前 P 本地调度队列去重新执行。&lt;/p&gt;
-&lt;p&gt;当IO事件发生之后，netpooler通过 &lt;code&gt;runtime.netpoll&lt;/code&gt; 即可在epoll监听列表获取到已就绪的fd列表对应的goroutine，具体：&lt;code&gt;runtime.netpoll&lt;/code&gt;会调用 &lt;code&gt;epollwait&lt;/code&gt; 等待发生了可读/可写事件的fd，循环 &lt;code&gt;epollwait&lt;/code&gt; 返回的事件列表，处理对应的事件类型，组装可运行的goroutine链表并返回。&lt;/p&gt;
+&lt;p&gt;当IO事件发生之后，netpoller通过 &lt;code&gt;runtime.netpoll&lt;/code&gt; 即可在epoll监听列表获取到已就绪的fd列表对应的goroutine，具体：&lt;code&gt;runtime.netpoll&lt;/code&gt;会调用 &lt;code&gt;epollwait&lt;/code&gt; 等待发生了可读/可写事件的fd，循环 &lt;code&gt;epollwait&lt;/code&gt; 返回的事件列表，处理对应的事件类型，组装可运行的goroutine链表并返回。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;sysmon监控线程&lt;/code&gt;会在循环过程中检查距离上一次 &lt;code&gt;runtime.netpoll&lt;/code&gt; 被调用是否超过10ms，若是则回去调用它拿到可运行的goroutine列表并调用 injectglist 把 g 列表放入全局调度队列或者当前 P 本地调度队列等待被执行。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;即当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中&amp;hellip;  ；当IO可用时，在 epoll 的 &lt;code&gt;eventpoll.rdr&lt;/code&gt; 中等待的 G 会被放到 &lt;code&gt;eventpoll.rdllist&lt;/code&gt; 链表里并通过 &lt;code&gt;netpoll&lt;/code&gt; 中的 &lt;code&gt;epoll_wait&lt;/code&gt; 系统调用&lt;strong&gt;返回放置到GRQ或者 P 的LRQ&lt;/strong&gt;，标记为 &lt;code&gt;_Grunnable&lt;/code&gt; ，等待 P 绑定 M 恢复执行。&lt;/p&gt;
@@ -4677,7 +4680,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程需要的上下文，（局部计算资源，用于在同一线程写多个goroutine的切换），负责调度线程上的LRQ，是实现从N：1到N：M映射的关键，存在的意义在于工作窃取算法，同时也是为了保证在发生系统调用时，M阻塞，此时P就可以交给其他M继续执行。&lt;/p&gt;
+&lt;p&gt;P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程M需要的上下文（局部计算资源，用于在同一线程写多个goroutine的切换），负责调度线程上的LRQ，是实现从N：1到N：M映射的关键，存在的意义在于工作窃取算法，同时也是为了保证在发生系统调用时，M阻塞，此时P就可以交给其他M继续执行。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;P的个数取决于&lt;strong&gt;GOMAXPROCS&lt;/strong&gt;，默认使用CPU的个数，这些P会绑定到不同内核线程，尽量提升性能，让每个核都有代码在跑。在确定了P的最大数量n后，当程序运行时，创建n个P，P代表代表并发度；&lt;/p&gt;
@@ -4717,7 +4720,8 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;持有P的M会执行G，执行完G后会先判断是否满足61次调用，如果是，则先从GRQ中获取，否则继续从P的LRQ中继续获取G进行消费；之所以先有次数判断，是为了防止GRQ里的G被饿死；&lt;/p&gt;
 &lt;p&gt;当发现P的LRQ中没有其他G可执行时，则会从GRQ的队首里获取G放入本地队列，获取数量&lt;code&gt;n = min(len(GQ)/GOMAXPROCS + 1, len(GQ/2))&lt;/code&gt;，一次不会获取太多，保证其他M在GRQ中有G可拿，&lt;strong&gt;获取时会加锁&lt;/strong&gt;；&lt;/p&gt;
 &lt;p&gt;当P发现自己的LRQ、GRQ都没有G了，会从netpoller(网络轮询器)上获取G来执行；&lt;/p&gt;
-&lt;p&gt;如果LRQ、GRQ、netpooler上都没有G时，则会随机从其他P的&lt;strong&gt;LRQ尾部中窃取一半的G&lt;/strong&gt;放到自己的LRQ，通过CAS获取；（&lt;strong&gt;work stealing 工作窃取&lt;/strong&gt;）&lt;/p&gt;
+&lt;p&gt;如果LRQ、GRQ、netpoller上都没有G时，则会随机从其他P的&lt;strong&gt;LRQ尾部中窃取一半的G&lt;/strong&gt;放到自己的LRQ，通过CAS获取；（&lt;strong&gt;work stealing 工作窃取&lt;/strong&gt;）&lt;/p&gt;
+&lt;p&gt;以上过程由M执行 runtime.schedule 函数来执行调度。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;当P的LRQ满时，会把当前P的LRQ前一半的G打乱顺序后转移到GRQ，此时新创建的G也会放到GRQ；&lt;/p&gt;
@@ -4739,8 +4743,8 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;通过netpoller进行网络系统调用，调度器可以防止G在进行这些系统调用时阻塞M，使得M可以执行P的LRQ中的其他G，而不需要使用新的M，该G在netpoller执行完后，会重新回到之前P的LRQ中（或者被放到GRQ），等待调用。执行网络系统调用不需要额外的M，netpoller使用系统线程时刻处理一个有效的事件循环（通过linux上的epoll实现，网络相关fd与G绑定），即在这种场景下，G会和M、P分离，G挂在了netpoller下。（网络调用导致G阻塞，会由netpoller接管，此时M可以继续执行下一个G）&lt;/p&gt;
-&lt;p&gt;如果是其他系统调用，如读取文件导致G被阻塞，此时不关netpoller什么事，这种阻塞使得G阻塞M，调度器会使得GM与P分离，而P使用新的M继续执行。（G阻塞导致M阻塞，P寻找新M来执行G）&lt;/p&gt;
-&lt;p&gt;如果是让G执行一个sleep操作，导致M被阻塞，则由sysmon监控线程来监控那些长时间运行的G，然后设置可以抢占的标识符，别的G就可以抢占来执行。&lt;/p&gt;
+&lt;p&gt;如果是系统调用，如读取文件导致G被阻塞，此时不关netpoller什么事，这种阻塞使得G阻塞M，调度器会使得GM与P分离，而P使用新的M继续执行。（G阻塞导致M阻塞，P寻找新M来执行G）&lt;/p&gt;
+&lt;p&gt;如果是让G执行一个sleep、原子、互斥量或者chan操作，导致M被阻塞，则由sysmon监控线程来监控那些长时间运行的G，然后设置可以抢占的标识符，别的G就可以抢占来执行。（阻塞的G被切换出去，M不阻塞，转而执行其他空闲的G）&lt;/p&gt;
 &lt;p&gt;这里有一个有趣的例子&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -5356,9 +5360,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。&lt;/p&gt;
+&lt;p&gt;全局变量：包级别的变量在&lt;strong&gt;同一个文件中是按照声明顺序逐个初始化&lt;/strong&gt;的；当该变量在初始化时&lt;strong&gt;依赖其它的变量时，则会先初始化该依赖的变量&lt;/strong&gt;。&lt;strong&gt;同一个包下的多个文件，会按照文件名的排列顺序进行初始化&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。&lt;/p&gt;
-&lt;p&gt;当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数&lt;/p&gt;
+&lt;p&gt;当init函数和全局变量&lt;strong&gt;无引用关系时，先初始化全局变量，再执行init函数&lt;/strong&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -5500,7 +5504,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;span class=&#34;kd&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;mutexLocked&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;iota&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 持有锁的标记，此时被锁定
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;mutexWoken&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// 唤醒标记，从普通模式被唤醒
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;mutexWoken&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// 唤醒标记，从正常模式被唤醒
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;mutexStarving&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 饥饿标记，进入饥饿模式
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;mutexWaiterShift&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;iota&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// 阻塞等待的waiter数量
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;starvationThresholdNs&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;1e6&lt;/span&gt;
@@ -5535,11 +5539,11 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;Mutex的零值是没有goroutine等待的未加锁状态，不会因为没有初始化而出现空指针或者无法获取到锁的情况，so无需额外的初始化，直接声明变量即可使用&lt;code&gt;var lock sync.Mutex&lt;/code&gt;，或者是在结构体里的属性，均无需初始化&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;锁有两种模式：普通模式和饥饿模式&lt;/p&gt;
-&lt;p&gt;普通模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；&lt;/p&gt;
+&lt;p&gt;锁有两种模式：正常模式和饥饿模式&lt;/p&gt;
+&lt;p&gt;正常模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；&lt;/p&gt;
 &lt;p&gt;如果此时有新的goroutine也在获取锁，会参与到获取锁的竞争中，这是非公平的，因为新请求锁的goroutine是在CPU上被运行，并且数量也可能很多，所以被唤醒的goroutine获取锁的概率并不大，所以，如果等待队列中的goroutine等待超过1ms，则会优先加入到队列的头部，如果超过1ms都没有获取到锁，则进入饥饿模式；&lt;/p&gt;
 &lt;p&gt;饥饿模式下，锁的所有权会直接从释放锁的goroutine转交给队首的goroutine，新请求锁的goroutine就算锁的空闲状态也不会去获取锁，也不会自旋，直接加入等待队列的队尾，以此解决等待的goroutine的饥饿问题；&lt;/p&gt;
-&lt;p&gt;恢复为正常模式的条件：一个goroutine获取锁后，当前goroutine是队列的最后一个，拿锁的耗时小于1ms；&lt;/p&gt;
+&lt;p&gt;恢复为正常模式的条件：一个goroutine获取锁后，当前goroutine是队列的最后一个，退出饥饿模式；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Unlock方法可以被任意goroutine调用，释放锁，即使它本身没有持有这个锁，so写的时候要牢记，谁申请锁，就该谁释放锁，保证在一个方法内被调用&lt;/p&gt;
@@ -5571,7 +5575,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;goroutine本身进入自旋的条件比较苛刻：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;互斥锁只有在普通模式才能进入自旋；&lt;/p&gt;
+&lt;p&gt;互斥锁只有在正常模式才能进入自旋；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;code&gt;runtime.sync_runtime_canSpin&lt;/code&gt;需要返回true：&lt;/p&gt;
@@ -5584,9 +5588,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ol&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;在lockSlow方法内，意味着锁已经被持有，当前调用Lock方法的goroutine正在等待，且非饥饿状态，其首先会自旋，尝试获取锁，无需休眠，否则进入 3&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
+&lt;p&gt;在lockSlow方法内，意味着锁已经被持有，当前调用Lock方法的goroutine正在等待，且非饥饿状态，其首先会自旋，尝试获取锁，无需休眠，否则进入 4&lt;/p&gt;
 &lt;p&gt;不满足自旋时，当前锁可能有如下几种状态：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;锁还没有被释放，锁处于正常状态&lt;/li&gt;
@@ -5596,7 +5598,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;由于lock方法会被多个goroutine执行，所以锁的状态会不断变化，此时会生成当前goroutine的 new state，期望状态&lt;/p&gt;
+&lt;p&gt;由于lock方法会被多个goroutine执行，所以锁的状态会不断变化，此时会生成当前goroutine的 new state 作为期望状态&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;如果是非饥饿状态，锁的new state设置为已持有锁&lt;/li&gt;
 &lt;li&gt;如果已经持有锁，或者是饥饿状态，waiter数量 + 1&lt;/li&gt;
@@ -5605,7 +5607,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;CAS&lt;strong&gt;更新当前锁的状态&lt;/strong&gt;为new state，如果更新成功&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;CAS更新当前锁的状态&lt;/strong&gt;为new state，如果更新成功&lt;/p&gt;
 &lt;p&gt;5.1. 如果锁的原状态old state是未被锁，且非饥饿状态，表明当前goroutine获取到了锁，&lt;strong&gt;退出结束&lt;/strong&gt;
 5.2. 判断当前goroutine是新加入的还是被唤醒的，新加入的放到等待队列的尾部，刚被唤醒的加入等待队列的头部，通过信号量阻塞，直到当前goroutine被唤醒
 5.3. 从这里开始被唤醒的goroutine，都是表示是从阻塞队列里出来的。goroutine被唤醒后，判断当前state是否是饥饿状态，如果不是则更新锁的状态为被唤醒，表示有G被唤醒，继续循环，跳到 2
@@ -5820,9 +5822,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;unlock方法&#34;&gt;Unlock方法&lt;/h2&gt;
 &lt;ol&gt;
-&lt;li&gt;将state的锁位-1，如果state=0，即此时没有加锁，且没有正在等待获取锁的goroutine，则直接结束方法，如果state != 0，执行unlockSlow方法，唤醒等待的goroutine&lt;/li&gt;
-&lt;li&gt;如果Mutex处于饥饿状态，直接唤醒等待队列中的waiter&lt;/li&gt;
-&lt;li&gt;如果Mutex处于正常状态，如果没有waiter，或者已经有在处理的waiter的情况，则直接释放锁，state锁位-1，返回；否则，waiter数-1，设置唤醒标记，通过CAS解锁，唤醒在等待锁的goroutine，此时新老goroutine一起竞争锁&lt;/li&gt;
+&lt;li&gt;将state的锁位-1，如果state=0，即此时没有加锁，且没有正在等待获取锁的goroutine，则直接结束方法，如果state != 0，执行unlockSlow方法，唤醒等待的goroutine；&lt;/li&gt;
+&lt;li&gt;如果Mutex处于饥饿状态，当前goroutine不更新锁状态，直接唤醒等待队列中的waiter，继续执行，相当于解锁了，然后由等待队列中的队首goroutine获得锁；&lt;/li&gt;
+&lt;li&gt;如果Mutex处于正常状态，如果没有waiter，或者已经有在处理的waiter的情况，则直接释放锁，state锁位-1，返回；否则，waiter数-1，设置唤醒标记，通过CAS解锁，唤醒在等待锁的goroutine，此时新老goroutine一起竞争锁；&lt;/li&gt;
 &lt;/ol&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -6008,6 +6010,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;Map&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -6015,16 +6018,17 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;mu&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;Mutex&lt;/span&gt;
 	&lt;span class=&#34;c1&#34;&gt;// 存读的数据，只读，由dirty提升得到
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;read&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;atomic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Value&lt;/span&gt;
-	&lt;span class=&#34;c1&#34;&gt;// 包含最新写入的数据，并且在写的时候，会把read中未被删除的数据拷贝到该dirty中，
+	&lt;span class=&#34;c1&#34;&gt;// 包含最新写入的数据，并且在写的时候，如果dirty是nil，会把read中未被删除的数据拷贝到该dirty中
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;dirty&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;interface&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;entry&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// 从read中读数据时该值+1, 当len(dirty) == misses时，将dirty拷贝到read中
+    &lt;span class=&#34;c1&#34;&gt;// 当从read中读不到数据，但在dirty中读到数据时该值+1, 当len(dirty) == misses时，将dirty拷贝到read中，此动作会发生在get和delete的操作中
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;misses&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
 &lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;readOnly&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;       &lt;span class=&#34;kd&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;interface&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;entry&lt;/span&gt;
-	&lt;span class=&#34;nx&#34;&gt;amended&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// true表明dirty中存在read中没有的键值对
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// true表明dirty中存在read中没有的键值对，有两种情况：1.被删除的key，只能在read中找到；2.新增加的key，只能在dirty中找到
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;amended&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
 &lt;span class=&#34;c1&#34;&gt;// read和dirty都包含了*entry，里面的p是一个指针，read和dirty各自维护了一套key，但他们都指向同一个value
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;entry&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -6087,6 +6091,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;解锁；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
+&lt;p&gt;总结：如果是新key，则加锁，优先put到dirty中，如果是dirty为空，则创建新dirty，将read中非删除键值对赋值给新dirty，将read标记为有key在dirty中但不存在在read中，解锁；如果是已存在的key，由于read和dirty的value是同一个引用，直接cas更新read即可。&lt;/p&gt;
 &lt;h2 id=&#34;load方法&#34;&gt;Load方法&lt;/h2&gt;
 &lt;p&gt;将dirty提升为read这个操作在load方法中执行。&lt;/p&gt;
 &lt;ol&gt;
@@ -6097,8 +6102,16 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;同时增加miss的值(miss表示读取穿透的次数)，当miss的值等于dirty的长度时，就会将dirty提升为read，只需简单的赋值即可，然后将dirty置为null，重置miss数，避免总是从dirty中加锁读取；&lt;/li&gt;
 &lt;li&gt;解锁，将dirty中的查询结果返回；&lt;/li&gt;
 &lt;/ol&gt;
+&lt;p&gt;总结：优先读read中的key，判断read的标记，加锁，判断dirty是否包含read中不存在的key，如果是，才会去读dirty，同时miss值+1，当miss值=dirty长度时，将dirty中非删除的键值对赋值给read，解锁。&lt;/p&gt;
 &lt;h2 id=&#34;delete方法&#34;&gt;Delete方法&lt;/h2&gt;
-&lt;p&gt;删除key时，自旋，只是对该key打上一个expunged标记，真正的删除只有在将dirty提升为read时才会清理删除的数据；&lt;/p&gt;
+&lt;p&gt;将dirty提升为read这个操作也会在delete方法中执行。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;判断read中是否存在该key；&lt;/li&gt;
+&lt;li&gt;如果read中不存在，且dirty中包含了read中不存在的key，加锁；&lt;/li&gt;
+&lt;li&gt;如果read中真的不存在，且dirty中包含了read中不存在的key，删除dirty中该key和value，此时miss也会 + 1，当miss值=dirty长度时，将dirty中非删除的键值对赋值给read；&lt;/li&gt;
+&lt;li&gt;如果存在该key（此时该键值对只会在read中存在），自旋，直接在该key对应的entry打上expunged标记，表示删除；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;总结：如果dirty中存在该key，dirty中该键值对会被真正的删除，但此时read中的键值对还没被删除，只是其key对应的value被打上一个expunged标记，表示删除，使其在被get的时候能分辨出来，read中该key真正的删除只有在将dirty提升为read的时候；&lt;/p&gt;
 &lt;h2 id=&#34;loadorstore方法&#34;&gt;LoadOrStore方法&lt;/h2&gt;
 &lt;p&gt;基本上和Store方法一样，只是增多一点逻辑：如果该key存在且没有被标记为删除，则返回原来的value和true，不存在则进行store，返回该value和false。&lt;/p&gt;
 &lt;h1 id=&#34;waitgroup&#34;&gt;WaitGroup&lt;/h1&gt;
@@ -7113,7 +7126,7 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;span class=&#34;nx&#34;&gt;data&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;9&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
 &lt;span class=&#34;c1&#34;&gt;// 第二次append后结果
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;slice&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;9&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;11&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;12&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;span class=&#34;nx&#34;&gt;data&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;9&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;data&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;  &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;   &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;9&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h3 id=&#34;扩容策略&#34;&gt;扩容策略&lt;/h3&gt;
@@ -7660,7 +7673,7 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;先判断hmap是否为空，是否是并发写入，如果是直接抛错误；修改当前hamp的状态。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;根据key计算出哈希；还要就是判断bucket桶是否为空，为空则分配bmap数组，。&lt;/p&gt;
+&lt;p&gt;根据key计算出哈希；还有就是判断bucket桶是否为空，为空则分配bmap数组，。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;判断 hmap的oldbuckets是否为空，不为空说明当前处于扩容搬迁，则进行搬迁工作，完了再进行之后的流程。&lt;/p&gt;
@@ -7883,10 +7896,10 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;进入evacuate函数，如果是等量扩容，B值不变，老bucket桶上的键值计算出来的桶的序号不变，tophash不变，此时会将老桶上的键值对依次地一个个转移到新桶上，使这些键值对在新桶上排列更加紧凑；&lt;/p&gt;
 &lt;p&gt;如果是增量扩容，容量变为原来的两倍，B值+1，老bucket桶上的键值计算出来的桶的序号改变，这些键值对计算后的bucket桶的序号可能跟之前一样，也可能是相比原来加上2^B，取决于key哈希值后 老B+1 位的值是0还是1。比如：&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;10010111 | 000011110110110010001111001010100010010110010101010 │ 01010&lt;/code&gt;，B=5，bucket的序号是10，增量扩容后为&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;10010111 | 000011110110110010001111001010100010010110010101010 │ 01010&lt;/code&gt;，B=6，bucket的序号还是10，&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;10010111 | 00001111011011001000111100101010001001011001010101 | 001010&lt;/code&gt;，B=6，bucket的序号还是10，&lt;/p&gt;
 &lt;p&gt;另一种情况是&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;10010111 | 000011110110110010001111001010100010010110010101010 │ 01010&lt;/code&gt;，B=5，bucket的序号是10，增量扩容后为&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;10010111 | 000011110110110010001111001010100010010110010101010 │ 11010&lt;/code&gt;，B=6，bucket的序号是42（10 + 32，即10 + 2 ^5）&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;10010111 | 000011110110110010001111001010100010010110010101011 │ 01010&lt;/code&gt;，B=5，bucket的序号是10，增量扩容后为&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;10010111 | 00001111011011001000111100101010001001011001010101 │ 101010&lt;/code&gt;，B=6，bucket的序号是42（10 + 32，即10 + 2 ^5）&lt;/p&gt;
 &lt;p&gt;tophash不变，原来老bucket桶上的键值对会重新分流到两个新bucket桶上。将老bucket桶上的键值对和其指向的溢出桶上的键值对进行迁移，依次转移到新桶上，每迁移完一个，key在老buckect的tophash设置为evacuatedX或者evacuatedY（tophash的最低位表示迁移到新桶的哪一part，0为x，1为y），hmap的nevacuate计数+1，直到老bucket桶上的键值对迁移完成，最后清空oldbuckets和oldoverflow字段。&lt;/p&gt;
 &lt;p&gt;这里两个新的桶对应源码里的X part, Y part，因为扩容到原来的 2 倍，桶的数量是原来的 2 倍，前一半桶被称为 X part，后一半桶被称为 Y part。一个 bucket 中的所有key 可能会分流到 2 个桶中，一个位于 X part，一个位于 Y part。所以在搬迁一个 cell 之前，需要计算这个cell要落入到哪一part。&lt;/p&gt;
 &lt;p&gt;X part 与 Y part的关系：X part + 2 ^ 老B = Y part，之所以要确定key落在哪个区间，是为了方便计算key要插入的内存地址。&lt;/p&gt;
@@ -14637,18 +14650,15 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;li&gt;&lt;strong&gt;Bitmap&lt;/strong&gt;：位存储，基于String，原理：String类型会保存二进制字节数组，只有0和1两个值，对于这个字节数组的每个bit来表示一个元素的二值状态；&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;HyperLogLog&lt;/strong&gt;：基数统计，类似set，主要作用是使用少量固定的内存（12KB内存即可统计2^64个不同元素）去存储并识别有大量元素的集合中的唯一元素，能快速算出集合内的元素个数，误差率0.81%；版本2.8.9之后才有&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Geo&lt;/strong&gt;：推算地理位置，比如两地之间的距离，方圆几里的人；版本3.2之后才有&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Stream&lt;/strong&gt;：5.0之后的版本才有，Stream会在第一次使用 &lt;code&gt;xadd&lt;/code&gt; 指令追加消息时自动创建。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Consumer Group&lt;/code&gt;：消费组，一个消费组有多个消费者，这些消费者是竞争关系；
+&lt;li&gt;&lt;strong&gt;Stream&lt;/strong&gt;：5.0之后的版本才有，Stream会在第一次使用 &lt;code&gt;xadd&lt;/code&gt; 指令追加消息时自动创建。
 &lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Consumer Group&lt;/code&gt;：消费组，一个消费组有多个消费者，这些消费者是竞争关系；&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;Last_delivered_id&lt;/code&gt;：游标，每个消费组的游标，组内任意一个消费者读取了消息都会使游标向前移动；&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;pending_ids&lt;/code&gt;：消费者的状态变量，用于维护消费者未确认的id，记录当前已经被客户端读取但还没有被ACK的消息。如果客户端没有ACK，这个变量里面的消息ID会越来越多，一旦某个消息被ACK，它就开始减少，用来确保客户端至少消费了消息一次，而不会在网络传输的中途丢失了没处理。
-&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;pending_ids&lt;/code&gt;：消费者的状态变量，用于维护消费者未确认的id，记录当前已经被客户端读取但还没有被ACK的消息。如果客户端没有ACK，这个变量里面的消息ID会越来越多，一旦某个消息被ACK，它就开始减少，用来确保客户端至少消费了消息一次，而不会在网络传输的中途丢失了没处理。&lt;/li&gt;
 &lt;li&gt;消息ID：组成方式&lt;code&gt;毫秒级时间戳 - 序号&lt;/code&gt;，消息ID也可以自定义，但必须是整数-整数，且能后面加入的消息ID要大于前面的消息ID。Redis本身会记录 &lt;code&gt;lastest_generated_id&lt;/code&gt;，防止时间回拨导致ID问题；&lt;/li&gt;
+&lt;li&gt;消息内容：键值对，类似Hash的结构；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
-&lt;li&gt;消息内容：键值对，类似Hash的结构；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
@@ -15072,7 +15082,7 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;一般只设置一个主节点，当负载上升时，主服务器可能无法很快地更新所有从服务器，或者重新连接和重新同步从服务器将导致系统超载。因为在一次主从数据同步过程中，主库有两个耗时的操作：生成RDB文件和传输RDB文件，如果从库数量过多，会导致主库忙于fork子进程生成RDB文件进行全量复制，导致阻塞主线程的正常请求，同时传输的带宽也带来了压力。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;解决办法&lt;/strong&gt;：通过主&lt;strong&gt;从级联模式&lt;/strong&gt;解决，可以设置主节点为根节点，向下延申，从节点再设置从节点的方式，形成树状的主从链，让从节点帮忙同步给其子节点的方式，降低主节点的压力。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;解决办法&lt;/strong&gt;：通过&lt;strong&gt;主从级联模式&lt;/strong&gt;解决，可以设置主节点为根节点，向下延申，从节点再设置从节点的方式，形成树状的主从链，让从节点帮忙同步给其子节点的方式，降低主节点的压力。&lt;/p&gt;
 &lt;p&gt;同样使用命令slaveof或replicaof，只是ip换成从库的ip，这样就形成了主-从-从的模式了。&lt;/p&gt;
 &lt;h2 id=&#34;主从库命令传播时网络中断&#34;&gt;主从库命令传播时网络中断&lt;/h2&gt;
 &lt;p&gt;Redis2.8之前，如果主从库发生网络中断，重写连接时会进行全量复制，开销巨大。&lt;/p&gt;
@@ -15362,17 +15372,9 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;p&gt;使用Stream类型，解决多端消费问题。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Stream的XADD命令，可以为其生成全局唯一ID。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;读取时使用命令XRead，可支持指定ID读取，也支持超时阻塞读取。&lt;/p&gt;
-&lt;ul&gt;
+&lt;li&gt;读取时使用命令XRead，可支持指定ID读取，也支持超时阻塞读取。&lt;/li&gt;
 &lt;li&gt;命令XGroup创建消费组，XREADGROUP指定组内哪个消费者进行消费。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Streams 会自动使用内部队列（也称为 PENDING List）留存消费组里每个消费者读取的消息，直到消费者使用 XACK 命令进行回复。如果消费不成功，它就不会给 Streams 发送 XACK 命令，消息仍然会留存。当消费者重启后，用 XPENDING 命令查看已读取、但尚未确认处理完成的消息。&lt;/p&gt;
-&lt;ul&gt;
+&lt;li&gt;Streams 会自动使用内部队列（也称为 PENDING List）留存消费组里每个消费者读取的消息，直到消费者使用 XACK 命令进行回复。如果消费不成功，它就不会给 Streams 发送 XACK 命令，消息仍然会留存。当消费者重启后，用 XPENDING 命令查看已读取、但尚未确认处理完成的消息。&lt;/li&gt;
 &lt;li&gt;Stream是Redis5.0以后才有的专门用来处理消息队列的。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
@@ -15405,7 +15407,7 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;p&gt;应对方案：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;不给热点数据的缓存设置过期时间，一直保留。&lt;/li&gt;
-&lt;li&gt;使用互斥锁，当有大量请求访问一个过期的热点数据时，只有一个请求会到达数据库查询数据并缓存，其他请求等待缓存加载即可。&lt;/li&gt;
+&lt;li&gt;使用互斥锁或者信号量，当有大量请求访问一个过期的热点数据时，只有一定数量的请求会到达数据库查询数据并缓存，其他请求等待缓存加载即可。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;缓存穿透&#34;&gt;缓存穿透&lt;/h2&gt;
 &lt;p&gt;现象：查询一个一定不存在的数据，导致请求一直到达数据库，数据也不在数据库中。&lt;/p&gt;
@@ -18253,7 +18255,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;redo log重做日志&lt;/strong&gt;：InnoDB独有，物理日志，&lt;strong&gt;记录这个页做了什么改动&lt;/strong&gt;，使用&lt;strong&gt;二阶段提交&lt;/strong&gt;保证两份日志逻辑一致。当有日志要写入时，先写到redo log buffer后状态是prepare，开始写bin log cache，bin log 写完后，事务提交，redo log 改为commit状态，redo log写完，此时事务就算完成；这里描述的写redo log和bin log都只写在了缓冲区，何时写进磁盘，是根据&lt;code&gt;innodb_flush_log_at_trx_commit&lt;/code&gt;和&lt;code&gt;sync_binlog&lt;/code&gt;配置决定。&lt;strong&gt;用于实现数据持久化，以及宕机恢复数据。&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;redo log 本质上记录了对某个表空间的某个数据页的某个偏移量修改了哪几个字节的值，具体修改的值是什么，一条redo log也就几个字节到十几个字节，格式是 &lt;code&gt;日志类型，表空间ID，数据页号，数据页偏移量，具体修改的数据&lt;/code&gt;。redo log buffer默认是16MB，redo log 数据内容是记在 redo log block 里的，写满一个就存到redo log buffer里，然后写下一个，直到 buffer 满了，此时会强制刷盘。&lt;/p&gt;
-&lt;p&gt;redo log  是固定大小的，比如有一组4个文件组成的“环形队列”，环形写入，一个文件写完就写下一个，4个轮转，作用是redo log刷盘完成之后这部分内存就能重新利用；首位指针表示当前记录的位置和当前擦除位置，是一个叫 LSN（log sequence number）的检查点，表示在LSN之前的数据（缓冲池里的数据页、索引页）都已经持久化到磁盘了，redo log文件里在LSN检查点之前的内容才允许被覆盖，擦除或覆盖之前记一定会刷到磁盘。&lt;/p&gt;
+&lt;p&gt;redo log  是固定大小的，比如有一组4个文件组成的“环形队列”，环形写入，一个文件写完就写下一个，4个轮转，作用是redo log刷盘完成之后这部分内存就能重新利用；首位指针表示当前记录的位置和当前擦除位置。当前擦除位置是一个叫 LSN（log sequence number）的检查点，表示在LSN之前的数据（缓冲池里的数据页、索引页）都已经持久化到磁盘了，redo log文件里在LSN检查点之前的内容才允许被覆盖，擦除或覆盖之前一定会刷到磁盘。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;WAL机制&lt;/strong&gt;：执行事务时，将表数据写入内存和日志(redo log)，事务就完成了，此时表数据可能还没写入磁盘，InnoDB会在合适的时机将内存里的数据刷入磁盘。WAL机制主要是解决表数据写入时，CPU和磁盘速度的差异问题，也因为是先把数据写进内存，再写入磁盘，才需要redo log + 二阶段提交来解决崩溃数据丢失的问题。&lt;/p&gt;
@@ -18261,7 +18263,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;bin log归档日志&lt;/strong&gt;：属于server层的日志，逻辑日志，&lt;strong&gt;记录所有逻辑操作&lt;/strong&gt;，追加写入，不会覆盖以前的日志，bin log有两种模式，statement 格式的话是记sql语句， row格式会记录行的内容，一般使用row，记录行变化前和变化后的数据，缺点是日志变大。&lt;strong&gt;用于主从复制和数据备份恢复&lt;/strong&gt;；&lt;/p&gt;
 &lt;p&gt;bin log也是先写buff再写磁盘，建议设置&lt;code&gt;sync_binlog=1&lt;/code&gt;，表示每次事务提交后bin log都会持久化到磁盘；&lt;/p&gt;
-&lt;p&gt;其他参数：&lt;code&gt;=0&lt;/code&gt;，表示由系统判断何时刷盘，&lt;code&gt;=N&lt;/code&gt;，表示每N个事务完成才会刷盘；&lt;/p&gt;
+&lt;p&gt;其他参数：&lt;code&gt;=0&lt;/code&gt;，表示由系统判断何时刷盘，&lt;code&gt;=N&lt;/code&gt;，表示每次事务提交都会write到磁盘page cahce，但是会累计提交 N 个事务后才把bin log的数据持久化到磁盘，一般设置范围是100~1000，对应的风险是，如果机器宕机，会丢失最近 N 个事务的bin log日志；&lt;/p&gt;
 &lt;p&gt;redo log prepare、commit 的XID与bin log的XID实现关联，通过XID的关联，就能知道两份日志是否完整，从而实现crash-safe。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
@@ -18269,32 +18271,36 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;结合redo log的二阶段提交和WAL机制，整个流程就是：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;当有记录要更新时，数据修改前，先把老版本的数据写入undo log，然后把新数据先写进redo log buffer，状态是prepare，然后是bin log写入cache，事务提交，redo log更新为commit状态，并更新内存里的数据后，整个更新操作就算完成。当两个参数都 &lt;code&gt;=1&lt;/code&gt; 时，事务完整提交前，需要刷两次盘，一次 redo log，一次 bin log。&lt;/p&gt;
+&lt;p&gt;当有记录要更新时，数据修改前，先把老版本的数据写入undo log，然后把新数据先写进redo log buffer，状态是prepare，然后是写入 bin log cache，事务提交，redo log更新为commit状态，并更新内存里的数据后，整个更新操作就算完成。当两个参数都 &lt;code&gt;=1&lt;/code&gt; 时，事务完整提交前，需要刷两次盘，一次 redo log，一次 bin log。&lt;/p&gt;
 &lt;p&gt;建议设置&lt;code&gt;innodb_flush_log_at_trx_commit=1&lt;/code&gt;，表示每次事务完成后，立即调一次 fsync 方法将redo log buffer 中的数据持久化到磁盘的cache，再调用一次flush 方法持久化到硬盘。&lt;/p&gt;
-&lt;p&gt;其他参数：&lt;code&gt;=0&lt;/code&gt;，表示每秒调用 fsync 方法将 redo log buffer 中的数据持久化到磁盘cache，再调用 flush 刷盘，机器停电或崩溃可能会丢失一秒的数据；&lt;code&gt;=2&lt;/code&gt;，表示每次事务完成后，立即调一次 fsync 方法将 redo log buffer 中的数据写到磁盘cache，然后每秒调一次 flush 方法持久化到硬盘，机器停电或操作系统崩溃可能会丢失一秒的数据。&lt;/p&gt;
+&lt;p&gt;其他参数：&lt;code&gt;=0&lt;/code&gt;，表示每秒调用 fsync 方法将 redo log buffer 中的数据持久化到磁盘cache，再调用 flush 刷盘，机器停电或崩溃可能会丢失一秒的数据；&lt;code&gt;=2&lt;/code&gt;，表示每次事务完成后，立即调一次 fsync 方法将 redo log buffer 中的数据写到磁盘page cache，然后每秒调一次 flush 方法持久化到硬盘，机器停电或操作系统崩溃可能会丢失一秒的数据。&lt;/p&gt;
 &lt;p&gt;除此之后还有几种场景会强制写磁盘：redo log buffer满了、正常关闭服务器、redo log环形写入到达check point时。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;InnoDB在空闲的时候才真正的将内存中已更新的表数据刷新到对应的page页，写入磁盘中，此时数据才真正落盘。&lt;/p&gt;
+&lt;p&gt;InnoDB在空闲的时候才真正的将内存中已更新的&lt;strong&gt;表数据&lt;/strong&gt;刷新到对应的page页，写入磁盘中，此时数据才真正落盘。&lt;/p&gt;
 &lt;p&gt;因为redo log格式固定，可以通过redo log buffer实现顺序写入磁盘，顺序IO写入速度快，而将表数据写入磁盘，需要更新redo log日志中的内容到表数据对应的page页，涉及到分页或合并等操作，属于随机IO写入，比较费时，所以才先写redo log日志，再把表数据写入磁盘。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;可以&lt;strong&gt;只使用redo log来实现崩溃恢复&lt;/strong&gt;，保证恢复后不会出现主从不一致的情况，由MySQL内部实现，但无法只使用bin log，原因是 InnoDB使用WAL机制，如果此时数据库崩溃，要依赖日志来恢复数据页，但是bin log并没有记录数据页的更新细节，而redo log因为环形写入的问题，无法对所有记录进行归档，仅仅只能实现崩溃恢复；InnoDB通过redo log的状态和比较与bin log的数据，来判断哪些数据需要进行崩溃恢复。&lt;/p&gt;
-&lt;p&gt;正常运行的情况下，数据页被修改到落盘，从头到尾操作的都是内存中的数据，操作记录只是顺带记录在redo log文件中，只有在奔溃恢复的场景下，如果InnoDB判断数据丢失了更新，才会从redo log文件中将数据恢复到内存，再从内存中将数据刷盘。redo log只是用于记录，真正刷盘的数据来自其他buffer。&lt;/p&gt;
+&lt;p&gt;正常运行的情况下，数据页被修改到落盘，从头到尾操作的都是内存中的数据，操作记录只是顺带记录在redo log文件中，只有在崩溃恢复的场景下，如果InnoDB判断数据丢失了更新，才会从redo log文件中将数据恢复到内存，再从内存中将数据刷盘。redo log只是用于记录，真正刷盘的数据来自其他buffer。&lt;/p&gt;
 &lt;p&gt;备份时间的长短会影响日志文件的大小，文件的完整性，从而影响到恢复速度和恢复效果；&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;undo log回滚日志&lt;/strong&gt;：InnoDB独有，逻辑日志，主要用于&lt;strong&gt;事务失败时的回滚&lt;/strong&gt;，以及MVC&lt;strong&gt;C中版本数据查看&lt;/strong&gt;。当事务被提交后，并不会马上被删除，而是放到待清理链中，=到没有事务用到该版本信息时才可以清理。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;undo log回滚日志&lt;/strong&gt;：InnoDB独有，逻辑日志，主要用于&lt;strong&gt;事务失败时的回滚&lt;/strong&gt;，以及&lt;strong&gt;MVCC中版本数据查看&lt;/strong&gt;。当事务被提交后，并不会马上被删除，而是放到待清理链中，等到没有事务用到该版本信息时才可以清理。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;参考：&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/133994414&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;MySQL中的日志机制&lt;/a&gt;&lt;/p&gt;
 &lt;h1 id=&#34;常用sql&#34;&gt;常用SQL&lt;/h1&gt;
+&lt;h2 id=&#34;更新&#34;&gt;更新&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;update 表名 set 列名1=值1, 列名2=值2... where 列名3=值3 &lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;插入&#34;&gt;插入&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;insert into 表名 (列名1, 列名2, ...) values (值1, 值2, ...)&lt;/code&gt;&lt;/p&gt;
 &lt;h2 id=&#34;countcount1count列区别&#34;&gt;Count(*)、Count(1)、Count([列])区别&lt;/h2&gt;
 &lt;p&gt;在count(*)不带条件在MyISAM里查询比较快，因为MyISAM会存储总条数，不带条件查询的时候直接用就行，而InnoDB带了事务，支持MVCC，因此每次count(*)时都会扫表&lt;/p&gt;
 &lt;p&gt;以下归纳基于InnoDB，count会返回满足条件的结果集的总行数，它会使用存储引擎进行全表扫描获取结果，比如count(1)会直接返回1，count(主键)会获取主键，返回给server层，由server层进行计数，因此按效率排序是：count(字段) &amp;lt; count( 主键id) &amp;lt; count(1) ≈ count(*)&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;count（列）会计算列或这列的组合不为空的计数&lt;/li&gt;
 &lt;li&gt;count(*) 跟 count(1) 的结果一样，都包括对NULL的统计，而count([列名]) 是不包括NULL的统计&lt;/li&gt;
-&lt;li&gt;对于计数，也可以通过创建列为表名、total的表进行计数，利用事务能力，一般是先insert在update，理由是并发进行total值的更新时，是会上行锁的，如果先update total值可能会导致事务处理时间过长&lt;/li&gt;
+&lt;li&gt;对于计数，也可以通过创建列为表名、total的表进行计数，利用事务能力，一般是先insert再update，理由是并发进行total值的更新时，是会上行锁的，如果先update total值可能会导致事务处理时间过长&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;having的使用&#34;&gt;having的使用&lt;/h2&gt;
 &lt;ul&gt;
@@ -18357,8 +18363,8 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;order-by&#34;&gt;order by&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;全字段排序：查询条件是索引，但是order by 条件不是，会先遍历索引，再回表取值，每次取到数据就丢sort_buffer，完了之后在sort_buffer里根据order by条件排序 （利用sort_buffer + 临时表），会根据数据量采用内存排序或者外部归并排序；&lt;/li&gt;
-&lt;li&gt;rowId排序：如果select的字段太多，超过设置的最大长度&lt;code&gt;max_length_for_sort_data&lt;/code&gt;，就会只取主键和order by的条件丢进去sort_buffer里进行排序，最后再回表根据主键取出其他select的字段；&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;全字段排序&lt;/strong&gt;：查询条件是索引，但是order by 条件不是，会先遍历索引，再回表取值，每次取到数据就丢sort_buffer，完了之后在sort_buffer里根据order by条件排序 （利用sort_buffer + 临时表），会根据数据量采用内存排序或者外部归并排序；&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;rowId排序&lt;/strong&gt;：如果select的字段太多，超过设置的最大长度&lt;code&gt;max_length_for_sort_data&lt;/code&gt;，就会只取主键和order by的条件丢进去sort_buffer里进行排序，最后再回表根据主键取出其他select的字段；&lt;/li&gt;
 &lt;li&gt;如果order by的条件正好是索引顺序，就不需要使用sort_buffer进行排序了，直接使用索引顺序即可；&lt;/li&gt;
 &lt;li&gt;order by rand()，随机排序，使用内存临时表，使用rowId + 随机数进行排序；&lt;/li&gt;
 &lt;li&gt;不带查询条件进行order by，就算order by条件是索引，是不一定会走索引进行排序，原因是如果MySQL优化器判断走索引后要去回表数量太大，就不会走；&lt;/li&gt;
@@ -18381,19 +18387,20 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;h2 id=&#34;join&#34;&gt;join&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;由于有时优化器会选择错误的驱动表，使用 &lt;strong&gt;straight_join&lt;/strong&gt; 则可以让MySQL默认使用左边的表作为驱动表；&lt;/p&gt;
+&lt;p&gt;由于有时优化器会选择错误的驱动表，使用 &lt;strong&gt;straight_join&lt;/strong&gt; 则可以让MySQL&lt;strong&gt;默认使用左边的表作为驱动表&lt;/strong&gt;；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;当有A、B两表，是一个1对1的关系，逻辑外键在B表带有索引，使用join进行关联查询，小表驱动大表(这样扫描的行数较少)，每扫一行，通过外键索引，在另一个表找对应的行数据，总共执行1条语句，扫描len(A) + len(B) 行，但是如果不使用join查，而是先查出A表所有数据，再根据A的id查回B的数据，虽然扫描的行数一样，但是却执行了len(B) + 1条SQL语句，显然是使用了join的方式性能强，前提是B上带了索引（NLJ算法）。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NLJ算法进行join操作&lt;/strong&gt;：当有A、B两表，是一个1对1的关系，逻辑外键在B表带有索引，使用join进行关联查询，小表驱动大表(这样扫描的行数较少)，每扫一行，通过外键索引，在另一个表找对应的行数据，总共执行1条语句，扫描len(A) + len(B) 行，但是如果不使用join查，而是先查出A表所有数据，再根据A的id查回B的数据，虽然扫描的行数一样，但是却执行了len(B) + 1条SQL语句，显然是使用了join的方式性能强，前提是B上带了索引。&lt;/p&gt;
 &lt;p&gt;在MySQL 5.6之后，使用MRR进行优化，需要设置&lt;code&gt;set optimizer_switch =&#39; mrr = on, mrr_cost_based = off, batched_key_access = on&#39;;&lt;/code&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;启用MRR优化：在没使用MRR优化前，通过索引回表是一行一行去查的，每次通过普通索引查到后的主键id是无序的，多次回表查性能不太好，而MRR优化指的是，如果主键索引有序，记录递增插入，则会先根据索引找到所有的id，再对id进行排序，再回表查。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;启用MRR优化&lt;/strong&gt;：在没使用MRR优化前，通过索引回表是一行一行去查的，每次通过普通索引查到后的主键id是无序的，多次回表查性能不太好，而MRR优化指的是，如果主键索引有序，记录递增插入，则会先根据索引找到所有的id，再对id进行排序，再回表查。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;如果B上关联键没有使用索引，则算法是这样的，先对A表进行全表扫描存进内存，再对B表进行全表扫描存进内存，然后在内存(join buffer)里进行匹配，如果内存太小，则分块加载，匹配后将结果集返回，清空内存，再分配加载这样循环处理（BNL算法）&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;BNL算法进行join操作&lt;/strong&gt;：如果B上关联键没有使用索引，则算法是这样的，先对A表进行全表扫描存进内存，再对B表进行全表扫描存进内存，然后在内存(join buffer)里进行匹配，如果内存太小，则分块加载，匹配后将结果集返回，清空内存，再分配加载这样循环处理。&lt;/p&gt;
 &lt;p&gt;对BNL的优化，一种是在业务端查回两张表的数据，在通过hash匹配组合，另一种是查join查询前，先创建临时表，创建索引，查询被驱动表的数据，插入临时表中，与临时表进行join操作，将BNL转为NLJ；&lt;/p&gt;
 &lt;p&gt;小表驱动，小表指的是行数相对少，或者select时表的数据量相对少的表；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;所以，NLJ算法是从表A每查一行就根据索引去表B匹配一行，MRR优化就是在NLJ基础上，回表的时候根据有序的索引一批一批查，这样就快一点；而BNL算法是同时去查表A和表B的所有行，再进行匹配关联&lt;/strong&gt;；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;驱动表走全表扫描，被驱动表最好走索引扫描，使用NLJ算法，如果被驱动表是全表扫描，则使用(S)BNL算法&lt;/p&gt;
@@ -18609,7 +18616,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;由于MySQL在选择索引的时候会根据 索引区分度 和索引对应的预估扫描行数（包括回表），但是有可能预估的结果是不准的，如果通过explain命令发现rows的值与想象中的偏差较大，可以执行&lt;code&gt;analyze table [tableName]&lt;/code&gt;来重新统计索引信息，或者使用&lt;code&gt;force index([索引名称])&lt;/code&gt;来强制使用索引，或者重写SQL，引导MySQL使用正确的索引&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;注意索引的最左前缀原则，如果在设置联合索引时，可以通过调整顺序来达到少维护一个索引，拿这个顺序就可以优先考虑，因为一个要考虑的就是索引的大小&lt;/p&gt;
+&lt;p&gt;注意索引的最左前缀原则，如果在设置联合索引时，可以通过调整顺序来达到少维护一个索引，拿这个顺序就可以优先考虑，另外一个要考虑的就是索引的大小&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;尽量的扩展索引，不要新建索引。比如表中已经有a的索引，现在要加(a,b)的索引，那么只需要修改原来的索引即可。&lt;/p&gt;
@@ -18622,9 +18629,9 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;使用临时表，如果是InnoDB引擎，那创建的临时表是写磁盘的，如果是Memory引擎，则是写内存的。创建语句是 &lt;code&gt;create temporary table ···engine=xxx&lt;/code&gt;，用法跟普通表类似，但仅在当前线程可见，show tables不显示临时表，当当前线程处理完成后，临时表会被清空，但会保留表结构，允许在不同线程间重名，如果bin log格式是statement或mix，操作临时表的记录也会记录在bin log，备库也会跟着操作。&lt;/p&gt;
-&lt;p&gt;内部临时表常用于不带索引的 join、分库分表时的联合查询、union查询(对两个查询结果求并集并去重，union all则不去重)、group by查询(order by和group by子句不一样时也会)、distinct查询时加上order by、from 中的子句查询，explain查询指向计划结果的extra列。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;内部临时表常用于不带索引的 join、分库分表时的联合查询、union查询(对两个查询结果求并集并去重，union all则不去重)、group by查询(order by和group by子句不一样时也会)、distinct查询时加上order by、from 中的子句查询，explain查询指向计划结果的extra列&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;当查询的数据量比较大时，默认会先使用内存临时表，发现太大后才转成磁盘表，因此如果数据量太大，可以使用&lt;strong&gt;SQL_BIG_RESULT&lt;/strong&gt;（ &lt;code&gt;select SQL_BIG_RESULT 字段 from 表 group by xxx&lt;/code&gt;）告诉MySQL强制使用磁盘临时表&lt;/p&gt;
-&lt;p&gt;一般情况下还是使用内存表快些，通过调大tmp_table_size来加大内存临时表的大小，默认是16M，这种临时表是由MySQL查询算法决定使用的&lt;/p&gt;
+&lt;p&gt;一般情况下还是使用内存表快些，通过调大&lt;code&gt;tmp_table_size&lt;/code&gt;来加大内存临时表的大小，默认是16M，这种临时表是由MySQL查询算法决定使用的&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;group by 或order by多个字段时，需要为这多个字段建组合索引，不然也是全表扫&lt;/p&gt;
@@ -18661,7 +18668,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;eq_ref：联表查询，按连表的&lt;strong&gt;主键或唯一键&lt;/strong&gt;联合查询，当主键或唯一非&lt;code&gt;NULL&lt;/code&gt;索引的所有字段都被用作&lt;code&gt;join&lt;/code&gt;联接时会使用此类型；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;ref：用于单表扫描或者表间的连接匹配条件时用到普通索引或者唯一索引的前缀匹配；&lt;/p&gt;
+&lt;p&gt;ref：表示单表扫描或者表间的连接匹配条件时用到普通索引或者唯一索引的前缀匹配；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;index_merge：索引合并， 表示查询使用了两个以上的索引，最后取交集或者并集，常见&lt;code&gt;and &lt;/code&gt;，&lt;code&gt;or&lt;/code&gt;的条件使用了不同的索引；&lt;/p&gt;
@@ -18783,7 +18790,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;可以手工或者自动执行检查和修复操作，但是和事务恢复以及崩溃恢复不同，可能导致一些数据丢失，而且修复操作是非常慢的。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;如果指定了 DELAY_KEY_WRITE 选项，在每次修改执行完成时，不会立即将修改的索引数据写入磁盘，而是会写到内存中的键缓冲区，只有在清理键缓冲区或者关闭表的时候才会将对应的索引块写入磁盘。这种方式可以极大的提升写入性能，但是在数据库或者主机崩溃时会造成索引损坏，需要执行修复操作。&lt;/p&gt;
+&lt;p&gt;如果指定了 &lt;code&gt;DELAY_KEY_WRITE&lt;/code&gt;选项，在每次修改执行完成时，不会立即将修改的索引数据写入磁盘，而是会写到内存中的键缓冲区，只有在清理键缓冲区或者关闭表的时候才会将对应的索引块写入磁盘。这种方式可以极大的提升写入性能，但是在数据库或者主机崩溃时会造成索引损坏，需要执行修复操作。&lt;/p&gt;
 &lt;h2 id=&#34;2innodb&#34;&gt;2.InnoDB&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -18803,7 +18810,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;关于有时更新或者查询时突然变慢的原因&lt;/strong&gt;：首先，InnoDB更新采用WAL机制，即更新时通过redo log记录更新操作，修改内存里的数据，然后再在恰当时间flush到磁盘（即先写日志，再写磁盘），原因就是出在flush磁盘上，当redo log满了，或者内存满了，脏页太多，都会将内存里的数据flush到磁盘，以腾出空间，如果要刷的数据特别多，那消耗的时间就长。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;解决方法&lt;/strong&gt;：1. 设置到 innodb_io_capacity参数，该参数会告诉InnoDB机器的磁盘能力，可以使用fio工具测出 2. 控制脏页的比例，设置innodb_max_dirty_pages_pct的值，默认是75%，达到了就会刷 3. 刷新脏页时是否会递归检测隔壁数据页是否也是脏页，如果是会连着一起刷，通过innodb_flush_neighbors=1表示采用这种机制，=0表示只会刷自己，这个机制对机械硬盘关系比较大，SSD则不会&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;解决方法&lt;/strong&gt;：1. 设置到 &lt;code&gt;innodb_io_capacity&lt;/code&gt; 参数，该参数会告诉InnoDB机器的磁盘能力，可以使用fio工具测出 ；2. 控制脏页的比例，设置 &lt;code&gt;innodb_max_dirty_pages_pct&lt;/code&gt; 的值，默认是75%，达到了就会刷； 3. 刷新脏页时是否会递归检测隔壁数据页是否也是脏页，如果是会连着一起刷，通过 &lt;code&gt;innodb_flush_neighbors=1&lt;/code&gt;表示采用这种机制，=0表示只会刷自己，这个机制对机械硬盘关系比较大，SSD则不会&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;关于InnoDB的删除&lt;/strong&gt;：&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;innodb_file_per_table=OFF&lt;/code&gt;：表示表数据放在系统共享表空间，=on表示各个表空间放在独立文件下，后缀名是 .ibd ，一般设置=on，便于管理。&lt;/p&gt;
 &lt;p&gt;当我们使用delete删除数据时，InnoDB实际上是把数据页上的该数据标记为删除，表示该位置可以进行复用，此时磁盘上的文件并不会变小，当数据随机插入时会因为页分裂，分裂后的页可能存不满数据，就会标记某些位可复用，导致页的利用率不高，当有大量的增删时，会导致数据页存在大量空洞，为了压缩空间，此时的解决办法是重建表，一般使用&lt;code&gt;alter table [tableName] enging=InnoDB&lt;/code&gt;达到重建的目的，MySQL会自动创建临时表，进行数据转存，交换表名，删除旧表，此时会阻塞，阻止增删改，&lt;strong&gt;5.56版本后使用onlineDDL机制&lt;/strong&gt;，解决了这个问题，解决方法是使用redo log记录新插入的数据 + MDL读锁(写锁会退化) + IO + CPU&lt;/p&gt;
@@ -19011,7 +19018,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;&lt;strong&gt;Auto-Inc 锁&lt;/strong&gt;：自增锁，比较特殊，当设置键为自增时使用，比如自增主键，在生成自增id时，会先获取相关表的 Auto-Inc 锁，阻塞其他事务的插入操作，保证自增的唯一性。不遵循二阶段锁协议，因为它并不是在事务提交时释放，而是在inset语句执行后释放，即使是在回滚时，自增值也不会减一。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;多版本并发控制（MVCC）&lt;/strong&gt;：用来解决读-写冲突的无锁并发控制，为事务分配一个单向增长的时间戳，为每个修改保存一个版本，版本与事务时间戳关联，读操作只读该事务开始前的数据库的快照。MVCC 在语境中倾向于 “对多行数据打快照造平行宇宙”，然而 CAS 一般只是保护单行数据而已&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;多版本并发控制（MVCC）&lt;/strong&gt;：用来解决读-写冲突的无锁并发控制，为事务分配一个单向增长的时间戳，为每个修改保存一个版本，版本与事务时间戳关联，读操作只读该事务开始前的数据库的快照。MVCC 在语境中倾向于 “对多行数据打快照造平行宇宙”，而 CAS 一般只是保护单行数据而已&lt;/p&gt;
 &lt;p&gt;MVCC只在&lt;strong&gt;提交读 和 可重复读隔离级别下有效&lt;/strong&gt;，保证在读操作不用阻塞写操作，写操作不用阻塞读操作的同时，避免了脏读和不可重复读。 对于可重复读，查询只承认在事务启动前就已经提交完成的数据； 对于提交读，查询只承认在语句启动前就已经提交完成的数据;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;MVCC的版本快照，指的是什么呢，而且它是基于整个库的，总不能保存多个版本的库的所有数据吧？&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;实际上MVCC得到的快照是逻辑上的数据，是推测出来的，通过当前值，利用事务Id和undo log日志，根据日志&amp;quot;回滚&amp;quot;得到各个版本的数据，事务id可以简单理解为对该行数据进行更改时产生的id，当然一个事务内可以对多条数据进行操作，这多条数据的事务id都是相同的&lt;/p&gt;
@@ -19047,7 +19054,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;不带等值的范围查询上，无论是否是唯一索引，范围查询都需要访问到第一个不满足条件的值为止，在这个范围加间隙锁（左开右闭），带等值的范围查询时，规则还是同上；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;锁是加在索引上的，根据where条件依次加上，比如有表A，索引为id、a、b，当update时的条件是where a=xx时，会对索引a、id、b的顺序加锁；间隙锁只会加在where条件中的索引上，对于该索引定位到的行加的是行锁；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;锁是加在索引上的，先对where条件上的用到的索引加锁，再对该行上存在的索引依次加锁&lt;/strong&gt;。比如有表A，索引为id、a、b，当update时的条件是where a=xx时，会对索引a、id、b的顺序加锁；&lt;strong&gt;间隙锁只会加在where条件中的索引上&lt;/strong&gt;，对于该索引定位到的行加的是行锁；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;select加的锁，如果查询的列刚好是满足覆盖索引，且覆盖索引不包括其他索引，则只会锁where条件上的索引；&lt;/p&gt;
@@ -19185,12 +19192,10 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;bin log的写入机制：事务执行过程中，先把日志写进bin log cache，事务提交时，再把bin log cache写进bin log文件（先写到文件系统的page cache，再进行持久化）中，然后把bin log cache清空。&lt;/p&gt;
 &lt;p&gt;bin log cache每个线程自己维护，bin log的写入是一个顺序操作；&lt;/p&gt;
 &lt;p&gt;bin log cache的大小通过&lt;code&gt;binlog_cache_size&lt;/code&gt;控制，如果超过就暂存到磁盘；&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;sync_binlog=x&lt;/code&gt;表示每次事务提交都会write到磁盘page cahce，但是会累计提交x个事务后才把bin log的数据持久化到磁盘，一般设置范围是100~1000，对应的风险是，如果机器宕机，会丢失最近N个事务的bin log日志；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;redo log写入机制：原理与bin log类似，但是它是二阶段提交，有状态，事务执行过程中，redo log先是prepare状态，写入redo log buffer，再写bin log，提交事务，变为redo log commit状态；&lt;/p&gt;
 &lt;p&gt;redo log buffer全局共用，与bin log cache不同；&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;innodb_flush_log_at_trx_commit&lt;/code&gt;=0，表示每次事务提交只是把redo log写入redo log buffer，=1 表示每次事务提交会持久化redo log到硬盘中，=2 表示每次事务提交会把redo log写到page cache，innodb后台有进程每秒钟将redo log buffer中的日志写进page cache，再持久化到磁盘，所以有可能会把事务未提交的redo log持久化到硬盘；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;一般会把&lt;code&gt;sync_binlog&lt;/code&gt;和&lt;code&gt;innodb_flush_log_at_trx_commit&lt;/code&gt;都设置为1，即一个事务完整提交前，会刷两次盘。另一种设置是让&lt;code&gt;sync_binlog=1000&lt;/code&gt;和&lt;code&gt;innodb_flush_log_at_trx_commit=2&lt;/code&gt;，一般是在主备复制存在很大延迟时，为了让从库的备份速度跟上主库；&lt;/p&gt;
@@ -19207,17 +19212,17 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/ul&gt;
 &lt;p&gt;bin log上会记录每台机子的server id，用于避免循环复制&lt;/p&gt;
 &lt;h3 id=&#34;具体步骤&#34;&gt;具体步骤&lt;/h3&gt;
-&lt;p&gt;每个MySQL数据库上都有这三个线程，&lt;strong&gt;默认是主服务器写完bin Log后就算事务成功，bin Log复制是异步执行。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;每个MySQL数据库上都有这三个线程，&lt;strong&gt;默认是主服务器写完bin log后就算事务成功，bin log复制是异步执行。&lt;/strong&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;binlog 线程&lt;/strong&gt; ：负责将主库上的数据更改写入bin Log。之后事务线程提交事务，响应成功给客户端。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;binlog 线程&lt;/strong&gt; ：负责将主库上的数据更改写入bin log。之后事务线程提交事务，响应成功给客户端。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;I/O 线程&lt;/strong&gt; ：负责从主库上读取bin Log，并写入从库的重放日志（relay log）中，主库也会创建一个log dump线程来异步发送bin Log给从库；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;I/O 线程&lt;/strong&gt; ：负责从主库上读取bin log，并写入从库的重放日志（relay log）中，主库也会创建一个log dump线程来异步发送bin log给从库；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;SQL 线程&lt;/strong&gt; ：在从库里，负责将读取到的relay log日志并重放其中的 SQL 语句。MySQL 5.6前只支持单线程，5.6后改为多线程，SQL线程分为container对事务进行分发，调度不同的worker线程进行执行，分发策略：1、更新同一行的两个事务，必须被分发到同一个worker；2、同一个事务不能被拆开，必须在同一worker中执行&lt;/p&gt;
-&lt;p&gt;从库在同步bin Log时，必须保证bin Log的顺序，才能确保数据一致性。&lt;/p&gt;
+&lt;p&gt;从库在同步bin log时，必须保证bin log的顺序，才能确保数据一致性。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;figure 
@@ -19234,7 +19239,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 	&lt;figcaption&gt;MySQL主从复制&lt;/figcaption&gt;
 	
 &lt;/figure&gt;&lt;/p&gt;
-&lt;p&gt;默认情况下，由于是异步复制，无法保证数据第一时间复制到从库上，但如果采用同步复制，即等从库复制完主库的bin Log后才响应给客户端，性能就太差了。&lt;/p&gt;
+&lt;p&gt;默认情况下，由于是异步复制，无法保证数据第一时间复制到从库上，但如果采用同步复制，即等从库复制完主库的bin log后才响应给客户端，性能就太差了。&lt;/p&gt;
 &lt;p&gt;在MySQL 5.7后的版本，增加半同步复制(Semisynchronous Replication)，事务线程不用等到所有都复制成功才响应，只要一部分复制响应回来后即可响应给客户端，比如一主二从，等一从成功即可成功。配置&lt;code&gt;rpl_semi_sync_master_wait_no_slave&lt;/code&gt;表示至少等待多少个从库复制成功才算成功。&lt;code&gt;rpl_semi_sync_master_wait_point&lt;/code&gt;表示主库执行事务的线程是提交事务前等待复制(默认)，还是提交事务之后等待复制&lt;/p&gt;
 &lt;h3 id=&#34;主备延迟&#34;&gt;主备延迟&lt;/h3&gt;
 &lt;p&gt;当备库重放日志的速度小于主库产生bin log的速度，会出现主备延迟，可能的原因：&lt;/p&gt;
@@ -19387,7 +19392,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;MyISAM自增id的下一个值是存在表结构里的，InnoDB是放内存的，在MySQL 8.0以前，自增值并不会持久化到磁盘，每次重启后，自增值会被清空，在第一次读表的时候会把最大id给读出来+1，达到恢复原来的自增值；8.0后是记录在redo log里，重启后通过持久化的值来恢复&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;自增的两个重要参数auto_increment_offset和auto_increment_increment都是系统参数，默认值为1&lt;/p&gt;
+&lt;p&gt;自增的两个重要参数&lt;code&gt;auto_increment_offset&lt;/code&gt;和&lt;code&gt;auto_increment_increment&lt;/code&gt;都是系统参数，默认值为1&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;设置 &lt;code&gt;innodb_autoinc_lock_mode&lt;/code&gt;，=1时，普通insert语句会执行完之后释放，批量insert时会等到所有批量insert的SQL都结束的时候才释放锁，原因是如果bin log不是row，备库在复制时产生的行的id可能于主库的不一致问题；=2时，自增id锁每次获取完就会释放。&lt;/p&gt;

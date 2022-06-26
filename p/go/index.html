@@ -467,7 +467,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <span class="nx">data</span> <span class="p">=</span> <span class="p">[</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">9</span> <span class="mi">0</span><span class="p">]</span>
 <span class="c1">// 第二次append后结果
 </span><span class="c1"></span><span class="nx">slice</span> <span class="p">=</span> <span class="p">[</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">9</span> <span class="mi">10</span> <span class="mi">11</span> <span class="mi">12</span><span class="p">]</span>
-<span class="nx">data</span> <span class="p">=</span> <span class="p">[</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">9</span> <span class="mi">0</span><span class="p">]</span>
+<span class="nx">data</span> <span class="p">=</span>  <span class="p">[</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span>  <span class="mi">0</span>   <span class="mi">0</span> <span class="mi">0</span> <span class="mi">9</span> <span class="mi">0</span><span class="p">]</span>
 </code></pre></td></tr></table>
 </div>
 </div><h3 id="扩容策略">扩容策略</h3>
@@ -1014,7 +1014,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>先判断hmap是否为空，是否是并发写入，如果是直接抛错误；修改当前hamp的状态。</p>
 </li>
 <li>
-<p>根据key计算出哈希；还要就是判断bucket桶是否为空，为空则分配bmap数组，。</p>
+<p>根据key计算出哈希；还有就是判断bucket桶是否为空，为空则分配bmap数组，。</p>
 </li>
 <li>
 <p>判断 hmap的oldbuckets是否为空，不为空说明当前处于扩容搬迁，则进行搬迁工作，完了再进行之后的流程。</p>
@@ -1237,10 +1237,10 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>进入evacuate函数，如果是等量扩容，B值不变，老bucket桶上的键值计算出来的桶的序号不变，tophash不变，此时会将老桶上的键值对依次地一个个转移到新桶上，使这些键值对在新桶上排列更加紧凑；</p>
 <p>如果是增量扩容，容量变为原来的两倍，B值+1，老bucket桶上的键值计算出来的桶的序号改变，这些键值对计算后的bucket桶的序号可能跟之前一样，也可能是相比原来加上2^B，取决于key哈希值后 老B+1 位的值是0还是1。比如：</p>
 <p><code>10010111 | 000011110110110010001111001010100010010110010101010 │ 01010</code>，B=5，bucket的序号是10，增量扩容后为</p>
-<p><code>10010111 | 000011110110110010001111001010100010010110010101010 │ 01010</code>，B=6，bucket的序号还是10，</p>
+<p><code>10010111 | 00001111011011001000111100101010001001011001010101 | 001010</code>，B=6，bucket的序号还是10，</p>
 <p>另一种情况是</p>
-<p><code>10010111 | 000011110110110010001111001010100010010110010101010 │ 01010</code>，B=5，bucket的序号是10，增量扩容后为</p>
-<p><code>10010111 | 000011110110110010001111001010100010010110010101010 │ 11010</code>，B=6，bucket的序号是42（10 + 32，即10 + 2 ^5）</p>
+<p><code>10010111 | 000011110110110010001111001010100010010110010101011 │ 01010</code>，B=5，bucket的序号是10，增量扩容后为</p>
+<p><code>10010111 | 00001111011011001000111100101010001001011001010101 │ 101010</code>，B=6，bucket的序号是42（10 + 32，即10 + 2 ^5）</p>
 <p>tophash不变，原来老bucket桶上的键值对会重新分流到两个新bucket桶上。将老bucket桶上的键值对和其指向的溢出桶上的键值对进行迁移，依次转移到新桶上，每迁移完一个，key在老buckect的tophash设置为evacuatedX或者evacuatedY（tophash的最低位表示迁移到新桶的哪一part，0为x，1为y），hmap的nevacuate计数+1，直到老bucket桶上的键值对迁移完成，最后清空oldbuckets和oldoverflow字段。</p>
 <p>这里两个新的桶对应源码里的X part, Y part，因为扩容到原来的 2 倍，桶的数量是原来的 2 倍，前一半桶被称为 X part，后一半桶被称为 Y part。一个 bucket 中的所有key 可能会分流到 2 个桶中，一个位于 X part，一个位于 Y part。所以在搬迁一个 cell 之前，需要计算这个cell要落入到哪一part。</p>
 <p>X part 与 Y part的关系：X part + 2 ^ 老B = Y part，之所以要确定key落在哪个区间，是为了方便计算key要插入的内存地址。</p>

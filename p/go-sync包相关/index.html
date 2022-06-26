@@ -182,9 +182,9 @@ if (!doNotTrack) {
 <p>init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。</p>
 </li>
 <li>
-<p>全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。</p>
+<p>全局变量：包级别的变量在<strong>同一个文件中是按照声明顺序逐个初始化</strong>的；当该变量在初始化时<strong>依赖其它的变量时，则会先初始化该依赖的变量</strong>。<strong>同一个包下的多个文件，会按照文件名的排列顺序进行初始化</strong>。</p>
 <p>init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。</p>
-<p>当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数</p>
+<p>当init函数和全局变量<strong>无引用关系时，先初始化全局变量，再执行init函数</strong></p>
 </li>
 </ul>
 <div class="highlight"><div class="chroma">
@@ -326,7 +326,7 @@ if (!doNotTrack) {
 </span><span class="c1"></span><span class="p">}</span>
 <span class="kd">const</span> <span class="p">(</span>
 	<span class="nx">mutexLocked</span> <span class="p">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="kc">iota</span> <span class="c1">// 持有锁的标记，此时被锁定
-</span><span class="c1"></span>	<span class="nx">mutexWoken</span>  <span class="c1">// 唤醒标记，从普通模式被唤醒
+</span><span class="c1"></span>	<span class="nx">mutexWoken</span>  <span class="c1">// 唤醒标记，从正常模式被唤醒
 </span><span class="c1"></span>	<span class="nx">mutexStarving</span> <span class="c1">// 饥饿标记，进入饥饿模式
 </span><span class="c1"></span>	<span class="nx">mutexWaiterShift</span> <span class="p">=</span> <span class="kc">iota</span>  <span class="c1">// 阻塞等待的waiter数量
 </span><span class="c1"></span>    <span class="nx">starvationThresholdNs</span> <span class="p">=</span> <span class="mf">1e6</span>
@@ -361,11 +361,11 @@ if (!doNotTrack) {
 <p>Mutex的零值是没有goroutine等待的未加锁状态，不会因为没有初始化而出现空指针或者无法获取到锁的情况，so无需额外的初始化，直接声明变量即可使用<code>var lock sync.Mutex</code>，或者是在结构体里的属性，均无需初始化</p>
 </li>
 <li>
-<p>锁有两种模式：普通模式和饥饿模式</p>
-<p>普通模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；</p>
+<p>锁有两种模式：正常模式和饥饿模式</p>
+<p>正常模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；</p>
 <p>如果此时有新的goroutine也在获取锁，会参与到获取锁的竞争中，这是非公平的，因为新请求锁的goroutine是在CPU上被运行，并且数量也可能很多，所以被唤醒的goroutine获取锁的概率并不大，所以，如果等待队列中的goroutine等待超过1ms，则会优先加入到队列的头部，如果超过1ms都没有获取到锁，则进入饥饿模式；</p>
 <p>饥饿模式下，锁的所有权会直接从释放锁的goroutine转交给队首的goroutine，新请求锁的goroutine就算锁的空闲状态也不会去获取锁，也不会自旋，直接加入等待队列的队尾，以此解决等待的goroutine的饥饿问题；</p>
-<p>恢复为正常模式的条件：一个goroutine获取锁后，当前goroutine是队列的最后一个，拿锁的耗时小于1ms；</p>
+<p>恢复为正常模式的条件：一个goroutine获取锁后，当前goroutine是队列的最后一个，退出饥饿模式；</p>
 </li>
 <li>
 <p>Unlock方法可以被任意goroutine调用，释放锁，即使它本身没有持有这个锁，so写的时候要牢记，谁申请锁，就该谁释放锁，保证在一个方法内被调用</p>
@@ -397,7 +397,7 @@ if (!doNotTrack) {
 <p>goroutine本身进入自旋的条件比较苛刻：</p>
 <ul>
 <li>
-<p>互斥锁只有在普通模式才能进入自旋；</p>
+<p>互斥锁只有在正常模式才能进入自旋；</p>
 </li>
 <li>
 <p><code>runtime.sync_runtime_canSpin</code>需要返回true：</p>
@@ -410,9 +410,7 @@ if (!doNotTrack) {
 </ol>
 </li>
 <li>
-<p>在lockSlow方法内，意味着锁已经被持有，当前调用Lock方法的goroutine正在等待，且非饥饿状态，其首先会自旋，尝试获取锁，无需休眠，否则进入 3</p>
-</li>
-<li>
+<p>在lockSlow方法内，意味着锁已经被持有，当前调用Lock方法的goroutine正在等待，且非饥饿状态，其首先会自旋，尝试获取锁，无需休眠，否则进入 4</p>
 <p>不满足自旋时，当前锁可能有如下几种状态：</p>
 <ul>
 <li>锁还没有被释放，锁处于正常状态</li>
@@ -422,7 +420,7 @@ if (!doNotTrack) {
 </ul>
 </li>
 <li>
-<p>由于lock方法会被多个goroutine执行，所以锁的状态会不断变化，此时会生成当前goroutine的 new state，期望状态</p>
+<p>由于lock方法会被多个goroutine执行，所以锁的状态会不断变化，此时会生成当前goroutine的 new state 作为期望状态</p>
 <ul>
 <li>如果是非饥饿状态，锁的new state设置为已持有锁</li>
 <li>如果已经持有锁，或者是饥饿状态，waiter数量 + 1</li>
@@ -431,7 +429,7 @@ if (!doNotTrack) {
 </ul>
 </li>
 <li>
-<p>CAS<strong>更新当前锁的状态</strong>为new state，如果更新成功</p>
+<p><strong>CAS更新当前锁的状态</strong>为new state，如果更新成功</p>
 <p>5.1. 如果锁的原状态old state是未被锁，且非饥饿状态，表明当前goroutine获取到了锁，<strong>退出结束</strong>
 5.2. 判断当前goroutine是新加入的还是被唤醒的，新加入的放到等待队列的尾部，刚被唤醒的加入等待队列的头部，通过信号量阻塞，直到当前goroutine被唤醒
 5.3. 从这里开始被唤醒的goroutine，都是表示是从阻塞队列里出来的。goroutine被唤醒后，判断当前state是否是饥饿状态，如果不是则更新锁的状态为被唤醒，表示有G被唤醒，继续循环，跳到 2
@@ -646,9 +644,9 @@ if (!doNotTrack) {
 </div>
 </div><h2 id="unlock方法">Unlock方法</h2>
 <ol>
-<li>将state的锁位-1，如果state=0，即此时没有加锁，且没有正在等待获取锁的goroutine，则直接结束方法，如果state != 0，执行unlockSlow方法，唤醒等待的goroutine</li>
-<li>如果Mutex处于饥饿状态，直接唤醒等待队列中的waiter</li>
-<li>如果Mutex处于正常状态，如果没有waiter，或者已经有在处理的waiter的情况，则直接释放锁，state锁位-1，返回；否则，waiter数-1，设置唤醒标记，通过CAS解锁，唤醒在等待锁的goroutine，此时新老goroutine一起竞争锁</li>
+<li>将state的锁位-1，如果state=0，即此时没有加锁，且没有正在等待获取锁的goroutine，则直接结束方法，如果state != 0，执行unlockSlow方法，唤醒等待的goroutine；</li>
+<li>如果Mutex处于饥饿状态，当前goroutine不更新锁状态，直接唤醒等待队列中的waiter，继续执行，相当于解锁了，然后由等待队列中的队首goroutine获得锁；</li>
+<li>如果Mutex处于正常状态，如果没有waiter，或者已经有在处理的waiter的情况，则直接释放锁，state锁位-1，返回；否则，waiter数-1，设置唤醒标记，通过CAS解锁，唤醒在等待锁的goroutine，此时新老goroutine一起竞争锁；</li>
 </ol>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -834,6 +832,7 @@ if (!doNotTrack) {
 </span><span class="lnt">19
 </span><span class="lnt">20
 </span><span class="lnt">21
+</span><span class="lnt">22
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Map</span> <span class="kd">struct</span> <span class="p">{</span>
@@ -841,16 +840,17 @@ if (!doNotTrack) {
 </span><span class="c1"></span>	<span class="nx">mu</span> <span class="nx">Mutex</span>
 	<span class="c1">// 存读的数据，只读，由dirty提升得到
 </span><span class="c1"></span>	<span class="nx">read</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">Value</span>
-	<span class="c1">// 包含最新写入的数据，并且在写的时候，会把read中未被删除的数据拷贝到该dirty中，
+	<span class="c1">// 包含最新写入的数据，并且在写的时候，如果dirty是nil，会把read中未被删除的数据拷贝到该dirty中
 </span><span class="c1"></span>	<span class="nx">dirty</span> <span class="kd">map</span><span class="p">[</span><span class="kd">interface</span><span class="p">{}]</span><span class="o">*</span><span class="nx">entry</span>
-    <span class="c1">// 从read中读数据时该值+1, 当len(dirty) == misses时，将dirty拷贝到read中
+    <span class="c1">// 当从read中读不到数据，但在dirty中读到数据时该值+1, 当len(dirty) == misses时，将dirty拷贝到read中，此动作会发生在get和delete的操作中
 </span><span class="c1"></span>	<span class="nx">misses</span> <span class="kt">int</span>
 <span class="p">}</span>
 
 <span class="kd">type</span> <span class="nx">readOnly</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">m</span>       <span class="kd">map</span><span class="p">[</span><span class="kd">interface</span><span class="p">{}]</span><span class="o">*</span><span class="nx">entry</span>
-	<span class="nx">amended</span> <span class="kt">bool</span> <span class="c1">// true表明dirty中存在read中没有的键值对
-</span><span class="c1"></span><span class="p">}</span>
+    <span class="c1">// true表明dirty中存在read中没有的键值对，有两种情况：1.被删除的key，只能在read中找到；2.新增加的key，只能在dirty中找到
+</span><span class="c1"></span>	<span class="nx">amended</span> <span class="kt">bool</span>
+<span class="p">}</span>
 
 <span class="c1">// read和dirty都包含了*entry，里面的p是一个指针，read和dirty各自维护了一套key，但他们都指向同一个value
 </span><span class="c1"></span><span class="kd">type</span> <span class="nx">entry</span> <span class="kd">struct</span> <span class="p">{</span>
@@ -913,6 +913,7 @@ if (!doNotTrack) {
 <p>解锁；</p>
 </li>
 </ol>
+<p>总结：如果是新key，则加锁，优先put到dirty中，如果是dirty为空，则创建新dirty，将read中非删除键值对赋值给新dirty，将read标记为有key在dirty中但不存在在read中，解锁；如果是已存在的key，由于read和dirty的value是同一个引用，直接cas更新read即可。</p>
 <h2 id="load方法">Load方法</h2>
 <p>将dirty提升为read这个操作在load方法中执行。</p>
 <ol>
@@ -923,8 +924,16 @@ if (!doNotTrack) {
 <li>同时增加miss的值(miss表示读取穿透的次数)，当miss的值等于dirty的长度时，就会将dirty提升为read，只需简单的赋值即可，然后将dirty置为null，重置miss数，避免总是从dirty中加锁读取；</li>
 <li>解锁，将dirty中的查询结果返回；</li>
 </ol>
+<p>总结：优先读read中的key，判断read的标记，加锁，判断dirty是否包含read中不存在的key，如果是，才会去读dirty，同时miss值+1，当miss值=dirty长度时，将dirty中非删除的键值对赋值给read，解锁。</p>
 <h2 id="delete方法">Delete方法</h2>
-<p>删除key时，自旋，只是对该key打上一个expunged标记，真正的删除只有在将dirty提升为read时才会清理删除的数据；</p>
+<p>将dirty提升为read这个操作也会在delete方法中执行。</p>
+<ol>
+<li>判断read中是否存在该key；</li>
+<li>如果read中不存在，且dirty中包含了read中不存在的key，加锁；</li>
+<li>如果read中真的不存在，且dirty中包含了read中不存在的key，删除dirty中该key和value，此时miss也会 + 1，当miss值=dirty长度时，将dirty中非删除的键值对赋值给read；</li>
+<li>如果存在该key（此时该键值对只会在read中存在），自旋，直接在该key对应的entry打上expunged标记，表示删除；</li>
+</ol>
+<p>总结：如果dirty中存在该key，dirty中该键值对会被真正的删除，但此时read中的键值对还没被删除，只是其key对应的value被打上一个expunged标记，表示删除，使其在被get的时候能分辨出来，read中该key真正的删除只有在将dirty提升为read的时候；</p>
 <h2 id="loadorstore方法">LoadOrStore方法</h2>
 <p>基本上和Store方法一样，只是增多一点逻辑：如果该key存在且没有被标记为删除，则返回原来的value和true，不存在则进行store，返回该value和false。</p>
 <h1 id="waitgroup">WaitGroup</h1>
