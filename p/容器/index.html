@@ -154,8 +154,8 @@ if (!doNotTrack) {
 <li>Network Namespace：隔离不同容器间的网络</li>
 <li>Mount Namespace：隔离不同容器间的文件系统</li>
 </ul>
-<p><strong>与虚拟化的区别</strong>：虚拟化是在操作系统和硬件上进行隔离，虚拟机上的应用需要经过虚拟机在经过宿主机，有两个内核，本身就有消耗，而容器化后的应用仅仅只是宿主机上的进程而已，只用到宿主机一个内核</p>
-<p>因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不同通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups</p>
+<p><strong>与虚拟化的区别</strong>：虚拟化是在操作系统和硬件上进行隔离，虚拟机上的应用需要经过虚拟机再经过宿主机，有两个内核，本身就有消耗，而容器化后的应用仅仅只是宿主机上的进程而已，只用到宿主机一个内核；</p>
+<p>因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不同通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups；</p>
 <h2 id="cgroups---资源限制">Cgroups - 资源限制</h2>
 <p>是用来制造约束的主要手段，即对进程设置资源能够使用的上限，如CPU、内存、IO设备的流量等</p>
 <p>比如，限定容器只能使用宿主机20%的CPU</p>
@@ -269,7 +269,7 @@ if (!doNotTrack) {
 <p>cpu.shares：CPU Cgroup对控制组之间的CPU分配比例，只有当控制组间的CPU配额超过了CPU可以资源的最大值，则会启用该参数进行配额分配。</p>
 </li>
 </ul>
-<p>通过Linux中cpu.cfs_period_us是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU就是通过调整其余两个参数来实现。</p>
+<p>Linux中cpu.cfs_period_us是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。</p>
 <p>在容器内使用top命令查看CPU使用率，显示的是宿主机的CPU使用率以及单个进程的CPU使用率，无法查到该容器的CPU使用率。</p>
 <p>因为top命令对于单个进程读取<code>/proc/[pid]/stat</code>里面包含进程用户态和内核态的ticks数目，对于整个节点读取的是<code>/proc/stat</code>里各个不同CPU类型的ticks数目，因为这些文件不属于任何一个Namespace，因此无法读取单个容器CPU的使用率，只能通过CPU Cgroup的控制组内的cpuacct.stat参数文件计算得到，该参数文件包含了这个控制组里所有进程的内核态ticks和用户态ticks的值，带入公式即可计算得到。</p>
 <blockquote>
@@ -331,7 +331,7 @@ if (!doNotTrack) {
 <li>work：存放临时文件的目录，如果OverlayFS中有文件修改，中间过程中会临时存放文件到这里；</li>
 </ul>
 <p>上下层同名目录合并，上下层同名文件覆盖，lower层文件写时会拷贝(copy_up)到upper层进行修改，不影响lower层的文件。</p>
-<p>比如，在merged目录里新键文件，这个文件会出现在upper目录中；删除文件，这个文件会在upper目录中消失，但在lower目录里不会有变化，只是upper目录中会增加一个特殊文件告诉OverlayFS该文件不能出现在merged目录里，表示它被删除；修改文件，会在upper目录中新建一个修改后的文件，而lower目录中原来的文件不会改变。</p>
+<p>比如，在merged目录里新建文件，这个文件会出现在upper目录中；删除文件，这个文件会在upper目录中消失，但在lower目录里不会有变化，只是upper目录中会增加一个特殊文件告诉OverlayFS该文件不能出现在merged目录里，表示它被删除；修改文件，会在upper目录中新建一个修改后的文件，而lower目录中原来的文件不会改变。</p>
 <p>在Docker中，容器镜像文件可以分成多个层，每层对应lower dir的一个目录，容器启动后，对镜像文件中的修改会保存在upper dir里。Docker会将镜像层作为lower dir，容器层作为upper dir，最后挂载到容器的merge挂载点，即容器的根目录下。</p>
 <p>OverlayFS本身没有限制文件写入量的功能，需要依赖底层文件系统，比如XFS文件系统的quota，限制upper目录的写入大小。</p>
 <h2 id="blkio-cgroup">Blkio Cgroup</h2>

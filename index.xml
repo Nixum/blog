@@ -751,8 +751,8 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;Network Namespace：隔离不同容器间的网络&lt;/li&gt;
 &lt;li&gt;Mount Namespace：隔离不同容器间的文件系统&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&lt;strong&gt;与虚拟化的区别&lt;/strong&gt;：虚拟化是在操作系统和硬件上进行隔离，虚拟机上的应用需要经过虚拟机在经过宿主机，有两个内核，本身就有消耗，而容器化后的应用仅仅只是宿主机上的进程而已，只用到宿主机一个内核&lt;/p&gt;
-&lt;p&gt;因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不同通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;与虚拟化的区别&lt;/strong&gt;：虚拟化是在操作系统和硬件上进行隔离，虚拟机上的应用需要经过虚拟机再经过宿主机，有两个内核，本身就有消耗，而容器化后的应用仅仅只是宿主机上的进程而已，只用到宿主机一个内核；&lt;/p&gt;
+&lt;p&gt;因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不同通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups；&lt;/p&gt;
 &lt;h2 id=&#34;cgroups---资源限制&#34;&gt;Cgroups - 资源限制&lt;/h2&gt;
 &lt;p&gt;是用来制造约束的主要手段，即对进程设置资源能够使用的上限，如CPU、内存、IO设备的流量等&lt;/p&gt;
 &lt;p&gt;比如，限定容器只能使用宿主机20%的CPU&lt;/p&gt;
@@ -866,7 +866,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;cpu.shares：CPU Cgroup对控制组之间的CPU分配比例，只有当控制组间的CPU配额超过了CPU可以资源的最大值，则会启用该参数进行配额分配。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;通过Linux中cpu.cfs_period_us是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU就是通过调整其余两个参数来实现。&lt;/p&gt;
+&lt;p&gt;Linux中cpu.cfs_period_us是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。&lt;/p&gt;
 &lt;p&gt;在容器内使用top命令查看CPU使用率，显示的是宿主机的CPU使用率以及单个进程的CPU使用率，无法查到该容器的CPU使用率。&lt;/p&gt;
 &lt;p&gt;因为top命令对于单个进程读取&lt;code&gt;/proc/[pid]/stat&lt;/code&gt;里面包含进程用户态和内核态的ticks数目，对于整个节点读取的是&lt;code&gt;/proc/stat&lt;/code&gt;里各个不同CPU类型的ticks数目，因为这些文件不属于任何一个Namespace，因此无法读取单个容器CPU的使用率，只能通过CPU Cgroup的控制组内的cpuacct.stat参数文件计算得到，该参数文件包含了这个控制组里所有进程的内核态ticks和用户态ticks的值，带入公式即可计算得到。&lt;/p&gt;
 &lt;blockquote&gt;
@@ -928,7 +928,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;work：存放临时文件的目录，如果OverlayFS中有文件修改，中间过程中会临时存放文件到这里；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;上下层同名目录合并，上下层同名文件覆盖，lower层文件写时会拷贝(copy_up)到upper层进行修改，不影响lower层的文件。&lt;/p&gt;
-&lt;p&gt;比如，在merged目录里新键文件，这个文件会出现在upper目录中；删除文件，这个文件会在upper目录中消失，但在lower目录里不会有变化，只是upper目录中会增加一个特殊文件告诉OverlayFS该文件不能出现在merged目录里，表示它被删除；修改文件，会在upper目录中新建一个修改后的文件，而lower目录中原来的文件不会改变。&lt;/p&gt;
+&lt;p&gt;比如，在merged目录里新建文件，这个文件会出现在upper目录中；删除文件，这个文件会在upper目录中消失，但在lower目录里不会有变化，只是upper目录中会增加一个特殊文件告诉OverlayFS该文件不能出现在merged目录里，表示它被删除；修改文件，会在upper目录中新建一个修改后的文件，而lower目录中原来的文件不会改变。&lt;/p&gt;
 &lt;p&gt;在Docker中，容器镜像文件可以分成多个层，每层对应lower dir的一个目录，容器启动后，对镜像文件中的修改会保存在upper dir里。Docker会将镜像层作为lower dir，容器层作为upper dir，最后挂载到容器的merge挂载点，即容器的根目录下。&lt;/p&gt;
 &lt;p&gt;OverlayFS本身没有限制文件写入量的功能，需要依赖底层文件系统，比如XFS文件系统的quota，限制upper目录的写入大小。&lt;/p&gt;
 &lt;h2 id=&#34;blkio-cgroup&#34;&gt;Blkio Cgroup&lt;/h2&gt;
@@ -15556,7 +15556,7 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;kubelet：负责创建、管理各个节点上运行时的容器和Pod，这个交互依赖CRI的远程调用接口，通过Socket和CRI通信；&lt;/p&gt;
-&lt;p&gt;周期性地从API Server接收新的或者修改的Pod规范并且保证节点傻瓜的Pod和其他容器的正常运行，保证节点会向目标状态迁移，向Master节点发送宿主机的健康状态；&lt;/p&gt;
+&lt;p&gt;周期性地从API Server接收新的或者修改的Pod规范并且保证节点上的Pod和其他容器的正常运行，保证节点会向目标状态迁移，向Master节点发送宿主机的健康状态；&lt;/p&gt;
 &lt;p&gt;kubelet 还通过 gRPC 协议同一个叫作 Device Plugin 的插件进行交互。这个插件，是 Kubernetes 项目用来管理 GPU 等宿主机物理设备的主要组件；
 kubelet 的另一个重要功能，则是调用网络插件和存储插件为容器配置网络和持久化存储，交互的接口是CNI和CSI；&lt;/p&gt;
 &lt;/li&gt;
@@ -15573,8 +15573,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;h3 id=&#34;核心组件的协作流程&#34;&gt;核心组件的协作流程&lt;/h3&gt;
 &lt;ol&gt;
 &lt;li&gt;以创建Deployment为例，用户或控制器通过kubectl、RestAPI或者其他客户端向API-Server发起创建deployment的请求；&lt;/li&gt;
-&lt;li&gt;API-Server收到创建请求后，经过认证、鉴权、准入三个环节后，将deployment对象保存到etcd中；&lt;/li&gt;
-&lt;li&gt;ControllerManager中的DeploymentController会监听API-Server中所有Deployment的事件变更，当收到该deployment对象的创建事件后，就会检查当前namespace中所有的ReplicaSet对象，判断其属性是否存在该deployment对象，如果没有，DeploymentController会向API-Server发起创建ReplicaSet对象的请求，经过API-Server的检查后，将该ReplicaSet对象保存在etcd中；&lt;/li&gt;
+&lt;li&gt;API-Server收到创建请求后，经过认证、鉴权、准入三个环节后，将deployment对象保存到etcd中，触发watch机制，通知API-Server，API-Server再调用ControllerManager对应的deployment控制器进行操作；&lt;/li&gt;
+&lt;li&gt;ControllerManager中的DeploymentController会监听API-Server中所有Deployment的事件变更，当收到该deployment对象的创建事件后，就会检查当前namespace中所有的ReplicaSet对象，判断其属性是否存在该deployment对象，如果没有，DeploymentController会向API-Server发起创建ReplicaSet对象的请求，经过API-Server的检查后，将该ReplicaSet对象保存在etcd中，触发watch机制通知API-Server调用控制器&amp;hellip;；&lt;/li&gt;
 &lt;li&gt;同上，会触发ReplicaSet Controller的检查，最后创建一个Pod对象，保存在etcd中；&lt;/li&gt;
 &lt;li&gt;Scheduler监听到API-Server中有新的Pod对象被创建，就会查看Pod是否被调度，如果没有，Scheduler就会给它分配一个最优节点，并更新Pod对象的spec.nodeName属性，随后该Pod对象被同步回API-Server里，并保存在etcd中；&lt;/li&gt;
 &lt;li&gt;最后，节点的kubelet会一直监听API-Server的Pod资源变化，当发现有新的Pod对象分配到自己所在的节点时，kubelet就会通过gRPC通信，通过CRI向容器运行时创建容器，运行起来。&lt;/li&gt;
@@ -15604,7 +15604,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;然后调用Priorities算法为这些选出来的Node进行打分，得分最高的Node就是此次调度的结果。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;得到可调度的Node后，调度器就会将Pod对象的nodeName字段的值，修改为Node的名字，实现绑定，此时修改的是Cache里的值，只会才会创建一个goroutine异步向API Server发起更新Pod的请求，完成真正的绑定工作；这个过程称为乐观绑定。&lt;/p&gt;
+&lt;p&gt;得到可调度的Node后，调度器就会将Pod对象的nodeName字段的值，修改为Node的名字，实现绑定，此时修改的是Cache里的值，之后才会创建一个goroutine异步向API Server发起更新Pod的请求，完成真正的绑定工作；这个过程称为乐观绑定。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Pod在Node上运行起来之前，还会有一个叫Admit的操作，调用一组GeneralPredicates的调度算法验证Pod是否真的能够在该节点上运行，比如资源是否可用，端口是否占用之类的问题。&lt;/p&gt;
@@ -15778,7 +15778,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;由于不同容器间可能存在依赖关系（如启动顺序的依赖），因此k8s会起一个中间容器Infra容器，来关联其他容器，infra容器一定是最先起的，其他容器通过Join Network Namespace的方式与Infa容器进行关联。&lt;/p&gt;
 &lt;p&gt;一个 Pod 只有一个 IP 地址，由Pod内容器共享，Pod 的生命周期只跟 Infra 容器一致，Infra管理共享资源。&lt;/p&gt;
 &lt;p&gt;kubelet会为每个节点上创建一个基本的cbr0网桥，并为每一个Pod创建veth虚拟网络设备，绑定一个IP地址，同一个Pod中的所有容器会通过这个网络设备共享网络，从而能通过localhost相互访问彼此暴露的端口和服务。&lt;/p&gt;
-&lt;p&gt;对于initContainer命令的作用是按配置顺序最先执行，执行完之后才会执行container命令，例如，对war包所在容器使用initContainer命令，将war包复制到挂载的卷下后，再执行tomcat的container命令启动tomcat以此来启动web应用，这种先启动一个辅助容器来完成一些独立于主进程（主容器）之外的工作，称为sidecar，边车&lt;/p&gt;
+&lt;p&gt;对于initContainer命令的作用是按配置顺序最先执行，执行完之后才会执行container命令，例如，对war包所在容器使用initContainer命令，将war包复制到挂载的卷下后，再执行tomcat的container命令启动tomcat以此来启动web应用，这种先启动一个辅助容器来完成一些独立于主进程（主容器）之外的工作，称为sidecar，边车。&lt;/p&gt;
 &lt;p&gt;Pod可以理解为一个机器，容器是里面的进程，凡是调度、网络、储存、安全相关、跟namespace相关的属性，都是Pod级别的&lt;/p&gt;
 &lt;h3 id=&#34;pod在k8s中的生命周期&#34;&gt;Pod在K8s中的生命周期&lt;/h3&gt;
 &lt;ul&gt;
@@ -15792,7 +15792,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;在Pod的containers定义中，有个lifecycle字段，用于定义容器的状态发生变化时产生的hook。&lt;/p&gt;
 &lt;h3 id=&#34;side-car&#34;&gt;Side Car&lt;/h3&gt;
 &lt;p&gt;在声明容器时，使用initContainers声明，用法同containers，initContainers作为辅助容器，必定比containers先启动，如果声明了多个initContainers，则会按顺序先启动，之后再启动containers。&lt;/p&gt;
-&lt;p&gt;因为Pod内所有容器共享同一个Network Namespace的特性i，nitContainers辅助容器常用于与Pod网络相关的配置和管理，比如常见的实现是Istio。&lt;/p&gt;
+&lt;p&gt;因为Pod内所有容器共享同一个Network Namespace的特性，initContainers辅助容器常用于与Pod网络相关的配置和管理，比如常见的实现是Istio。&lt;/p&gt;
 &lt;h3 id=&#34;pod中的projected-volume投射数据卷&#34;&gt;Pod中的Projected Volume(投射数据卷)&lt;/h3&gt;
 &lt;p&gt;k8s将预先定义好的数据投射进容器，支持的种类：secret、ConfigMap、Downward API，这三种PV一般存放不经常更新的数据，ServiceAccountToken则是在访问Kubernetes API Server时会使用到。&lt;/p&gt;
 &lt;h4 id=&#34;secret&#34;&gt;Secret&lt;/h4&gt;
@@ -15936,7 +15936,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h4 id=&#34;serviceaccounttoken&#34;&gt;serviceAccountToken&lt;/h4&gt;
-&lt;p&gt;serviceAccountToken是一种特殊的Secret，一般用于访问Kubernetes API Server时提供token作为验证的凭证。Kubernets提供了一个默认的default Service Account，任何运行在Kubernets中的Pod都可以使用，无需显示声明挂载了它。&lt;/p&gt;
+&lt;p&gt;serviceAccountToken是一种特殊的Secret，一般用于访问Kubernetes API Server时提供token作为验证的凭证。Kubernets提供了一个默认的default Service Account，任何运行在Kubernets中的Pod都可以使用，无需显式声明挂载了它。&lt;/p&gt;
 &lt;p&gt;默认挂载路径：/var/run/secrets/kubernetes.io/serviceaccount，里面包含了ca.crt，namespace，token三个文件，用于授权当前Pod访问API Server。&lt;/p&gt;
 &lt;p&gt;如果要让Pod拥有不同访问API Server的权限，就需要不同的service account，也就需要不同的token了。&lt;/p&gt;
 &lt;h4 id=&#34;挂载宿主机上的目录&#34;&gt;挂载宿主机上的目录&lt;/h4&gt;
@@ -16051,6 +16051,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;pod中的健康检查&#34;&gt;Pod中的健康检查&lt;/h3&gt;
 &lt;p&gt;对于Web应用，最简单的就是由Web应用提供健康检查的接口，我们在定义的API对象的时候设置定时请求来检查运行在容器中的web应用是否健康，主要是为了防止服务未启动完成就被打入流量或者长时间未响应依然没有重启等问题。&lt;/p&gt;
+&lt;p&gt;livenessProbe：保活探针，当不满足检查规则时，直接重启Pod&lt;/p&gt;
+&lt;p&gt;readnessProbe：只读探针，当不满足检查规则时，不放流量进Pod&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -16177,7 +16179,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 	
 &lt;/figure&gt;&lt;/p&gt;
 &lt;p&gt;flanneld通过为各个宿主机建立子网，知道了各个宿主机能处理的IP范围，子网与宿主机的对应关系，都会保存在etcd中，flanneld将原数据包再次封装成一个UDP包，同时带上目标节点的真实IP，发往对应节点。&lt;/p&gt;
-&lt;p&gt;在由fannel管理的容器网络里，一个节点上的所有容器，都属于该宿主机被分配的一个子网。flannel会在宿主机上注册一个flannel0设备，保存各个节点的容器子网信息，flanneld进程会处理由flannel0传入的IP包，匹配到对应的子网，从etcd中找到该子网对应的宿主机的IP，封装成一个UDP包，交由flannel0，接着就跟节点间的网络通信一样，发送给目标节点了。因为多了一步flanneld的处理，涉及到了多次用户态与内核态间的数据拷贝，导致性能问题，优化的原则是减少切换次数，所以有了VXLAN模式、host-gw模式。&lt;/p&gt;
+&lt;p&gt;再由fannel管理的容器网络里，一个节点上的所有容器，都属于该宿主机被分配的一个子网。flannel会在宿主机上注册一个flannel0设备，保存各个节点的容器子网信息，flanneld进程会处理由flannel0传入的IP包，匹配到对应的子网，从etcd中找到该子网对应的宿主机的IP，封装成一个UDP包，交由flannel0，接着就跟节点间的网络通信一样，发送给目标节点了。因为多了一步flanneld的处理，涉及到了多次用户态与内核态间的数据拷贝，导致性能问题，优化的原则是减少切换次数，所以有了VXLAN模式、host-gw模式。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;UDP模式下，在发送IP包的过程，经过三次用户态与内核态的数据拷贝&lt;/p&gt;
 &lt;ol&gt;
@@ -16958,10 +16960,10 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;kube-proxy只是controller，对iptables进行更新，基于iptables的kube-proxy的主要职责包括两大块：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;侦听service更新事件，并更新service相关的iptables规则；&lt;/p&gt;
+&lt;p&gt;监听service更新事件，并更新service相关的iptables规则；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;侦听endpoint更新事件，更新endpoint相关的iptables规则，然后将包请求转入endpoint对应的Pod；&lt;/p&gt;
+&lt;p&gt;监听endpoint更新事件，更新endpoint相关的iptables规则，然后将包请求转入endpoint对应的Pod；&lt;/p&gt;
 &lt;p&gt;如果某个service尚没有Pod创建，那么针对此service的请求将会被丢弃。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
@@ -17037,7 +17039,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;Kubernetes支持两种服务发现：环境变量和DNS服务&lt;/p&gt;
 &lt;h4 id=&#34;环境变量&#34;&gt;环境变量&lt;/h4&gt;
 &lt;p&gt;创建Service时，会在Service selector的Pod中的容器注入同一namespace下所有service的IP和端口作为环境变量，该环境变量会随着Service的IP和端口的改变而改变，但设置到容器里的环境变量不会。&lt;/p&gt;
-&lt;p&gt;可以使用&lt;code&gt;kubectl exec -it {pod名字} -n {名称空间 env}&lt;/code&gt;查看，HOST为service的cluster-IP&lt;/p&gt;
+&lt;p&gt;可以使用&lt;code&gt;kubectl exec -it {pod名字} -n {名称空间} env&lt;/code&gt;查看，HOST为service的cluster-IP&lt;/p&gt;
 &lt;p&gt;Kubernetes会设置两类环境变量：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -18102,8 +18104,8 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;ol&gt;
 &lt;li&gt;
 &lt;p&gt;VirtualService和DestinationRule：按服务版本路由、按比例切分流量、根据匹配规则进行路由(比如请求头必须包含xx)、路由策略(如负载均衡，连接池)&lt;/p&gt;
-&lt;p&gt;蓝绿部署：同时准备两套环境，控制流量流向不同环境或版本&lt;/p&gt;
-&lt;p&gt;灰度发布(金丝雀发布)：小范围测试和发布，即按比例切分流量&lt;/p&gt;
+&lt;p&gt;蓝绿部署：同时准备两套环境，控制流量流向不同环境或版本：两套集群，一套是现有在使用的集群（蓝色），另一套用于上线前的测试和验证后进行切换的集群（绿色），都可以接受流量，先放少量流量到绿色集群，没问题之后再把蓝色集群的所有流量切到绿色集群，蓝色集群再进行升级；&lt;/p&gt;
+&lt;p&gt;灰度发布(金丝雀发布)：小范围测试和发布，即按比例切分流量；让一部分用户先用老服务A，一部分用新服务B，后面再根据具体情况，全部迁移到B；&lt;/p&gt;
 &lt;p&gt;A/B测试：类似灰度发布，只是侧重点不同，灰度发布最终流量会流向最新版本，而A/B测试只是用于测试A、B两个环境带来的影响。&lt;/p&gt;
 &lt;p&gt;这两个可以用于ingressgateway或egressgateway&lt;/p&gt;
 &lt;/li&gt;
