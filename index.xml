@@ -285,15 +285,15 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;MMapv1引擎会最大限度的使用内存，分配给它的内存越大，性能越好；同时，内存由操作系统管理，如果其他进程需要内存，MMapv1会让出自己的空闲内存&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;文档按照写入顺序存储在磁盘上，由于文档可能会更新导致长度变长，如果原有存储空间不够，文档就需要进行迁移，导致集合中所有索引都要同步修改文档新的存储位置，影响性能，因此会有两种策略来避免这种情况发生：&lt;/p&gt;
+&lt;p&gt;文档按照写入顺序存储在磁盘上，由于文档可能会更新导致长度变长，如果原有存储空间不够，文档就需要进行迁移，导致集合中所有索引都要同步修改文档新的存储位置，影响性能，同时也反映出，如果文档没有索引，时无法保证文档在read中的自然顺序。有两种策略来避免文档迁移的情况发生：&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;blockquote&gt;
 &lt;p&gt;&lt;strong&gt;基于paddingFactor（填充因子）的自适应分配方式&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;　　这种方式会基于每个集合中的文档更新历史计算文档更新的平均增长长度，然后根据平均增长长度设置一个paddingFactor（填充因子，大小大于1）， 以后在新文档插入或旧文档移动时分配的空间=文档实际长度×paddingFactor。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;基于usePowerOf2Sizes的预分配方式&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;　　这种方式则不考虑更新历史，直接为文档分配比文档大小大而又最接近文档大小的2的N次方大小的存储空间（当大小超过2MB时则变为2MB的倍数增长），例如若文档大小为200Bytes则直接分配256Bytes的空间。&lt;/p&gt;
-&lt;p&gt;　　对于第一种策略，由于每个文档大小不一，经过填充后的空间大小也不一样，如果集合上的更新操作很多，那么因为记录移动而导致的空闲空间会因为大小不一而难以重用。而第二种策略就不一样了，它分配的空间大小都是2的N次方，因此更容易维护和利用。&lt;/p&gt;
+&lt;p&gt;　　这种方式则不考虑更新历史，直接为文档分配比文档大小大而又最接近文档大小的2的N次方大小的存储空间（当大小超过2MB时则变为2MB的倍数增长），例如若文档大小为200Bytes则直接分配256Bytes的空间，这种方式也会产生一定的磁盘碎片。&lt;/p&gt;
+&lt;p&gt;　　对于第一种策略，由于每个文档大小不一，经过填充后的空间大小也不一样，如果集合上的更新操作很多，那么因为记录移动而导致的空闲空间会因为大小不一而难以重用。而第二种策略就不一样了，它分配的空间大小都是2的N次方，会更容易维护和利用，当那些删除或更新变大而产生的磁盘碎片，比如文档变大，需要迁移到新空间，此时就空间就会被标记为delete，这些被标记为删除的空间可以被insert重用，另外，由于预分配允许文档尺寸有限度的增长，而无需每次更新变大都重新分配空间。&lt;/p&gt;
 &lt;p&gt;所以，改进后的MMAPv1便抛弃了第一种策略，只使用较优的第二种策略。&lt;/p&gt;
 &lt;p&gt;另外，MongoDB还提供了一个“No Padding Allocation”策略，按照数据的实际尺寸分配空间，如果某个集合上绝大多数情况下执行的都是insert或者in-place update（更新后文档size不会变大），还有极少数的delete，那么可以在这个集合使用这个策略，提高磁盘空间利用率。&lt;/p&gt;
 &lt;/blockquote&gt;
@@ -318,10 +318,31 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;p&gt;题外话关于LSM树：&lt;/p&gt;
 &lt;p&gt;LSM树，全称：Log-Structured Merge-Tree，是一种数据结构的设计思想，不是一种数据结构，一般基于B树及其变体实现，主要是将随机操作变为顺序操作，提升磁盘写速度，但会牺牲一些读性能；&lt;/p&gt;
-&lt;p&gt;LSM树一般由两个或以上的存储结构组成，比如有C0 tree，一般是用于查找的数据结构，比如红黑树、map、跳表之类，另一个结构常驻在硬盘，为C1 tree，比如B+树，C1所有节点都是100%满的，节点的大小为磁盘块的大小；&lt;/p&gt;
+&lt;p&gt;LSM树由三部分组成：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;MemTable，常驻于内存，用于保存最近更新的数据，按照Key有序组织这些数据，保证有序性通常会使用一些数据结构，比如红黑树，跳表等&lt;/li&gt;
+&lt;li&gt;Immutable MemTable，当MemTable达到一定大小后，会转换为Immutable MemTable，处于MemTable和SSTable的中间状态，写操作由新的MemTable处理，在转存过程中不阻塞数据更新操作。&lt;/li&gt;
+&lt;li&gt;SSTable，有序键值对集合，是LSM树在磁盘中的结构，为了加速读取，通常是通过建立key的索引 + 布隆过滤器来加快key的查找。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;LSM树在数据插入、修改、删除等操作时，为了保证顺序写，是直接将操作记录追加到内存中（而B+树是直接修改原数据），当达到一定的数据量后，再批量写入磁盘，不断将Immutable MemTable刷盘持久化，变成SSTable，而不用去修改之前的SSTable中的key，保证顺序读写。由于是操作记录的追加写入，在不同的SSTable中，可能存在对相同的Key的记录，而只有最新的记录才是最准确的，因此需要对SSTable进行压缩，通过合并多个SSTable来清除冗余记录，读取时，也是倒序查询。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;LSM树有两种压缩策略：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;size-tiered：保证每层SSTable的大小相近，同时限制每一层SSTable的数量。比如，每层限制SSTable为N，当每层SSTable达到N后，则触发Compact操作合并这些SSTable，并将合并后的结果写入到下一层成为一个更大的sstable。&lt;/p&gt;
+&lt;p&gt;由此可以看出，当层数达到一定数量时，最底层的单个SSTable的大小会变得非常大。并且size-tiered策略会导致空间放大比较严重。即使对于同一层的SSTable，每个key的记录是可能存在多份的，只有当该层的SSTable执行compact操作才会消除这些key的冗余记录。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;leveled：也是采用分层的思想，每一层限制总文件的大小。但是跟size-tiered策略不同的是，leveled会将每一层切分成多个大小相近的SSTable。这些SSTable是这一层是全局有序的，意味着一个key在每一层至多只有1条记录，不存在冗余记录。之所以可以保证全局有序，是因为合并策略和size-tiered不同。&lt;/p&gt;
+&lt;p&gt;leveled策略相较于size-tiered策略来说，每层内key是不会重复的，即使是最坏的情况，除开最底层外，其余层都是重复key，按照相邻层大小比例为10来算，冗余占比也很小。因此空间放大问题得到缓解。但是写放大问题会更加突出。举一个最坏场景，如果LevelN层某个SSTable的key的范围跨度非常大，覆盖了LevelN+1层所有key的范围，那么进行Compact时将涉及Level N+1层的全部数据。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;将LSM树存储结构抽象成两种树，比如有C0 tree，常驻在内存，另一个为C1 tree，结构常驻在硬盘，比如B+树，C1所有节点都是100%满的，节点的大小为磁盘块的大小；&lt;/p&gt;
 &lt;p&gt;插入新记录时，先在日志文件中以append的方式顺序插入操作日志；新记录的索引插入到C0中，在内存完成，不涉及磁盘IO，当C0大小达到某一阈值或每隔一段时间后，将C0中的记录滚动合并到磁盘C1中，如果C1体量太大就像C2合并，以此类推；合并时从C1中读取未合并叶子节点，从小到大找C0中的节点，合并排序，删除C0，循环执行，直至满了，就写入磁盘，从而达到将随机操作变成顺序操作；&lt;/p&gt;
 &lt;p&gt;查找时，先查C0，查不到就查C1，以此类推；&lt;/p&gt;
 &lt;p&gt;删除时，查询同查找逻辑，只是找到后只进行标记，等待异步删除；&lt;/p&gt;
+&lt;p&gt;参考：https://zhuanlan.zhihu.com/p/103968892、https://zhuanlan.zhihu.com/p/181498475、https://www.51cto.com/article/680775.html&lt;/p&gt;
 &lt;h3 id=&#34;数据文件在磁盘上的数据结构&#34;&gt;数据文件在磁盘上的数据结构&lt;/h3&gt;
 &lt;p&gt;B+树的leaf page包含一个：&lt;/p&gt;
 &lt;ul&gt;
@@ -351,18 +372,14 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;checkpoint 相当于一个日志，记录上次checkpoint后相关数据文件的变化。&lt;/p&gt;
 &lt;h4 id=&#34;作用&#34;&gt;作用&lt;/h4&gt;
 &lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;发生写操作时，只是将数据写入内存和journal日志，然后再通过check point机制将内存里面发生修改的数据写到数据文件进行持久化保存，确保数据一致性；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;实现数据库在某个时刻意外发生故障，再次启动时，缩短数据库的恢复时间；&lt;/p&gt;
-&lt;/li&gt;
+&lt;li&gt;发生写操作时，只是将数据写入内存和journal日志，然后再通过check point机制将内存里面发生修改的数据写到数据文件进行持久化保存，确保数据一致性，同时也通过延迟持久化的方式，提升磁盘效率；&lt;/li&gt;
+&lt;li&gt;实现数据库在某个时刻意外发生故障，再次启动时，缩短数据库的恢复时间；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;有点像MySQL中的change buffer + 持久化，优化写操作的速度和数据持久化的保证。&lt;/p&gt;
 &lt;h4 id=&#34;触发时机&#34;&gt;触发时机&lt;/h4&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;按一定时间周期：默认60s，执行一次checkpoint，所以DB宕机重启后可以快速恢复60s之前的数据，配合redo log(journal日志)恢复60s之后的数据；&lt;/p&gt;
+&lt;p&gt;按一定时间周期：默认60s，执行一次checkpoint，所以DB宕机重启后可以快速恢复60s之前的数据，配合journal日志恢复60s之后的数据；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;按一定日志文件大小：当 journal日志文件大小达到2GB（如果已开启），执行一次checkpoint；&lt;/p&gt;
@@ -426,12 +443,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;3.2版本有支持单文档原子操作了，主要是用在单文档嵌套更新上，默认自动的；4.0版本支持复制集多文档事务，4.2版本支持分片事务。&lt;/p&gt;
 &lt;p&gt;另外，Spring 5.1.1 / SpringBoot 2.x 以上 @Transactional可以支持Mongo，需要为TransactionManager注入MongoDBFactory&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;MVCC：以本次trancsaction_id + 本次修改后的value组成一个结点，每次修改都会追加到链表的头部，每次读取时根据trancsaction_id和本次事务的snapshot来找到对应的历史版本，该链表挂在叶子结点的WT_UPDATE字段中&lt;/li&gt;
-&lt;li&gt;snapshot：拉取当前事务之前的数据快照，确定当前事务哪些数据可见，哪些不可见，确定事务状态&lt;/li&gt;
-&lt;li&gt;operation_array：本次事务中已执行的操作列表，用于事务回滚，类似MySQL的undo log&lt;/li&gt;
-&lt;li&gt;redo log，即journal日志：记录当前操作&lt;/li&gt;
-&lt;li&gt;trancsaction_id：全局唯一事务id，通过cas自增生成&lt;/li&gt;
-&lt;li&gt;全局事务管理器：管理系统所有事务，用数组保存所有历史事务对象transaction_array，用于snapshot的创建，扫描transaction_array时使用cas保证并发安全&lt;/li&gt;
+&lt;li&gt;MVCC：以本次trancsaction_id + 本次修改后的value组成一个结点，每次修改都会追加到链表的头部，每次读取时根据trancsaction_id和本次事务的snapshot来找到对应的历史版本，该链表挂在叶子结点的WT_UPDATE字段中；&lt;/li&gt;
+&lt;li&gt;snapshot：拉取当前事务之前的数据快照，确定当前事务哪些数据可见，哪些不可见，确定事务状态；&lt;/li&gt;
+&lt;li&gt;operation_array：本次事务中已执行的操作列表，用于事务回滚，类似MySQL的undo log；&lt;/li&gt;
+&lt;li&gt;redo log，即journal日志：记录当前操作，一个mongoDB实例中的所有DB共享journal文件；&lt;/li&gt;
+&lt;li&gt;trancsaction_id：全局唯一事务id，通过cas自增生成；&lt;/li&gt;
+&lt;li&gt;全局事务管理器：管理系统所有事务，用数组保存所有历史事务对象transaction_array，用于snapshot的创建，扫描transaction_array时使用cas保证并发安全；&lt;/li&gt;
+&lt;li&gt;namespace文件：默认大小为16M，主要用于保存集合、索引的属性、命令信息等字段；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h4 id=&#34;事务执行流程&#34;&gt;事务执行流程&lt;/h4&gt;
 &lt;ol&gt;
@@ -504,7 +522,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;对于事务内多文档执行写操作，保证原子性，失败能回滚&lt;/p&gt;
 &lt;h3 id=&#34;writeconcern参数&#34;&gt;writeConcern参数&lt;/h3&gt;
 &lt;p&gt;通过参数writeConcern来保证写操作到达多少个节点才算成功，写操作会等到写到复制集后才会返回&lt;/p&gt;
-&lt;p&gt;使用：nosql语句里包含{writeConcern: {w: 1, timeout: 3000}}，单位毫秒，超时不意味着都写失败，有可能已经写入了一些节点了，写操作性能会取决于节点的数量，会影响写入的时间，但对集群不会有压力&lt;/p&gt;
+&lt;p&gt;使用：nosql语句里包含&lt;code&gt;{writeConcern: {w: 1, timeout: 3000}}&lt;/code&gt;，单位毫秒，超时不意味着都写失败，有可能已经写入了一些节点了，写操作性能会取决于节点的数量，会影响写入的时间，但对集群不会有压力&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;默认值为1，表示数据被写入到一个节点就算成功&lt;/li&gt;
 &lt;li&gt;=[数字x]，表示数据被写入到x个节点就算成功&lt;/li&gt;
@@ -513,8 +531,8 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;=all，需要全部节点确认，但如果同步时有节点挂了，此时写操作会被阻塞&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;journal参数&#34;&gt;journal参数&lt;/h3&gt;
-&lt;p&gt;写操作时，会先写到内存，再写入磁盘（journal日志文件和数据文件），参数journal字段来保证达到哪步操作才算成功，由配置文件里&lt;code&gt;storage.journal.enabled&lt;/code&gt;控制是否开启，&lt;code&gt;storage.journal.commitInternalMs&lt;/code&gt;决定刷盘时间间隔&lt;/p&gt;
-&lt;p&gt;使用：nosql语句里包含 {journal: {j: true}} 会保证每次写入都会进行刷盘&lt;/p&gt;
+&lt;p&gt;写操作时，会按操作顺序先写到内存，再写入磁盘（journal日志文件和数据文件），参数journal字段来保证达到哪步操作才算成功，由配置文件里&lt;code&gt;storage.journal.enabled&lt;/code&gt;控制是否开启，&lt;code&gt;storage.journal.commitInternalMs&lt;/code&gt;决定刷盘时间间隔&lt;/p&gt;
+&lt;p&gt;使用：nosql语句里包含 &lt;code&gt;{journal: {j: true}}&lt;/code&gt; 会保证每次写入都会进行刷盘&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;=true，表示写操作要落到journal日志文件才算成功&lt;/li&gt;
 &lt;li&gt;=false，表示写操作到达内存就算成功&lt;/li&gt;
@@ -524,10 +542,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;journal日志：即redo log &lt;strong&gt;，由MongoDB引擎层使用，&lt;strong&gt;主要用于控制写操作是否立即持久化&lt;/strong&gt;，因为如果发生写操作，mongo一般是先将写操作写入内存，在&lt;/strong&gt;定时（默认是1分钟）通过check point机制将内存里的数据刷盘持久化&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;如果写操作的成功判定出现在写完内存后，如果此时宕机，将会丢失写操作的记录，如果判定发生在写完journal日志之后，如果宕机可以利用journal日志进行恢复。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;写入journal日志时，也是先写入内存，再定时（默认是100ms）写入磁盘&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;写入journal日志时，也是先写入内存，再根据写入buffer的大小（默认是100M）或者 定时（默认是100ms）写入磁盘。&lt;/strong&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;oplog日志&lt;/strong&gt;：只用在主从复制集的使用，通过&lt;strong&gt;oplog来实现节点间的数据同步&lt;/strong&gt;，从节点获取主节点的oplog日志后进行重放，同步数据。oplog本身在MongoDB里是一个集合&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;oplog日志&lt;/strong&gt;：只用在主从复制集的使用，通过&lt;strong&gt;oplog来实现节点间的数据同步&lt;/strong&gt;，从节点获取主节点的oplog日志后进行重放，同步数据。oplog本身在MongoDB里是一个集合。&lt;/p&gt;
 &lt;p&gt;mongo的一次写操作，包括 1.将文档数据写进集合； 2.更新集合的索引信息； 3.写入oplog日志，（此时只是写入内存），这三个步骤是原子性的，要么成功要么失败。一次写操作可以是批量的也可以是单条，一次写操作对应一条journal日志。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -2206,7 +2224,36 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h2 id=&#34;websocket&#34;&gt;Websocket&lt;/h2&gt;
 &lt;p&gt;此方案最佳，CDN + 长连接(websocket) 广播给用户，原理跟聊天室差不多；&lt;/p&gt;
 &lt;p&gt;与上面的方案差不多，只是把前端轮询部分替换成了由后端与前端建立长连接后进行推送&lt;/p&gt;
-&lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
+&lt;h1 id=&#34;ip与数字的转换&#34;&gt;IP与数字的转换&lt;/h1&gt;
+&lt;p&gt;ipv4本质上是32位的二进制字符串，一个int整数刚好是4个字节32位，所以一个int整数可以表示一个ipv4地址。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;ip地址 = 第一段左移24位 + 第二段左移16位 + 第三段左移 8位 + 第四段 = 第一段 * 256 * 256 * 256 + 第二段 * 256 * 256 + 第三段 * 256 + 第四段&lt;/code&gt;，范围是 0 ~ 4,294,967,295（2^32 - 1）&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// ip字符串转整型：
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;ips&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Split&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;part&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ips&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;partInt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Atoi&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;part&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;partInt&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;result&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;8&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;// 整型转ip字符串：
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;24&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;16&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;8&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
 &lt;p&gt;极客时间 - 后端存储实战&lt;/p&gt;
 &lt;p&gt;极客时间 - 秒杀系统设计&lt;/p&gt;
 </description>
@@ -3439,6 +3486,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;channel作为通道，负责在多个goroutine间传递数据，解决多线程下共享数据竞争问题。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;len()&lt;/code&gt;方法会输出chan中存在的数据数量，&lt;code&gt;cap()&lt;/code&gt;方法是输出buff的长度&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;带有 &amp;lt;- 的chan是有方向的，不带 &amp;lt;- 的chan是双向的，比如&lt;/p&gt;

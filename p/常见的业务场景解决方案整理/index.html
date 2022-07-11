@@ -509,7 +509,36 @@ if (!doNotTrack) {
 <h2 id="websocket">Websocket</h2>
 <p>此方案最佳，CDN + 长连接(websocket) 广播给用户，原理跟聊天室差不多；</p>
 <p>与上面的方案差不多，只是把前端轮询部分替换成了由后端与前端建立长连接后进行推送</p>
-<h1 id="参考">参考</h1>
+<h1 id="ip与数字的转换">IP与数字的转换</h1>
+<p>ipv4本质上是32位的二进制字符串，一个int整数刚好是4个字节32位，所以一个int整数可以表示一个ipv4地址。</p>
+<p><code>ip地址 = 第一段左移24位 + 第二段左移16位 + 第三段左移 8位 + 第四段 = 第一段 * 256 * 256 * 256 + 第二段 * 256 * 256 + 第三段 * 256 + 第四段</code>，范围是 0 ~ 4,294,967,295（2^32 - 1）</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// ip字符串转整型：
+</span><span class="c1"></span><span class="nx">result</span> <span class="o">:=</span> <span class="mi">0</span>
+<span class="nx">ips</span> <span class="o">:=</span> <span class="nx">strings</span><span class="p">.</span><span class="nf">Split</span><span class="p">(</span><span class="nx">ip</span><span class="p">,</span> <span class="s">&#34;.&#34;</span><span class="p">)</span>
+<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">part</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">ips</span> <span class="p">{</span>
+	<span class="nx">partInt</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Atoi</span><span class="p">(</span><span class="nx">part</span><span class="p">)</span>
+	<span class="nx">result</span> <span class="p">=</span> <span class="nx">partInt</span> <span class="p">|</span> <span class="p">(</span><span class="nx">result</span><span class="o">&lt;&lt;</span><span class="mi">8</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c1">// 整型转ip字符串：
+</span><span class="c1"></span><span class="nx">result</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">((</span><span class="nx">num</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#34;.&#34;</span> <span class="o">+</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">((</span><span class="nx">num</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#34;.&#34;</span> <span class="o">+</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">((</span><span class="nx">num</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#34;.&#34;</span> <span class="o">+</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">(</span><span class="nx">num</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="参考">参考</h1>
 <p>极客时间 - 后端存储实战</p>
 <p>极客时间 - 秒杀系统设计</p>
 
@@ -752,6 +781,7 @@ if (!doNotTrack) {
         <li><a href="#websocket">Websocket</a></li>
       </ol>
     </li>
+    <li><a href="#ip与数字的转换">IP与数字的转换</a></li>
     <li><a href="#参考">参考</a></li>
   </ol>
 </nav>

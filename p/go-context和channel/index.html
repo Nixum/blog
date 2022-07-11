@@ -697,6 +697,9 @@ if (!doNotTrack) {
 <p>channel作为通道，负责在多个goroutine间传递数据，解决多线程下共享数据竞争问题。</p>
 </li>
 <li>
+<p><code>len()</code>方法会输出chan中存在的数据数量，<code>cap()</code>方法是输出buff的长度</p>
+</li>
+<li>
 <p>带有 &lt;- 的chan是有方向的，不带 &lt;- 的chan是双向的，比如</p>
 </li>
 </ul>
