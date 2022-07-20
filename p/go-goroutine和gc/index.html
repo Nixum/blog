@@ -227,7 +227,7 @@ if (!doNotTrack) {
 <p>当IO事件发生之后，netpoller通过 <code>runtime.netpoll</code> 即可在epoll监听列表获取到已就绪的fd列表对应的goroutine，具体：<code>runtime.netpoll</code>会调用 <code>epollwait</code> 等待发生了可读/可写事件的fd，循环 <code>epollwait</code> 返回的事件列表，处理对应的事件类型，组装可运行的goroutine链表并返回。</p>
 <p><code>sysmon监控线程</code>会在循环过程中检查距离上一次 <code>runtime.netpoll</code> 被调用是否超过10ms，若是则回去调用它拿到可运行的goroutine列表并调用 injectglist 把 g 列表放入全局调度队列或者当前 P 本地调度队列等待被执行。</p>
 </blockquote>
-<p>即当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中&hellip;  ；当IO可用时，在 epoll 的 <code>eventpoll.rdr</code> 中等待的 G 会被放到 <code>eventpoll.rdllist</code> 链表里并通过 <code>netpoll</code> 中的 <code>epoll_wait</code> 系统调用<strong>返回放置到GRQ或者 P 的LRQ</strong>，标记为 <code>_Grunnable</code> ，等待 P 绑定 M 恢复执行。</p>
+<p>即当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中；当IO可用时，在 epoll 的 <code>eventpoll.rdr</code> 中等待的 G 会被放到 <code>eventpoll.rdllist</code> 链表里并通过 <code>netpoll</code> 中的 <code>epoll_wait</code> 系统调用<strong>返回放置到GRQ或者 P 的LRQ</strong>，标记为 <code>_Grunnable</code> ，等待 P 绑定 M 恢复执行。</p>
 <h1 id="goroutine">Goroutine</h1>
 <h2 id="基本">基本</h2>
 <ul>
