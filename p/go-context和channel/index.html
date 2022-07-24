@@ -690,14 +690,15 @@ if (!doNotTrack) {
 <li>
 <p>chan是引用类型，使用make关键字创建，未初始化时的零值是nil，如</p>
 <p><code>ch := make(chan string, 10)</code>，创建一个能处理string的缓冲区大小为10的channel，效果相当于异步队列，除非缓冲区用完，否则不会阻塞；</p>
-<p><code>ch := make(chan string)</code>，则创建了一个不存在缓冲区的channel，效果相当于同步阻塞队列，即如果连续发送两次数据，第一次如果没有被接收的话，第二次就会被阻塞；</p>
+<p><code>ch := make(chan string)</code>，则创建了一个不存在缓冲区的channel，效果相当于同步阻塞队列，len永远返回0。</p>
+<p>即 假如没有接收者，同一个方法内，连续发送两次数据，第一次如果没有被接收的话，此时就阻塞了，轮不到第二次发送，但如果size = 1，第一次发送的数据就会进入buf数组，不阻塞，到了第二次发送才阻塞；</p>
 <p><code>var ch chan int</code>表示创建了一个nil channel；</p>
 </li>
 <li>
 <p>channel作为通道，负责在多个goroutine间传递数据，解决多线程下共享数据竞争问题。</p>
 </li>
 <li>
-<p><code>len()</code>方法会输出chan中存在的数据数量，<code>cap()</code>方法是输出buff的长度</p>
+<p><code>len()</code>方法会输出chan中存在的数据数量，<code>cap()</code>方法是输出buff数组的长度</p>
 </li>
 <li>
 <p>带有 &lt;- 的chan是有方向的，不带 &lt;- 的chan是双向的，比如</p>
@@ -969,6 +970,7 @@ if (!doNotTrack) {
 <p>阻塞发送 - <strong>最后才是保存在待发送队列，阻塞</strong></p>
 <p><strong>当recvq中没有等待的接收者，且buf区已满或不存在buf区时</strong>，会先调用<code>getg()</code>函数获取正在发送者的goroutine，执行<code>acquireSudog()</code>函数获取sudoG对象，设置此次阻塞发送的相关信息（如发送的channel、是否在select控制结构中和待发送数据的内存地址、发送数据的goroutine）</p>
 <p>然后将该sudoG对象加入sendq队列，调用<code>goparkunlock()</code>函数让当前发送者的goroutine进入等待状态，表示当前goroutine正在等待其他goroutine从channel中接收数据，等待调度器唤醒；</p>
+<p>此时len()返回值为0，数据的发送是阻塞在方法中的。</p>
 <p>调度器唤醒后，将一些属性值设置为零，并释放sudog对象，表示向channel发送数据结束；</p>
 </li>
 </ol>
@@ -1232,6 +1234,7 @@ if (!doNotTrack) {
 <p>阻塞接收 - <strong>最后才是保存在接收等待队列，阻塞</strong></p>
 <p><strong>当channel的sendq队列没有等待状态的goroutine，且buf区不存在数据时</strong>，执行<code>acquireSudog()</code>函数获取sudoG对象，设置此次阻塞发送的相关信息（如发送的channel、是否在select控制结构中和待发送数据的内存地址、发送数据的goroutine）</p>
 <p>然后将该sudoG对象加入待发送recvq队列，调用<code>goparkunlock()</code>函数让当前接收者的goroutine进入等待状态，表示当前goroutine正在等待其他goroutine从channel中发送数据，等待调度器唤醒；</p>
+<p>此时方法会阻塞在ch的接收中，len()返回值为0；</p>
 <p>goroutine被唤醒后，chan完成阻塞数据的接收，接收完成后进行基本的参数检查，解除chan的绑定，释放sudoG，表示接收数据完成；</p>
 </li>
 </ol>

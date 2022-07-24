@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    3 minute read
+                    4 minute read
                 </time>
             </div>
         
@@ -151,7 +151,8 @@ if (!doNotTrack) {
 <li>build成可执行文件时，Runtime会和用户代码一起进行打包。</li>
 </ul>
 <h1 id="pprof">pprof</h1>
-<p>pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能</p>
+<p>使用<code>net/http/pprof</code>库，进行HTTP服务进行分析，需要主动开启，比如<code>import _ &quot;net/http/pprof&quot;</code>，使用默认的<code>http.DefaultServeMux</code>，默认端口是6060；也可自定义Mux，手动注册路由。</p>
+<p>pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能：</p>
 <table>
 <thead>
 <tr>
@@ -194,23 +195,66 @@ if (!doNotTrack) {
 </tr>
 <tr>
 <td>trace</td>
-<td>程序运行跟踪信息</td>
+<td>程序运行跟踪信息，跟踪GC和G调度</td>
 </tr>
 </tbody>
 </table>
 <ul>
 <li>
-<p><code>curl  http://ip:port/debug/pprof/{上面列表的功能} &gt; profile文件名</code> 把此时的统计下载下来；</p>
+<p><code>curl  http://ip:port/debug/pprof/{上面列表的功能} &gt; profile文件名</code> 把此时的统计下载下来；像trace、profile 默认采集时间是30s，可以使用参数 seconds=xx 来调整采样时间；</p>
 </li>
 <li>
-<p><code>go tool pprof -http=:8080 profile文件名</code>，打开web终端，左上角view里就有各种视图；</p>
+<p>除了trace使用<code>go tool trace 文件名</code>打开外，其他都是使用<code>go tool pprof -http=:8080 profile文件名</code>，打开web终端，左上角view里就有各种视图；</p>
 </li>
 <li>
 <p>关于火焰图</p>
-<p>Y轴表示调用栈，每一层都是一个函数，调用栈越深火焰就越高，最底部是正在执行的函数，上面是它的父函数；</p>
-<p>X轴表示这个函数的抽样数，如果一个函数在X轴占的越宽，代表抽样数越高，执行CPU的时间越长，注意，X轴不代表时间,而是所有的调用栈合并后，按字母顺序排列的；</p>
+<p>Y轴表示调用栈，从上到下每一层都是一个函数，调用栈越深火焰就越高，最底部是正在执行的函数，上面是它的父函数；</p>
+<p>X轴表示这个函数的抽样数，如果一个函数在X轴占的越宽，代表抽样数越高，CPU占用的时间越长；注意，X轴不代表时间，而是所有的调用栈合并后，按字母顺序排列的；</p>
 <p>火焰图就是看顶层的哪个函数占据的宽度最大。只要有&quot;平顶&quot;（plateaus），就表示该函数可能存在性能问题。</p>
 </li>
+<li>
+<p>debug包下有几个可以读取运行时指标的方法，但需要手动编写输出</p>
+<p><code>debug.ReadGCStatus()</code>，具体的指标可以看<code>debug.GCStats{}</code>里的字段</p>
+<p><code>runtime.ReadMemStats()</code>，具体的指标可以看<code>runtime.MemStats</code>里的字段</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">printGCStats</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// 每隔一秒钟监控一次 GC 的状态
+</span><span class="c1"></span>    <span class="nx">t</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">NewTicker</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+    <span class="nx">s</span> <span class="o">:=</span> <span class="nx">debug</span><span class="p">.</span><span class="nx">GCStats</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="p">{</span>
+        <span class="k">select</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="o">&lt;-</span><span class="nx">t</span><span class="p">.</span><span class="nx">C</span><span class="p">:</span>
+            <span class="nx">debug</span><span class="p">.</span><span class="nf">ReadGCStats</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">s</span><span class="p">)</span>
+            <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;gc %d last@%v, PauseTotal %v\n&#34;</span><span class="p">,</span> <span class="nx">s</span><span class="p">.</span><span class="nx">NumGC</span><span class="p">,</span> <span class="nx">s</span><span class="p">.</span><span class="nx">LastGC</span><span class="p">,</span> <span class="nx">s</span><span class="p">.</span><span class="nx">PauseTotal</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">go</span> <span class="nf">printGCStats</span><span class="p">()</span>
+    <span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
 </ul>
 <h1 id="netpoller">netpoller</h1>
 <p>参考：https://strikefreedom.top/go-netpoll-io-multiplexing-reactor，讲得足够详细了</p>
@@ -911,12 +955,75 @@ if (!doNotTrack) {
 </ul>
 <h2 id="gc性能优化技巧">GC性能优化技巧</h2>
 <ul>
-<li>slice预先分配内存，因为slice扩容时会返回新的slice，如果频繁扩容会增加GC压力；</li>
-<li>map的key和value使用值类型，而不是指针类型，利用map中extra中的特性；</li>
-<li>go中，string底层也是指针，如果string不可变，可以在转成 byte数组，这样就不会生成原有变量的副本，新的变量共享底层的数据指针。此特性也可用在把字符串转成[]byte，再作为map的key或value；</li>
-<li>对于占用空间少，频繁分配的函数，函数返回值使用值类型，不使用指针类型，因为返回指针类型会带来指针逃逸，使得原来可以分配在栈上的内存分配在堆上。在栈上进行小对象拷贝的性能会比对象在堆上分配好得多；</li>
-<li>对象如果包含了指针，则需要递归进行扫描，大量使用对象真正会使垃圾回收耗时变长；</li>
-<li>减少频繁创建goroutine，可以的话是一批一批的创建</li>
+<li>
+<p>slice预先分配内存，因为slice扩容时会返回新的slice，如果频繁扩容会增加GC压力；</p>
+</li>
+<li>
+<p>map的key和value使用值类型，而不是指针类型，利用map中extra中的特性；</p>
+</li>
+<li>
+<p>go中，string底层也是指针，如果string不可变，可以在转成 byte数组，这样就不会生成原有变量的副本，新的变量共享底层的数据指针。此特性也可用在把字符串转成[]byte，再作为map的key或value；</p>
+</li>
+<li>
+<p>对于占用空间少，频繁分配的函数，函数返回值使用值类型，不使用指针类型，因为返回指针类型会带来指针逃逸，使得原来可以分配在栈上的内存分配在堆上。在栈上进行小对象拷贝的性能会比对象在堆上分配好得多；</p>
+</li>
+<li>
+<p>将多个小对象合并成一个大对象，减少对象分配，比如在局部变量逃逸时，聚集起来</p>
+</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="k">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">m</span> <span class="p">{</span>
+   <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span>   <span class="c1">// copy for capturing by the goroutine
+</span><span class="c1"></span>   <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+       <span class="c1">// use k and v
+</span><span class="c1"></span>   <span class="p">}()</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可以修改为下面这种，修改后，逃逸的对象变为了 x，将 k，v2 个对象减少为 1 个对象。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="k">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">m</span> <span class="p">{</span>
+   <span class="nx">x</span> <span class="o">:=</span> <span class="kd">struct</span><span class="p">{</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="kt">string</span> <span class="p">}{</span><span class="nx">k</span><span class="p">,</span> <span class="nx">v</span><span class="p">}</span>   <span class="c1">// copy for capturing by the goroutine
+</span><span class="c1"></span>   <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+       <span class="c1">// use x.k and x.v
+</span><span class="c1"></span>   <span class="p">}()</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>
+<p>对象如果包含了指针，则需要递归进行扫描，大量使用对象真正会使垃圾回收耗时变长；</p>
+</li>
+<li>
+<p>减少频繁创建goroutine，可以的话是一批一批的创建；</p>
+</li>
+<li>
+<p>使用<code>sync.Pool</code>来缓存常用对象；</p>
+</li>
+<li>
+<p>尽可能使用字节数少的类型，比如当我们知道某些数字的使用只会在一定范围内，直接使用int8类型</p>
+</li>
+<li>
+<p>切片或map提前预分配</p>
+</li>
 </ul>
 <h1 id="参考">参考</h1>
 <p><a class="link" href="https://www.cnblogs.com/secondtonone1/p/11803961.html"  target="_blank" rel="noopener"
@@ -945,6 +1052,8 @@ if (!doNotTrack) {
     >GC模式图文全分析</a></p>
 <p><a class="link" href="https://jishuin.proginn.com/p/763bfbd5f194"  target="_blank" rel="noopener"
     >Golang 系统调用与阻塞处理</a></p>
+<p><a class="link" href="https://zhuanlan.zhihu.com/p/373874739"  target="_blank" rel="noopener"
+    >go pprof 实战</a></p>
 
 </section>
 
