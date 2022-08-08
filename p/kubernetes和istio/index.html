@@ -1617,7 +1617,79 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </span></code></pre></td></tr></table>
 </div>
 </div><h3 id="operator">Operator</h3>
-<p>本质是一个Deployment，会创建一个CRD，常用于简化StatefulSet的部署，用来管理有状态的Pod，维持拓扑状态和存储状态。需要编写与Kubernetes Matser交互的代码，才能实现自定义CRD的行为。</p>
+<p>本质是一个控制器，控制自定义的CRD的流程控制，执行自定义CRD的行为。</p>
+<p>CRD（ Custom Resource Definition），一种API插件机制，允许用户在k8s中添加一个跟Pod、Node类型的，新的API资源，即kind为CustomResourceDefinition，类似于类的概念，这样就可以通过这个类，来创建属于这个类的实例(编写yaml文件)，这个实例就称为CR</p>
+<p>比如有CRD为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apiextensions.k8s.io/v1beta1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">CustomResourceDefinition</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">networks.samplecrd.k8s.io</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">samplecrd.k8s.io</span><span class="w">
+</span><span class="w">  </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w">  </span><span class="nt">names</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Network</span><span class="w">
+</span><span class="w">    </span><span class="nt">plural</span><span class="p">:</span><span class="w"> </span><span class="l">networks</span><span class="w">
+</span><span class="w">  </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l">Namespaced</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>CR为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">samplecrd.k8s.io/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Network</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">example-network</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">cidr</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;192.168.0.0/16&#34;</span><span class="w">
+</span><span class="w">  </span><span class="nt">gateway</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;192.168.0.1&#34;</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>其中的资源类型、组、版本号要一一对应</p>
+<p>上面这些操作只是告诉k8s怎么认识yaml文件，接着就需要编写代码，让k8s能够通过yaml配置生成API对象，以及如何使用这些配置的字段属性了，接着，还需要编写操作该API对象的控制器</p>
+<p>控制器的原理：</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<p>控制器通过APIServer获取它所关心的对象，依靠Informer通知器来完成，Informer与API对象一一对应</p>
+<p>Informer是一个自带缓存和索引机制，通过增量里的事件触发 Handler 的客户端库。这个本地缓存在 Kubernetes 中一般被称为 Store，索引一般被称为 Index。</p>
+<p>Informer会使用Index库把增量里的API对象保存到本地缓存，并创建索引，Handler可以是对API对象进行增删改</p>
+<p>Informer 使用了 Reflector 包，它是一个可以通过 ListAndWatch 机制获取并监视 API 对象变化的客户端封装。</p>
+<p>Reflector 和 Informer 之间，用到了一个“增量先进先出队列”进行协同。而 Informer 与你要编写的控制循环之间，则使用了一个工作队列来进行协同</p>
+<p>实际应用中，informers、listers、clientset都是通过CRD代码生成，开发者只需要关注控制循环的具体实现就行</p>
 <h2 id="service">Service</h2>
 <ul>
 <li>
@@ -2222,86 +2294,14 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 </div>
 </div><p>以上面的配置为例，CronJob是API对象的资源类型、batch是组、v2alpha1是版本</p>
 <p>核心API对象如Pod、Node是没有Group的，k8s是直接在/api这个层级进行下一步的匹配</p>
-<p>过程步骤</p>
+<p>过程步骤：</p>
 <ol>
-<li>yaml文件被提交给APIServer，APIServer接收到后完成前置工作，如授权、超时处理、审计</li>
-<li>进入MUX和Routes流程，APIServer根据yaml提供的信息，使用上述的匹配过程，找到CronJob的类型定义</li>
-<li>APIServer根据这个类型定义，根据yaml里CronbJob的相关字段，创建一个CronJob对象，同时也会创建一个SuperVersion对象，它是API资源类型所有版本的字段全集，用于处理不同版本的yaml转成的CronJob对象</li>
-<li>APIServer 会先后进行 Admission() 和 Validation() 操作，进行初始化和校验字段合法性，验证过后保存在Registry的数据结构中</li>
-<li>APIServer把验证过的API对象转换成用户最初提交的版本，进行序列化操作，保存在ETCD中</li>
+<li>yaml文件被提交给API-Server，APIServer接收到后完成前置工作，如授权、超时处理、审计；</li>
+<li>进入MUX和Routes流程，API-Server根据yaml提供的信息，使用上述的匹配过程，找到CronJob的类型定义；</li>
+<li>API-Server根据这个类型定义，根据yaml里CronJob的相关字段，创建一个CronJob对象，同时也会创建一个SuperVersion对象，它是API资源类型所有版本的字段全集，用于处理不同版本的yaml转成的CronJob对象；</li>
+<li>API-Server 会先后进行 Admission() 和 Validation() 操作，进行初始化和校验字段合法性，验证过后保存在Registry的数据结构中；</li>
+<li>API-Server把验证过的API对象转换成用户最初提交的版本，进行序列化操作，保存在etcd中；</li>
 </ol>
-<p>CRD（ Custom Resource Definition），一种API插件机制，允许用户在k8s中添加一个跟Pod、Node类型的，新的API资源，即kind为CustomResourceDefinition，类似于类的概念，这样就可以通过这个类，来创建属于这个类的实例(编写yaml文件)，这个实例就称为CR</p>
-<p>比如有CRD为</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apiextensions.k8s.io/v1beta1</span><span class="w">
-</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">CustomResourceDefinition</span><span class="w">
-</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">networks.samplecrd.k8s.io</span><span class="w">
-</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">samplecrd.k8s.io</span><span class="w">
-</span><span class="w">  </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
-</span><span class="w">  </span><span class="nt">names</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Network</span><span class="w">
-</span><span class="w">    </span><span class="nt">plural</span><span class="p">:</span><span class="w"> </span><span class="l">networks</span><span class="w">
-</span><span class="w">  </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l">Namespaced</span><span class="w">
-</span></code></pre></td></tr></table>
-</div>
-</div><p>CR为</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">samplecrd.k8s.io/v1</span><span class="w">
-</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Network</span><span class="w">
-</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">example-network</span><span class="w">
-</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="nt">cidr</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;192.168.0.0/16&#34;</span><span class="w">
-</span><span class="w">  </span><span class="nt">gateway</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;192.168.0.1&#34;</span><span class="w">
-</span></code></pre></td></tr></table>
-</div>
-</div><p>其中的资源类型、组、版本号要一一对应</p>
-<p>上面这些操作只是告诉k8s怎么认识yaml文件，接着就需要编写代码，让k8s能够通过yaml配置生成API对象，以及如何使用这些配置的字段属性了，接着，还需要编写操作该API对象的控制器</p>
-<p>控制器的原理：</p>
-<p><figure 
-	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e6%8e%a7%e5%88%b6%e5%99%a8%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b.png"
-			
-			
-			
-			loading="lazy"
-			>
-	</a>
-	
-</figure></p>
-<p>控制器通过APIServer获取它所关心的对象，依靠Informer通知器来完成，Informer与API对象一一对应</p>
-<p>Informer是一个自带缓存和索引机制，通过增量里的事件触发 Handler 的客户端库。这个本地缓存在 Kubernetes 中一般被称为 Store，索引一般被称为 Index。</p>
-<p>Informer会使用Index库把增量里的API对象保存到本地缓存，并创建索引，Handler可以是对API对象进行增删改</p>
-<p>Informer 使用了 Reflector 包，它是一个可以通过 ListAndWatch 机制获取并监视 API 对象变化的客户端封装。</p>
-<p>Reflector 和 Informer 之间，用到了一个“增量先进先出队列”进行协同。而 Informer 与你要编写的控制循环之间，则使用了一个工作队列来进行协同</p>
-<p>实际应用中，informers、listers、clientset都是通过CRD代码生成，开发者只需要关注控制循环的具体实现就行</p>
 <h2 id="配置相关">配置相关</h2>
 <h3 id="pod级别下的一些配置即当kind-pod">Pod级别下的一些配置，即当kind: Pod</h3>
 <p><strong>NodeSelector</strong>：将Pod和Node进行绑定的字段</p>
