@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    13 minute read
+                    16 minute read
                 </time>
             </div>
         
@@ -750,9 +750,207 @@ if (!doNotTrack) {
 </code></pre></td></tr></table>
 </div>
 </div><ul>
-<li>从一个已经关闭的channel接收数据，如果缓冲区为空，则返回一个零值；</li>
-<li>已关闭的channel再次关闭，会panic；</li>
-<li>channel在关闭时会自动退出循环；</li>
+<li>
+<p>从一个已经关闭的channel接收数据，如果缓冲区为空，则返回一个零值；</p>
+</li>
+<li>
+<p>已关闭的channel再次关闭，会panic；</p>
+</li>
+<li>
+<p>对于一个不关闭的channel，在方法结束后，只要channel没有被引用，会被GC自动回收；</p>
+</li>
+<li>
+<p>关闭channel的原则：不要向已关闭的channel发送数据或者再次关闭，关闭的动作尽量在sender做，主要还是分场景：</p>
+<ul>
+<li>
+<p>一个sender一个receiver的场景：在sender处关闭。</p>
+</li>
+<li>
+<p>一个sender多个recevier的场景：在sender处关闭。</p>
+</li>
+<li>
+<p>多个sender一个receiver的场景：增加一个传递关闭信号的 channel，receiver 通过信号 channel 下达关闭数据 channel 指令。senders 监听到关闭信号后，停止发送数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">	<span class="nx">dataCh</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="nx">stopCh</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kd">struct</span><span class="p">{})</span>
+	<span class="c1">// senders
+</span><span class="c1"></span>    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">NumSenders</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+        <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">{</span>
+                <span class="k">select</span> <span class="p">{</span>
+                <span class="k">case</span> <span class="o">&lt;-</span> <span class="nx">stopCh</span><span class="p">:</span>
+                    <span class="c1">// 接收关闭信号退出
+</span><span class="c1"></span>                    <span class="k">return</span>
+                <span class="k">case</span> <span class="nx">dataCh</span> <span class="o">&lt;-</span> <span class="nx">rand</span><span class="p">.</span><span class="nf">Intn</span><span class="p">(</span><span class="nx">Max</span><span class="p">):</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}()</span>
+    <span class="p">}</span>
+    <span class="c1">// the receiver
+</span><span class="c1"></span>    <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="nx">value</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">dataCh</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="nx">value</span> <span class="o">==</span> <span class="nx">Max</span><span class="o">-</span><span class="mi">1</span> <span class="p">{</span>
+                <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;send stop signal to senders.&#34;</span><span class="p">)</span>
+                <span class="c1">// 直接关闭
+</span><span class="c1"></span>                <span class="nb">close</span><span class="p">(</span><span class="nx">stopCh</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="p">}</span>
+
+            <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}()</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>多个sender多个receiver的场景：再增加一个中间的channel，用来接收标识关闭的数据，收到后直接close传递关闭的信号channel即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">	<span class="nx">dataCh</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="nx">stopCh</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kd">struct</span><span class="p">{})</span>
+
+    <span class="c1">// 当使用select发送数据到toStop时，一定要有buffer，防止中间channel没准备好而错失关闭时机的问题
+</span><span class="c1"></span>    <span class="nx">toStop</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">string</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="kd">var</span> <span class="nx">stoppedBy</span> <span class="kt">string</span>
+
+    <span class="c1">// 中间channel，用于接收标识关闭的数据
+</span><span class="c1"></span>    <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">stoppedBy</span> <span class="p">=</span> <span class="o">&lt;-</span><span class="nx">toStop</span>
+        <span class="nb">close</span><span class="p">(</span><span class="nx">stopCh</span><span class="p">)</span>
+    <span class="p">}()</span>
+
+    <span class="c1">// senders
+</span><span class="c1"></span>    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">NumSenders</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+        <span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">id</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">{</span>
+                <span class="nx">value</span> <span class="o">:=</span> <span class="nx">rand</span><span class="p">.</span><span class="nf">Intn</span><span class="p">(</span><span class="nx">Max</span><span class="p">)</span>
+                <span class="c1">// 发送者也可以关闭
+</span><span class="c1"></span>                <span class="k">if</span> <span class="nx">value</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+                    <span class="nx">toStop</span> <span class="o">&lt;-</span> <span class="s">&#34;sender#&#34;</span> <span class="o">+</span> <span class="nx">id</span>
+                    <span class="k">return</span>
+                <span class="p">}</span>
+
+                <span class="k">select</span> <span class="p">{</span>
+                <span class="k">case</span> <span class="o">&lt;-</span> <span class="nx">stopCh</span><span class="p">:</span> <span class="c1">// 真正的停止
+</span><span class="c1"></span>                    <span class="k">return</span>
+                <span class="k">case</span> <span class="nx">dataCh</span> <span class="o">&lt;-</span> <span class="nx">value</span><span class="p">:</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}(</span><span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">(</span><span class="nx">i</span><span class="p">))</span>
+    <span class="p">}</span>
+
+    <span class="c1">// receivers
+</span><span class="c1"></span>    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">NumReceivers</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+        <span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">id</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">{</span>
+                <span class="k">select</span> <span class="p">{</span>
+                <span class="k">case</span> <span class="o">&lt;-</span> <span class="nx">stopCh</span><span class="p">:</span>  <span class="c1">// 真正的停止
+</span><span class="c1"></span>                    <span class="k">return</span>
+                <span class="k">case</span> <span class="nx">value</span> <span class="o">:=</span> <span class="o">&lt;-</span><span class="nx">dataCh</span><span class="p">:</span>
+                    <span class="c1">// 接收者也能进行关闭
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="nx">value</span> <span class="o">==</span> <span class="nx">Max</span><span class="o">-</span><span class="mi">1</span> <span class="p">{</span>
+                        <span class="k">case</span> <span class="nx">toStop</span> <span class="o">&lt;-</span> <span class="s">&#34;receiver#&#34;</span> <span class="o">+</span> <span class="nx">id</span><span class="p">:</span>
+                        <span class="k">return</span>
+                    <span class="p">}</span>
+
+                    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}(</span><span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">(</span><span class="nx">i</span><span class="p">))</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+</li>
+<li>
+<p>channel在关闭时会自动退出循环；</p>
+</li>
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1700,11 +1898,239 @@ if (!doNotTrack) {
 </div>
 </div><h2 id="应用场景">应用场景</h2>
 <ul>
-<li>实现生产者 - 消费组模型，数据传递，比如<a class="link" href="http://marcio.io/2015/07/handling-1-million-requests-per-minute-with-golang/"  target="_blank" rel="noopener"
-    >worker池的实现</a></li>
-<li>信号通知：利用 如果chan为空，那receiver接收数据的时候就会阻塞等待，直到chan被关闭或有新数据进来 的特点，将一个协程将信号(closing、closed、data ready等)传递给另一个或者另一组协程，比如 wait/notify的模式。</li>
-<li>任务编排：让一组协程按照一定的顺序并发或串行执行，比如实现waitGroup的功能</li>
-<li>实现互斥锁的机制，比如，容量为 1 的chan，放入chan的元素代表锁，谁先取得这个元素，就代表谁先获取了锁</li>
+<li>
+<p>实现生产者 - 消费组模型，数据传递，比如<a class="link" href="http://marcio.io/2015/07/handling-1-million-requests-per-minute-with-golang/"  target="_blank" rel="noopener"
+    >worker池的实现</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">consumer</span><span class="p">(</span><span class="nx">taskChan</span> <span class="o">&lt;-</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">5</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+        <span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">id</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">{</span>
+                <span class="nx">task</span> <span class="o">:=</span> <span class="o">&lt;-</span> <span class="nx">taskChan</span>
+                <span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span> <span class="c1">// 模拟耗时
+</span><span class="c1"></span>            <span class="p">}</span>
+        <span class="p">}(</span><span class="nx">i</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">taskCh</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="k">go</span> <span class="nf">consumer</span><span class="p">(</span><span class="nx">taskCh</span><span class="p">)</span>
+    <span class="c1">// 生产者
+</span><span class="c1"></span>    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+        <span class="nx">taskCh</span> <span class="o">&lt;-</span> <span class="nx">i</span>
+    <span class="p">}</span>
+    <span class="c1">// wait...
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>信号通知：利用 如果chan为空，那receiver接收数据的时候就会阻塞等待，直到chan被关闭或有新数据进来 的特点，将一个协程将信号(closing、closed、data ready等)传递给另一个或者另一组协程，比如 wait/notify的模式。</p>
+</li>
+<li>
+<p>控制并发量，可以配合WaitGroup进行控制goroutine的数量</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+<span class="c1">// 这个放在外层和放在里层的效果不同，都可以控制并发量，但是前者会阻塞for循环，后者不会
+</span><span class="c1"></span>        <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="mi">1</span>
+      <span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">k</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">k</span><span class="p">)</span> <span class="c1">// do something...
+</span><span class="c1"></span>          <span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+          <span class="c1">// 防止泄露
+</span><span class="c1"></span>          <span class="k">defer</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+              <span class="o">&lt;-</span> <span class="nx">ch</span>
+          <span class="p">}()</span>
+      <span class="p">}(</span><span class="nx">i</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// 配合WaitGroup控制goroutine的数量
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="nx">wg</span> <span class="o">:=</span> <span class="nx">sync</span><span class="p">.</span><span class="nx">WaitGroup</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+        <span class="nx">wg</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">k</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">defer</span> <span class="nx">wg</span><span class="p">.</span><span class="nf">Done</span><span class="p">()</span>
+            <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="mi">1</span>
+          <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">k</span><span class="p">)</span> <span class="c1">// do something...
+</span><span class="c1"></span>          <span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+            <span class="c1">// 防止泄露
+</span><span class="c1"></span>          <span class="k">defer</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+              <span class="o">&lt;-</span> <span class="nx">ch</span>
+          <span class="p">}()</span>
+      <span class="p">}(</span><span class="nx">i</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="nx">wg</span><span class="p">.</span><span class="nf">Wait</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>任务定时</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">worker</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">ticker</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Tick</span><span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
+    <span class="k">for</span> <span class="p">{</span>
+        <span class="k">select</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="o">&lt;-</span> <span class="nx">ticker</span><span class="p">:</span>
+            <span class="c1">// 执行定时任务
+</span><span class="c1"></span>            <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;执行 1s 定时任务&#34;</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="c1">// 或者
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">worker</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">{</span>
+        <span class="k">select</span> <span class="p">{</span>
+          <span class="k">case</span> <span class="o">&lt;-</span><span class="nx">time</span><span class="p">.</span><span class="nf">After</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Millisecond</span><span class="p">):</span>
+          <span class="k">case</span> <span class="o">&lt;-</span><span class="nx">s</span><span class="p">.</span><span class="nx">stopc</span><span class="p">:</span>
+              <span class="k">return</span> <span class="kc">false</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>任务编排：让一组协程按照一定的顺序并发或串行执行，比如实现waitGroup的功能</p>
+</li>
+<li>
+<p>实现互斥锁的机制，比如，容量为 1 的chan，放入chan的元素代表锁，谁先取得这个元素，就代表谁先获取了锁</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Locker</span> <span class="kd">struct</span> <span class="p">{</span>
+    <span class="nx">ch</span> <span class="kd">chan</span> <span class="kt">int</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewLocker</span><span class="p">()</span> <span class="o">*</span><span class="nx">Locker</span> <span class="p">{</span>
+    <span class="nx">locker</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">Locker</span><span class="p">{</span><span class="nx">ch</span><span class="p">:</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
+    <span class="nx">locker</span><span class="p">.</span><span class="nx">ch</span> <span class="o">&lt;-</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="nx">locker</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">locker</span> <span class="o">*</span><span class="nx">Locker</span><span class="p">)</span> <span class="nf">Lock</span><span class="p">()</span> <span class="p">{</span>
+    <span class="o">&lt;-</span> <span class="nx">locker</span><span class="p">.</span><span class="nx">ch</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">locker</span> <span class="o">*</span><span class="nx">Locker</span><span class="p">)</span> <span class="nf">UnLock</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">select</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="nx">m</span><span class="p">.</span><span class="nx">ch</span> <span class="o">&lt;-</span> <span class="kd">struct</span><span class="p">{}{}:</span> 
+      <span class="k">default</span><span class="p">:</span> 
+          <span class="nb">panic</span><span class="p">(</span><span class="s">&#34; unlock of unlocked mutex&#34;</span><span class="p">)</span> 
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
 </ul>
 <blockquote>
 <p>共享资源的并发访问使用传统并发原语；</p>
