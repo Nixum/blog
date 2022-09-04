@@ -320,10 +320,14 @@ if (!doNotTrack) {
 </figure></p>
 <h2 id="四本地消息表">四、本地消息表</h2>
 <p>适合解决分布式最终一致性问题。</p>
-<h3 id="正常情况下-2">正常情况下</h3>
-<p>参与者A正常进行数据库事务并提交，将涉及到对参与者B的操作记录到本地消息表中，相当于一条日志，然后再用一个异步服务，读取该条日志控制参与者B进行相关操作，如果失败了直接重试即可，保证参与者A与B数据最终一致性。注意：参与者A的数据库操作与日志记录是一个原子性操作。</p>
-<p><strong>异步消费操作可以利用RocketMQ事务</strong></p>
-<p>事务性消息：本地事务和发送消息是原子性操作</p>
+<p>事务性消息：本地事务和发送消息是原子性操作；</p>
+<p><strong>正常情况下</strong></p>
+<p>参与者A正常进行数据库事务并提交，将涉及到对参与者B的操作记录到本地消息表中，相当于一条日志，然后再用一个异步服务，读取该条日志，控制参与者B进行相关操作，完成之后更新这条本地消息的状态。</p>
+<p>异步消费操作可以利用RocketMQ事务；</p>
+<p><strong>注意：参与者A的数据库操作与日志记录是一个原子性操作</strong>。</p>
+<p><strong>异常情况下</strong></p>
+<p>如果失败了直接重试即可，保证参与者A与B数据最终一致性。</p>
+<p>消费者在处理的时候要保证幂等。</p>
 <p><a class="link" href="https://www.jianshu.com/p/53324ea2df92"  target="_blank" rel="noopener"
     >https://www.jianshu.com/p/53324ea2df92</a></p>
 <p><a class="link" href="http://blog.itpub.net/31556438/viewspace-2649246/"  target="_blank" rel="noopener"
@@ -844,11 +848,7 @@ rev={4 1}, key=key2, value=&quot;v22&quot;
           </ol>
         </li>
         <li><a href="#三tcc">三、TCC</a></li>
-        <li><a href="#四本地消息表">四、本地消息表</a>
-          <ol>
-            <li><a href="#正常情况下-2">正常情况下</a></li>
-          </ol>
-        </li>
+        <li><a href="#四本地消息表">四、本地消息表</a></li>
         <li><a href="#五saga">五、SAGA</a></li>
         <li><a href="#六简单通过可靠消息和最终一致性方案实现">六、简单通过可靠消息和最终一致性方案实现</a></li>
         <li><a href="#参考">参考：</a></li>

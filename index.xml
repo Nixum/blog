@@ -2270,7 +2270,20 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;24&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;16&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;8&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;strconv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Itoa&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&#34;mh&#34;&gt;0xff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
+&lt;/div&gt;&lt;h1 id=&#34;扫码登录&#34;&gt;扫码登录&lt;/h1&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/PC%e7%ab%af%e6%89%ab%e7%a0%81%e7%99%bb%e5%bd%95.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/PC%e7%ab%af%e6%89%ab%e7%a0%81%e7%99%bb%e5%bd%95.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
 &lt;p&gt;极客时间 - 后端存储实战&lt;/p&gt;
 &lt;p&gt;极客时间 - 秒杀系统设计&lt;/p&gt;
 </description>
@@ -3169,9 +3182,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;通过根context，比如emptyCtx之后，调用&lt;code&gt;withCancel()&lt;/code&gt;方法可以创建cancelCtx用于取消操作。&lt;/p&gt;
 &lt;p&gt;有两种方式可触发取消：&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;返回的CancelFunc被调用，此时会取消当前context和其所有的子context&lt;/li&gt;
-&lt;li&gt;Done这个chan被close了，此时会取消当前context和其所有的子context&lt;/li&gt;
+&lt;li&gt;返回的CancelFunc被调用，此时会&lt;strong&gt;取消当前context和其所有的子context&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Done这个chan被close了，此时会&lt;strong&gt;取消当前context和其所有的子context&lt;/strong&gt;&lt;/li&gt;
 &lt;/ol&gt;
+&lt;p&gt;所以cancel时，只会取消当前ctx和其子ctx，并从其父ctx的children列表中移除，不会影响父ctx的其他子ctx&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -3232,6 +3246,12 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;56
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;57
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;58
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;59
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;60
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;61
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;62
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;63
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;64
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;CancelFunc&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
@@ -3251,14 +3271,17 @@ PROJECTION：限定返回字段时候stage的返回
 	&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;cancelCtx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Context&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
-&lt;span class=&#34;c1&#34;&gt;// 主要是将child ctx与parent ctx绑定，放到parent的children属性中
+&lt;span class=&#34;c1&#34;&gt;// 该方法主要是找到可以”挂靠“的”可取消“的ctx，
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// 将child ctx放到parent的children属性中，与parent ctx绑定，当parent ctx调用取消时，才能层层传递，取消挂靠的child ctx
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;propagateCancel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;Context&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;child&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;canceler&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Done&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// parent节点是一个空节点
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 		&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// parent is never canceled
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
-	&lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// 判断parent节点是否已经被取消
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 	&lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
 		&lt;span class=&#34;c1&#34;&gt;// parent is already canceled
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nx&#34;&gt;child&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;cancel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
@@ -3266,7 +3289,8 @@ PROJECTION：限定返回字段时候stage的返回
 	&lt;span class=&#34;k&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
-    &lt;span class=&#34;c1&#34;&gt;// 获取parent的cancelCtx
+    &lt;span class=&#34;c1&#34;&gt;// parentCancelCtx方法的作用判断该节点是否是cancelCtx类型，因为只有cancelCtx类型的context才有children map
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 找到可以取消的parent节点，上锁
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;parentCancelCtx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 		&lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mu&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Lock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
 		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -3281,14 +3305,16 @@ PROJECTION：限定返回字段时候stage的返回
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 		&lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mu&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Unlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-        &lt;span class=&#34;c1&#34;&gt;// 表示parent的ctx不是一个cancelCtx，没有children属性，无法构建成树，只能通过parent的done来向下传播
+        &lt;span class=&#34;c1&#34;&gt;// 表示parent ctx不是一个cancelCtx，没有children map，无法构建成树，只能通过parent的done来向下传播取消信号
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nx&#34;&gt;atomic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;AddInt32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;goroutines&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 		&lt;span class=&#34;k&#34;&gt;go&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 			&lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 			&lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Done&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
-				&lt;span class=&#34;nx&#34;&gt;child&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;cancel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
+                &lt;span class=&#34;c1&#34;&gt;// 这个case的作用是传递parent取消信号，取消child ctx
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;				&lt;span class=&#34;nx&#34;&gt;child&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;cancel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;parent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
 			&lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;child&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Done&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
-			&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+                &lt;span class=&#34;c1&#34;&gt;// 这个case的作用是防止parent.Done()一直不执行导致G泄漏
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;			&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}()&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -3349,6 +3375,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;50
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;51
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;52
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;53
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;canceler&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;interface&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -3367,7 +3394,8 @@ PROJECTION：限定返回字段时候stage的返回
 
 &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cancelCtx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;Done&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;chan&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
    &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mu&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Lock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-   &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+   &lt;span class=&#34;c1&#34;&gt;// 懒汉式创建，返回一个只读channel，该channel不会被写入数据，仅用于接收close()方法调用时的信号
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;   &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
       &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;make&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;chan&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{})&lt;/span&gt;
    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
    &lt;span class=&#34;nx&#34;&gt;d&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt;
@@ -3392,13 +3420,13 @@ PROJECTION：限定返回字段时候stage的返回
 		&lt;span class=&#34;nb&#34;&gt;close&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;done&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 	&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;child&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;children&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-		&lt;span class=&#34;c1&#34;&gt;// 取消所有子context
+		&lt;span class=&#34;c1&#34;&gt;// 取消所有子context，通过传递error
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nx&#34;&gt;child&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;cancel&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;children&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mu&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Unlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
 
-    &lt;span class=&#34;c1&#34;&gt;// 从父context的children中移除当前context
+    &lt;span class=&#34;c1&#34;&gt;// 从父context的children map中移除当前context
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;removeFromParent&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 		&lt;span class=&#34;nf&#34;&gt;removeChild&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Context&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -3485,7 +3513,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;valuectx&#34;&gt;valueCtx&lt;/h2&gt;
 &lt;p&gt;&lt;code&gt;valueCtx&lt;/code&gt;内部仍然使用&lt;code&gt;Context&lt;/code&gt;存储父&lt;code&gt;Context&lt;/code&gt;的指针，并用&lt;code&gt;interface{}&lt;/code&gt;存储键值；&lt;/p&gt;
-&lt;p&gt;如果当前&lt;code&gt;valueCtx&lt;/code&gt;找不到需要的&lt;code&gt;key&lt;/code&gt;，会沿着树向上一直查找直到根节点，类似链表的搜索；&lt;/p&gt;
+&lt;p&gt;如果当前&lt;code&gt;valueCtx&lt;/code&gt;找不到需要的&lt;code&gt;key&lt;/code&gt;，会沿着树向上一直查找父节点直到根节点，类似链表的搜索；&lt;/p&gt;
 &lt;p&gt;使用&lt;code&gt;WithValue&lt;/code&gt;创建时，会判断&lt;code&gt;key&lt;/code&gt;是否实现&lt;code&gt;Comparable&lt;/code&gt;接口。如果没有实现，会触发&lt;code&gt;panic&lt;/code&gt;；&lt;/p&gt;
 &lt;p&gt;key的类类型不应该是内置类型，以避免冲突。使用的时候应该自定义类型；&lt;/p&gt;
 &lt;h1 id=&#34;channel&#34;&gt;Channel&lt;/h1&gt;
@@ -5158,7 +5186,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;一般线程会占有1Mb以上的内存空间，每次对线程进行切换时会消耗较多内存，恢复寄存器中的内容还需要向操作系统申请或销毁对应的资源，每一次上下文切换都需要消耗~1us左右的时间，而Go调度器对goroutine的上下文切换为~0.2us，减少了80%的额外开销。&lt;/p&gt;
+&lt;p&gt;一般线程会占有1Mb以上的内存空间，每次对线程进行切换时会消耗较多内存，恢复寄存器中的内容还需要向操作系统申请或销毁对应的资源，每一次上下文切换都需要消耗~1us左右的时间，而Go调度器对 G 的上下文切换为~0.2us，减少了80%的额外开销。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;协程本质是一个数据结构，封装了要运行的函数和运行的进度，交由go调度器进行调度，不断切换的过程。由go调度器决定协程是运行，还是切换出调度队列(阻塞)，去执行其他满足条件的协程。&lt;/p&gt;
@@ -5170,9 +5198,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;Go的调度器通过&lt;strong&gt;使用与CPU数量相等的线程&lt;/strong&gt;减少线程频繁切换的内存开销，同时&lt;strong&gt;在每一个线程上执行额外开销更低的Goroutine&lt;/strong&gt;来降低操作系统和软件的负载。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;1.2~1.3版本使用&lt;strong&gt;基于协作的抢占式调度器&lt;/strong&gt;（通过编译器在函数调用时插入抢占式检查指令，比如栈扩容检查，在函数调用时检查当前goroutine是否发起抢占式请求），但gouroutine可能会因为垃圾回收和循环时间太长，占用资源导致没有让出CPU，造成其他goroutine饿死，甚至让程序暂停；&lt;/p&gt;
-&lt;p&gt;从1.14版本开始使用&lt;strong&gt;基于信号的抢占式调度&lt;/strong&gt;，会给需要处理的函数绑上signhandler，处理SIGURG信号，比如垃圾回收在扫描栈时会触发抢占式调度，sysmon是其中一种实现，sysmon会定时进行监控，触发调度；&lt;/p&gt;
-&lt;p&gt;之所以要使用信号抢占式的，是因为如果是goroutine主动让出CPU资源才能触发调度，可能会导致某个goroutine长时间占用线程，造成其他goroutine饿死；另外，垃圾回收需要暂停整个程序，在STW时，整个程序无法工作。&lt;/p&gt;
+&lt;p&gt;1.2~1.3版本使用&lt;strong&gt;基于协作的抢占式调度器&lt;/strong&gt;（通过编译器在函数调用时(函数头或尾)插入抢占式检查指令，比如栈扩容检查，在函数调用时检查当前G是否发起抢占式请求），但 G 可能会因为垃圾回收和循环时间太长，占用资源导致没有让出CPU，造成其他goroutine饿死，甚至让程序暂停；&lt;/p&gt;
+&lt;p&gt;从1.14版本开始使用&lt;strong&gt;基于信号的抢占式调度&lt;/strong&gt;，会给需要处理的函数绑上signhandler，处理SIGURG信号，当线程M接收到信号后，会从用户栈 G 切换到gsingal执行信号处理逻辑，实现调度，比如垃圾回收在扫描栈时会触发抢占式调度，sysmon是其中一种实现，sysmon会定时进行监控，触发调度；&lt;/p&gt;
+&lt;p&gt;之所以要使用信号抢占式的，是因为如果是 G 主动让出CPU资源才能触发调度，可能会导致某个 G 长时间占用线程，造成其他 G 饿死；另外，垃圾回收需要暂停整个程序，在STW时，整个程序无法工作。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;早期调度模型-mg模型&#34;&gt;早期调度模型-MG模型&lt;/h2&gt;
@@ -5257,14 +5285,16 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h2 id=&#34;gpm三者的关系&#34;&gt;GPM三者的关系&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;持有P的M会执行G，执行完G后会先判断是否满足61次调用，如果是，则先从GRQ中获取，否则继续从P的LRQ中继续获取G进行消费；之所以先有次数判断，是为了防止GRQ里的G被饿死；&lt;/p&gt;
-&lt;p&gt;当发现P的LRQ中没有其他G可执行时，则会从GRQ的队首里获取G放入本地队列，获取数量&lt;code&gt;n = min(len(GQ)/GOMAXPROCS + 1, len(GQ/2))&lt;/code&gt;，一次不会获取太多，保证其他M在GRQ中有G可拿，&lt;strong&gt;获取时会加锁&lt;/strong&gt;；&lt;/p&gt;
+&lt;p&gt;持有P的M会执行G，执行完G后会&lt;strong&gt;先判断是否满足61次调用&lt;/strong&gt;，如果是，则先从GRQ中获取，否则继续从P的LRQ中继续获取G进行消费；之所以先有次数判断，是为了&lt;strong&gt;防止GRQ里的G被饿死&lt;/strong&gt;；&lt;/p&gt;
+&lt;p&gt;当发现P的LRQ中没有其他G可执行时，则会从&lt;strong&gt;GRQ的队首里获取G&lt;/strong&gt;放入本地队列，获取数量&lt;code&gt;n = min(len(GQ)/GOMAXPROCS + 1, len(GQ/2))&lt;/code&gt;，一次不会获取太多（一次不超过128个），保证其他M在GRQ中有G可拿，&lt;strong&gt;获取时会加锁&lt;/strong&gt;；&lt;/p&gt;
 &lt;p&gt;当P发现自己的LRQ、GRQ都没有G了，会从netpoller(网络轮询器)上获取G来执行；&lt;/p&gt;
-&lt;p&gt;如果LRQ、GRQ、netpoller上都没有G时，则会随机从其他P的&lt;strong&gt;LRQ尾部中窃取一半的G&lt;/strong&gt;放到自己的LRQ，通过CAS获取；（&lt;strong&gt;work stealing 工作窃取&lt;/strong&gt;）&lt;/p&gt;
+&lt;p&gt;如果LRQ、GRQ、netpoller上都没有G时，则会随机从&lt;strong&gt;其他P的LRQ队首中窃取一半的G&lt;/strong&gt;放到自己的LRQ，其他P的LRQ队首的第一半+1个拿来执行；通过CAS获取G；（&lt;strong&gt;work stealing 工作窃取&lt;/strong&gt;）&lt;/p&gt;
+&lt;p&gt;获取到的G都会先放到P的runnext队列(该队列的长度是1)，然后再交由M执行；&lt;/p&gt;
 &lt;p&gt;以上过程由M执行 runtime.schedule 函数来执行调度。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;当P的LRQ满时，会把当前P的LRQ前一半的G打乱顺序后转移到GRQ，此时新创建的G也会放到GRQ；&lt;/p&gt;
+&lt;p&gt;当P的LRQ满时，会把当前P的LRQ前一半的G打乱顺序后转移到GRQ；&lt;/p&gt;
+&lt;p&gt;如果此时runnext也有G，则新创建的G会替换runnext中的G，原来runnext中的G跟着LRQ中挑出来的那些G一起加入GRQ；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;当P的LRQ和调度器的GRQ都没有可执行的G时，M进入自旋状态；&lt;/p&gt;
@@ -5285,6 +5315,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;通过netpoller进行网络系统调用，调度器可以防止G在进行这些系统调用时阻塞M，使得M可以执行P的LRQ中的其他G，而不需要使用新的M，该G在netpoller执行完后，会重新回到之前P的LRQ中（或者被放到GRQ），等待调用。执行网络系统调用不需要额外的M，netpoller使用系统线程时刻处理一个有效的事件循环（通过linux上的epoll实现，网络相关fd与G绑定），即在这种场景下，G会和M、P分离，G挂在了netpoller下。（网络调用导致G阻塞，会由netpoller接管，此时M可以继续执行下一个G）&lt;/p&gt;
 &lt;p&gt;如果是系统调用，如读取文件导致G被阻塞，此时不关netpoller什么事，这种阻塞使得G阻塞M，调度器会使得GM与P分离，而P使用新的M继续执行。（G阻塞导致M阻塞，P寻找新M来执行G）&lt;/p&gt;
 &lt;p&gt;如果是让G执行一个sleep、原子、互斥量或者chan操作，导致M被阻塞，则由sysmon监控线程来监控那些长时间运行的G，然后设置可以抢占的标识符，别的G就可以抢占来执行。（阻塞的G被切换出去，M不阻塞，转而执行其他空闲的G）&lt;/p&gt;
+&lt;p&gt;这些不同类型阻塞的G都是由sysmon来调度的。&lt;/p&gt;
 &lt;p&gt;这里有一个有趣的例子&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -5346,8 +5377,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;channel、mutex等sync操作发生协程阻塞；&lt;/li&gt;
 &lt;li&gt;time.sleep，go1.13以前的版本，会创建一个goroutine，专门用来唤醒挂载timer上的时间未到期的goroutine，但在1.14之后不会创建goroutine来做这件事，而是在调度循环的各个地方、sysmon中都有唤醒timer的代码，使得timer的唤醒更加及时；&lt;/li&gt;
 &lt;li&gt;IO&lt;/li&gt;
-&lt;li&gt;GC，如STW期间，P上执行safe point&lt;/li&gt;
-&lt;li&gt;运行过久，比如G每次只执行10ms，或系统调度过久&lt;/li&gt;
+&lt;li&gt;GC，如STW期间、P上执行safe point、GC栈扫描；&lt;/li&gt;
+&lt;li&gt;sysmon后台监控，当G运行过久时会触发，比如G每次只执行10ms，或系统调度过久；&lt;/li&gt;
+&lt;li&gt;panic崩溃期间；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;调度器的生命周期&#34;&gt;调度器的生命周期&lt;/h2&gt;
 &lt;p&gt;&lt;figure 
@@ -5560,7 +5592,54 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h1 id=&#34;内存模型&#34;&gt;内存模型&lt;/h1&gt;
 &lt;p&gt;Go 的内存分配器基于tcmalloc的内存分配算法，它是一个带内存池的分配器，底层直接调用操作系统的mmap函数实现内存分配，减少内存碎片，提升内存利用率。&lt;/p&gt;
 &lt;p&gt;Go中为每个系统线程分配一个本地的mcache，少量的地址分配就直接从mcache中分配，并且定期做垃圾回收，将线程的mcache中的空闲内存返回给全局控制堆。&lt;/p&gt;
-&lt;p&gt;小于32K的为小对象，小对象从本地内存链表中分配，大于32K为大对象，大对象从中心内存堆中分配。大对象直接从全局控制堆上以页（4K）为单位进行分配，大对象总是以页对齐的，一个页可以存入一些相同大小的小对象。&lt;/p&gt;
+&lt;p&gt;根据对象中是否含有指针以及对象大小，内存分配过程分为 3 类：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;tiny：小于16 byte 并且 没有指针的对象；分配最复杂；&lt;/li&gt;
+&lt;li&gt;small：有指针 或者 大小大于等于16 byte 并且小于等于 32 KB 的对象；&lt;/li&gt;
+&lt;li&gt;large：大小大于 32KB 的对象；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;小于32K的为小对象，小对象从本地内存链表中分配；&lt;/p&gt;
+&lt;p&gt;大于32K为大对象，直接从全局控制堆（中心内存堆）上以页（4K）为单位进行分配，大对象总是以页对齐的，一个页可以存入一些相同大小的小对象；&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;我们可以将内存分配的路径与 CPU 的多级缓存作类比，这里 mcache 内部的 tiny 可以类比为 L1 cache，而 alloc 数组中的元素可以类比为 L2 cache，全局的 mheap.mcentral 结构为 L3 cache，mheap.arena 是 L4，L4 是以页为单位将内存向下派发的，由 pageAlloc 来管理 arena 中的空闲内存。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;L1&lt;/th&gt;
+&lt;th&gt;L2&lt;/th&gt;
+&lt;th&gt;L3&lt;/th&gt;
+&lt;th&gt;L4&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;mcache.tiny&lt;/td&gt;
+&lt;td&gt;mcache.alloc[]&lt;/td&gt;
+&lt;td&gt;mheap.central&lt;/td&gt;
+&lt;td&gt;mheap.arenas&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;若 L4 也没法满足我们的内存分配需求，便需要向操作系统去要内存了。&lt;/p&gt;
+&lt;p&gt;和 tiny 的四级分配路径相比，small 类型的内存没有本地的 mcache.tiny 缓存，其余与 tiny 分配路径完全一致。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;L1&lt;/th&gt;
+&lt;th&gt;L2&lt;/th&gt;
+&lt;th&gt;L3&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;mcache.alloc[]&lt;/td&gt;
+&lt;td&gt;mheap.central&lt;/td&gt;
+&lt;td&gt;mheap.arenas&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;large 内存分配稍微特殊一些，没有上面复杂的缓存流程，而是直接从 mheap.arenas 中要内存，直接走 pageAlloc 页分配器。&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;大约有100种内存块类别，每一类别都有自己对象的空闲链表。小于32K的内存分配被向上取整到对应的尺寸类别，从相应的空闲链表中分配。一页内存只可以被分裂成同一种尺寸类别的对象，然后由空闲链表分配器管理。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;Go内存管理可以看成一个两级的内存管理结构，mheap和mcache。上面一级管理的基本单位是页，用于分配大对象，每次分配都是若干连续的页，也就是若干个4KB的大小，使用的数据结构是mheap和mspan，用BestFit算法做分配，用位示图做回收。下面一级管理的基本单位是不同类型的固定大小的对象，更像一个对象池而不是内存池，用引用计数做回收，使用的数据结构是mcache。&lt;/p&gt;
@@ -5691,12 +5770,12 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;想要在并发或增量的标记算法中保证正确性，需要达成&lt;strong&gt;任意&lt;/strong&gt;一种三色不变性&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;强三色不变性：黑色对象不会指向白色对象，只会指向灰色对象或黑色对象&lt;/li&gt;
-&lt;li&gt;弱三色不变性：黑色对象可以指向白色对象，但是该白色对象必须有被其他灰色对象直接或间接引用&lt;/li&gt;
+&lt;li&gt;弱三色不变性：黑色对象可以指向白色对象，但是被指向的白色对象，必须有被其他灰色对象直接或间接引用&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;go中使用了写屏障是在写入指针前执行的一小段代码，用以防止并发标记时指针丢失，这一小段代码Go是在编译时加入的。&lt;/p&gt;
 &lt;h3 id=&#34;dijkstra的插入写屏障---灰色赋值器&#34;&gt;Dijkstra的插入写屏障 - 灰色赋值器&lt;/h3&gt;
-&lt;p&gt;在标记阶段，在对对象所引用的指针进行修改时触发，比如A引用了B，在标记阶段，A将对B的引用改成了C，C会被标记为灰色。&lt;strong&gt;go会在堆区使用插入写屏障&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;在标记阶段，在对对象所引用的指针进行修改时触发，比如A引用了B，在标记阶段，A将对B的引用改成了C，C会被标记为灰色，即 &lt;strong&gt;指针修改时，指向的新对象要标记成灰色，go会在堆区使用插入写屏障&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;灰色赋值器：尚未被回收器扫描过，或者已经扫描过但仍然需要重新扫描。如果重新扫描过程中发现了新的灰色对象或白色对象，回收器需要对这些对象遍历扫描追踪，由于此时赋值器还没停止，仍然可以插入新的非黑色引用，因此回收器仍然需要往复扫描，直到重新扫描过程中没有发现新的白色或灰色对象，so最坏情况下，回收器只能将所有赋值器线程都停止才能对根对象进行完整扫描，此时就会STW。&lt;/p&gt;
 &lt;p&gt;优点：可以立即开始并发标记&lt;/p&gt;
 &lt;p&gt;缺点：相对保守，将有存活可能的对象都标记为灰色，保证强三色不变性，部分残留对象只能留在下一次进行回收；另外，插入写屏障有两种实现方式：&lt;/p&gt;
@@ -5728,7 +5807,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;Dijkstra写屏障是对被写入的指针进行grey操作, 不能防止指针从heap被隐藏到黑色的栈中, 需要STW重扫描栈.&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;yuasa的删除写屏障---黑色赋值器&#34;&gt;Yuasa的删除写屏障 - 黑色赋值器&lt;/h3&gt;
-&lt;p&gt;在标记阶段，对对象所引用的指针进行删除时触发，保证灰色-白色链路不会断开，比如A引用了B，标记阶段，A取消了对B的引用，B会被标记为灰色，即一个对象即使被删除了最后一个指向它的指针，也依旧可以活过这一轮，在下一轮的GC中才会被清理掉。&lt;strong&gt;go会在栈区和堆区都使用删除写屏障&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;在标记阶段，对对象所引用的指针进行删除时触发，保证灰色-白色链路不会断开，比如A引用了B，标记阶段，A取消了对B的引用，B会被标记为灰色，即一个对象即使被删除了最后一个指向它的指针，也依旧可以活过这一轮，在下一轮的GC中才会被清理掉。&lt;strong&gt;即 指针修改时，修改前指向的对象要标记成灰色，go会在栈区和堆区都使用删除写屏障&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;黑色赋值器：已经被回收器扫描过，不会再次对其进行扫描。&lt;/p&gt;
 &lt;p&gt;优点：标记结束时不需要STW；&lt;/p&gt;
 &lt;p&gt;缺点：已经被垃圾回收器扫描过，不会再次对其进行扫描，回收精度低；标记开始前开启STW扫描栈来记录初始快照，这个过程会保护开始时刻的所有存活对象，用于把原来指向的对象标记为灰色，完了之后后续不需要STW；&lt;/p&gt;
@@ -5750,6 +5829,7 @@ PROJECTION：限定返回字段时候stage的返回
 	
 &lt;/figure&gt;&lt;/p&gt;
 &lt;h2 id=&#34;混合屏障&#34;&gt;混合屏障&lt;/h2&gt;
+&lt;p&gt;如果所有对象都在堆上分配，理论上只需要选择插入写屏障 或者 删除写屏障即可满足强/弱三色不变性，但在Go中，栈上对象操作比较频繁，对栈上对象开启写屏障的成本比较高，颜色判断比较复杂，如果只使用其中一种写屏障，都会有对象丢失的问题，需要对栈进行重新扫描标记，导致STW的时间过长，官方为了简单实现，使用混合写屏障，避免二次扫描栈。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;GC 开始将栈上的对象全部并发扫描并标记为黑色（之后不再对栈进行第二次重复扫描，无需STW）；&lt;/li&gt;
 &lt;li&gt;GC 期间，任何在栈上创建的新对象，均为黑色，扫描过一次就不需要再扫描了，这样就消除了插入写屏障时期最后STW的重新扫描栈；&lt;/li&gt;
@@ -5771,13 +5851,16 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h2 id=&#34;垃圾收集过程&#34;&gt;垃圾收集过程&lt;/h2&gt;
 &lt;blockquote&gt;
 &lt;ol&gt;
-&lt;li&gt;清理终止阶段：
+&lt;li&gt;
+&lt;p&gt;清理终止阶段：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;strong&gt;暂停程序&lt;/strong&gt;STW，所有的goroutine在这时会进入安全点（Safe point）；&lt;/li&gt;
 &lt;li&gt;如果当前垃圾收集循环是强制触发的，我们还需要处理还未被清理的内存管理单元；&lt;/li&gt;
 &lt;/ol&gt;
 &lt;/li&gt;
-&lt;li&gt;标记阶段：
+&lt;li&gt;
+&lt;p&gt;标记阶段：&lt;/p&gt;
+&lt;p&gt;标记过程是一个广度优先遍历的过程，扫描节点，将节点的子节点推到任务队列中，然后递归扫描子节点的节点，直到所有工作队列都被排空为止，这个阶段进行三色标记。&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
 &lt;p&gt;将写屏障状态切换至 &lt;code&gt;_GCmark&lt;/code&gt;、开启写屏障、辅助GC程序（Mutator Assiste）并将根对象入队；占用25%CPU。&lt;/p&gt;
@@ -5797,13 +5880,15 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/li&gt;
 &lt;/ol&gt;
 &lt;/li&gt;
-&lt;li&gt;标记终止阶段：
+&lt;li&gt;
+&lt;p&gt;标记终止阶段：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;strong&gt;暂停程序STW&lt;/strong&gt;、将写屏障状态切换至 &lt;code&gt;_GCmarktermination&lt;/code&gt; 并停止写屏障，关闭辅助标记的用户程序；&lt;/li&gt;
 &lt;li&gt;清理处理器上的线程缓存；&lt;/li&gt;
 &lt;/ol&gt;
 &lt;/li&gt;
-&lt;li&gt;清理阶段；
+&lt;li&gt;
+&lt;p&gt;清理阶段；&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;将写屏障状态切换至 &lt;code&gt;_GCoff&lt;/code&gt; 开始清理阶段，初始化清理状态并关闭写屏障；&lt;/li&gt;
 &lt;li&gt;恢复用户程序，所有新创建的对象会标记成白色；&lt;/li&gt;
@@ -5812,6 +5897,20 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;并发垃圾回收是先STW找到所有的Root对象，开启写屏障，然后结束STW，让垃圾标记线程和用户线程并发执行，垃圾标记完成后，再次开启STW，停止写屏障，清理内存。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/GC%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/GC%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			alt=&#34;go GC执行流程&#34;&gt;
+	&lt;/a&gt;
+	
+	&lt;figcaption&gt;go GC执行流程&lt;/figcaption&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h2 id=&#34;关注的指标&#34;&gt;关注的指标&lt;/h2&gt;
 &lt;ul&gt;
@@ -5824,6 +5923,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;slice预先分配内存，因为slice扩容时会返回新的slice，如果频繁扩容会增加GC压力；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;slice的缩容，比如一个 &lt;code&gt;arr = make([]*obj, 6)&lt;/code&gt; 缩容时，当&lt;code&gt;arr = arr[:3]&lt;/code&gt;时，底层数组后面 3 个元素已经无法访问了，但是其关联的堆上内存依然无法释放，触发把对应下标的元素置为nil；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;map的key和value使用值类型，而不是指针类型，利用map中extra中的特性；&lt;/p&gt;
@@ -7027,8 +7129,156 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h1 id=&#34;pool&#34;&gt;Pool&lt;/h1&gt;
+&lt;p&gt;这里是针对go 1.13之后的版本&lt;/p&gt;
 &lt;h2 id=&#34;数据结构-6&#34;&gt;数据结构&lt;/h2&gt;
-&lt;p&gt;&lt;figure 
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;Pool&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// 使用go vet工具可以检测用户代码是否复制了pool
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;noCopy&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;noCopy&lt;/span&gt;
+
+    &lt;span class=&#34;c1&#34;&gt;// 每个 P 的本地队列，实际类型为 [P]poolLocal，长度是固定的，P的id对应[P]poolLocal下标索引，通过这样的设计，多个 G 使用同一个Pool时，减少竞争，提升性能
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;local&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt;
+	&lt;span class=&#34;c1&#34;&gt;// [P]poolLocal 本地队列的大小
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;localSize&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;
+
+    &lt;span class=&#34;c1&#34;&gt;// GC 时使用，分别接管 local 和 localSize，victim机制用于减少GC后冷启动导致的性能抖动，让对象分配更平滑，降低GC压力的同时提高命中率
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;victim&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// local from previous cycle
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;victimSize&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// size of victims array
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
+	&lt;span class=&#34;c1&#34;&gt;// 自定义的对象创建回调函数，当 pool 中无可用对象时会调用此函数
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;New&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;interface&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;当Pool没有缓存对象时，调用 New 函数生成以下对象&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;poolLocal&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;poolLocalInternal&lt;/span&gt;
+
+	&lt;span class=&#34;c1&#34;&gt;// 将 poolLocal 补齐至两个缓存行的倍数，防止 false sharing,
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 每个缓存行具有 64 bytes，即 512 bit
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 目前我们的处理器一般拥有 32 * 1024 / 64 = 512 条缓存行
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 伪共享，仅占位用，防止在 cache line 上分配多个 poolLocalInternal
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;pad&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;128&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Sizeof&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;poolLocalInternal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{})&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;%&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;128&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;byte&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;// Local 每个P都有一个
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;poolLocalInternal&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// P 的私有对象，使用时无需要加锁，用于不同G执行get和put
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;private&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;interface&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// 共享对象数组，每个P都有一个。本地 P 可以 pushHead/popHead，其他 P 则只能 popTail, 进时append，出时slice[:last-1]
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 同一个P上不同G可以多次执行put方法，需要有地方能存储, 并且别的P上的G可能过来偷，所以要加锁
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;shared&lt;/span&gt;  &lt;span class=&#34;nx&#34;&gt;poolChain&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;poolChain 是一个双端队列的实现；&lt;/p&gt;
+&lt;p&gt;poolDequeue 被实现为单生产者，多消费者的固定大小无锁的环形队列，生产者可以从 head 插入和删除，而消费者仅能从 tail 删除&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;poolChain&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;c1&#34;&gt;// 只有生产者会 push to，不用加锁
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;head&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;poolChainElt&lt;/span&gt;
+
+	&lt;span class=&#34;c1&#34;&gt;// 读写需要原子控制，pop from
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;tail&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;poolChainElt&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;poolChainElt&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;poolDequeue&lt;/span&gt;
+
+	&lt;span class=&#34;c1&#34;&gt;// next 被 producer 写，consumer 读。所以只会从 nil 变成 non-nil
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// prev 被 consumer 写，producer 读。所以只会从 non-nil 变成 nil
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;next&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;prev&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;poolChainElt&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;poolDequeue&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;c1&#34;&gt;// headTail 包含一个 32 位的 head 和一个 32 位的 tail 指针。这两个值都和 len(vals)-1 取模过。
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// tail 是队列中最老的数据，head 指向下一个将要填充的 slot
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// slots 的有效范围是 [tail, head)，由 consumers 持有。
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 通过对其cas操作保证并发安全
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;headTail&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint64&lt;/span&gt;
+
+	&lt;span class=&#34;c1&#34;&gt;// vals 是一个存储 interface{} 的环形队列，它的 size 必须是 2 的幂，初始化长度为8
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 如果 slot 为空，则 vals[i].typ 为空；否则，非空。
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 一个 slot 在这时宣告无效：tail 不指向它了，vals[i].typ 为 nil
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 由 consumer 设置成 nil，由 producer 读
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;vals&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;eface&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;figure 
 	&gt;
 	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_syncPool%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84.png&#34; &gt;
 		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_syncPool%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84.png&#34;
@@ -7041,34 +7291,82 @@ PROJECTION：限定返回字段时候stage的返回
 	
 &lt;/figure&gt;&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;每次垃圾回收时，Pool会把victim中的对象移除，然后把local的数据给victim，local置为nil，如果此时有Get方法被调用，则会从victim中获取对象。通过这种方式，避免缓存元素被大量回收后再再次使用时新建很多对象&lt;/li&gt;
-&lt;li&gt;获取重用对象时，先从local中获取，获取不到再从victim中获取&lt;/li&gt;
-&lt;li&gt;poolLocalInternal用于CPU缓存对齐，避免false sharing&lt;/li&gt;
-&lt;li&gt;private字段代表一个缓存元素，且只能由相应的一个P存取，因为一个P同时只能执行一个goroutine，所以不会有并发问题&lt;/li&gt;
-&lt;li&gt;shared字段可以被任意的P访问，但是只有本地的P次啊能pushHead/popHead，其他P可以popTail，相当于只有一个本地P作为生产者，多个P作为消费者，它由一个local-free的队列实现&lt;/li&gt;
+&lt;li&gt;每次垃圾回收时，Pool会把victim中的对象移除，然后把local的数据给victim，local置为nil，如果此时有Get方法被调用，则会从victim中获取对象。通过这种方式，避免缓存元素被大量回收后再再次使用时新建很多对象；&lt;/li&gt;
+&lt;li&gt;获取重用对象时，先从local中获取，获取不到再从victim中获取；&lt;/li&gt;
+&lt;li&gt;poolLocalInternal用于CPU缓存对齐，避免false sharing；&lt;/li&gt;
+&lt;li&gt;private字段代表一个可复用对象，且只能由相应的一个P存取，因为一个P同时只能执行一个goroutine，所以不会有并发问题；&lt;/li&gt;
+&lt;li&gt;shared字段可以被任意的P访问，但是只有本地的P次啊能pushHead/popHead，其他P可以popTail，相当于只有一个本地P作为生产者，多个P作为消费者，它由一个local-free的队列实现；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;基本-6&#34;&gt;基本&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;sync.Pool用于保存一组可独立访问的临时对象，它池化的对象如果没有被其他对象持有引用，可能会在未来某个时间点被回收掉&lt;/li&gt;
-&lt;li&gt;sync.Pool是并发安全的，多个gotoutine可以并发调用它存取对象；&lt;/li&gt;
-&lt;li&gt;不能复制使用&lt;/li&gt;
-&lt;li&gt;在1.13以前，保证并发安全使用了带锁的队列，1.13后，改成了lock-free的队列实现，避免锁对性能的影响&lt;/li&gt;
-&lt;li&gt;包含了三个方法：New、Get、Put；Get方法调用时，会从池中移走该元素&lt;/li&gt;
-&lt;li&gt;当Pool里没有元素可用时，Get方法会返回nil；可以向Pool中Put一个nil的值，Pool会将其忽略&lt;/li&gt;
-&lt;li&gt;当使用Pool作为buffer池时，要注意buffer如果太大，reset后它就会占很大空间，引起内存泄漏，因此在回收元素时，需要检查大小，如果太大了就直接置为null，丢弃即可&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;sync.Pool用于保存一组可独立访问的临时对象，它池化的对象如果没有被其他对象持有引用，可能会在未来某个时间点（GC发生时）被回收掉；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;sync.Pool是并发安全的，多个gotoutine可以并发调用它存取对象；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;不能复制使用；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在1.13以前，保证并发安全使用了带锁的队列，且在GC时，直接清空所有Pool的&lt;code&gt;local&lt;/code&gt;和&lt;code&gt;poollocal.shared&lt;/code&gt;，GC的时间可能会很长;&lt;/p&gt;
+&lt;p&gt;1.13后，改成了lock-free的队列实现，避免锁对性能的影响，且在GC时，使用victim作为次级缓存，GC时将对象放入其中，下次GC来临之前，如果有 Get 调用则会从victim中取，直到下一次GC来临时回收，拉长实际回收时间，使得单位时间内GC的开销减少；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;包含了三个方法：New、Get、Put；Get方法调用时，会从池中移走该元素；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;当Pool里没有元素可用时，Get方法会返回nil；可以向Pool中Put一个nil的值，Pool会将其忽略；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在使用Put归还对象时，需要将对象的属性reset；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;当使用Pool作为buffer池时，要注意buffer如果太大，reset后它就会占很大空间，引起内存泄漏，因此在回收元素时，需要检查大小，如果太大了就直接置为null，丢弃即可；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Pool 里对象的生命周期受 GC 影响，不适合于做连接池，因为连接池需要自己管理对象的生命周期；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Pool 不可以指定大小，大小只受制于 GC 临界值；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;procPin&lt;/code&gt; 将 G 和 P 绑定，防止 G 被抢占。在绑定期间，GC 无法清理缓存的对象；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;sync.Pool&lt;/code&gt; 的最底层使用切片加链表来实现双端队列，并将缓存的对象存储在切片中；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;双端队列初始化长度为8，始终保持2的n次幂，两倍两倍的增长，最大的长度是2^30，达到上限时，再执行Put操作就放不进去，也不报错；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Get方法调用时，如果是从其他P的local.shared的尾部窃取复用对象，同时会移除，当最小时收缩成只剩下一个节点时，双端队列的长度会变为2，不会收缩成空链表；&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;get方法&#34;&gt;Get方法&lt;/h2&gt;
 &lt;ol&gt;
-&lt;li&gt;将当前goroutine固定在P上，优先从local的private字段取出一个元素，将private置为null&lt;/li&gt;
-&lt;li&gt;如果取出的元素为null，从当前的local.shared的head中取出一个元素，如果还取不到，调用getSlow函数去其他shared中取&lt;/li&gt;
-&lt;li&gt;getSlow函数会遍历所有local，从它们的shared的head中弹出一个元素，如果还没有，则对victim中以在同样的方式(先从private里找，找不到再在shared里找)获取一遍&lt;/li&gt;
-&lt;li&gt;如果还取不到，则调用New函数生成一个，然后返回&lt;/li&gt;
+&lt;li&gt;如果是第一次访问，创建P个poolLocal，返回New的新对象；&lt;/li&gt;
+&lt;li&gt;如果非第一次访问，调用&lt;code&gt;p.pin()&lt;/code&gt;函数，将当前 G 固定在P上，防止被抢占，并获取pid，再根据pid号找到当前P对应的poolLocal，优先从local的private字段取出一个元素，将private置为null；&lt;/li&gt;
+&lt;li&gt;如果从private取出的元素为null，则从当前的local.shared的head中取出一个无锁队列，遍历队列获取元素，如果有pop出来并返回；如果还取不到，沿着pre指针到下一个无锁队列继续获取，直到获取到或者遍历完双端链表；&lt;/li&gt;
+&lt;li&gt;如果还没有的话，调用getSlow函数，遍历其他P的poolLocal（从pid+1对应的poolLocal开始），从它们shared 的 tail 中弹出一个无锁队列，遍历队列获取元素，如果有，pop出来并返回；如果还取不到，沿着next指针到下一个无锁队列继续获取，如果还没有，直到获取到或者遍历完双端链表；如果还没有，就到别的P上继续获取；&lt;/li&gt;
+&lt;li&gt;如果所有P的poolLocal.shared都没有，则对victim中以在同样的方式，先从当前P的poolLocal的private里找，找不到再在shared里找，获取一遍；&lt;/li&gt;
+&lt;li&gt;Pool相关操作执行完，调用&lt;code&gt;runtime_procUnpin()&lt;/code&gt;解除非抢占；&lt;/li&gt;
+&lt;li&gt;如果还取不到，则调用New函数生成一个，然后返回；&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;因为当前的goroutine被固定在了P上，在查找元素时不会被其他P执行&lt;/p&gt;
+&lt;p&gt;因为当前的G被固定在了P上，在查找元素时不会被其他P执行。&lt;/p&gt;
+&lt;h2 id=&#34;pin方法&#34;&gt;Pin方法&lt;/h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;pin&lt;/code&gt; 的作用就是将当前 groutine 和 P 绑定在一起，禁止抢占。并且返回对应的 poolLocal 以及 P 的 id。&lt;/p&gt;
+&lt;p&gt;如果 G 被抢占，则 G 的状态从 running 变成 runnable，会被放回 P 的 localq 或 globaq，等待下一次调度。下次再执行时，就不一定是和现在的 P 相结合了。因为之后会用到 pid，如果被抢占了，有可能接下来使用的 pid 与所绑定的 P 并非同一个。&lt;/p&gt;
+&lt;p&gt;所谓的抢占，就是把 M 绑定的 P 给剥夺了，因为我们后面获取本地的 poolLocal 是根据pid获取的，如果这个过程中 P 被抢走，就乱套了，所以需要设置禁止抢占，实现的原理就是让 M 的locks字段不等于0，比如+1，实际上也相当于对M上锁，让调度器知道 M 不适合抢占。&lt;/p&gt;
+&lt;p&gt;执行完之后，P 不可抢占，且 GC 不会清扫 Pool 里的对象&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;h2 id=&#34;put方法&#34;&gt;Put方法&lt;/h2&gt;
 &lt;ol&gt;
-&lt;li&gt;如果Put进来的元素是null，直接返回&lt;/li&gt;
-&lt;li&gt;固定当前goroutine，如果本地private没有值，直接设置，否则加入到shared中&lt;/li&gt;
+&lt;li&gt;如果Put进来的元素是null，直接返回；&lt;/li&gt;
+&lt;li&gt;调用&lt;code&gt;p.pin()&lt;/code&gt;函数，将当前 G 固定在P上，防止被抢占，并获取pid，再根据pid号找到当前P对应的poolLocal；&lt;/li&gt;
+&lt;li&gt;尝试将put进来的元素赋值给private，如果本地private没有值，直接赋值；&lt;/li&gt;
+&lt;li&gt;否则，将其加入到shared对应的双端队列的队首；&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h1 id=&#34;原子操作&#34;&gt;原子操作&lt;/h1&gt;
 &lt;ul&gt;
@@ -7415,6 +7713,8 @@ PROJECTION：限定返回字段时候stage的返回
     &gt;go中waitGroup源码解读&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/344834329&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;深度解密Go语言之sync.map&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/99710992&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;golang的对象池sync.pool源码解读&lt;/a&gt;&lt;/p&gt;
 </description>
         </item>
         <item>
@@ -8035,6 +8335,9 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;map是非线程安全的，扩容不是一个原子操作，通过hmap里的flags字段在并发修改时进行fast-fail。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;当 map 对象同时进行加锁的 write 和不加锁的read（比如打印，序列化等）时，会发生panic。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;map的遍历是无序的，每次遍历出来的结果的顺序都不一样。&lt;/p&gt;
@@ -15010,10 +15313,14 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/figure&gt;&lt;/p&gt;
 &lt;h2 id=&#34;四本地消息表&#34;&gt;四、本地消息表&lt;/h2&gt;
 &lt;p&gt;适合解决分布式最终一致性问题。&lt;/p&gt;
-&lt;h3 id=&#34;正常情况下-2&#34;&gt;正常情况下&lt;/h3&gt;
-&lt;p&gt;参与者A正常进行数据库事务并提交，将涉及到对参与者B的操作记录到本地消息表中，相当于一条日志，然后再用一个异步服务，读取该条日志控制参与者B进行相关操作，如果失败了直接重试即可，保证参与者A与B数据最终一致性。注意：参与者A的数据库操作与日志记录是一个原子性操作。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;异步消费操作可以利用RocketMQ事务&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;事务性消息：本地事务和发送消息是原子性操作&lt;/p&gt;
+&lt;p&gt;事务性消息：本地事务和发送消息是原子性操作；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;正常情况下&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;参与者A正常进行数据库事务并提交，将涉及到对参与者B的操作记录到本地消息表中，相当于一条日志，然后再用一个异步服务，读取该条日志，控制参与者B进行相关操作，完成之后更新这条本地消息的状态。&lt;/p&gt;
+&lt;p&gt;异步消费操作可以利用RocketMQ事务；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;注意：参与者A的数据库操作与日志记录是一个原子性操作&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;异常情况下&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;如果失败了直接重试即可，保证参与者A与B数据最终一致性。&lt;/p&gt;
+&lt;p&gt;消费者在处理的时候要保证幂等。&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.jianshu.com/p/53324ea2df92&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;https://www.jianshu.com/p/53324ea2df92&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;http://blog.itpub.net/31556438/viewspace-2649246/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
