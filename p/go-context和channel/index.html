@@ -361,10 +361,9 @@ if (!doNotTrack) {
 <p>通过根context，比如emptyCtx之后，调用<code>withCancel()</code>方法可以创建cancelCtx用于取消操作。</p>
 <p>有两种方式可触发取消：</p>
 <ol>
-<li>返回的CancelFunc被调用，此时会<strong>取消当前context和其所有的子context</strong></li>
-<li>Done这个chan被close了，此时会<strong>取消当前context和其所有的子context</strong></li>
+<li>返回的CancelFunc被调用，此时会取消当前context和其所有的子context</li>
+<li>Done这个chan被close了，此时会取消当前context和其所有的子context</li>
 </ol>
-<p>所以cancel时，只会取消当前ctx和其子ctx，并从其父ctx的children列表中移除，不会影响父ctx的其他子ctx</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -425,12 +424,6 @@ if (!doNotTrack) {
 </span><span class="lnt">56
 </span><span class="lnt">57
 </span><span class="lnt">58
-</span><span class="lnt">59
-</span><span class="lnt">60
-</span><span class="lnt">61
-</span><span class="lnt">62
-</span><span class="lnt">63
-</span><span class="lnt">64
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">CancelFunc</span> <span class="kd">func</span><span class="p">()</span>
@@ -450,17 +443,14 @@ if (!doNotTrack) {
 	<span class="k">return</span> <span class="nx">cancelCtx</span><span class="p">{</span><span class="nx">Context</span><span class="p">:</span> <span class="nx">parent</span><span class="p">}</span>
 <span class="p">}</span>
 
-<span class="c1">// 该方法主要是找到可以”挂靠“的”可取消“的ctx，
-</span><span class="c1">// 将child ctx放到parent的children属性中，与parent ctx绑定，当parent ctx调用取消时，才能层层传递，取消挂靠的child ctx
+<span class="c1">// 主要是将child ctx与parent ctx绑定，放到parent的children属性中
 </span><span class="c1"></span><span class="kd">func</span> <span class="nf">propagateCancel</span><span class="p">(</span><span class="nx">parent</span> <span class="nx">Context</span><span class="p">,</span> <span class="nx">child</span> <span class="nx">canceler</span><span class="p">)</span> <span class="p">{</span>
 	<span class="nx">done</span> <span class="o">:=</span> <span class="nx">parent</span><span class="p">.</span><span class="nf">Done</span><span class="p">()</span>
-    <span class="c1">// parent节点是一个空节点
-</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">done</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">done</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
 		<span class="k">return</span> <span class="c1">// parent is never canceled
 </span><span class="c1"></span>	<span class="p">}</span>
 
-    <span class="c1">// 判断parent节点是否已经被取消
-</span><span class="c1"></span>	<span class="k">select</span> <span class="p">{</span>
+	<span class="k">select</span> <span class="p">{</span>
 	<span class="k">case</span> <span class="o">&lt;-</span><span class="nx">done</span><span class="p">:</span>
 		<span class="c1">// parent is already canceled
 </span><span class="c1"></span>		<span class="nx">child</span><span class="p">.</span><span class="nf">cancel</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">parent</span><span class="p">.</span><span class="nf">Err</span><span class="p">())</span>
@@ -468,8 +458,7 @@ if (!doNotTrack) {
 	<span class="k">default</span><span class="p">:</span>
 	<span class="p">}</span>
 
-    <span class="c1">// parentCancelCtx方法的作用判断该节点是否是cancelCtx类型，因为只有cancelCtx类型的context才有children map
-</span><span class="c1"></span>    <span class="c1">// 找到可以取消的parent节点，上锁
+    <span class="c1">// 获取parent的cancelCtx
 </span><span class="c1"></span>	<span class="k">if</span> <span class="nx">p</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nf">parentCancelCtx</span><span class="p">(</span><span class="nx">parent</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span>
 		<span class="nx">p</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
 		<span class="k">if</span> <span class="nx">p</span><span class="p">.</span><span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
@@ -484,16 +473,14 @@ if (!doNotTrack) {
 		<span class="p">}</span>
 		<span class="nx">p</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
 	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-        <span class="c1">// 表示parent ctx不是一个cancelCtx，没有children map，无法构建成树，只能通过parent的done来向下传播取消信号
+        <span class="c1">// 表示parent的ctx不是一个cancelCtx，没有children属性，无法构建成树，只能通过parent的done来向下传播
 </span><span class="c1"></span>		<span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">goroutines</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 		<span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
 			<span class="k">select</span> <span class="p">{</span>
 			<span class="k">case</span> <span class="o">&lt;-</span><span class="nx">parent</span><span class="p">.</span><span class="nf">Done</span><span class="p">():</span>
-                <span class="c1">// 这个case的作用是传递parent取消信号，取消child ctx
-</span><span class="c1"></span>				<span class="nx">child</span><span class="p">.</span><span class="nf">cancel</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">parent</span><span class="p">.</span><span class="nf">Err</span><span class="p">())</span>
+				<span class="nx">child</span><span class="p">.</span><span class="nf">cancel</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">parent</span><span class="p">.</span><span class="nf">Err</span><span class="p">())</span>
 			<span class="k">case</span> <span class="o">&lt;-</span><span class="nx">child</span><span class="p">.</span><span class="nf">Done</span><span class="p">():</span>
-                <span class="c1">// 这个case的作用是防止parent.Done()一直不执行导致G泄漏
-</span><span class="c1"></span>			<span class="p">}</span>
+			<span class="p">}</span>
 		<span class="p">}()</span>
 	<span class="p">}</span>
 <span class="p">}</span>
@@ -554,7 +541,6 @@ if (!doNotTrack) {
 </span><span class="lnt">50
 </span><span class="lnt">51
 </span><span class="lnt">52
-</span><span class="lnt">53
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">canceler</span> <span class="kd">interface</span> <span class="p">{</span>
@@ -573,8 +559,7 @@ if (!doNotTrack) {
 
 <span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">cancelCtx</span><span class="p">)</span> <span class="nf">Done</span><span class="p">()</span> <span class="o">&lt;-</span><span class="kd">chan</span> <span class="kd">struct</span><span class="p">{}</span> <span class="p">{</span>
    <span class="nx">c</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
-   <span class="c1">// 懒汉式创建，返回一个只读channel，该channel不会被写入数据，仅用于接收close()方法调用时的信号
-</span><span class="c1"></span>   <span class="k">if</span> <span class="nx">c</span><span class="p">.</span><span class="nx">done</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+   <span class="k">if</span> <span class="nx">c</span><span class="p">.</span><span class="nx">done</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
       <span class="nx">c</span><span class="p">.</span><span class="nx">done</span> <span class="p">=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kd">struct</span><span class="p">{})</span>
    <span class="p">}</span>
    <span class="nx">d</span> <span class="o">:=</span> <span class="nx">c</span><span class="p">.</span><span class="nx">done</span>
@@ -599,13 +584,13 @@ if (!doNotTrack) {
 		<span class="nb">close</span><span class="p">(</span><span class="nx">c</span><span class="p">.</span><span class="nx">done</span><span class="p">)</span>
 	<span class="p">}</span>
 	<span class="k">for</span> <span class="nx">child</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">c</span><span class="p">.</span><span class="nx">children</span> <span class="p">{</span>
-		<span class="c1">// 取消所有子context，通过传递error
+		<span class="c1">// 取消所有子context
 </span><span class="c1"></span>		<span class="nx">child</span><span class="p">.</span><span class="nf">cancel</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
 	<span class="p">}</span>
 	<span class="nx">c</span><span class="p">.</span><span class="nx">children</span> <span class="p">=</span> <span class="kc">nil</span>
 	<span class="nx">c</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
 
-    <span class="c1">// 从父context的children map中移除当前context
+    <span class="c1">// 从父context的children中移除当前context
 </span><span class="c1"></span>	<span class="k">if</span> <span class="nx">removeFromParent</span> <span class="p">{</span>
 		<span class="nf">removeChild</span><span class="p">(</span><span class="nx">c</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">c</span><span class="p">)</span>
 	<span class="p">}</span>
@@ -692,7 +677,7 @@ if (!doNotTrack) {
 </div>
 </div><h2 id="valuectx">valueCtx</h2>
 <p><code>valueCtx</code>内部仍然使用<code>Context</code>存储父<code>Context</code>的指针，并用<code>interface{}</code>存储键值；</p>
-<p>如果当前<code>valueCtx</code>找不到需要的<code>key</code>，会沿着树向上一直查找父节点直到根节点，类似链表的搜索；</p>
+<p>如果当前<code>valueCtx</code>找不到需要的<code>key</code>，会沿着树向上一直查找直到根节点，类似链表的搜索；</p>
 <p>使用<code>WithValue</code>创建时，会判断<code>key</code>是否实现<code>Comparable</code>接口。如果没有实现，会触发<code>panic</code>；</p>
 <p>key的类类型不应该是内置类型，以避免冲突。使用的时候应该自定义类型；</p>
 <h1 id="channel">Channel</h1>
@@ -2028,10 +2013,10 @@ if (!doNotTrack) {
     <span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
     <span class="nx">wg</span> <span class="o">:=</span> <span class="nx">sync</span><span class="p">.</span><span class="nx">WaitGroup</span><span class="p">{}</span>
     <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
-        <span class="nx">wg</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="mi">1</span> <span class="c1">// ch如果放在里层就达不到控制goroutine的效果了
+</span><span class="c1"></span>        <span class="nx">wg</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
       <span class="k">go</span> <span class="kd">func</span><span class="p">(</span><span class="nx">k</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">defer</span> <span class="nx">wg</span><span class="p">.</span><span class="nf">Done</span><span class="p">()</span>
-            <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="mi">1</span>
           <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">k</span><span class="p">)</span> <span class="c1">// do something...
 </span><span class="c1"></span>          <span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span>
             <span class="c1">// 防止泄露
