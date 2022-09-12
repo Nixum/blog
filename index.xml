@@ -5006,10 +5006,24 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.cyhone.com/articles/analysis-of-golang-timer/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;https://www.cyhone.com/articles/analysis-of-golang-timer/&lt;/a&gt;&lt;/p&gt;
 &lt;h1 id=&#34;时间轮&#34;&gt;时间轮&lt;/h1&gt;
-&lt;p&gt;概念理解：https://zhuanlan.zhihu.com/p/121483218&lt;/p&gt;
-&lt;p&gt;golang实现：https://lk668.github.io/2021/04/05/2021-04-05-%E6%89%8B%E6%8A%8A%E6%89%8B%E6%95%99%E4%BD%A0%E5%A6%82%E4%BD%95%E7%94%A8golang%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AAtimewheel/&lt;/p&gt;
+&lt;p&gt;概念理解：&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/121483218&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;一张图理解Kafka时间轮&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://lk668.github.io/2021/04/05/2021-04-05-%E6%89%8B%E6%8A%8A%E6%89%8B%E6%95%99%E4%BD%A0%E5%A6%82%E4%BD%95%E7%94%A8golang%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AAtimewheel/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;手把手教你如何用golang实现一个timewheel时间轮&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.luozhiyun.com/archives/444&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;https://www.luozhiyun.com/archives/444&lt;/a&gt;&lt;/p&gt;
+    &gt;Go语言中时间轮的实现&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kafka%e6%97%b6%e9%97%b4%e8%bd%ae%e7%ae%80%e5%8d%95%e5%ae%9e%e7%8e%b0.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kafka%e6%97%b6%e9%97%b4%e8%bd%ae%e7%ae%80%e5%8d%95%e5%ae%9e%e7%8e%b0.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 </description>
         </item>
         <item>
@@ -12572,6 +12586,20 @@ value：无
 &lt;li&gt;集群成员管理 - 新增Broker、Broker主动关闭、Broker宕机；&lt;/li&gt;
 &lt;li&gt;保存了最全的集群元数据，向其他Broker提供数据服务，其他Broker会定期接收控制器发送过来的元数据更新请求，更新内存中的缓存数据。比较重要的元数据：主题信息、分区信息、所有Broker的信息、当前正在进行Preferred领导者选择的分区列表、分区重分配的分区列表；&lt;/li&gt;
 &lt;/ul&gt;
+&lt;h3 id=&#34;kafka中的时间轮&#34;&gt;Kafka中的时间轮&lt;/h3&gt;
+&lt;p&gt;通过DelayQueue（优先级队列实现） + 环形数组（数组的每个元素是个list，索引代表时间格），DelayQueue会根据环形数组中的每个元素进行排序；添加任务时，判断任务执行时间，加入环形数组中，对应的环形数组的元素，加入DelayQueue中。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kafka%e6%97%b6%e9%97%b4%e8%bd%ae%e7%ae%80%e5%8d%95%e5%ae%9e%e7%8e%b0.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kafka%e6%97%b6%e9%97%b4%e8%bd%ae%e7%ae%80%e5%8d%95%e5%ae%9e%e7%8e%b0.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;h1 id=&#34;消息模型&#34;&gt;消息模型&lt;/h1&gt;
 &lt;p&gt;1.点对点：队列、监听器&lt;/p&gt;
 &lt;p&gt;2.发布订阅：监听器、监听器、观察者模式&lt;/p&gt;
@@ -12825,9 +12853,61 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;延迟队列&#34;&gt;延迟队列&lt;/h1&gt;
+&lt;p&gt;任意延迟消息有两个难点，一个是消息因为有不同的过期时间，且投递顺序不定，因此处理消息时需要排序，另一个是延迟消息的存储，因为如果MQ基于WAL方式实现，日志文件会被过期删除，其最多只能保存一段时间的数据。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;通过RabbitMQ的TTL消息 + 死信队列实现，消息的TTL过期之后，会被转发到死信，消费者直接消费死信队列里的消息即可。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;基于Kafka，由于Kafka本身不支持延迟消息，只能通过额外方案实现。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;实现固定过期时间的延迟消息&lt;/strong&gt;：设置两个Topic，一个用于生产者投递设定好过期时间的消息，另一个是用于立即消费消息。生产者设定消息过期时间后，投递到第一个消息队列，消费者消费消息后判断是否需要立即执行，如果需要则把消息投递到第一个Topic，由真正的消费者执行消费。消费第一个队列的消费者如果判断出消息不能被投递到第二个队列，需要使用Kafka提供的 开始/暂停 API 来消费消息，不能使用sleep暂停消费消息，也不能重新投递（因为消息的顺序性），否则会导致Broker认为消费者不可用，触发 重平衡机制。&lt;/p&gt;
+&lt;p&gt;缺点：消息只能是固定的延迟，如果每条消息的延迟时间不同，就得使用多种Topic和对应的消费者；延迟时间不宜过长，因为WAL机制，消息堆积可能会导致日志文件被删除&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kafka%e5%bb%b6%e8%bf%9f%e9%98%9f%e5%88%97%e5%ae%9e%e7%8e%b0.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kafka%e5%bb%b6%e8%bf%9f%e9%98%9f%e5%88%97%e5%ae%9e%e7%8e%b0.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;多级时间轮优化排序；将普通消息和延迟消息的commitLog分开保存，以保存较长时间；延迟消息数据按固定延迟划分，分段加载，时间轮只加载临近到期的消息，比如每30分钟一个块写入文件，整点时计算下一个30分钟的消息hash到对应的时间轮上，而超过时间轮限制的，直接落盘。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%97%b6%e9%97%b4%e8%bd%ae%e5%bb%b6%e8%bf%9f%e9%98%9f%e5%88%97.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e6%97%b6%e9%97%b4%e8%bd%ae%e5%bb%b6%e8%bf%9f%e9%98%9f%e5%88%97.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;消息写入WAL&lt;/li&gt;
+&lt;li&gt;Dispatcher处理延迟消息
+&lt;ul&gt;
+&lt;li&gt;延迟消息一定时间的直接写入TimeWheel&lt;/li&gt;
+&lt;li&gt;延迟超过一定时间写入DelayMessageStorage&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;DelayMessageStorage对DelayMsgFile构建一层索引，这样在映射到TimeWheel时只需要做一次Hash操作&lt;/li&gt;
+&lt;li&gt;通过TimeWheel将消息投递到ConsumeQueue中完成对Consumer的可见&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://zhuanlan.zhihu.com/p/266156267&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;几种延迟队列实现&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;也可以 通过RabbitMQ的TTL消息 + 死信队列实现，消息的TTL过期之后，会被转发到死信，消费者直接消费死信队列里的消息即可。&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://developer.aliyun.com/article/660438&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;如何在MQ中实现支持任意延迟的消息？&lt;/a&gt;&lt;/p&gt;
 &lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;http://xuyangyang.club/articles/2018/07/23/1532348839398.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;消息队列常见问题和解决方案&lt;/a&gt;&lt;/p&gt;
