@@ -612,6 +612,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="lnt">83
 </span><span class="lnt">84
 </span><span class="lnt">85
+</span><span class="lnt">86
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">hmap</span> <span class="kd">struct</span> <span class="p">{</span>
@@ -626,18 +627,19 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="c1"></span>	<span class="nx">oldbuckets</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="c1">// 扩容时用于保存之前buckets的字段，大小是当前buckets的一半或0.75，非扩容状态下为null
 </span><span class="c1"></span>	<span class="nx">nevacuate</span>  <span class="kt">uintptr</span> <span class="c1">// 扩容迁移的进度，小于nevacuate的buckets表示已迁移完成，同时也用来计算下一个要迁移的桶在oldbuckets中的位置
 </span><span class="c1"></span>
-	<span class="nx">extra</span> <span class="o">*</span><span class="nx">mapextra</span> <span class="c1">// 用于扩容的指针，存储单个桶装满时溢出的数据，溢出桶和正常桶在内存上是连续的，该字段是为了优化GC扫描而设计的。
+	<span class="nx">extra</span> <span class="o">*</span><span class="nx">mapextra</span> <span class="c1">// 用于扩容的指针，存储单个桶装满时溢出的数据，溢出桶和正常桶在内存上是连续的
 </span><span class="c1"></span><span class="p">}</span>
 
 <span class="kd">type</span> <span class="nx">mapextra</span> <span class="kd">struct</span> <span class="p">{</span>
-    <span class="c1">// 当map的key和value都不是指针，并且size都小于128字节时（即可以被inline），会把bmap标记为不含指针，避免gc时扫描整个hmap。
-</span><span class="c1"></span>    <span class="c1">// 通过overflow实现，bmap.overflow是个指针，指向溢出的bucket，GC时又必定会扫描指针，也就是会扫描所有bmap，
-</span><span class="c1"></span>    <span class="c1">// 而当map的key和value都是非指针类型时，可直接标记整个map的颜色，避免扫描每个bmap的overflow指针，
-</span><span class="c1"></span>    <span class="c1">// 但溢出的bucket总是存在，与key和value的类型无关，于是就利用overflow来指向溢出的bucket，
-</span><span class="c1"></span>    <span class="c1">// 并把bmap结构体里的overflow指针类型变成unitptr类型（编译期干的），于是整个bmap就完全没指针了，也就不会被GC扫描。
+    <span class="c1">// 下面这两个字段是为了优化GC扫描而设计的。
+</span><span class="c1"></span>    <span class="c1">// 当map的key和value都不是指针，并且size都小于128字节时（即可以被inline），会把bmap标记为不含指针，避免gc时扫描整个hmap，就是通过overflow实现的。
+</span><span class="c1"></span>    <span class="c1">// bmap.overflow是个指针，指向溢出的bucket，由于GC时必定会扫描指针，所以就会扫描所有bmap，
+</span><span class="c1"></span>    <span class="c1">// 而当map的key和value都是非指针类型时，可以直接标记整个map的颜色，避免扫描每个bmap的overflow指针，
+</span><span class="c1"></span>    <span class="c1">// 但扩容时，溢出的bucket总是存在，与key和value的类型无关
+</span><span class="c1"></span>    <span class="c1">// 于是就利用extra.overflow来指向溢出的bucket，并把bmap结构体里的overflow指针类型变成unitptr类型（编译期干的），那整个bmap就完全没指针了，也就不会被GC扫描。
 </span><span class="c1"></span>    <span class="c1">// 另一方面，当 GC 在扫描 hmap 时，通过 extra.overflow 这条路径（指针）就可以将 overflow 的 bucket 正常标记成黑色，从而不会被 GC 错误地回收。
-</span><span class="c1"></span>	<span class="nx">overflow</span>    <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含hmap.buckets的overflow的buckets
-</span><span class="c1"></span>	<span class="nx">oldoverflow</span> <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含扩容时的hmap.oldbuckets的overflow的bucket
+</span><span class="c1"></span>	<span class="nx">overflow</span>    <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含hmap.buckets的overflow的buckets，即保存了所有溢出桶，便于GC扫描
+</span><span class="c1"></span>	<span class="nx">oldoverflow</span> <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>  <span class="c1">// 包含扩容时的hmap.oldbuckets的overflow的bucket，用于扩容
 </span><span class="c1"></span>	<span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span>    <span class="c1">// 指向空闲的 overflow bucket 的指针，用于预分配
 </span><span class="c1"></span><span class="p">}</span>
 
@@ -683,12 +685,12 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 
     <span class="c1">// 每个桶（如果有溢出，则包含它的overflow的链接桶）在搬迁完成状态下，要么会包含它所有的键值对，要么一个都不包含（但不包括调用evacuate()方法阶段，该方法调用只会在对map发起write时发生，在该阶段其他goroutine是无法查看该map的）。简单的说，桶里的数据要么一起搬走，要么一个都还未搬。
 </span><span class="c1"></span>    <span class="c1">// 当tophash值小于minTopHash时，表示存的是迁移状态，大于minTopHash时，表示的是计算的值。
-</span><span class="c1"></span>    <span class="nx">emptyRest</span>      <span class="p">=</span> <span class="mi">0</span> <span class="c1">// 表示cell为空，并且之后的位置也为空，包括overflow（初始化bucket时，就是该状态）
-</span><span class="c1"></span>    <span class="nx">emptyOne</span>       <span class="p">=</span> <span class="mi">1</span> <span class="c1">// 表示当前是空的cell，或者已经被搬迁到新的bucket，后面的位置则不清楚是否可用
+</span><span class="c1"></span>    <span class="nx">emptyRest</span>      <span class="p">=</span> <span class="mi">0</span> <span class="c1">// 表示cell为空，并且之后的位置也为空，包括overflow，初始化bucket时，就是该状态
+</span><span class="c1"></span>    <span class="nx">emptyOne</span>       <span class="p">=</span> <span class="mi">1</span> <span class="c1">// 表示当前是空的cell，但曾经有值，已经被搬迁到新的bucket
 </span><span class="c1"></span>    <span class="nx">evacuatedX</span>     <span class="p">=</span> <span class="mi">2</span> <span class="c1">// 键值对已经搬迁完毕，key在新buckets数组的前半部分
 </span><span class="c1"></span>    <span class="nx">evacuatedY</span>     <span class="p">=</span> <span class="mi">3</span> <span class="c1">// 键值对已经搬迁完毕，key在新buckets数组的后半部分
 </span><span class="c1"></span>    <span class="nx">evacuatedEmpty</span> <span class="p">=</span> <span class="mi">4</span> <span class="c1">// cell为空，整个bucket已经搬迁完毕
-</span><span class="c1"></span>    <span class="nx">minTopHash</span>     <span class="p">=</span> <span class="mi">5</span> <span class="c1">// tophash的最小正常值
+</span><span class="c1"></span>    <span class="nx">minTopHash</span>     <span class="p">=</span> <span class="mi">5</span> <span class="c1">// tophash的最小正常值，如果计算出来的tophash小于该值，则加上它避免跟前面几个状态枚举冲突
 </span><span class="c1"></span>
     <span class="c1">// flags
 </span><span class="c1"></span>    <span class="nx">iterator</span>     <span class="p">=</span> <span class="mi">1</span> <span class="c1">// 可能有迭代器在使用buckets
@@ -744,7 +746,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>key的哈希值的低B位计算获得桶的位置，高8位计算得到tophash的位置，进而找到key的位置。</p>
 </li>
 <li>
-<p>溢出桶也是一个bmap，bmap的overflow会指向下一个溢出桶，所以<strong>溢出桶的结构是链表，但是它们跟正常桶是在一片连续内存上，都在buckets数组里</strong>。</p>
+<p>溢出桶也是一个bmap，bmap的overflow会指向下一个溢出桶，所以<strong>溢出桶的结构是链表，但是它们跟正常桶是在一片连续内存上，都在buckets数组里，前2^B个当成正常桶，后2^(B-4)个当作溢出桶</strong>。</p>
 </li>
 <li>
 <p>每个桶存了8个tophash + 8对键值对。</p>
@@ -865,6 +867,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="lnt">61
 </span><span class="lnt">62
 </span><span class="lnt">63
+</span><span class="lnt">64
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">makemap</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">maptype</span><span class="p">,</span> <span class="nx">hint</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">h</span> <span class="o">*</span><span class="nx">hmap</span><span class="p">)</span> <span class="o">*</span><span class="nx">hmap</span> <span class="p">{</span>
@@ -877,7 +880,8 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 		<span class="nx">B</span><span class="o">++</span>
     <span class="p">}</span>
     <span class="nx">h</span><span class="p">.</span><span class="nx">B</span> <span class="p">=</span> <span class="nx">B</span>
-    <span class="k">if</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+    <span class="c1">// 如果 B == 0时，就会懒加载
+</span><span class="c1"></span>    <span class="k">if</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
 		<span class="kd">var</span> <span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span>
 		<span class="nx">h</span><span class="p">.</span><span class="nx">buckets</span><span class="p">,</span> <span class="nx">nextOverflow</span> <span class="p">=</span> <span class="nf">makeBucketArray</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
 		<span class="k">if</span> <span class="nx">nextOverflow</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
@@ -925,7 +929,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </span><span class="c1"></span>		<span class="nx">nextOverflow</span> <span class="p">=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nf">add</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="nx">base</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
         <span class="c1">// 计算出申请的最后一块bucket的地址
 </span><span class="c1"></span>		<span class="nx">last</span> <span class="o">:=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nf">add</span><span class="p">(</span><span class="nx">buckets</span><span class="p">,</span> <span class="p">(</span><span class="nx">nbuckets</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
-        <span class="c1">// 将最后一块bucket的overflow指针（指向链表的指针）指向buckets 的首部。 原因呢，是为了将来判断是否还有空的bucket 可以让溢出的bucket空间使用。
+        <span class="c1">// 将最后一个bucket桶的位置指向non-nil值，这样在获取溢出桶时，可以通过nextOverflow指针判断自己是否是最后一个溢出桶，nil说明还有桶，non-nil说明是最后一个桶
 </span><span class="c1"></span>		<span class="nx">last</span><span class="p">.</span><span class="nf">setoverflow</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nx">buckets</span><span class="p">))</span>
 	<span class="p">}</span>
 	<span class="k">return</span> <span class="nx">buckets</span><span class="p">,</span> <span class="nx">nextOverflow</span>
@@ -1042,7 +1046,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </li>
 <li>
 <p>此时key还没插入，且正常位已满，还不需要扩容，此时会调用newoverflow()函数。</p>
-<p>newoverflow()函数使用hmap在extre.overflow中创建好的桶，如果有，遍历这个创建好的桶链表，直到可以放入新的键值对；如果没有，则创建一个桶，增加noverflow计数，将新键值对放入这个桶中，然后将新桶挂载到当前桶overflow字段，成为溢出桶。</p>
+<p>newoverflow()函数使用hmap在extra.overflow中创建好的桶，如果有，遍历这个创建好的桶链表，直到可以放入新的键值对；如果没有，则创建一个桶，增加noverflow计数，将新键值对放入这个桶中，然后将新桶挂载到当前桶overflow字段，成为溢出桶。</p>
 <p>newoverflow()函数会在一开始判断hmap的extra.nextOverflow是否为空，如果为空会先预分配，不为空则直接将其设置为当前要使用的溢出桶，并把原来的nextOverflow设置为空，目的是充分利用已分配的内存，减少分配次数，算是比较巧妙了。</p>
 </li>
 </ol>
@@ -1119,7 +1123,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 	<span class="kd">var</span> <span class="nx">ovf</span> <span class="o">*</span><span class="nx">bmap</span>
 	<span class="k">if</span> <span class="nx">h</span><span class="p">.</span><span class="nx">extra</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="o">&amp;&amp;</span> <span class="nx">h</span><span class="p">.</span><span class="nx">extra</span><span class="p">.</span><span class="nx">nextOverflow</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
 		<span class="nx">ovf</span> <span class="p">=</span> <span class="nx">h</span><span class="p">.</span><span class="nx">extra</span><span class="p">.</span><span class="nx">nextOverflow</span>
-        <span class="c1">// 如果hmap的extre.nextOverflow桶的没有溢出桶，则进行初始化
+        <span class="c1">// 如果hmap的extra.nextOverflow桶的没有溢出桶，则进行初始化
 </span><span class="c1"></span>		<span class="k">if</span> <span class="nx">ovf</span><span class="p">.</span><span class="nf">overflow</span><span class="p">(</span><span class="nx">t</span><span class="p">)</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
 			<span class="nx">h</span><span class="p">.</span><span class="nx">extra</span><span class="p">.</span><span class="nx">nextOverflow</span> <span class="p">=</span> <span class="p">(</span><span class="o">*</span><span class="nx">bmap</span><span class="p">)(</span><span class="nf">add</span><span class="p">(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">ovf</span><span class="p">),</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">t</span><span class="p">.</span><span class="nx">bucketsize</span><span class="p">)))</span>
 		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
@@ -1192,16 +1196,16 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </code></pre></td></tr></table>
 </div>
 </div><h3 id="触发扩容">触发扩容</h3>
-<p>触发扩容条件时，会执行hashGrow函数，<strong>进行新桶的分配，但还未迁移数据</strong>。</p>
+<p>触发扩容条件时，会执行hashGrow函数，<strong>进行新桶的分配，但还未迁移数据</strong>，真正迁移数据在growWork函数中。</p>
 <ol>
 <li>
 <p>首先会判断是增量扩容还是等量扩容，如果是增量扩容，B + 1，即扩容到原来的两倍，如果是等量扩容，B + 0，容量不变</p>
 </li>
 <li>
-<p>将当前buckets数组挂在hmap的oldbuckets字段，当前extra里的溢出桶挂在hmap.extra.oldoverflow</p>
+<p>将当前buckets数组挂在hmap的oldbuckets字段，当前extra里的溢出桶挂在<code>hmap.extra.oldoverflow</code></p>
 </li>
 <li>
-<p>创建新的buckets数组，容量为新的B值，预创建溢出桶（溢出桶的数量看上面创建初始化逻辑），然后将新的buckets数组挂在buckets字段，新的溢出桶挂在hmap.mapextra.nextOverflow字段上</p>
+<p>创建新的buckets数组，容量为新的B值，预创建溢出桶（溢出桶的数量看上面创建初始化逻辑），然后将新的buckets数组挂在buckets字段，新的溢出桶挂在<code>hmap.mapextra.nextOverflow</code>字段上</p>
 </li>
 </ol>
 <p>触发扩容条件，对新桶进行内存分配，只是创建了新的桶，旧数据还在旧桶上，之后还需要完成数据迁移。</p>
@@ -1370,6 +1374,8 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
     >Go map原理剖析</a></p>
 <p><a class="link" href="https://segmentfault.com/a/1190000023879178"  target="_blank" rel="noopener"
     >年度最佳【golangmap】详解</a></p>
+<p><a class="link" href="https://juejin.cn/post/7079964047893856293"  target="_blank" rel="noopener"
+    >逐行拆解 Go map 源码</a></p>
 <p><a class="link" href="https://zhuanlan.zhihu.com/p/74613114"  target="_blank" rel="noopener"
     >深度解密Go语言之channel</a></p>
 

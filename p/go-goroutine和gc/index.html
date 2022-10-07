@@ -271,7 +271,7 @@ if (!doNotTrack) {
 <p>当IO事件发生之后，netpoller通过 <code>runtime.netpoll</code> 即可在epoll监听列表获取到已就绪的fd列表对应的goroutine，具体：<code>runtime.netpoll</code>会调用 <code>epollwait</code> 等待发生了可读/可写事件的fd，循环 <code>epollwait</code> 返回的事件列表，处理对应的事件类型，组装可运行的goroutine链表并返回。</p>
 <p><code>sysmon监控线程</code>会在循环过程中检查距离上一次 <code>runtime.netpoll</code> 被调用是否超过10ms，若是则回去调用它拿到可运行的goroutine列表并调用 injectglist 把 g 列表放入全局调度队列或者当前 P 本地调度队列等待被执行。</p>
 </blockquote>
-<p>即当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中；当IO可用时，在 epoll 的 <code>eventpoll.rdr</code> 中等待的 G 会被放到 <code>eventpoll.rdllist</code> 链表里并通过 <code>netpoll</code> 中的 <code>epoll_wait</code> 系统调用<strong>返回放置到GRQ或者 P 的LRQ</strong>，标记为 <code>_Grunnable</code> ，等待 P 绑定 M 恢复执行。</p>
+<p>总结：当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中；当IO可用时，在 epoll 的 <code>eventpoll.rdr</code> 中等待的 G 会被放到 <code>eventpoll.rdllist</code> 链表里并通过 <code>netpoll</code> 中的 <code>epoll_wait</code> 系统调用<strong>返回放置到GRQ或者 P 的LRQ</strong>，标记为 <code>_Grunnable</code> ，等待 P 绑定 M 恢复执行。</p>
 <h1 id="goroutine">Goroutine</h1>
 <h2 id="基本">基本</h2>
 <ul>
@@ -402,7 +402,7 @@ if (!doNotTrack) {
 <p>持有P的M会执行G，执行完G后会<strong>先判断是否满足61次调用</strong>，如果是，则先从GRQ中获取，否则继续从P的LRQ中继续获取G进行消费；之所以先有次数判断，是为了<strong>防止GRQ里的G被饿死</strong>；</p>
 <p>当发现P的LRQ中没有其他G可执行时，则会从<strong>GRQ的队首里获取G</strong>放入本地队列，获取数量<code>n = min(len(GQ)/GOMAXPROCS + 1, len(GQ/2))</code>，一次不会获取太多（一次不超过128个），保证其他M在GRQ中有G可拿，<strong>获取时会加锁</strong>；</p>
 <p>当P发现自己的LRQ、GRQ都没有G了，会从netpoller(网络轮询器)上获取G来执行；</p>
-<p>如果LRQ、GRQ、netpoller上都没有G时，则会随机从<strong>其他P的LRQ队首中窃取一半的G</strong>放到自己的LRQ，其他P的LRQ队首的第一半+1个拿来执行；通过CAS获取G；（<strong>work stealing 工作窃取</strong>）</p>
+<p>如果当前P的LRQ、GRQ、netpoller上都没有G时，则会随机从<strong>其他P的LRQ队首中窃取一半+1个的G</strong>放到自己的LRQ，通过CAS获取G；（<strong>work stealing 工作窃取</strong>）</p>
 <p>获取到的G都会先放到P的runnext队列(该队列的长度是1)，然后再交由M执行；</p>
 <p>以上过程由M执行 runtime.schedule 函数来执行调度。</p>
 </li>
@@ -412,9 +412,9 @@ if (!doNotTrack) {
 </li>
 <li>
 <p>当P的LRQ和调度器的GRQ都没有可执行的G时，M进入自旋状态；</p>
-<p>M进入自旋，是为了避免频繁的休眠和唤醒产生大量的开销，当其他G准备就绪时，首先被调度到自旋的M上，其次才是去创建新线程；</p>
+<p>M进入自旋，是为了避免频繁的休眠和唤醒产生大量的开销，当其他G准备就绪时，首先被调度到自旋的M上，其次才是去创建新的M；</p>
 <p>自旋只会持续一段时间，如果自旋期间没有G需要调度，则之后会进入休眠状态，加入空闲M链表，等待被唤醒；</p>
-<p>M自旋时会调用G0协程，G0协程主要负责调度时协程的切换；</p>
+<p>M自旋时会调用G0协程，G0协程 主要负责调度时协程的切换；</p>
 <p>M是否新建取决于正在自旋的M或者休眠的M的数量；</p>
 </li>
 <li>
@@ -426,9 +426,9 @@ if (!doNotTrack) {
 <p>G被调用运行时，会尝试唤醒其他空闲的M和P进行组合，由于M和P由于刚被唤醒，进入自旋状态，G0发现P的本地队列没有G，则先去GRQ里进行working stealing，如果GRQ里没有，则去其他P的LRQ里working stealing；</p>
 </li>
 </ul>
-<p>通过netpoller进行网络系统调用，调度器可以防止G在进行这些系统调用时阻塞M，使得M可以执行P的LRQ中的其他G，而不需要使用新的M，该G在netpoller执行完后，会重新回到之前P的LRQ中（或者被放到GRQ），等待调用。执行网络系统调用不需要额外的M，netpoller使用系统线程时刻处理一个有效的事件循环（通过linux上的epoll实现，网络相关fd与G绑定），即在这种场景下，G会和M、P分离，G挂在了netpoller下。（网络调用导致G阻塞，会由netpoller接管，此时M可以继续执行下一个G）</p>
-<p>如果是系统调用，如读取文件导致G被阻塞，此时不关netpoller什么事，这种阻塞使得G阻塞M，调度器会使得GM与P分离，而P使用新的M继续执行。（G阻塞导致M阻塞，P寻找新M来执行G）</p>
-<p>如果是让G执行一个sleep、原子、互斥量或者chan操作，导致M被阻塞，则由sysmon监控线程来监控那些长时间运行的G，然后设置可以抢占的标识符，别的G就可以抢占来执行。（阻塞的G被切换出去，M不阻塞，转而执行其他空闲的G）</p>
+<p><strong>如果是网络IO</strong>，比如通过netpoller进行网络系统调用，调度器可以防止G在进行这些系统调用时阻塞M，使得M可以执行P的LRQ中的其他G，而不需要使用新的M，该G在netpoller执行完后，会重新回到之前P的LRQ中（或者被放到GRQ），等待调用。执行网络系统调用不需要额外的M，netpoller使用系统线程时刻处理一个有效的事件循环（通过linux上的epoll实现，网络相关fd与G绑定），即在这种场景下，G会和M、P分离，G挂在了netpoller下。（<strong>网络调用导致G阻塞，会由netpoller接管，M不阻塞，此时M可以继续执行下一个G</strong>）</p>
+<p><strong>如果是系统调用</strong>，如读取文件导致G被阻塞，此时不关netpoller什么事，这种阻塞使得G阻塞M，调度器会使得GM与P分离，而P使用新的M继续执行。（<strong>G阻塞导致M阻塞，P寻找新M来执行G</strong>）</p>
+<p><strong>如果是channel、sync包中的方法、time.Sleep</strong>，比如让G执行一个sleep、原子操作、锁或者chan操作，导致M被阻塞，则由sysmon监控线程来监控那些长时间运行的G，然后设置可以抢占的标识符，别的G就可以抢占来执行。（<strong>阻塞的G被切换出去，M不阻塞，转而执行其他空闲的G</strong>）</p>
 <p>这些不同类型阻塞的G都是由sysmon来调度的。</p>
 <p>这里有一个有趣的例子</p>
 <div class="highlight"><div class="chroma">
@@ -464,17 +464,16 @@ if (!doNotTrack) {
     <span class="o">&lt;-</span> <span class="nx">ch</span>
 <span class="p">}</span>
 <span class="c1">// 输出的数是 9、0、1、2、3、4、5、6、7、8
-</span><span class="c1"></span><span class="nx">原因是此时P</span><span class="p">=</span><span class="mi">1</span><span class="err">，</span><span class="nx">不涉及GRQ</span><span class="err">，</span><span class="nx">for循环中产生的协程都会进到这个p里</span>
+</span><span class="c1"></span><span class="nx">原因是此时P</span><span class="p">=</span><span class="mi">1</span><span class="err">，</span><span class="nx">且只有10个G</span><span class="err">，</span><span class="nx">不涉及GRQ</span><span class="err">，</span><span class="nx">for循环中产生的协程都会进到这个p里</span>
 <span class="nx">由于此时还没发生调度</span><span class="err">，</span><span class="nx">每次新产生的协程都会被M持有</span><span class="err">，</span><span class="nx">这时就会把老的协程放到p的LRQ中</span><span class="err">，</span><span class="nx">当i</span><span class="p">=</span><span class="mi">9</span><span class="nx">时</span><span class="err">，</span><span class="nx">M持有i</span><span class="p">=</span><span class="mi">9</span><span class="nx">的协程</span><span class="err">，</span><span class="nx">此时p的LRQ队列因为先进先出的缘故</span><span class="err">，</span><span class="nx">持有的协程顺序是0</span><span class="err">，</span><span class="mi">1</span><span class="err">，</span><span class="mi">2</span><span class="err">，</span><span class="mi">3</span><span class="err">，</span><span class="mi">4</span><span class="err">，</span><span class="mi">5</span><span class="err">，</span><span class="mi">6</span><span class="err">，</span><span class="mi">7</span><span class="err">，</span><span class="mi">8</span>
 <span class="nx">此时执行到读chan的语句</span><span class="err">，</span><span class="nx">调度发生</span><span class="err">，</span><span class="nx">main</span> <span class="nx">goroutine挂起</span><span class="err">，</span><span class="nx">m运行持有的协程i</span><span class="p">=</span><span class="mi">9</span><span class="err">，</span><span class="nx">之后继续消费LRQ里的协程</span><span class="err">，</span><span class="nx">因此输出顺序是</span> <span class="mi">9</span><span class="err">、</span><span class="mi">0</span><span class="err">、</span><span class="mi">1</span><span class="err">、</span><span class="mi">2</span><span class="err">、</span><span class="mi">3</span><span class="err">、</span><span class="mi">4</span><span class="err">、</span><span class="mi">5</span><span class="err">、</span><span class="mi">6</span><span class="err">、</span><span class="mi">7</span><span class="err">、</span><span class="mi">8</span>
 </code></pre></td></tr></table>
 </div>
 </div><h2 id="调度过程中存在的阻塞">调度过程中存在的阻塞</h2>
 <ul>
-<li>IO，select</li>
+<li>网络IO</li>
 <li>系统调用syscall</li>
-<li>channel</li>
-<li>锁等待</li>
+<li>channel，select，锁等待</li>
 <li>runtime.Gosched()运行时调度</li>
 </ul>
 <h2 id="调度器的策略">调度器的策略</h2>
@@ -527,43 +526,8 @@ if (!doNotTrack) {
 </figure></p>
 <p>5.1 当M执行某个G时发生syscall或其他阻塞操作，M会阻塞，如果当前有一些G在执行，runtime会把这个线程M从P中摘除，然后再创建一个新的M（操作系统线程或者复用其他空闲线程）来服务这个P，即此时的M会直接管理阻塞的G，之前跟它绑定的P转移到其他M，执行其他G。</p>
 <p>当原阻塞的M系统调用或阻塞结束时，其绑定的这个G要继续往下执行，会优先尝试获取之前的P，若之前的P已经跟其他M绑定，则尝试从空闲的P链表获取P，将G放入这个P的本地队列，继续执行。如果获取不到P，则该M进入休眠，加入休眠队列，G则放入全局队列，等其他P消费它。</p>
-<h3 id="调度demo">调度Demo</h3>
-<p>单核机器，只有一个处理器P，系统初始化两个线程M0和M1，处理器P优先绑定线程M0，线程M1进入休眠状态。目前P正在处理G0，LRQ里的G1、G2、G3等待处理，GRQ里的G4、G5等到分配。</p>
-<p>如果G0短时间处理完，P就会从LRQ取出G1进行处理，LRQ从GRQ取出G4进行分配；</p>
-<p><figure 
-	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime1.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime1.png"
-			
-			
-			
-			loading="lazy"
-			alt="goroutine runtime_1">
-	</a>
-	
-	<figcaption>goroutine runtime_1</figcaption>
-	
-</figure></p>
-<p>如果G0处理得很慢，系统就会让M0休眠，挂起G0，唤醒线程M1，将LRQ转移给M1进行处理；</p>
-<p>如果此时G1也处理得很慢，此时会阻塞，或者休眠M1，唤醒M0，回去继续处理G0；<strong>切换M和G的操作由sysmon协程进行处理，即抢占式由sysmon函数实现</strong>。</p>
-<p>如果G1处理得很快，则继续获取LRQ里的下一个G；待LRQ里的G都执行完了，切回M0，继续处理G0。</p>
-<p><figure 
-	>
-	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime2.png" >
-		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/go_goroutine_runtime2.png"
-			
-			
-			
-			loading="lazy"
-			alt="goroutine runtime_2">
-	</a>
-	
-	<figcaption>goroutine runtime_2</figcaption>
-	
-</figure></p>
-<p>如果是多核的，有多个P，多个M，当有一个P处理完所有的G后，会先从GRQ中获取G，如果获取不到，就会从另一个P的LRQ里取走一半G，继续处理。</p>
 <h2 id="sysmon协程">sysmon协程</h2>
-<p><strong>由sysmon协程进行协作式抢占</strong>，对goroutine进行标记，执行goroutine时如果有标记就会让出CPU，对于syscall过久的P，会进行M和P的分配，防止P被占用过久影响调度。</p>
+<p><strong>切换M和G的操作由sysmon协程进行处理，即sysmon协程进行协作式抢占</strong>，对goroutine进行标记，执行goroutine时如果有标记就会让出CPU，对于syscall过久的P，会进行M和P的分配，防止P被占用过久影响调度。</p>
 <p>sysmon协程运行在M上，且不需要P，它会每隔一段时间检查runtime，确保没有出现异常状态，也会触发调度、GC、检查死锁、获取下一个需要被触发的计时器、定时从netpoll中获取ready的G、打印调度和内存信息。</p>
 <p><figure 
 	>
@@ -1462,11 +1426,7 @@ if (!doNotTrack) {
         <li><a href="#调度器的策略">调度器的策略</a></li>
         <li><a href="#调度抢占的时机">调度(抢占)的时机</a></li>
         <li><a href="#调度器的生命周期">调度器的生命周期</a></li>
-        <li><a href="#总的调度流程">总的调度流程</a>
-          <ol>
-            <li><a href="#调度demo">调度Demo</a></li>
-          </ol>
-        </li>
+        <li><a href="#总的调度流程">总的调度流程</a></li>
         <li><a href="#sysmon协程">sysmon协程</a></li>
         <li><a href="#mmachine">M：Machine</a></li>
         <li><a href="#ggoroutine的状态">G：Goroutine的状态</a></li>
