@@ -906,7 +906,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;&lt;strong&gt;影响：&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Linux内核在初始化系统时，会根据CPU数目现在进程最大数量&lt;code&gt;通过/proc/sys/kernel/pid_max查看&lt;/code&gt;，对Linux系统而言，容器是一组进程的集合，如果容器中的应用创建过多，就会出现fork bomb行为，不断建立新进程消耗系统资源，如果达到了Linux最大进程数，导致系统不可用。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;解决方案：&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;因此对于容器，也要限制容器内的进程数量，通过pids Cgroup来完成，限制进程数目大小。在一个容器建立后，创建容器的服务会在/sys/fs/cgroup/pids下建立一个子目录作为控制组，里面的pids.max文件表示容器允许的最大进程数目。当容器内进程达到最大限制后再起新进程，会报错&lt;code&gt;Resource temporarily unavailable&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;因此对于容器，也要限制容器内的进程数量，通过pids Cgroup来完成，限制进程数目大小。在一个容器建立后，创建容器的服务会在&lt;code&gt;/sys/fs/cgroup/pids&lt;/code&gt;下建立一个子目录作为控制组，里面的pids.max文件表示容器允许的最大进程数目。当容器内进程达到最大限制后再起新进程，会报错&lt;code&gt;Resource temporarily unavailable&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;当出现僵尸进程后，父进程可以调用wait函数（该函数是同步阻塞）或者调用waitpid函数（该函数仅在调用时检查僵尸进程，如果没有则返回，不会阻塞等待）回收子进程资源，避免僵尸进程 的产生。或者kill掉僵尸进程的父进程，此时僵尸进程会归附到init进程下，利用init进程的能力回收僵尸进程的资源。&lt;/p&gt;
 &lt;p&gt;init进程是所有进程的父进程，init进程具备回收僵尸进程的能力。&lt;/p&gt;
 &lt;p&gt;或者把容器内的init进程替换为tini进程，该进程具备自动回收收子进程的能力。&lt;/p&gt;
@@ -927,7 +927,7 @@ PROJECTION：限定返回字段时候stage的返回
 	
 &lt;/figure&gt;&lt;/p&gt;
 &lt;h2 id=&#34;cpu-cgroup&#34;&gt;CPU Cgroup&lt;/h2&gt;
-&lt;p&gt;容器会使用CPU Cgroup来控制CPU的资源使用。CPU Cgroup只会对用户态us和ni、内核态sy做限制，不对wa、hi、si这些I/O或者中断相关做限制。&lt;/p&gt;
+&lt;p&gt;容器会使用CPU Cgroup来控制CPU的资源使用。CPU Cgroup只会对用户态us和ni、内核态sys做限制，不对wa、hi、si这些I/O或者中断相关做限制。&lt;/p&gt;
 &lt;p&gt;CPU Cgroup一般会通过一个虚拟文件系统挂载点的方式，挂载在&lt;code&gt;/sys/fs/cgroup/cpu&lt;/code&gt;目录下，每个子目录为一个控制组，各个目录间是一个树状的层级关系。&lt;/p&gt;
 &lt;p&gt;对于普通调度类型，每个目录下有三个文件对应三个参数：&lt;/p&gt;
 &lt;ul&gt;
@@ -941,8 +941,8 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;cpu.shares：CPU Cgroup对控制组之间的CPU分配比例，只有当控制组间的CPU配额超过了CPU可以资源的最大值，则会启用该参数进行配额分配。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Linux中cpu.cfs_period_us是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。&lt;/p&gt;
-&lt;p&gt;在容器内使用top命令查看CPU使用率，显示的是宿主机的CPU使用率以及单个进程的CPU使用率，无法查到该容器的CPU使用率。&lt;/p&gt;
+&lt;p&gt;Linux中 cpu.cfs_period_us 是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;在容器内使用top命令查看CPU使用率，显示的是宿主机的CPU使用率以及单个进程的CPU使用率，无法查到该容器的CPU使用率&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;因为top命令对于单个进程读取&lt;code&gt;/proc/[pid]/stat&lt;/code&gt;里面包含进程用户态和内核态的ticks数目，对于整个节点读取的是&lt;code&gt;/proc/stat&lt;/code&gt;里各个不同CPU类型的ticks数目，因为这些文件不属于任何一个Namespace，因此无法读取单个容器CPU的使用率，只能通过CPU Cgroup的控制组内的cpuacct.stat参数文件计算得到，该参数文件包含了这个控制组里所有进程的内核态ticks和用户态ticks的值，带入公式即可计算得到。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;ticks是Linux操作系统中的一个时间单位，Linux通过自己的时钟周期性产生中断，每次中断会触发内核做一次进程调度，一次中断就是一个ticks&lt;/p&gt;
@@ -960,7 +960,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;OOM Killed的标准是通过oom_badness函数决定，通过以下两个值的乘积决定：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;进程已经使用的物理内存页面数&lt;/li&gt;
-&lt;li&gt;每个进程的OOM校准值oom_score_adj，在&lt;code&gt;/proc/[pid]/oom)score_adj&lt;/code&gt;文件中，该值用于调整进程被OOM Kill的几率&lt;/li&gt;
+&lt;li&gt;每个进程的OOM校准值oom_score_adj，在&lt;code&gt;/proc/[pid]/oom_score_adj&lt;/code&gt;文件中，该值用于调整进程被OOM Kill的几率&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;Linux的内存类型&lt;/strong&gt;：有两类，一类是内核使用的内存，如页表、内核栈、slab等各种cache pool；另一类是用户态使用的内存，如堆内存、栈内存、共享库内存、文件读写的Page Cache。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;RSS（Resident Set Size）&lt;/strong&gt;：进程真正申请到的物理页面的内存大小，RSS内存包括了进程的代码段内存，堆内存、栈内存、共享库内存，每一部分RSS内存的大小可查看&lt;code&gt;/proc/[pid]/smaps&lt;/code&gt;&lt;/p&gt;
