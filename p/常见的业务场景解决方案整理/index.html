@@ -252,7 +252,10 @@ if (!doNotTrack) {
 </span><span class="w"></span><span class="k">commit</span><span class="p">;</span><span class="w"> </span><span class="c1">-- 提交事务
 </span></code></pre></td></tr></table>
 </div>
-</div><p>或者直接</p>
+</div><p>但这种方案会把压力转移到数据库，吞吐量并不高。</p>
+</li>
+<li>
+<p>乐观锁，版本号 + cas + 自旋，也可以利用数据库的能力实现</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -270,20 +273,17 @@ if (!doNotTrack) {
 <pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="k">update</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="err">扣减数量</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">扣减数量</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="k">end</span><span class="p">;</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
-</div><p>但这种方案会把压力转移到数据库，吞吐量并不高。</p>
-</li>
-<li>
-<p>乐观锁，版本号 + cas + 自旋，也可以利用数据库的能力实现</p>
-<p>获取到版本号后，在应用层自旋，执行以下语句</p>
+</div><p>如果要解决ABA问题，还需要先查询版本号，获取到版本号后，在应用层自旋，执行以下语句</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="k">update</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">扣减数量</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">sku_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;12345&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="k">update</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inventory</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="err">扣减数量</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">sku_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
-</div></li>
+</div><p>如果更新数据库层面有重试机制，那在set的时候就不能使用<code>inventory = inventory - 扣减数量</code>这种方案了，因为这种操作是不幂等的，重试会导致重复扣减，所以得先计算出扣减完之后的inventory值，在set才能保证更新时幂等。</p>
+</li>
 <li>
 <p>（建议使用，其他方案都不建议，数据库方案是性能比较差，分布式锁方案是可靠性比较差）库存扣减主要是包含两部分，超卖校验、扣减数据的持久化，因此，可以分离这两部分，只要超卖校验能通过，直接改库即可，可以利用Redis单线程操作并发安全的能力，把库存存在Redis中实现校验。</p>
 <p>比如每次扣减库存时，对存在Redis中的数据进行decrby扣减（或者先查询后扣减，需要使用Lua脚本保证原子），如果返回的数量大于0，说明库存够，之后可以同步或异步把值更新到数据库即可，但要注意的是，本方案不支持回滚；</p>
