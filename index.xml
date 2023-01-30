@@ -5318,7 +5318,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程M需要的上下文（局部计算资源，用于在同一线程写多个goroutine的切换），负责调度线程上的LRQ，是实现从N：1到N：M映射的关键，存在的意义在于工作窃取算法，同时也是为了保证在发生系统调用时，M阻塞，此时P就可以交给其他M继续执行。&lt;/p&gt;
+&lt;p&gt;P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程M需要的上下文（局部计算资源，用于在同一线程写多个goroutine的切换），由P来负责调度线程上的LRQ，是实现从N：1到N：M映射的关键，存在的意义在于工作窃取算法，同时也是为了保证在发生系统调用时，M阻塞，此时P就可以交给其他M继续执行，即hand off策略。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;P的个数取决于&lt;strong&gt;GOMAXPROCS&lt;/strong&gt;，默认使用CPU的个数，这些P会绑定到不同内核线程，尽量提升性能，让每个核都有代码在跑。在确定了P的最大数量n后，当程序运行时，创建n个P，P代表代表并发度；&lt;/p&gt;
@@ -5356,9 +5356,9 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;持有P的M会执行G，执行完G后会&lt;strong&gt;先判断是否满足61次调用&lt;/strong&gt;，如果是，则先从GRQ中获取，否则继续从P的LRQ中继续获取G进行消费；之所以先有次数判断，是为了&lt;strong&gt;防止GRQ里的G被饿死&lt;/strong&gt;；&lt;/p&gt;
-&lt;p&gt;当发现P的LRQ中没有其他G可执行时，则会从&lt;strong&gt;GRQ的队首里获取G&lt;/strong&gt;放入本地队列，获取数量&lt;code&gt;n = min(len(GQ)/GOMAXPROCS + 1, len(GQ/2))&lt;/code&gt;，一次不会获取太多（一次不超过128个），保证其他M在GRQ中有G可拿，&lt;strong&gt;获取时会加锁&lt;/strong&gt;；&lt;/p&gt;
+&lt;p&gt;当发现P的LRQ中没有其他G可执行时，则会从&lt;strong&gt;GRQ的队首里获取G&lt;/strong&gt;放入自己的LRQ，获取数量&lt;code&gt;n = min(len(GQ)/GOMAXPROCS + 1, len(GQ/2))&lt;/code&gt;，一次不会获取太多（一次不超过128个），保证其他M在GRQ中有G可拿，&lt;strong&gt;获取时会加锁&lt;/strong&gt;；&lt;/p&gt;
 &lt;p&gt;当P发现自己的LRQ、GRQ都没有G了，会从netpoller(网络轮询器)上获取G来执行；&lt;/p&gt;
-&lt;p&gt;如果当前P的LRQ、GRQ、netpoller上都没有G时，则会随机从&lt;strong&gt;其他P的LRQ队首中窃取一半+1个的G&lt;/strong&gt;放到自己的LRQ，通过CAS获取G；（&lt;strong&gt;work stealing 工作窃取&lt;/strong&gt;）&lt;/p&gt;
+&lt;p&gt;如果当前P的LRQ、GRQ、netpoller上都没有G时，则会随机从&lt;strong&gt;其他P的LRQ队尾窃取一半+1个的G&lt;/strong&gt;放到自己的LRQ，通过CAS获取G；（&lt;strong&gt;work stealing 工作窃取&lt;/strong&gt;）&lt;/p&gt;
 &lt;p&gt;获取到的G都会先放到P的runnext队列(该队列的长度是1)，然后再交由M执行；&lt;/p&gt;
 &lt;p&gt;以上过程由M执行 runtime.schedule 函数来执行调度。&lt;/p&gt;
 &lt;/li&gt;
@@ -5379,7 +5379,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;阻塞结束后，该M和G会尝试找回原来的P（有利于数据局部性），如果原来的P没空，则获取其他空闲的P，放入其LRQ，等待执行；如果没有空闲的P，则G放入GRQ，M继续休眠；（&lt;strong&gt;hand off策略&lt;/strong&gt;）&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;G被调用运行时，会尝试唤醒其他空闲的M和P进行组合，由于M和P由于刚被唤醒，进入自旋状态，G0发现P的本地队列没有G，则先去GRQ里进行working stealing，如果GRQ里没有，则去其他P的LRQ里working stealing；&lt;/p&gt;
+&lt;p&gt;G被调用运行时，会尝试唤醒其他空闲的M和P进行组合，由于M和P由于刚被唤醒，进入自旋状态，G0发现P的LRQ队列没有G，则先去GRQ里进行working stealing，如果GRQ里没有，则去其他P的LRQ里working stealing；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;如果是网络IO&lt;/strong&gt;，比如通过netpoller进行网络系统调用，调度器可以防止G在进行这些系统调用时阻塞M，使得M可以执行P的LRQ中的其他G，而不需要使用新的M，该G在netpoller执行完后，会重新回到之前P的LRQ中（或者被放到GRQ），等待调用。执行网络系统调用不需要额外的M，netpoller使用系统线程时刻处理一个有效的事件循环（通过linux上的epoll实现，网络相关fd与G绑定），即在这种场景下，G会和M、P分离，G挂在了netpoller下。（&lt;strong&gt;网络调用导致G阻塞，会由netpoller接管，M不阻塞，此时M可以继续执行下一个G&lt;/strong&gt;）&lt;/p&gt;
@@ -5925,7 +5925,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;清理阶段；&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;将写屏障状态切换至 &lt;code&gt;_GCoff&lt;/code&gt; 开始清理阶段，初始化清理状态并关闭写屏障；&lt;/li&gt;
-&lt;li&gt;恢复用户程序，所有新创建的对象会标记成白色；&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;恢复程序&lt;/strong&gt;，所有新创建的对象会标记成白色；&lt;/li&gt;
 &lt;li&gt;后台并发清理所有的内存管理单元，当 Goroutine 申请新的内存管理单元时就会触发清理；&lt;/li&gt;
 &lt;/ol&gt;
 &lt;/li&gt;
@@ -8098,7 +8098,7 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;扩容实际上包括两部分：计算容量的规则 和 内存对齐&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;如果期望容量大于当前容量的两倍就会使用期望容量，期望容量指的是把元素加进去后的容量，一般发生在append 多个的时候，如 append(arr, 1, 2, 3, 4)。&lt;/p&gt;
+&lt;p&gt;如果&lt;strong&gt;期望容量大于当前容量的两倍&lt;/strong&gt;就会使用期望容量，期望容量指的是把元素加进去后的容量，一般发生在append 多个的时候，如 append(arr, 1, 2, 3, 4)。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;如果当前切片的长度小于 1024，扩容两倍。&lt;/p&gt;
@@ -8358,7 +8358,7 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;key不允许为slice、map、func，允许bool、numeric、string、指针、channel、interface、struct及其类型对应的数组&lt;/p&gt;
-&lt;p&gt;即key必须支持 == 或 != 运算的类型，如果是结构体，则他们的所有字段都相等，才被认为是相同的key。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;即key必须支持 == 或 != 运算的类型，如果是结构体，则他们的所有字段都相等，才被认为是相同的key&lt;/strong&gt;。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;map容量最多为 6.5 * 2^B 个元素，6.5是装载因子阈值常量，装载因子 = 哈希表中的元素 / 哈希表总长度，装载因子越大，冲突越多。B最大值是63。&lt;/p&gt;
