@@ -428,8 +428,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;checkpoint 相当于一个日志，记录上次checkpoint后相关数据文件的变化。&lt;/p&gt;
 &lt;h4 id=&#34;作用&#34;&gt;作用&lt;/h4&gt;
 &lt;ul&gt;
-&lt;li&gt;发生写操作时，只是将数据写入内存和journal日志，然后再通过check point机制将内存里面发生修改的数据写到数据文件进行持久化保存，确保数据一致性，同时也通过延迟持久化的方式，提升磁盘效率；&lt;/li&gt;
-&lt;li&gt;实现数据库在某个时刻意外发生故障，再次启动时，缩短数据库的恢复时间；&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;发生写操作时，只是将数据写入内存和journal日志，然后再通过check point机制将内存里面发生修改的数据写到数据文件进行持久化保存，确保数据一致性，同时也通过延迟持久化的方式，提升磁盘效率；&lt;/p&gt;
+&lt;p&gt;也就是说，checkpoint开始时，在当前时间点创建快照（同时也有对应的checkpoint文件，但是其读取速度是比数据文件快的），写操作时，先写journal buffer（100ms或buffer到达100M后写入journal日志到磁盘）同时更新内存里的checkpoint数据，等到下一次执行checkpoint前，将checkpoint数据持久化到磁盘，变成数据文件。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;实现数据库在某个时刻意外发生故障，再次启动时，直接读取checkpoint文件（会比读数据文件快），配合journal日志恢复数据，缩短数据库的恢复时间；&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;有点像MySQL中的change buffer + 持久化，优化写操作的速度和数据持久化的保证。&lt;/p&gt;
 &lt;h4 id=&#34;触发时机&#34;&gt;触发时机&lt;/h4&gt;
@@ -503,7 +508,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;MVCC：以本次trancsaction_id + 本次修改后的value组成一个结点，每次修改都会追加到链表的头部，每次读取时根据trancsaction_id和本次事务的snapshot来找到对应的历史版本，该链表挂在叶子结点的WT_UPDATE字段中；&lt;/li&gt;
 &lt;li&gt;snapshot：拉取当前事务之前的数据快照，确定当前事务哪些数据可见，哪些不可见，确定事务状态；&lt;/li&gt;
 &lt;li&gt;operation_array：本次事务中已执行的操作列表，用于事务回滚，类似MySQL的undo log；&lt;/li&gt;
-&lt;li&gt;redo log，即journal日志：记录当前操作，一个mongoDB实例中的所有DB共享journal文件；&lt;/li&gt;
+&lt;li&gt;journal日志，相当于redo log，即：记录当前操作，一个mongoDB实例中的所有DB共享journal文件；&lt;/li&gt;
 &lt;li&gt;trancsaction_id：全局唯一事务id，通过cas自增生成；&lt;/li&gt;
 &lt;li&gt;全局事务管理器：管理系统所有事务，用数组保存所有历史事务对象transaction_array，用于snapshot的创建，扫描transaction_array时使用cas保证并发安全；&lt;/li&gt;
 &lt;li&gt;namespace文件：默认大小为16M，主要用于保存集合、索引的属性、命令信息等字段；&lt;/li&gt;
@@ -606,7 +611,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;mongo的一次写操作，包括 1.将文档数据写进集合； 2.更新集合的索引信息； 3.写入oplog日志，（此时只是写入内存），这三个步骤是原子性的，要么成功要么失败。一次写操作可以是批量的也可以是单条，一次写操作对应一条journal日志。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;开启jourbal和writeConcern后的数据写入顺序&lt;/strong&gt;：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;开启journal和writeConcern后的数据写入顺序&lt;/strong&gt;：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;写操作进来，先将写操作写入journal缓存，将写操作产生的数据写入数据缓存，将journal内存里的写操作日志同步到oplog里，异步响应给客户端；&lt;/li&gt;
 &lt;li&gt;后台线程检测到日志变化，将oplog同步给从节点；另外，后台每100ms会将journal缓存里的日志刷盘，每60s将数据缓存里的数据刷盘&lt;/li&gt;
@@ -7329,7 +7334,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;获取重用对象时，先从local中获取，获取不到再从victim中获取；&lt;/li&gt;
 &lt;li&gt;poolLocalInternal用于CPU缓存对齐，避免false sharing；&lt;/li&gt;
 &lt;li&gt;private字段代表一个可复用对象，且只能由相应的一个P存取，因为一个P同时只能执行一个goroutine，所以不会有并发问题；&lt;/li&gt;
-&lt;li&gt;shared字段可以被任意的P访问，但是只有本地的P次啊能pushHead/popHead，其他P可以popTail，相当于只有一个本地P作为生产者，多个P作为消费者，它由一个lock-free的队列实现；&lt;/li&gt;
+&lt;li&gt;shared字段可以被任意的P访问，但是只有本地的P能pushHead/popHead，其他P可以popTail，相当于只有一个本地P作为生产者，多个P作为消费者，它由一个lock-free的队列实现；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;基本-6&#34;&gt;基本&lt;/h2&gt;
 &lt;ul&gt;
@@ -7347,7 +7352,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;1.13后，改成了lock-free的队列实现，避免锁对性能的影响，且在GC时，使用victim作为次级缓存，GC时将对象放入其中，下次GC来临之前，如果有 Get 调用则会从victim中取，直到下一次GC来临时回收，拉长实际回收时间，使得单位时间内GC的开销减少；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;包含了三个方法：New、Get、Put；Get方法调用时，会从池中移走该元素；&lt;/p&gt;
+&lt;p&gt;包含了三个方法：New、Get、Put；&lt;strong&gt;Get方法调用时，会从池中移走该元素&lt;/strong&gt;；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;当Pool里没有元素可用时，Get方法会返回nil；可以向Pool中Put一个nil的值，Pool会将其忽略；&lt;/p&gt;
@@ -7380,11 +7385,11 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h2 id=&#34;get方法&#34;&gt;Get方法&lt;/h2&gt;
 &lt;ol&gt;
 &lt;li&gt;如果是第一次访问，创建P个poolLocal，返回New的新对象；&lt;/li&gt;
-&lt;li&gt;如果非第一次访问，调用&lt;code&gt;p.pin()&lt;/code&gt;函数，将当前 G 固定在P上，防止被抢占，并获取pid，再根据pid号找到当前P对应的poolLocal，优先从local的private字段取出一个元素，将private置为null；&lt;/li&gt;
+&lt;li&gt;如果非第一次访问，调用&lt;code&gt;p.pin()&lt;/code&gt;函数，&lt;strong&gt;将当前 G 固定在P上，防止被抢占&lt;/strong&gt;，并获取pid，再根据pid号找到当前P对应的poolLocal，优先从local的private字段取出一个元素，将private置为null；&lt;/li&gt;
 &lt;li&gt;如果从private取出的元素为null，则从当前的local.shared的head中取出一个双端环形队列，遍历队列获取元素，如果有pop出来并返回；如果还取不到，沿着pre指针到下一个双端环形队列继续获取，直到获取到或者遍历完双向链表；&lt;/li&gt;
 &lt;li&gt;如果还没有的话，调用getSlow函数，遍历其他P的poolLocal（从pid+1对应的poolLocal开始），从它们shared 的 tail 中弹出一个双端环形队列，遍历队列获取元素，如果有，pop出来并返回；如果还取不到（如果当前节点为null，则删除），沿着next指针到下一个双端环形队列继续获取，如果还没有，直到获取到或者遍历完双向链表；如果还没有，就到别的P上继续获取；&lt;/li&gt;
 &lt;li&gt;如果所有P的poolLocal.shared都没有，则对victim中以在同样的方式，先从当前P的poolLocal的private里找，找不到再在shared里找，获取一遍；&lt;/li&gt;
-&lt;li&gt;Pool相关操作执行完，调用&lt;code&gt;runtime_procUnpin()&lt;/code&gt;解除非抢占；&lt;/li&gt;
+&lt;li&gt;Pool相关操作&lt;strong&gt;执行完，调用&lt;code&gt;runtime_procUnpin()&lt;/code&gt;解除非抢占&lt;/strong&gt;；&lt;/li&gt;
 &lt;li&gt;如果还取不到，则调用New函数生成一个，然后返回；&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;因为当前的G被固定在了P上，在查找元素时不会被其他P执行。&lt;/p&gt;
@@ -7628,7 +7633,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h2 id=&#34;release方法&#34;&gt;Release方法&lt;/h2&gt;
 &lt;ol&gt;
 &lt;li&gt;加锁，当前已使用资源数cur - 入参要释放的资源数，唤醒等待队列中的元素，解锁&lt;/li&gt;
-&lt;li&gt;唤醒等待队列的元素时，会遍历waiters队列，按照先入先出的方式唤醒调用者，前提是释放的资源数要够队首的元素资源的要求，比如释放100个资源，但是队首元素要求101个资源，那队列中的所有等待者都将继续等待，直到队首元素出队，这样做是为了避免饥饿&lt;/li&gt;
+&lt;li&gt;唤醒等待队列的元素时，会遍历waiters队列，按照先入先出的方式唤醒调用者，前提是释放的资源数要够队首的元素资源的要求，比如只释放了100个资源，但是队首元素要求101个资源，那队列中的所有等待者都将继续等待，直到队首元素出队，这样做是为了避免饥饿&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h1 id=&#34;singleflight&#34;&gt;SingleFlight&lt;/h1&gt;
 &lt;h2 id=&#34;结构体&#34;&gt;结构体&lt;/h2&gt;
@@ -12937,7 +12942,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;扩充原来的数量，消费之后再恢复原来架构。比如新键一个topic，建立比原先多n倍的队列，多n倍的消费者处理，每批消费者对应一个队列（分区），确保消费者的实例数和队列(分区)数相等。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;如果可以持久化消息，耶可以先丢弃消息，之后再将持久化消息导入队列再处理&lt;/p&gt;
+&lt;p&gt;如果可以持久化消息，也可以先丢弃消息，之后再将持久化消息导入队列再处理&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;服务降级，减少生产者的发送消息的数量&lt;/p&gt;
@@ -19931,7 +19936,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;h2 id=&#34;5优化&#34;&gt;5.优化&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;注意区分度，计算索引最优长度，使用这个计算 &lt;code&gt;count(distinct  left(列名,  索引长度)) / count(*) from table&lt;/code&gt;，&lt;strong&gt;区分度越高越好&lt;/strong&gt;，另外使用前缀索引虽然会减少索引存储空间，但是可能会增加扫描次数或者覆盖索引不生效&lt;/p&gt;
+&lt;p&gt;注意区分度，计算索引最优长度，使用这个计算 &lt;code&gt;select count(distinct left(列名, 索引长度)) / count(*) from {table名}&lt;/code&gt;，&lt;strong&gt;区分度越高越好&lt;/strong&gt;，另外使用前缀索引虽然会减少索引存储空间，但是可能会增加扫描次数或者覆盖索引不生效&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;当表的字符集编码或者属性不同时，需要想办法把函数加再索引对应的值上，而不是索引字段上，或者去掉函数，使用其他方法替代&lt;/p&gt;
@@ -20589,7 +20594,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 	
 &lt;/figure&gt;&lt;/p&gt;
 &lt;p&gt;默认情况下，由于是异步复制，无法保证数据第一时间复制到从库上，但如果采用同步复制，即等从库复制完主库的bin log后才响应给客户端，性能就太差了。&lt;/p&gt;
-&lt;p&gt;在MySQL 5.7后的版本，增加半同步复制(Semisynchronous Replication)，事务线程不用等到所有都复制成功才响应，只要一部分复制响应回来后即可响应给客户端，比如一主二从，等一从成功即可成功。配置&lt;code&gt;rpl_semi_sync_master_wait_no_slave&lt;/code&gt;表示至少等待多少个从库复制成功才算成功。&lt;code&gt;rpl_semi_sync_master_wait_point&lt;/code&gt;表示主库执行事务的线程是提交事务前等待复制(默认)，还是提交事务之后等待复制&lt;/p&gt;
+&lt;p&gt;在MySQL 5.7后的版本，增加&lt;strong&gt;半同步复制&lt;/strong&gt;(Semisynchronous Replication)，事务线程不用等到所有都复制成功才响应，只要一部分复制响应回来后即可响应给客户端，比如一主二从，等一从成功即可成功。配置&lt;code&gt;rpl_semi_sync_master_wait_no_slave&lt;/code&gt;表示至少等待多少个从库复制成功才算成功。&lt;code&gt;rpl_semi_sync_master_wait_point&lt;/code&gt;表示主库执行事务的线程是提交事务前等待复制(默认)，还是提交事务之后等待复制&lt;/p&gt;
 &lt;h3 id=&#34;主备延迟&#34;&gt;主备延迟&lt;/h3&gt;
 &lt;p&gt;当备库重放日志的速度小于主库产生bin log的速度，会出现主备延迟，可能的原因：&lt;/p&gt;
 &lt;ul&gt;
@@ -20745,19 +20750,19 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;设置 &lt;code&gt;innodb_autoinc_lock_mode&lt;/code&gt;，=1时，普通insert语句会执行完之后释放，批量insert时会等到所有批量insert的SQL都结束的时候才释放锁，原因是如果bin log不是row，备库在复制时产生的行的id可能跟主库的不一致问题；=2时，自增id锁每次获取完就会释放。&lt;/p&gt;
-&lt;p&gt;如果选择=1，在批量insert时性能就会很差，MySQL的优化是让insert的语句不使用连续的自增id，不过这样就会让自增id不连续了。所以一般的操作是选择=2，bin log=row&lt;/p&gt;
+&lt;p&gt;如果选择=1，在批量insert时性能就会很差，MySQL的优化是让insert的语句不使用连续的自增id，不过这样就会让自增id不连续了。所以一般的操作是选择=2，bin log=row；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;理论上自增id是无限的，但是因为字段的类型已经限定了最大的位数，比如如果id使用unsigned int是4个字节，上限就是2^32 -1，当达到上限后，自增值不变，就会导致报重复主键的错，所以如果表的上限需要比较大，需要设置成unsigned bigint&lt;/p&gt;
+&lt;p&gt;理论上自增id是无限的，但是因为字段的类型已经限定了最大的位数，比如如果id使用unsigned int是4个字节，上限就是2^32 -1，当达到上限后，自增值不变，就会导致报重复主键的错，所以如果表的上限需要比较大，需要设置成unsigned bigint；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;如果没有明确设置主键，innoDB会默认给一个row_id，虽然实际上是一个unsigned bigint，但是只用到了6个字节，所以长度是0 ~ 2^48-1，子增值达到上限后的下一个值是0，此时在insert会覆盖原有的行&lt;/p&gt;
+&lt;p&gt;如果没有明确设置主键，innoDB会默认给一个row_id，虽然实际上是一个unsigned bigint，但是只用到了6个字节，所以长度是0 ~ 2^48-1，子增值达到上限后的下一个值是0，此时再insert会覆盖原有的行；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;当产生唯一键冲突时，除了会报错，还会加锁(主键+行锁，普通索引+间隙锁)，然后在回滚时才释放，当出现唯一键冲突时，如果有多个事务同时插入，容易造成死锁(双方都在等待对方的间隙锁释放导致)&lt;/p&gt;
+&lt;p&gt;当产生唯一键冲突时，除了会报错，还会加锁(主键+行锁，普通索引+间隙锁)，然后在回滚时才释放，当出现唯一键冲突时，如果有多个事务同时插入，容易造成死锁(双方都在等待对方的间隙锁释放导致)；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;code&gt;insert into ... on duplicate key update ... &lt;/code&gt;，表示插入一行数据，如果出现唯一键冲突，就执行后面的update语句，该更新语句只会修改跟第一个索引冲突的行&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;insert into ... on duplicate key update ... &lt;/code&gt;，表示插入一行数据，如果出现唯一键冲突，就执行后面的update语句，该更新语句只会修改跟第一个索引冲突的行；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;xid&#34;&gt;Xid&lt;/h2&gt;
