@@ -155,7 +155,7 @@ if (!doNotTrack) {
 <li>Mount Namespace：隔离不同容器间的文件系统</li>
 </ul>
 <p><strong>与虚拟化的区别</strong>：虚拟化是在操作系统和硬件上进行隔离，虚拟机上的应用需要经过虚拟机再经过宿主机，有两个内核，本身就有消耗，而容器化后的应用仅仅只是宿主机上的进程而已，只用到宿主机一个内核；</p>
-<p>因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不同通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups；</p>
+<p>因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不能通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups；</p>
 <h2 id="cgroups---资源限制">Cgroups - 资源限制</h2>
 <p>是用来制造约束的主要手段，即对进程设置资源能够使用的上限，如CPU、内存、IO设备的流量等</p>
 <p>比如，限定容器只能使用宿主机20%的CPU</p>
@@ -183,7 +183,7 @@ if (!doNotTrack) {
 <p>挂载在容器根目录上、用来为容器进程提供隔离后执行环境的文件系统，即容器镜像，也是容器的根文件系统。Mount Namespace保证每个容器都有自己独立的文件目录结构。</p>
 <p>镜像可以理解为是容器的文件系统（一个操作系统的所有文件和目录），它是只读的，挂载在宿主机的一个目录上。同一台机器上的所有容器，都共享宿主机操作系统的内核，如果容器内应用修改了内核参数，会影响到所有依赖的应用。而虚拟机则都是独立的内核和文件系统，共享宿主机的硬件资源。</p>
 <blockquote>
-<p>上面的读写层通常也称为容器层，下面的只读层称为镜像层，所有的增删查改操作都只会作用在容器层，相同的文件上层会覆盖掉下层。知道这一点，就不难理解镜像文件的修改，比如修改一个文件的时候，首先会从上到下查找有没有这个文件，找到，就复制到容器层中，修改，修改的结果就会作用到下层的文件，这种方式也被称为copy-on-write。</p>
+<p>上面的读写层通常也称为容器层，下面的只读层称为镜像层，所有的增删查改操作都只会作用在容器层，相同的文件上层会覆盖掉下层。比如修改一个文件的时候，首先会从上到下查找有没有这个文件，找到，就复制到容器层中，进行修改，修改的结果就会作用到下层的文件，这种方式也被称为copy-on-write。</p>
 </blockquote>
 <h2 id="注意点">注意点</h2>
 <p>容器是“单进程模型”，单进程模型并不是指容器只能运行一个进程，而是指容器没有管理多个进程的能力，它只能管理一个进程，即如果在容器里启动了一个Web 应用和一个nginx，如果nginx挂了，你是不知道的。</p>
@@ -226,13 +226,13 @@ if (!doNotTrack) {
 <p>在容器中，无法使用SIGKILL(-9)和SIGTOP(19)这两个信号杀死1号进程，但对于其他kill信号(比如默认的kill信号是SIGTERM)，如果init进程注册了自己处理该信号的handler，则1号进程可以做出响应。但是，如果SIGKILL和SIGTOP信号是从Host Namespace里发出的，则可以被响应，因为此时容器里的1号进程在宿主机上只是一个普通进程。</p>
 <p><strong>有时无法被kill掉的原因：</strong></p>
 <p>Linux执行kill命令，实际上只是发送了一个信号给到Linux进程，<strong>可被调度的进程</strong>在收到信号后，一般会从 **默认行为(每个信号都有)、忽略、捕获后处理（需要用户进程自己针对这个信号做handler）**中进行操作，但SIGKILL和SIGTOP这两个信号是特权信号，不允许被自行捕获处理也无法忽略，只能执行系统的默认行为。</p>
-<p>执行kill命令时，会调用一系列内核函数进行处理，其中有一个函数sig_task_ignored会判断是否要忽略这个信号。Linux内核里的每个Namespace里的init进程，会忽略只有默认handler的信号，即如果我们的进程有处理相关信号的handler，就可以响应。可以通过<code>cat /proc/{进程pid}/status | grep -i SigCgt</code>查看该进程注册了哪些handler。</p>
+<p>执行kill命令时，会调用一系列内核函数进行处理，其中有一个函数<code>sig_task_ignored</code>会判断是否要忽略这个信号。Linux内核里的每个Namespace里的init进程，会忽略只有默认handler的信号，即如果我们的进程有处理相关信号的handler，就可以响应。可以通过<code>cat /proc/{进程pid}/status | grep -i SigCgt</code>查看该进程注册了哪些handler。</p>
 <h2 id="zombie进程">ZOMBIE进程</h2>
-<p>ps aux查看Linux进程，STAT里的状态是Z，ps后有defunct标记，表示该进程为僵尸进程，此时该进程不可被调度。僵尸进程是Linux进程退出状态的一种，进程处于此状态下，无法响应kill命令，虽然资源被释放，但是仍然占用着进程号。</p>
+<p><code>ps aux</code>查看Linux进程，STAT里的状态是Z，ps后有defunct标记，表示该进程为<strong>僵尸进程，此时该进程不可被调度。僵尸进程是Linux进程退出状态的一种，进程处于此状态下，无法响应kill命令，虽然资源被释放，但是仍然占用着进程号</strong>。</p>
 <p><strong>形成的原因：</strong></p>
 <p>父进程在创建完子进程后，没有对子进程进行后续的管理。</p>
 <p><strong>影响：</strong></p>
-<p>Linux内核在初始化系统时，会根据CPU数目现在进程最大数量<code>通过/proc/sys/kernel/pid_max查看</code>，对Linux系统而言，容器是一组进程的集合，如果容器中的应用创建过多，就会出现fork bomb行为，不断建立新进程消耗系统资源，如果达到了Linux最大进程数，导致系统不可用。</p>
+<p>Linux内核在初始化系统时，会根据CPU数目限制进程最大数量，通过<code>/proc/sys/kernel/pid_max</code>查看，对Linux系统而言，容器是一组进程的集合，如果容器中的应用创建过多，就会出现fork bomb行为，不断建立新进程消耗系统资源，如果达到了Linux最大进程数，导致系统不可用。</p>
 <p><strong>解决方案：</strong></p>
 <p>因此对于容器，也要限制容器内的进程数量，通过pids Cgroup来完成，限制进程数目大小。在一个容器建立后，创建容器的服务会在<code>/sys/fs/cgroup/pids</code>下建立一个子目录作为控制组，里面的pids.max文件表示容器允许的最大进程数目。当容器内进程达到最大限制后再起新进程，会报错<code>Resource temporarily unavailable</code></p>
 <p>当出现僵尸进程后，父进程可以调用wait函数（该函数是同步阻塞）或者调用waitpid函数（该函数仅在调用时检查僵尸进程，如果没有则返回，不会阻塞等待）回收子进程资源，避免僵尸进程 的产生。或者kill掉僵尸进程的父进程，此时僵尸进程会归附到init进程下，利用init进程的能力回收僵尸进程的资源。</p>
@@ -260,18 +260,18 @@ if (!doNotTrack) {
 <p>对于普通调度类型，每个目录下有三个文件对应三个参数：</p>
 <ul>
 <li>
-<p>cpu.cfs_period_us：CFS的调度周期，单位微秒</p>
+<p><code>cpu.cfs_period_us</code>：CFS的调度周期，单位微秒</p>
 </li>
 <li>
-<p>cpu.cfs_quota_us：一个调度周期内该控制组被允许运行的时间，单位微秒，<code>CPU最大配额 = cpu.cfs_quota_us / cpu.cfs_period_us </code></p>
+<p><code>cpu.cfs_quota_us</code>：一个调度周期内该控制组被允许运行的时间，单位微秒，<code>CPU最大配额 = cpu.cfs_quota_us / cpu.cfs_period_us </code></p>
 </li>
 <li>
-<p>cpu.shares：CPU Cgroup对控制组之间的CPU分配比例，只有当控制组间的CPU配额超过了CPU可以资源的最大值，则会启用该参数进行配额分配。</p>
+<p><code>cpu.shares</code>：CPU Cgroup对控制组之间的CPU分配比例，只有当控制组间的CPU配额超过了CPU可以资源的最大值，则会启用该参数进行配额分配。</p>
 </li>
 </ul>
-<p>Linux中 cpu.cfs_period_us 是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。</p>
+<p>Linux中 <code>cpu.cfs_period_us</code> 是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。</p>
 <p><strong>在容器内使用top命令查看CPU使用率，显示的是宿主机的CPU使用率以及单个进程的CPU使用率，无法查到该容器的CPU使用率</strong>。</p>
-<p>因为top命令对于单个进程读取<code>/proc/[pid]/stat</code>里面包含进程用户态和内核态的ticks数目，对于整个节点读取的是<code>/proc/stat</code>里各个不同CPU类型的ticks数目，因为这些文件不属于任何一个Namespace，因此无法读取单个容器CPU的使用率，只能通过CPU Cgroup的控制组内的cpuacct.stat参数文件计算得到，该参数文件包含了这个控制组里所有进程的内核态ticks和用户态ticks的值，带入公式即可计算得到。</p>
+<p>因为top命令对于单个进程读取<code>/proc/[pid]/stat</code>里面包含进程用户态和内核态的ticks数目，对于整个节点读取的是<code>/proc/stat</code>里各个不同CPU类型的ticks数目，因为这些文件不属于任何一个Namespace，因此无法读取单个容器CPU的使用率，只能通过CPU Cgroup的控制组内的<code>cpuacct.stat</code>参数文件计算得到，该参数文件包含了这个控制组里所有进程的内核态ticks和用户态ticks的值，带入公式即可计算得到。</p>
 <blockquote>
 <p>ticks是Linux操作系统中的一个时间单位，Linux通过自己的时钟周期性产生中断，每次中断会触发内核做一次进程调度，一次中断就是一个ticks</p>
 <p>utime：表示进程在用户态部分在Linux调度中获得CPU的ticks，这个值会一直累加</p>
@@ -281,11 +281,11 @@ if (!doNotTrack) {
 <p>进程的 CPU 使用率 =((utime_2 – utime_1) + (stime_2 – stime_1)) * 100.0 / (HZ * et * CPU个数 )</p>
 </blockquote>
 <h2 id="load-average平均负载">Load Average平均负载</h2>
-<p>Load Average是指Linux进程调度器中一段时间内，可运行队列里的进程平均数 + 休眠队列中不可打断的进程平均数。</p>
+<p>Load Average是指<strong>Linux进程调度器中一段时间内，可运行队列里的进程平均数 + 休眠队列中不可打断的进程平均数</strong>。</p>
 <p>所以，有可能在使用top命令时观察到 明明CPU空闲率很高，但是Load Average的数值也很高，CPU性能下降，因为此时休眠队列中有很多在等待的进程，这些进程的stat是D，这种状态可能是IO或者信号量锁的访问导致。</p>
 <h1 id="内存">内存</h1>
 <p><strong>Linux进程的内存申请策略</strong>：Linux允许进程在申请内存时overcommit，即允许进程申请超过实际物理内存上限的内存。因为申请只是申请内存的虚拟地址，只是一个地址范围，只有真正写入数据时，才能得到真实的物理内存，当物理内存不够时，Linux就会根据一定的策略杀死某个正在运行的进程，当容器内存使用率超过限制值时，容器就会出现OOM Killed。</p>
-<p>OOM Killed的标准是通过oom_badness函数决定，通过以下两个值的乘积决定：</p>
+<p>OOM Killed的标准是通过<code>oom_badness函数</code>决定，通过以下两个值的乘积决定：</p>
 <ul>
 <li>进程已经使用的物理内存页面数</li>
 <li>每个进程的OOM校准值oom_score_adj，在<code>/proc/[pid]/oom_score_adj</code>文件中，该值用于调整进程被OOM Kill的几率</li>
@@ -296,18 +296,18 @@ if (!doNotTrack) {
 <h2 id="memory-cgroup">Memory Cgroup</h2>
 <p>Memory Cgroup一般会通过一个虚拟文件系统挂载点的方式，挂载在<code>/sys/fs/cgroup/memory</code>目录下，每个子目录为一个控制组，各个目录间是一个树状的层级关系。每个目录有很多参数文件，跟OOM相关的有3个</p>
 <ul>
-<li>memory.limit_in_bytes：控制控制组里进程可使用的内存最大值，父节点的控制组内该值可以限制它的子节点所有进程的内存使用，Kubernetes的limit改的就是该值，而request仅在调度时计算节点是否满足。</li>
-<li>memory.oom_control：当控制组中的进程内存使用达到上限时，该参数决定是否触发OOM Killed，默认是会触发OOM Killed，只能杀死控制组内的进程，无法杀死节点上的其他进程。当值设置为1时，表示控制组内进程即使达到limit_in_bytes设置的值，也不会触发OOM Killed，但是这可能会影响控制组中正在申请物理内存页面的进程，造成该进程处于停止状态，无法继续运行。</li>
-<li>memory.usage_in_bytes：表示当前控制组里所有进程实际使用的内存总和，与limit_in_bytes的值越接近，越容易触发OOM Killed。</li>
+<li><code>memory.limit_in_bytes</code>：控制控制组里进程可使用的内存最大值，父节点的控制组内该值可以限制它的子节点所有进程的内存使用，Kubernetes的limit改的就是该值，而request仅在调度时计算节点是否满足。</li>
+<li><code>memory.oom_control</code>：当控制组中的进程内存使用达到上限时，该参数决定是否触发OOM Killed，默认是会触发OOM Killed，只能杀死控制组内的进程，无法杀死节点上的其他进程。当值设置为1时，表示控制组内进程即使达到limit_in_bytes设置的值，也不会触发OOM Killed，但是这可能会影响控制组中正在申请物理内存页面的进程，造成该进程处于停止状态，无法继续运行。</li>
+<li><code>memory.usage_in_bytes</code>：表示当前控制组里所有进程实际使用的内存总和，与limit_in_bytes的值越接近，越容易触发OOM Killed。</li>
 </ul>
 <p>当发送OOM killed时，可以查看内核日志 <code>journalctl -k 或者 查看日志文件 /var/log/message</code></p>
-<p>Memory Cgroup只统计了RSS和Page Cache这两部分内存，两者的和等于memory.usage_in_bytes，当控制组里的进程要申请新的物理内存，但memory.usage_in_bytes已超过memory.limit_in_bytes，此时会启用page frame reclaim内存页面回收机制，回收Page Cache的内存。</p>
-<p>判断容器真实的内存使用量，不能仅靠Memory Cgroup里的memory.usage_in_bytes，而需要memory.stat里的rss值，该值才真正反应了容器使用的真实物理内存的大小。</p>
+<p>Memory Cgroup只统计了RSS和Page Cache这两部分内存，两者的和等于memory.usage_in_bytes，当控制组里的进程要申请新的物理内存，但<code>memory.usage_in_bytes</code>已超过<code>memory.limit_in_bytes</code>，此时会启用page frame reclaim内存页面回收机制，回收Page Cache的内存。</p>
+<p>判断容器真实的内存使用量，不能仅靠Memory Cgroup里的<code>memory.usage_in_bytes</code>，而需要<code>memory.stat</code>里的rss值，该值才真正反应了容器使用的真实物理内存的大小。</p>
 <h2 id="swap">Swap</h2>
 <p>容器可以使用Swap空间，但会导致Memory Cgroup失效，比如在Swap空间足够的情况下，设置容器limit为512MB，然后容器申请了1G内存，是可以申请成功的，此时容器的RSS为512MB，Swap只剩下512MB空闲。</p>
 <p>为了解决这个问题，可以使用swapiness，参数文件在<code>/proc/sys/vm/swapiness</code>，通过它来设置Swap使用的权重，用于定义Page Cache内存和匿名内存释放的比例值，取值范围是0到100，默认是60。100表示匿名内存和Page Cache内存的释放比例是100：100；60表示匿名内存和PageCache内存的释放比例是60：140，此时PageCache内存的释放优先于匿名内存；0不会完全禁止Swap的使用，在内存特别紧张的时候才会启用Swap来回收匿名内存。</p>
-<p>swapiness也存在于Memory Cgroup控制组中，参数文件是memory.swappiness，该值的优先级会大于全局的swappiness，但有一点跟全局的swappiness不太一样，当memory.swappiness=0时，是完全不使用Swap空间的。</p>
-<p>通过memory.swappiness参数可以使得需要使用Swap容器和不需要使用Swap的容器，同时运行在同一个节点上。</p>
+<p>swapiness也存在于Memory Cgroup控制组中，参数文件是<code>memory.swappiness</code>，该值的优先级会大于全局的swappiness，但有一点跟全局的swappiness不太一样，当<code>memory.swappiness=0</code>时，是完全不使用Swap空间的。</p>
+<p>通过<code>memory.swappiness</code>参数可以使得需要使用Swap容器和不需要使用Swap的容器，同时运行在同一个节点上。</p>
 <h1 id="存储">存储</h1>
 <p>Linux两种文件 I / O模式：</p>
 <p>Direct I/O：用户进程写磁盘文件，通过Linux内核文件系统 -&gt; 块设备层 -&gt; 磁盘驱动 -&gt; 磁盘硬件，直到落盘。</p>
@@ -320,7 +320,7 @@ if (!doNotTrack) {
 <p>dirty_expire_centisecs，时间值，单位是百分之一秒，默认是30s，定义dirty pages在内存的存放的最长时间，如果超过该时间，就会唤醒内核的flush线程处理dirty pages；</p>
 </blockquote>
 <h2 id="unionfs">UnionFS</h2>
-<p>将多个目录(处于不同的分区)一起挂载在一个目录下，实现多目录挂载。这种方式可以使得同一节点上，多个容器使用同一份基础镜像，减少磁盘冗余的镜像数据。OverlayFS是其中的一种实现。</p>
+<p><strong>将多个目录(处于不同的分区)一起挂载在一个目录下，实现多目录挂载</strong>。这种方式可以使得同一节点上，多个容器使用同一份基础镜像，减少磁盘冗余的镜像数据。OverlayFS是其中的一种实现。</p>
 <p>比如容器A和容器B都使用了ubuntu作为基础镜像，放在目录/ubuntu上，容器A使用的额外应用程序放在appA目录，容器B的放在appB目录，将/ubuntu目录和appA目录同时挂载在containA目录下，作为容器A看到的文件系统，同理容器B也是，此时节点就只需要保存一份ubuntu镜像文件即可。</p>
 <h2 id="overlayfs">OverlayFS</h2>
 <p>OverlayFS是一种堆叠文件系统，依赖并建立在其他文件系统之上，如EXT4FS、XFS等，并不直接参与磁盘空间结构的划分，仅将原来底层文件系统中不同目录进行合并，用户见到的Overlay文件系统根目录下的内容就来自挂载时指定的不同目录的合集，OverlayFS会将挂载的文件进行分层。</p>
@@ -332,7 +332,7 @@ if (!doNotTrack) {
 </ul>
 <p>上下层同名目录合并，上下层同名文件覆盖，lower层文件写时会拷贝(copy_up)到upper层进行修改，不影响lower层的文件。</p>
 <p>比如，在merged目录里新建文件，这个文件会出现在upper目录中；删除文件，这个文件会在upper目录中消失，但在lower目录里不会有变化，只是upper目录中会增加一个特殊文件告诉OverlayFS该文件不能出现在merged目录里，表示它被删除；修改文件，会在upper目录中新建一个修改后的文件，而lower目录中原来的文件不会改变。</p>
-<p>在Docker中，容器镜像文件可以分成多个层，每层对应lower dir的一个目录，容器启动后，对镜像文件中的修改会保存在upper dir里。Docker会将镜像层作为lower dir，容器层作为upper dir，最后挂载到容器的merge挂载点，即容器的根目录下。</p>
+<p>在Docker中，容器镜像文件可以分成多个层，每层对应lower dir的一个目录，容器启动后，对镜像文件中的修改会保存在upper dir里。Docker会将镜像层作为lower dir，容器层作为upper dir，最后挂载到容器的merged挂载点，即容器的根目录下。</p>
 <p>OverlayFS本身没有限制文件写入量的功能，需要依赖底层文件系统，比如XFS文件系统的quota，限制upper目录的写入大小。</p>
 <h2 id="blkio-cgroup">Blkio Cgroup</h2>
 <p>IOPS：每秒钟磁盘读写的次数</p>
@@ -340,13 +340,13 @@ if (!doNotTrack) {
 <p>两者的关系：吞吐量 = 数据块大小 * IOPS</p>
 <p>Blkio Cgroup一般会通过一个虚拟文件系统挂载点的方式，挂载在<code>/sys/fs/cgroup/blkio</code>目录下，每个子目录为一个控制组，各个目录间是一个树状的层级关系。每个目录有很多参数文件，有4个主要参数来限制磁盘 I/O性能。</p>
 <ul>
-<li>blkio.throttle.read_iops_device：磁盘读取IOPS限制</li>
-<li>blkio.throttle.read_bps_device：磁盘读取吞吐量限制</li>
-<li>blkio.throttle.write_iops_device：磁盘写入IOPS限制</li>
-<li>blkio.throttle.write_bps_device：磁盘写入吞吐量限制</li>
+<li><code>blkio.throttle.read_iops_device</code>：磁盘读取IOPS限制</li>
+<li><code>blkio.throttle.read_bps_device</code>：磁盘读取吞吐量限制</li>
+<li><code>blkio.throttle.write_iops_device</code>：磁盘写入IOPS限制</li>
+<li><code>blkio.throttle.write_bps_device</code>：磁盘写入吞吐量限制</li>
 </ul>
 <p>但在Cgroup V1，只有Direct I/O才能通过Blkio Cgroup限制，Buffered I/O不能，因为Buffered I/O会用到Page Cache，但V1版本各个Cgroup子系统相互独立，所以没办法做限制。</p>
-<p>Cgroup V2才可以，通过配置Blkio Cgroup和Memory Cgroup即可解决。有个问题是，如果Memory Cgroup的memory.limit_in_bytes设置得比较小，而容器中进程有大量的IO、这样申请新的Page Cache内存时，又会不断释放老的内存页面，带来了额外的开销，可能会产生写入波动。</p>
+<p>Cgroup V2才可以，通过配置Blkio Cgroup和Memory Cgroup即可解决。有个问题是，如果Memory Cgroup的<code>memory.limit_in_bytes</code>设置得比较小，而容器中进程有大量的IO、这样申请新的Page Cache内存时，又会不断释放老的内存页面，带来了额外的开销，可能会产生写入波动。</p>
 <h1 id="网络">网络</h1>
 <p>容器网络一个Network Namespace网络栈包括：网卡、回环设备、路由表、iptables规则。</p>
 <h2 id="network-namespace">Network Namespace</h2>
@@ -447,13 +447,13 @@ if (!doNotTrack) {
 </ol>
 <h1 id="安全">安全</h1>
 <p>进程的权限分为两类，特权用户进程(进程有效用户ID是0，root用户的进程)、非特权用户进程(进程有效用户ID非0，非root用户的进程)，特权用户可以执行Linux系统上所有操作，而非特权用户执行这些操作会被内核限制。</p>
-<p>在kernel2.2开始，Linux把特权用户的特权做了划分，每个被划分出来的单元称为capability，比如运行iptables命令，对应的进程需要有CAP_NET_ADMIN这个capability。非root用户启动的进程默认没有任务capabilities，root用户则包含了所有。子父进程的capabilities有继承属性。查看进程拥有的capability命令：<code>cat /proc/[pid]/status | grep Cap</code>。</p>
+<p>在kernel2.2开始，Linux把特权用户的特权做了划分，每个被划分出来的单元称为capability，比如运行iptables命令，对应的进程需要有CAP_NET_ADMIN这个capability。非root用户启动的进程默认没有任何capabilities，root用户则包含了所有。子父进程的capabilities有继承属性。查看进程拥有的capability命令：<code>cat /proc/[pid]/status | grep Cap</code>。</p>
 <p>对于privileged容器，实际上就是拥有了所有capability，允许执行所有特权操作，比如docker容器启动时增加参数 <code>--privileged</code>。容器缺省启动时，是root用户，但只允许了15个capabilities。</p>
 <p>一般只给容器所需操作的最小capabilities，而不是直接给privileged，因为privileged的权限太大，容器可以轻易获取宿主机上的所有资源，比如直接访问磁盘设备，修改宿主机上的文件。</p>
 <p>为了保证容器运行不对宿主机造成安全影响，可以在容器中指定用户。</p>
-<p>在docker中，启动容器命令后面加<code>-u [uid]/[gid]</code>，或者在写Dockerfile时指定(这样启动容器就不用加-u)，容器里的用户与宿主机上的用户共享，即<strong>容器上的uid实际上是宿主机上的uid(root用户也是，只是容器里capabilities只有15个，而宿主机上的root有全部)</strong>，这样会产生限制，因为在Linux上每个用户的资源是有限的，比如打开文件数目、最大进程数等，如果有多个容器共享同一个uid，就会互相影响。</p>
+<p>在docker中，启动容器命令后面加<code>-u [uid]/[gid]</code>，或者在写Dockerfile时指定(这样启动容器就不用加-u)，<strong>容器里的用户与宿主机上的用户共享，即容器上的uid实际上是宿主机上的uid(root用户也是，只是容器里capabilities只有15个，而宿主机上的root有全部)</strong>，这样会产生限制，因为在Linux上每个用户的资源是有限的，比如打开文件数目、最大进程数等，如果有多个容器共享同一个uid，就会互相影响。</p>
 <p>为了解决容器uid共享问题，可以使用User Namespace。</p>
-<p>User Namespace本质上是将容器中的uid/gid与宿主机上的uid/gid建立映射，同时也支持嵌套映射。比如划分宿主机上的uid的范围1000-1999，对应容器uid的0到999，容器里uid也可以继续嵌套映射。</p>
+<p><strong>User Namespace本质上是将容器中的uid/gid与宿主机上的uid/gid建立映射</strong>，同时也支持嵌套映射。比如划分宿主机上的uid的范围1000-1999，对应容器uid的0到999，容器里uid也可以继续嵌套映射。</p>
 <p>使用User Namespace，可以把容器中root用户映射称宿主机上的普通用户，解决uid冲突共享问题，<strong>目前Kebernetes还不支持User Namespace(当前时间20210920，不过github上有pr了)</strong></p>
 <h1 id="runc-与-oci">runC 与 OCI</h1>
 <ul>
@@ -497,6 +497,8 @@ if (!doNotTrack) {
 <h1 id="参考">参考</h1>
 <p>极客时间-深入剖析k8s-张磊</p>
 <p>极客时间-容器实战高手课</p>
+<p><a class="link" href="https://tech.meituan.com/2015/03/31/cgroups.html"  target="_blank" rel="noopener"
+    >Linux资源管理之cgroups简介</a></p>
 
 </section>
 

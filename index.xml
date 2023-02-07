@@ -832,7 +832,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;Mount Namespace：隔离不同容器间的文件系统&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;与虚拟化的区别&lt;/strong&gt;：虚拟化是在操作系统和硬件上进行隔离，虚拟机上的应用需要经过虚拟机再经过宿主机，有两个内核，本身就有消耗，而容器化后的应用仅仅只是宿主机上的进程而已，只用到宿主机一个内核；&lt;/p&gt;
-&lt;p&gt;因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不同通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups；&lt;/p&gt;
+&lt;p&gt;因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不能通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups；&lt;/p&gt;
 &lt;h2 id=&#34;cgroups---资源限制&#34;&gt;Cgroups - 资源限制&lt;/h2&gt;
 &lt;p&gt;是用来制造约束的主要手段，即对进程设置资源能够使用的上限，如CPU、内存、IO设备的流量等&lt;/p&gt;
 &lt;p&gt;比如，限定容器只能使用宿主机20%的CPU&lt;/p&gt;
@@ -860,7 +860,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;挂载在容器根目录上、用来为容器进程提供隔离后执行环境的文件系统，即容器镜像，也是容器的根文件系统。Mount Namespace保证每个容器都有自己独立的文件目录结构。&lt;/p&gt;
 &lt;p&gt;镜像可以理解为是容器的文件系统（一个操作系统的所有文件和目录），它是只读的，挂载在宿主机的一个目录上。同一台机器上的所有容器，都共享宿主机操作系统的内核，如果容器内应用修改了内核参数，会影响到所有依赖的应用。而虚拟机则都是独立的内核和文件系统，共享宿主机的硬件资源。&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;上面的读写层通常也称为容器层，下面的只读层称为镜像层，所有的增删查改操作都只会作用在容器层，相同的文件上层会覆盖掉下层。知道这一点，就不难理解镜像文件的修改，比如修改一个文件的时候，首先会从上到下查找有没有这个文件，找到，就复制到容器层中，修改，修改的结果就会作用到下层的文件，这种方式也被称为copy-on-write。&lt;/p&gt;
+&lt;p&gt;上面的读写层通常也称为容器层，下面的只读层称为镜像层，所有的增删查改操作都只会作用在容器层，相同的文件上层会覆盖掉下层。比如修改一个文件的时候，首先会从上到下查找有没有这个文件，找到，就复制到容器层中，进行修改，修改的结果就会作用到下层的文件，这种方式也被称为copy-on-write。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h2 id=&#34;注意点&#34;&gt;注意点&lt;/h2&gt;
 &lt;p&gt;容器是“单进程模型”，单进程模型并不是指容器只能运行一个进程，而是指容器没有管理多个进程的能力，它只能管理一个进程，即如果在容器里启动了一个Web 应用和一个nginx，如果nginx挂了，你是不知道的。&lt;/p&gt;
@@ -903,13 +903,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;在容器中，无法使用SIGKILL(-9)和SIGTOP(19)这两个信号杀死1号进程，但对于其他kill信号(比如默认的kill信号是SIGTERM)，如果init进程注册了自己处理该信号的handler，则1号进程可以做出响应。但是，如果SIGKILL和SIGTOP信号是从Host Namespace里发出的，则可以被响应，因为此时容器里的1号进程在宿主机上只是一个普通进程。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;有时无法被kill掉的原因：&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Linux执行kill命令，实际上只是发送了一个信号给到Linux进程，&lt;strong&gt;可被调度的进程&lt;/strong&gt;在收到信号后，一般会从 **默认行为(每个信号都有)、忽略、捕获后处理（需要用户进程自己针对这个信号做handler）**中进行操作，但SIGKILL和SIGTOP这两个信号是特权信号，不允许被自行捕获处理也无法忽略，只能执行系统的默认行为。&lt;/p&gt;
-&lt;p&gt;执行kill命令时，会调用一系列内核函数进行处理，其中有一个函数sig_task_ignored会判断是否要忽略这个信号。Linux内核里的每个Namespace里的init进程，会忽略只有默认handler的信号，即如果我们的进程有处理相关信号的handler，就可以响应。可以通过&lt;code&gt;cat /proc/{进程pid}/status | grep -i SigCgt&lt;/code&gt;查看该进程注册了哪些handler。&lt;/p&gt;
+&lt;p&gt;执行kill命令时，会调用一系列内核函数进行处理，其中有一个函数&lt;code&gt;sig_task_ignored&lt;/code&gt;会判断是否要忽略这个信号。Linux内核里的每个Namespace里的init进程，会忽略只有默认handler的信号，即如果我们的进程有处理相关信号的handler，就可以响应。可以通过&lt;code&gt;cat /proc/{进程pid}/status | grep -i SigCgt&lt;/code&gt;查看该进程注册了哪些handler。&lt;/p&gt;
 &lt;h2 id=&#34;zombie进程&#34;&gt;ZOMBIE进程&lt;/h2&gt;
-&lt;p&gt;ps aux查看Linux进程，STAT里的状态是Z，ps后有defunct标记，表示该进程为僵尸进程，此时该进程不可被调度。僵尸进程是Linux进程退出状态的一种，进程处于此状态下，无法响应kill命令，虽然资源被释放，但是仍然占用着进程号。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;ps aux&lt;/code&gt;查看Linux进程，STAT里的状态是Z，ps后有defunct标记，表示该进程为&lt;strong&gt;僵尸进程，此时该进程不可被调度。僵尸进程是Linux进程退出状态的一种，进程处于此状态下，无法响应kill命令，虽然资源被释放，但是仍然占用着进程号&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;形成的原因：&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;父进程在创建完子进程后，没有对子进程进行后续的管理。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;影响：&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;Linux内核在初始化系统时，会根据CPU数目现在进程最大数量&lt;code&gt;通过/proc/sys/kernel/pid_max查看&lt;/code&gt;，对Linux系统而言，容器是一组进程的集合，如果容器中的应用创建过多，就会出现fork bomb行为，不断建立新进程消耗系统资源，如果达到了Linux最大进程数，导致系统不可用。&lt;/p&gt;
+&lt;p&gt;Linux内核在初始化系统时，会根据CPU数目限制进程最大数量，通过&lt;code&gt;/proc/sys/kernel/pid_max&lt;/code&gt;查看，对Linux系统而言，容器是一组进程的集合，如果容器中的应用创建过多，就会出现fork bomb行为，不断建立新进程消耗系统资源，如果达到了Linux最大进程数，导致系统不可用。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;解决方案：&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;因此对于容器，也要限制容器内的进程数量，通过pids Cgroup来完成，限制进程数目大小。在一个容器建立后，创建容器的服务会在&lt;code&gt;/sys/fs/cgroup/pids&lt;/code&gt;下建立一个子目录作为控制组，里面的pids.max文件表示容器允许的最大进程数目。当容器内进程达到最大限制后再起新进程，会报错&lt;code&gt;Resource temporarily unavailable&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;当出现僵尸进程后，父进程可以调用wait函数（该函数是同步阻塞）或者调用waitpid函数（该函数仅在调用时检查僵尸进程，如果没有则返回，不会阻塞等待）回收子进程资源，避免僵尸进程 的产生。或者kill掉僵尸进程的父进程，此时僵尸进程会归附到init进程下，利用init进程的能力回收僵尸进程的资源。&lt;/p&gt;
@@ -937,18 +937,18 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;对于普通调度类型，每个目录下有三个文件对应三个参数：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;cpu.cfs_period_us：CFS的调度周期，单位微秒&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;cpu.cfs_period_us&lt;/code&gt;：CFS的调度周期，单位微秒&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;cpu.cfs_quota_us：一个调度周期内该控制组被允许运行的时间，单位微秒，&lt;code&gt;CPU最大配额 = cpu.cfs_quota_us / cpu.cfs_period_us &lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;cpu.cfs_quota_us&lt;/code&gt;：一个调度周期内该控制组被允许运行的时间，单位微秒，&lt;code&gt;CPU最大配额 = cpu.cfs_quota_us / cpu.cfs_period_us &lt;/code&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;cpu.shares：CPU Cgroup对控制组之间的CPU分配比例，只有当控制组间的CPU配额超过了CPU可以资源的最大值，则会启用该参数进行配额分配。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;cpu.shares&lt;/code&gt;：CPU Cgroup对控制组之间的CPU分配比例，只有当控制组间的CPU配额超过了CPU可以资源的最大值，则会启用该参数进行配额分配。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Linux中 cpu.cfs_period_us 是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。&lt;/p&gt;
+&lt;p&gt;Linux中 &lt;code&gt;cpu.cfs_period_us&lt;/code&gt; 是个固定值，Kubernetes的pod中，限制容器CPU使用率的requestCPU和limitCPU是通过调整其余两个参数来实现。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;在容器内使用top命令查看CPU使用率，显示的是宿主机的CPU使用率以及单个进程的CPU使用率，无法查到该容器的CPU使用率&lt;/strong&gt;。&lt;/p&gt;
-&lt;p&gt;因为top命令对于单个进程读取&lt;code&gt;/proc/[pid]/stat&lt;/code&gt;里面包含进程用户态和内核态的ticks数目，对于整个节点读取的是&lt;code&gt;/proc/stat&lt;/code&gt;里各个不同CPU类型的ticks数目，因为这些文件不属于任何一个Namespace，因此无法读取单个容器CPU的使用率，只能通过CPU Cgroup的控制组内的cpuacct.stat参数文件计算得到，该参数文件包含了这个控制组里所有进程的内核态ticks和用户态ticks的值，带入公式即可计算得到。&lt;/p&gt;
+&lt;p&gt;因为top命令对于单个进程读取&lt;code&gt;/proc/[pid]/stat&lt;/code&gt;里面包含进程用户态和内核态的ticks数目，对于整个节点读取的是&lt;code&gt;/proc/stat&lt;/code&gt;里各个不同CPU类型的ticks数目，因为这些文件不属于任何一个Namespace，因此无法读取单个容器CPU的使用率，只能通过CPU Cgroup的控制组内的&lt;code&gt;cpuacct.stat&lt;/code&gt;参数文件计算得到，该参数文件包含了这个控制组里所有进程的内核态ticks和用户态ticks的值，带入公式即可计算得到。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;ticks是Linux操作系统中的一个时间单位，Linux通过自己的时钟周期性产生中断，每次中断会触发内核做一次进程调度，一次中断就是一个ticks&lt;/p&gt;
 &lt;p&gt;utime：表示进程在用户态部分在Linux调度中获得CPU的ticks，这个值会一直累加&lt;/p&gt;
@@ -958,11 +958,11 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;进程的 CPU 使用率 =((utime_2 – utime_1) + (stime_2 – stime_1)) * 100.0 / (HZ * et * CPU个数 )&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h2 id=&#34;load-average平均负载&#34;&gt;Load Average平均负载&lt;/h2&gt;
-&lt;p&gt;Load Average是指Linux进程调度器中一段时间内，可运行队列里的进程平均数 + 休眠队列中不可打断的进程平均数。&lt;/p&gt;
+&lt;p&gt;Load Average是指&lt;strong&gt;Linux进程调度器中一段时间内，可运行队列里的进程平均数 + 休眠队列中不可打断的进程平均数&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;所以，有可能在使用top命令时观察到 明明CPU空闲率很高，但是Load Average的数值也很高，CPU性能下降，因为此时休眠队列中有很多在等待的进程，这些进程的stat是D，这种状态可能是IO或者信号量锁的访问导致。&lt;/p&gt;
 &lt;h1 id=&#34;内存&#34;&gt;内存&lt;/h1&gt;
 &lt;p&gt;&lt;strong&gt;Linux进程的内存申请策略&lt;/strong&gt;：Linux允许进程在申请内存时overcommit，即允许进程申请超过实际物理内存上限的内存。因为申请只是申请内存的虚拟地址，只是一个地址范围，只有真正写入数据时，才能得到真实的物理内存，当物理内存不够时，Linux就会根据一定的策略杀死某个正在运行的进程，当容器内存使用率超过限制值时，容器就会出现OOM Killed。&lt;/p&gt;
-&lt;p&gt;OOM Killed的标准是通过oom_badness函数决定，通过以下两个值的乘积决定：&lt;/p&gt;
+&lt;p&gt;OOM Killed的标准是通过&lt;code&gt;oom_badness函数&lt;/code&gt;决定，通过以下两个值的乘积决定：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;进程已经使用的物理内存页面数&lt;/li&gt;
 &lt;li&gt;每个进程的OOM校准值oom_score_adj，在&lt;code&gt;/proc/[pid]/oom_score_adj&lt;/code&gt;文件中，该值用于调整进程被OOM Kill的几率&lt;/li&gt;
@@ -973,18 +973,18 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h2 id=&#34;memory-cgroup&#34;&gt;Memory Cgroup&lt;/h2&gt;
 &lt;p&gt;Memory Cgroup一般会通过一个虚拟文件系统挂载点的方式，挂载在&lt;code&gt;/sys/fs/cgroup/memory&lt;/code&gt;目录下，每个子目录为一个控制组，各个目录间是一个树状的层级关系。每个目录有很多参数文件，跟OOM相关的有3个&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;memory.limit_in_bytes：控制控制组里进程可使用的内存最大值，父节点的控制组内该值可以限制它的子节点所有进程的内存使用，Kubernetes的limit改的就是该值，而request仅在调度时计算节点是否满足。&lt;/li&gt;
-&lt;li&gt;memory.oom_control：当控制组中的进程内存使用达到上限时，该参数决定是否触发OOM Killed，默认是会触发OOM Killed，只能杀死控制组内的进程，无法杀死节点上的其他进程。当值设置为1时，表示控制组内进程即使达到limit_in_bytes设置的值，也不会触发OOM Killed，但是这可能会影响控制组中正在申请物理内存页面的进程，造成该进程处于停止状态，无法继续运行。&lt;/li&gt;
-&lt;li&gt;memory.usage_in_bytes：表示当前控制组里所有进程实际使用的内存总和，与limit_in_bytes的值越接近，越容易触发OOM Killed。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;memory.limit_in_bytes&lt;/code&gt;：控制控制组里进程可使用的内存最大值，父节点的控制组内该值可以限制它的子节点所有进程的内存使用，Kubernetes的limit改的就是该值，而request仅在调度时计算节点是否满足。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;memory.oom_control&lt;/code&gt;：当控制组中的进程内存使用达到上限时，该参数决定是否触发OOM Killed，默认是会触发OOM Killed，只能杀死控制组内的进程，无法杀死节点上的其他进程。当值设置为1时，表示控制组内进程即使达到limit_in_bytes设置的值，也不会触发OOM Killed，但是这可能会影响控制组中正在申请物理内存页面的进程，造成该进程处于停止状态，无法继续运行。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;memory.usage_in_bytes&lt;/code&gt;：表示当前控制组里所有进程实际使用的内存总和，与limit_in_bytes的值越接近，越容易触发OOM Killed。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;当发送OOM killed时，可以查看内核日志 &lt;code&gt;journalctl -k 或者 查看日志文件 /var/log/message&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;Memory Cgroup只统计了RSS和Page Cache这两部分内存，两者的和等于memory.usage_in_bytes，当控制组里的进程要申请新的物理内存，但memory.usage_in_bytes已超过memory.limit_in_bytes，此时会启用page frame reclaim内存页面回收机制，回收Page Cache的内存。&lt;/p&gt;
-&lt;p&gt;判断容器真实的内存使用量，不能仅靠Memory Cgroup里的memory.usage_in_bytes，而需要memory.stat里的rss值，该值才真正反应了容器使用的真实物理内存的大小。&lt;/p&gt;
+&lt;p&gt;Memory Cgroup只统计了RSS和Page Cache这两部分内存，两者的和等于memory.usage_in_bytes，当控制组里的进程要申请新的物理内存，但&lt;code&gt;memory.usage_in_bytes&lt;/code&gt;已超过&lt;code&gt;memory.limit_in_bytes&lt;/code&gt;，此时会启用page frame reclaim内存页面回收机制，回收Page Cache的内存。&lt;/p&gt;
+&lt;p&gt;判断容器真实的内存使用量，不能仅靠Memory Cgroup里的&lt;code&gt;memory.usage_in_bytes&lt;/code&gt;，而需要&lt;code&gt;memory.stat&lt;/code&gt;里的rss值，该值才真正反应了容器使用的真实物理内存的大小。&lt;/p&gt;
 &lt;h2 id=&#34;swap&#34;&gt;Swap&lt;/h2&gt;
 &lt;p&gt;容器可以使用Swap空间，但会导致Memory Cgroup失效，比如在Swap空间足够的情况下，设置容器limit为512MB，然后容器申请了1G内存，是可以申请成功的，此时容器的RSS为512MB，Swap只剩下512MB空闲。&lt;/p&gt;
 &lt;p&gt;为了解决这个问题，可以使用swapiness，参数文件在&lt;code&gt;/proc/sys/vm/swapiness&lt;/code&gt;，通过它来设置Swap使用的权重，用于定义Page Cache内存和匿名内存释放的比例值，取值范围是0到100，默认是60。100表示匿名内存和Page Cache内存的释放比例是100：100；60表示匿名内存和PageCache内存的释放比例是60：140，此时PageCache内存的释放优先于匿名内存；0不会完全禁止Swap的使用，在内存特别紧张的时候才会启用Swap来回收匿名内存。&lt;/p&gt;
-&lt;p&gt;swapiness也存在于Memory Cgroup控制组中，参数文件是memory.swappiness，该值的优先级会大于全局的swappiness，但有一点跟全局的swappiness不太一样，当memory.swappiness=0时，是完全不使用Swap空间的。&lt;/p&gt;
-&lt;p&gt;通过memory.swappiness参数可以使得需要使用Swap容器和不需要使用Swap的容器，同时运行在同一个节点上。&lt;/p&gt;
+&lt;p&gt;swapiness也存在于Memory Cgroup控制组中，参数文件是&lt;code&gt;memory.swappiness&lt;/code&gt;，该值的优先级会大于全局的swappiness，但有一点跟全局的swappiness不太一样，当&lt;code&gt;memory.swappiness=0&lt;/code&gt;时，是完全不使用Swap空间的。&lt;/p&gt;
+&lt;p&gt;通过&lt;code&gt;memory.swappiness&lt;/code&gt;参数可以使得需要使用Swap容器和不需要使用Swap的容器，同时运行在同一个节点上。&lt;/p&gt;
 &lt;h1 id=&#34;存储&#34;&gt;存储&lt;/h1&gt;
 &lt;p&gt;Linux两种文件 I / O模式：&lt;/p&gt;
 &lt;p&gt;Direct I/O：用户进程写磁盘文件，通过Linux内核文件系统 -&amp;gt; 块设备层 -&amp;gt; 磁盘驱动 -&amp;gt; 磁盘硬件，直到落盘。&lt;/p&gt;
@@ -997,7 +997,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;dirty_expire_centisecs，时间值，单位是百分之一秒，默认是30s，定义dirty pages在内存的存放的最长时间，如果超过该时间，就会唤醒内核的flush线程处理dirty pages；&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h2 id=&#34;unionfs&#34;&gt;UnionFS&lt;/h2&gt;
-&lt;p&gt;将多个目录(处于不同的分区)一起挂载在一个目录下，实现多目录挂载。这种方式可以使得同一节点上，多个容器使用同一份基础镜像，减少磁盘冗余的镜像数据。OverlayFS是其中的一种实现。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;将多个目录(处于不同的分区)一起挂载在一个目录下，实现多目录挂载&lt;/strong&gt;。这种方式可以使得同一节点上，多个容器使用同一份基础镜像，减少磁盘冗余的镜像数据。OverlayFS是其中的一种实现。&lt;/p&gt;
 &lt;p&gt;比如容器A和容器B都使用了ubuntu作为基础镜像，放在目录/ubuntu上，容器A使用的额外应用程序放在appA目录，容器B的放在appB目录，将/ubuntu目录和appA目录同时挂载在containA目录下，作为容器A看到的文件系统，同理容器B也是，此时节点就只需要保存一份ubuntu镜像文件即可。&lt;/p&gt;
 &lt;h2 id=&#34;overlayfs&#34;&gt;OverlayFS&lt;/h2&gt;
 &lt;p&gt;OverlayFS是一种堆叠文件系统，依赖并建立在其他文件系统之上，如EXT4FS、XFS等，并不直接参与磁盘空间结构的划分，仅将原来底层文件系统中不同目录进行合并，用户见到的Overlay文件系统根目录下的内容就来自挂载时指定的不同目录的合集，OverlayFS会将挂载的文件进行分层。&lt;/p&gt;
@@ -1009,7 +1009,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ul&gt;
 &lt;p&gt;上下层同名目录合并，上下层同名文件覆盖，lower层文件写时会拷贝(copy_up)到upper层进行修改，不影响lower层的文件。&lt;/p&gt;
 &lt;p&gt;比如，在merged目录里新建文件，这个文件会出现在upper目录中；删除文件，这个文件会在upper目录中消失，但在lower目录里不会有变化，只是upper目录中会增加一个特殊文件告诉OverlayFS该文件不能出现在merged目录里，表示它被删除；修改文件，会在upper目录中新建一个修改后的文件，而lower目录中原来的文件不会改变。&lt;/p&gt;
-&lt;p&gt;在Docker中，容器镜像文件可以分成多个层，每层对应lower dir的一个目录，容器启动后，对镜像文件中的修改会保存在upper dir里。Docker会将镜像层作为lower dir，容器层作为upper dir，最后挂载到容器的merge挂载点，即容器的根目录下。&lt;/p&gt;
+&lt;p&gt;在Docker中，容器镜像文件可以分成多个层，每层对应lower dir的一个目录，容器启动后，对镜像文件中的修改会保存在upper dir里。Docker会将镜像层作为lower dir，容器层作为upper dir，最后挂载到容器的merged挂载点，即容器的根目录下。&lt;/p&gt;
 &lt;p&gt;OverlayFS本身没有限制文件写入量的功能，需要依赖底层文件系统，比如XFS文件系统的quota，限制upper目录的写入大小。&lt;/p&gt;
 &lt;h2 id=&#34;blkio-cgroup&#34;&gt;Blkio Cgroup&lt;/h2&gt;
 &lt;p&gt;IOPS：每秒钟磁盘读写的次数&lt;/p&gt;
@@ -1017,13 +1017,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;两者的关系：吞吐量 = 数据块大小 * IOPS&lt;/p&gt;
 &lt;p&gt;Blkio Cgroup一般会通过一个虚拟文件系统挂载点的方式，挂载在&lt;code&gt;/sys/fs/cgroup/blkio&lt;/code&gt;目录下，每个子目录为一个控制组，各个目录间是一个树状的层级关系。每个目录有很多参数文件，有4个主要参数来限制磁盘 I/O性能。&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;blkio.throttle.read_iops_device：磁盘读取IOPS限制&lt;/li&gt;
-&lt;li&gt;blkio.throttle.read_bps_device：磁盘读取吞吐量限制&lt;/li&gt;
-&lt;li&gt;blkio.throttle.write_iops_device：磁盘写入IOPS限制&lt;/li&gt;
-&lt;li&gt;blkio.throttle.write_bps_device：磁盘写入吞吐量限制&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;blkio.throttle.read_iops_device&lt;/code&gt;：磁盘读取IOPS限制&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;blkio.throttle.read_bps_device&lt;/code&gt;：磁盘读取吞吐量限制&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;blkio.throttle.write_iops_device&lt;/code&gt;：磁盘写入IOPS限制&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;blkio.throttle.write_bps_device&lt;/code&gt;：磁盘写入吞吐量限制&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;但在Cgroup V1，只有Direct I/O才能通过Blkio Cgroup限制，Buffered I/O不能，因为Buffered I/O会用到Page Cache，但V1版本各个Cgroup子系统相互独立，所以没办法做限制。&lt;/p&gt;
-&lt;p&gt;Cgroup V2才可以，通过配置Blkio Cgroup和Memory Cgroup即可解决。有个问题是，如果Memory Cgroup的memory.limit_in_bytes设置得比较小，而容器中进程有大量的IO、这样申请新的Page Cache内存时，又会不断释放老的内存页面，带来了额外的开销，可能会产生写入波动。&lt;/p&gt;
+&lt;p&gt;Cgroup V2才可以，通过配置Blkio Cgroup和Memory Cgroup即可解决。有个问题是，如果Memory Cgroup的&lt;code&gt;memory.limit_in_bytes&lt;/code&gt;设置得比较小，而容器中进程有大量的IO、这样申请新的Page Cache内存时，又会不断释放老的内存页面，带来了额外的开销，可能会产生写入波动。&lt;/p&gt;
 &lt;h1 id=&#34;网络&#34;&gt;网络&lt;/h1&gt;
 &lt;p&gt;容器网络一个Network Namespace网络栈包括：网卡、回环设备、路由表、iptables规则。&lt;/p&gt;
 &lt;h2 id=&#34;network-namespace&#34;&gt;Network Namespace&lt;/h2&gt;
@@ -1124,13 +1124,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/ol&gt;
 &lt;h1 id=&#34;安全&#34;&gt;安全&lt;/h1&gt;
 &lt;p&gt;进程的权限分为两类，特权用户进程(进程有效用户ID是0，root用户的进程)、非特权用户进程(进程有效用户ID非0，非root用户的进程)，特权用户可以执行Linux系统上所有操作，而非特权用户执行这些操作会被内核限制。&lt;/p&gt;
-&lt;p&gt;在kernel2.2开始，Linux把特权用户的特权做了划分，每个被划分出来的单元称为capability，比如运行iptables命令，对应的进程需要有CAP_NET_ADMIN这个capability。非root用户启动的进程默认没有任务capabilities，root用户则包含了所有。子父进程的capabilities有继承属性。查看进程拥有的capability命令：&lt;code&gt;cat /proc/[pid]/status | grep Cap&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;在kernel2.2开始，Linux把特权用户的特权做了划分，每个被划分出来的单元称为capability，比如运行iptables命令，对应的进程需要有CAP_NET_ADMIN这个capability。非root用户启动的进程默认没有任何capabilities，root用户则包含了所有。子父进程的capabilities有继承属性。查看进程拥有的capability命令：&lt;code&gt;cat /proc/[pid]/status | grep Cap&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;对于privileged容器，实际上就是拥有了所有capability，允许执行所有特权操作，比如docker容器启动时增加参数 &lt;code&gt;--privileged&lt;/code&gt;。容器缺省启动时，是root用户，但只允许了15个capabilities。&lt;/p&gt;
 &lt;p&gt;一般只给容器所需操作的最小capabilities，而不是直接给privileged，因为privileged的权限太大，容器可以轻易获取宿主机上的所有资源，比如直接访问磁盘设备，修改宿主机上的文件。&lt;/p&gt;
 &lt;p&gt;为了保证容器运行不对宿主机造成安全影响，可以在容器中指定用户。&lt;/p&gt;
-&lt;p&gt;在docker中，启动容器命令后面加&lt;code&gt;-u [uid]/[gid]&lt;/code&gt;，或者在写Dockerfile时指定(这样启动容器就不用加-u)，容器里的用户与宿主机上的用户共享，即&lt;strong&gt;容器上的uid实际上是宿主机上的uid(root用户也是，只是容器里capabilities只有15个，而宿主机上的root有全部)&lt;/strong&gt;，这样会产生限制，因为在Linux上每个用户的资源是有限的，比如打开文件数目、最大进程数等，如果有多个容器共享同一个uid，就会互相影响。&lt;/p&gt;
+&lt;p&gt;在docker中，启动容器命令后面加&lt;code&gt;-u [uid]/[gid]&lt;/code&gt;，或者在写Dockerfile时指定(这样启动容器就不用加-u)，&lt;strong&gt;容器里的用户与宿主机上的用户共享，即容器上的uid实际上是宿主机上的uid(root用户也是，只是容器里capabilities只有15个，而宿主机上的root有全部)&lt;/strong&gt;，这样会产生限制，因为在Linux上每个用户的资源是有限的，比如打开文件数目、最大进程数等，如果有多个容器共享同一个uid，就会互相影响。&lt;/p&gt;
 &lt;p&gt;为了解决容器uid共享问题，可以使用User Namespace。&lt;/p&gt;
-&lt;p&gt;User Namespace本质上是将容器中的uid/gid与宿主机上的uid/gid建立映射，同时也支持嵌套映射。比如划分宿主机上的uid的范围1000-1999，对应容器uid的0到999，容器里uid也可以继续嵌套映射。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;User Namespace本质上是将容器中的uid/gid与宿主机上的uid/gid建立映射&lt;/strong&gt;，同时也支持嵌套映射。比如划分宿主机上的uid的范围1000-1999，对应容器uid的0到999，容器里uid也可以继续嵌套映射。&lt;/p&gt;
 &lt;p&gt;使用User Namespace，可以把容器中root用户映射称宿主机上的普通用户，解决uid冲突共享问题，&lt;strong&gt;目前Kebernetes还不支持User Namespace(当前时间20210920，不过github上有pr了)&lt;/strong&gt;&lt;/p&gt;
 &lt;h1 id=&#34;runc-与-oci&#34;&gt;runC 与 OCI&lt;/h1&gt;
 &lt;ul&gt;
@@ -1174,6 +1174,8 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
 &lt;p&gt;极客时间-深入剖析k8s-张磊&lt;/p&gt;
 &lt;p&gt;极客时间-容器实战高手课&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://tech.meituan.com/2015/03/31/cgroups.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Linux资源管理之cgroups简介&lt;/a&gt;&lt;/p&gt;
 </description>
         </item>
         <item>
@@ -2289,7 +2291,7 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;用户进入视频 / 直播间 页面，拉取正在观看视频的用户列表，接收持续发布的弹幕消息，自己发消息。&lt;/p&gt;
 &lt;p&gt;弹幕要分清是需要实时还是可接受延迟，是直播的时候用，还是视频、录播的时候用，这涉及到弹幕信息要不要保存，一般来说，客户端接收弹幕信息有以下两种方案：&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;客户端轮询&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;用户在前端写入消息，消息发完服务端，为消息赋完序号后，直接丢给kafka，下游服务消费kafa的消息，将消息存入Redis（以Zadd的方式写入，score消息的小队时间）；&lt;/p&gt;
+&lt;p&gt;用户在前端写入消息，消息发往服务端，为消息赋完序号后，直接丢给kafka，下游服务消费kafa的消息，将消息存入Redis（以Zadd的方式写入，score消息的小队时间）；&lt;/p&gt;
 &lt;p&gt;前端每2s向后端发起轮询，后端查询Redis返回；&lt;/p&gt;
 &lt;p&gt;但是客户端轮询的方式，始终对服务端的压力较大，一般采用websocket长连接的方式进行推送弹幕信息。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Websocket&lt;/strong&gt;&lt;/p&gt;
@@ -9268,7 +9270,7 @@ Data ----------- 提案内容
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;安全性&#34;&gt;安全性&lt;/h3&gt;
 &lt;p&gt;Raft通过给选举和日志复制增加规则，保证当Leader crash后，能在众多Follower中选举出有最新日志条目的Follower成为新Leader。&lt;/p&gt;
-&lt;p&gt;当节点收到选举投票时，需检查发出选举消息的节点的最后一条日志的任期号，若小于自己则拒绝投票，如果相同，日志比自己短，也拒绝投。节点需将投票信息持久化，防止异常重启后再投票给其他节点。&lt;/p&gt;
+&lt;p&gt;当节点收到选举投票时，需检查发出选举消息的节点的最后一条日志的任期号，若小于自己则拒绝投票，如果相同，日志比自己短，也拒绝投票。节点需将投票信息持久化，防止异常重启后再投票给其他节点。&lt;/p&gt;
 &lt;p&gt;在复制上，通过Leader完全特性、只附加原则和日志匹配保证Leader提交消息并广播给其他节点后crash，这条新消息不会被其他节点删除的问题和各个节点的同Raft日志位置含有相同的日志条目。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;完全特性：某个日志条目在某个任期号中已被提交，那么这个条目必然出现在更大任期号的所有Leader中&lt;/li&gt;
@@ -10076,7 +10078,7 @@ Data ----------- 提案内容
 &lt;/figure&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;在单Reactor单线程模型的基础上，因为Handler的处理流程相对固定，就将比较耗时的业务处理包装成任务交由线程池处理，加快Handler的处理速度&lt;/li&gt;
-&lt;li&gt;实际上如果只是在Handler处将业务逻辑交给线程池去做，在同步等待结果，只是一种伪异步，本质上Handler还是要等任务执行完才能执行send操作。优化的方法是先将Handler存起来，把业务处理提交给线程池后，就结束handler的执行了，这样就能把主线程释放出来，处理其他事件。当线程池里的任务执行完，只需将结果、handlerId、事件交由Reactor，Reactor根据事件和HandlerId找到对应的Handler去响应结果就可以了。&lt;/li&gt;
+&lt;li&gt;实际上如果只是在Handler处将业务逻辑交给线程池去做，再同步等待结果，只是一种伪异步，本质上Handler还是要等任务执行完才能执行send操作。优化的方法是先将Handler存起来，把业务处理提交给线程池后，就结束handler的执行了，这样就能把主线程释放出来，处理其他事件。当线程池里的任务执行完，只需将结果、handlerId、事件交由Reactor，Reactor根据事件和HandlerId找到对应的Handler去响应结果就可以了。&lt;/li&gt;
 &lt;li&gt;由于业务处理使用了多线程，需要注意共享数据的问题，处理起来会比较复杂，线程安全只存在于Reactor所在的线程&lt;/li&gt;
 &lt;li&gt;Reactor需要处理的事件变多，高并发下容易出现性能瓶颈&lt;/li&gt;
 &lt;/ul&gt;
@@ -12318,7 +12320,7 @@ value：无
 &lt;p&gt;都是基于主从部署，有普通集群模式和镜像集群模式，&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;普通集群模式：多台机器，每台部署一个RabbitMQ实例，我们创建的队列，&lt;strong&gt;只会放在一个实例上，但每个实例都会同步队列里的元数据&lt;/strong&gt;（元数据是队列的一些配置信息，可以通过其找到队列所在的实例），消费的时候，如果&lt;strong&gt;连接到了另一个实例，那么该实例会从队列所在实例上拉去数据过来消费&lt;/strong&gt;，实现多个节点服务某个队列的读写操作；&lt;/li&gt;
-&lt;li&gt;镜像集群模式：我们所创建的队列，无论元数据还是队列里的消息都会存在多个实例上，即每个RabbitMQ节点都有这个队列的一个完整镜像，包含队列里的全部数据。&lt;strong&gt;队列每次收到消息时，都会自动把消息同步到多个实例的队列上，每个节点都有这个队列的完整数据&lt;/strong&gt;，所以任意一台机器宕机了，还可以从别的机器进行消费，但这种方式对带宽压力比较大；&lt;/li&gt;
+&lt;li&gt;镜像集群模式：我们所创建的队列，&lt;strong&gt;无论元数据还是队列里的消息都会存在多个实例上&lt;/strong&gt;，即每个RabbitMQ节点都有这个队列的一个完整镜像，包含队列里的全部数据。&lt;strong&gt;队列每次收到消息时，都会自动把消息同步到多个实例的队列上，每个节点都有这个队列的完整数据&lt;/strong&gt;，所以任意一台机器宕机了，还可以从别的机器进行消费，但这种方式对带宽压力比较大；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;kafka&#34;&gt;Kafka&lt;/h2&gt;
 &lt;ul&gt;
@@ -12344,7 +12346,7 @@ value：无
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Offset：Kafka存在两个位移字段，一个是消息位移，表示分区中每条消息的位置，单调递增；另一个是消费者位移，表示每个消费者在消费过程中会记录它当前消费到分区的哪个位置上，代表消费者的消费进度；&lt;/p&gt;
-&lt;p&gt;Kafka的存储文件通过 [offset].kafka 来命名，方便根据offset进行查找；&lt;/p&gt;
+&lt;p&gt;Kafka的存储文件通过 &lt;code&gt;[offset].kafka&lt;/code&gt; 来命名，方便根据offset进行查找；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Rebalance：消费组有重平衡功能，当组内某个消费者挂掉后，其他消费者会自动重新分配订阅主题的分区进行消费；&lt;/p&gt;
@@ -12507,7 +12509,7 @@ value：无
 &lt;p&gt;一般情况下，第一个发送JoinGroup请求的成员自动成为领导者，之后由领导者制定分区分配方案；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;领导者向协调者发送SyncGroup请求，Leader 将 1 中制定的分配方案发送给协调者，其他成员也会向协调者发送SyncGroup请求，只是请求中没有实际内容，这一步主要是让协调者接收分配方案后，统一以SyncGroup响应的方式分发给所有成员们，使得组内所有成员都知道自己该消费哪些分区。&lt;/p&gt;
+&lt;p&gt;领导者向协调者发送SyncGroup请求，领导者将 1 中制定的分配方案发送给协调者，其他成员也会向协调者发送SyncGroup请求，只是请求中没有实际内容，这一步主要是让协调者接收分配方案后，统一以SyncGroup响应的方式分发给所有成员们，使得组内所有成员都知道自己该消费哪些分区。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
 &lt;h3 id=&#34;位移主题&#34;&gt;位移主题&lt;/h3&gt;
@@ -15581,7 +15583,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;etcd采用raft算法，一个写请求要经过集群多数节点确认，所以一旦分布式锁申请成功返回给client时，锁数据一定是持久化了集群多数节点上，不会出现Redis那种主备异步复制，当主机宕机，从机和主机数据不一致的情况。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;事务功能：etcd事务由IF、THEN、ELSE语句组成，可以比较key的修改版本号mod_revision和创建版本号create_revision，因此可以通过创建版本号create_revision检查key是否已存在，当key不存在时，创建版本号为0，此时可以进行put操作。&lt;/li&gt;
-&lt;li&gt;Lease 功能：可以保证分布式锁的安全性，为锁对应的 key 配置租约，即使锁的持有者因故障而不能主动释放锁，锁也会因租约到期而自动释放，同时也支持续约。此特性解决了client出现crash故障，client与ectd集群网络出现隔离等场景下的死锁问题。一旦Lease TTL，key就会自动释放，确保其他client在TTL过期后能正常申请锁。&lt;/li&gt;
+&lt;li&gt;Lease 功能：可以保证分布式锁的安全性，为锁对应的 key 配置租约，即使锁的持有者因故障而不能主动释放锁，锁也会因租约到期而自动释放，同时也支持续约。此特性解决了client出现crush故障，client与ectd集群网络出现隔离等场景下的死锁问题。一旦Lease TTL，key就会自动释放，确保其他client在TTL过期后能正常申请锁。&lt;/li&gt;
 &lt;li&gt;watch功能：在实现分布式锁时，如果抢锁失败，可通过 Prefix 机制返回的 KeyValue 列表获得 Revision 比自己小且相差最小的 key（称为 pre-key），对 pre-key 进行监听，因为只有它释放锁，自己才能获得锁，如果 Watch 到 pre-key 的 DELETE 事件，则说明pre-ke已经释放，自己已经持有锁。&lt;/li&gt;
 &lt;li&gt;prefix功能：例如，一个名为 /mylock 的锁，两个争抢它的客户端进行写操作，实际写入的 key 分别为：key1=”/mylock/UUID1″，key2=”/mylock/UUID2″，其中，UUID 表示全局唯一的 ID，确保两个 key 的唯一性。很显然，写操作都会成功，但返回的 Revision 不一样，通过前缀 /mylock 查询，返回包含两个 key-value 对的的 KeyValue 列表，同时也包含它们的 Revision，通过 Revision 大小，客户端可以判断自己是否获得锁，如果抢锁失败，则等待锁释放（对应的 key 被删除或者租约过期），然后再判断自己是否可以获得锁。并配合上一条的watch功能使用。&lt;/li&gt;
 &lt;li&gt;reversion功能：如上一条所述，每个 key 带有一个 Revision 号，每进行一次事务加一，因此它是全局唯一的，如初始值为 0，进行一次 put(key, value)，key 的 Revision 变为 1；同样的操作，再进行一次，Revision 变为 2；换成 key1 进行 put(key1, value) 操作，Revision 将变为 3。多线程获取锁时，通过比较reversion的大小即可知道获取的顺序，避免&amp;quot;惊群效应&amp;quot;（指的是当锁被释放，会导致所有监听该key的client都尝试发起事务获取锁，性能较差）。&lt;/li&gt;
@@ -15850,7 +15852,7 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;redisObject&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
     &lt;span class=&#34;c1&#34;&gt;// 类型，如String、List
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;unsigned&lt;/span&gt; &lt;span class=&#34;nl&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// 编码方式：SDS、压缩列表
+    &lt;span class=&#34;c1&#34;&gt;// 编码方式：如SDS、压缩列表、跳表等
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;unsigned&lt;/span&gt; &lt;span class=&#34;nl&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
     &lt;span class=&#34;c1&#34;&gt;// LRU - 24位, 记录最后一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;unsigned&lt;/span&gt; &lt;span class=&#34;nl&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;LRU_BITS&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// LRU_BITS: 24
@@ -16147,8 +16149,8 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;/ul&gt;
 &lt;h3 id=&#34;淘汰策略中的lru算法&#34;&gt;淘汰策略中的LRU算法&lt;/h3&gt;
 &lt;p&gt;对于LRU算法，如果一些元素被频繁使用，会导致频繁的移动，带来了额外的开销。&lt;/p&gt;
-&lt;p&gt;Redis的LRU算法做了简化，其只会在RedisObject中记录每个数据最近以此访问的时间戳，当出现数据淘汰时，第一次会&lt;em&gt;随机&lt;/em&gt;选出N个数据，作为一个候选集合，比较N个数据的lru字段，把lru字段最小的元素淘汰。&lt;/p&gt;
-&lt;p&gt;再次淘汰时，Redis会挑选&lt;em&gt;那些&lt;/em&gt;LRU的值小于候选集合中最小LRU值的数据，进入第一次淘汰时创建的候选集合，可能会把里面最大的换出去或者淘汰里面最小的。准备候选集和淘汰数据是两个解耦操作。&lt;/p&gt;
+&lt;p&gt;Redis的LRU算法做了简化，其只会在RedisObject中记录每个数据最近以此访问的时间戳，当出现数据淘汰时，第一次会&lt;strong&gt;随机&lt;/strong&gt;选出N个数据，作为一个候选集合，比较N个数据的lru字段，把lru字段最小的元素淘汰。&lt;/p&gt;
+&lt;p&gt;再次淘汰时，Redis会挑选那些LRU的值小于候选集合中最小LRU值的数据，进入第一次淘汰时创建的候选集合，可能会把里面最大的换出去或者淘汰里面最小的。准备候选集和淘汰数据是两个解耦操作。&lt;/p&gt;
 &lt;p&gt;N的值由&lt;code&gt;maxmemory-samples&lt;/code&gt;决定。&lt;/p&gt;
 &lt;h3 id=&#34;淘汰策略中的lfu算法&#34;&gt;淘汰策略中的LFU算法&lt;/h3&gt;
 &lt;p&gt;Redis的LRU算法有个问题是对于非热点数据，其访问次数很少，直到触发淘汰策略才会被删除，在被删除之前都会一直留存，造成缓存污染。LFU算法就是为了解决这个问题。&lt;/p&gt;
@@ -16734,6 +16736,16 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;li&gt;Scheduler监听到API-Server中有新的Pod对象被创建，就会查看Pod是否被调度，如果没有，Scheduler就会给它分配一个最优节点，并更新Pod对象的spec.nodeName属性，随后该Pod对象被同步回API-Server里，并保存在etcd中；&lt;/li&gt;
 &lt;li&gt;最后，节点的kubelet会一直监听API-Server的Pod资源变化，当发现有新的Pod对象分配到自己所在的节点时，kubelet就会通过gRPC通信，通过CRI向容器运行时创建容器，运行起来。&lt;/li&gt;
 &lt;/ol&gt;
+&lt;h2 id=&#34;api-server&#34;&gt;API-Server&lt;/h2&gt;
+&lt;p&gt;api-server在收到请求后，会进行一系列的执行链路。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;认证：校验发起请求的用户身份是否合法，支持多种方式如x509客户端证书认证、静态token认证、webhook认证&lt;/li&gt;
+&lt;li&gt;限速：默认读 400/s，写 200/s，1.19版本以前不支持根据请求类型进行分类、按优先级限速，1.19版本以后支持将请求按重要程度分类限速，支持多租户，可有效保障Leader选举之类的高优先级请求得到及时响应，防止一个异常client导致整个集群被限速。&lt;/li&gt;
+&lt;li&gt;审计：记录用户对资源的详细操作行为&lt;/li&gt;
+&lt;li&gt;授权：检查用户是否有权限对其访问的资源进行相关操作，支持RBAC、ABAC、webhook，1.12版本后默认授权机制是RBAC&lt;/li&gt;
+&lt;li&gt;准入控制：提供在访问资源前拦截请求的静态和动态扩展能力，如镜像拉取策略。&lt;/li&gt;
+&lt;li&gt;与etcd交互&lt;/li&gt;
+&lt;/ol&gt;
 &lt;h2 id=&#34;调度器scheduler&#34;&gt;调度器Scheduler&lt;/h2&gt;
 &lt;p&gt;主要职责就是为新创建的Pod寻找合适的节点，默认调度器会先调用一组叫Predicate的调度算法检查每个Node，再调用一组叫Priority的调度算法为上一步结果里的每个Node打分，将新创建的Pod调度到得分最高的Node上。&lt;/p&gt;
 &lt;h3 id=&#34;原理&#34;&gt;原理&lt;/h3&gt;
@@ -16877,7 +16889,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;PriorityClass里的value值越高，优先级越大，优先级是一个32bit的整数，最大不超过 10亿，超过10亿的值是Kubernetes保留给系统Pod使用，保证系统Pod不会被用户Pod抢占；globalDefault为true表示该PriorityClass的值会成为系统默认值，为false表示只有使用了该PriorityClass的Pod才有优先级，没有声明则默认是0。&lt;/p&gt;
 &lt;h4 id=&#34;抢占过程&#34;&gt;抢占过程&lt;/h4&gt;
-&lt;p&gt;当一个高优先级的Pod调度失败时，调度器会试图从当前集群里寻找一个节点，当该节点上的一个或多个低优先级的Pod被删除后，待调度的高优先级的Pod可用被调度到该节点上，但是抢占过程不是立即发生，而只是在待调度的高优先级的Pod上先设置spec.nominatedNodeName=Node名字，等到下一个调度周期再决定是否针对要运行在该节点上，之所以这么做是因为被删除的Pod有默认的30秒优雅退出时间，在这个过程中，可能有新的更加被适合给高优先级调度的节点加入。&lt;/p&gt;
+&lt;p&gt;当一个高优先级的Pod调度失败时，调度器会试图从当前集群里寻找一个节点，当该节点上的一个或多个低优先级的Pod被删除后，待调度的高优先级的Pod可用被调度到该节点上，但是抢占过程不是立即发生，而只是在待调度的高优先级的Pod上先设置&lt;code&gt;spec.nominatedNodeName=Node名字&lt;/code&gt;，等到下一个调度周期再决定是否针对要运行在该节点上，之所以这么做是因为被删除的Pod有默认的30秒优雅退出时间，在这个过程中，可能有新的更加被适合给高优先级调度的节点加入。&lt;/p&gt;
 &lt;h4 id=&#34;抢占原理&#34;&gt;抢占原理&lt;/h4&gt;
 &lt;p&gt;抢占算法的实现基于两个队列，一个是activeQ队列，存放下一个调度周期里需要调度的Pod；另一个是unschedulableQ队列，存放调度失败的Pod，当一个unschedulableQ里的Pod被更新之后，调度器就会把该Pod移动到activeQ里；&lt;/p&gt;
 &lt;ol&gt;
@@ -16930,7 +16942,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;这里以docker作为容器引擎为例：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;kubectl执行exec命令后，首先发送Get请求到API-Server，获取pod的相关信息；&lt;/li&gt;
-&lt;li&gt;获取到信息后，kubectl再发送Post请求，API-Server返回101 upgrade响应给kubectl，表示切换到 SPDY 协议。SPDY协议允许在单个TCP连接上复用独立的 stdin / stdout / stderr / spdy-err 流。&lt;/li&gt;
+&lt;li&gt;获取到信息后，kubectl再发送Post请求，API-Server返回&lt;code&gt;101 upgrade&lt;/code&gt;响应给kubectl，表示切换到 SPDY 协议。SPDY协议允许在单个TCP连接上复用独立的 stdin / stdout / stderr / spdy-err 流。&lt;/li&gt;
 &lt;li&gt;API-Server找到对应的Pod和容器，将Post请求转发到节点的Kubelet，再转发到向对应容器的Docker shim请求一个流式端点URL，并将exec请求转发到Docker exec API。Kubelet再将这个URL以 redirect 的方式返回给API-Server，请求就会重定向到对应的Streaming Server上发起exec请求，并维护长连接，之后就是在这个长连接的基础上执行命令和获取结果了。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;除了exec命令意外，其他的如 attach、port-forward、logs 等命令也是类似的模式。&lt;/p&gt;
@@ -16970,15 +16982,6 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;Kubernetes 1.13版本后，节点处于不同的状态时将被打上不同的污点，节点上的Pod就可以基于污点在不同的状态被驱逐了，这个时候Pod被迁移的时间就不定了。&lt;/p&gt;
 &lt;h2 id=&#34;etcd&#34;&gt;etcd&lt;/h2&gt;
 &lt;p&gt;etcd作为Kubernetes的元数据存储，kube-apiserver是唯一直接跟etcd交互的组件，kube-apiserver对外提供的监听机制底层实现就是etcd的watch。&lt;/p&gt;
-&lt;p&gt;api-server在收到请求后，会进行一系列的执行链路。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;认证：校验发起请求的用户身份是否合法，支持多种方式如x509客户端证书认证、静态token认证、webhook认证&lt;/li&gt;
-&lt;li&gt;限速：默认读 400/s，写 200/s，1.19版本以前不支持根据请求类型进行分类、按优先级限速，1.19版本以后支持将请求按重要程度分类限速，支持多租户，可有效保障Leader选举之类的高优先级请求得到及时响应，防止一个异常client导致整个集群被限速。&lt;/li&gt;
-&lt;li&gt;审计：记录用户对资源的详细操作行为&lt;/li&gt;
-&lt;li&gt;授权：检查用户是否有权限对其访问的资源进行相关操作，支持RBAC、ABAC、webhook，1.12版本后默认授权机制是RBAC&lt;/li&gt;
-&lt;li&gt;准入控制：提供在访问资源前拦截请求的静态和动态扩展能力，如镜像拉取策略。&lt;/li&gt;
-&lt;li&gt;与etcd交互&lt;/li&gt;
-&lt;/ol&gt;
 &lt;h3 id=&#34;资源存储格式&#34;&gt;资源存储格式&lt;/h3&gt;
 &lt;p&gt;资源以 &lt;code&gt;prefix + / + 资源类型 + / + namespace + / + 具体资源名称&lt;/code&gt; 组成，作为key。基于etcd提供的范围查询能力，支持按具体资源名称查询、namespace查询。默认的prefix是 /registry。&lt;/p&gt;
 &lt;p&gt;对于基于label查询，是由api-server通过范围查询遍历etcd获取原始数据，然后再通过label过滤。&lt;/p&gt;
@@ -17013,7 +17016,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;h2 id=&#34;pod&#34;&gt;Pod&lt;/h2&gt;
 &lt;p&gt;Pod是最小的API对象。Pod中的容器会作为一个整体被Master打包调度到一个节点上运行。&lt;/p&gt;
 &lt;p&gt;由于不同容器间需要共同协作，如war包和tomcat，就需要把它们包装成一个pod，概念类似于进程与进程组，pod并不是真实存在的，只是逻辑划分。&lt;/p&gt;
-&lt;p&gt;同一个pod里的所有容器，共享同一个Network Namespace，也可以共享同一个Volume。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;同一个pod里的所有容器，共享同一个Network Namespace，也可以共享同一个Volume&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;这种把多个容器组合打包在一起管理的模式也称为容器设计模式。&lt;/p&gt;
 &lt;p&gt;另外还有静态Pod：&lt;/p&gt;
 &lt;blockquote&gt;
@@ -17021,7 +17024,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;原理-1&#34;&gt;原理&lt;/h3&gt;
 &lt;p&gt;由于不同容器间可能存在依赖关系（如启动顺序的依赖），因此k8s会起一个中间容器Infra容器，来关联其他容器，infra容器一定是最先起的，其他容器通过Join Network Namespace的方式与Infa容器进行关联。&lt;/p&gt;
-&lt;p&gt;一个 Pod 只有一个 IP 地址，由Pod内容器共享，Pod 的生命周期只跟 Infra 容器一致，Infra管理共享资源。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;一个 Pod 只有一个 IP 地址，由Pod内容器共享，Pod 的生命周期只跟 Infra 容器一致，Infra管理共享资源&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;kubelet会为每个节点上创建一个基本的cbr0网桥，并为每一个Pod创建veth虚拟网络设备，绑定一个IP地址，同一个Pod中的所有容器会通过这个网络设备共享网络，从而能通过localhost相互访问彼此暴露的端口和服务。&lt;/p&gt;
 &lt;p&gt;对于initContainer命令的作用是按配置顺序最先执行，执行完之后才会执行container命令，例如，对war包所在容器使用initContainer命令，将war包复制到挂载的卷下后，再执行tomcat的container命令启动tomcat以此来启动web应用，这种先启动一个辅助容器来完成一些独立于主进程（主容器）之外的工作，称为sidecar，边车。&lt;/p&gt;
 &lt;p&gt;Pod可以理解为一个机器，容器是里面的进程，凡是调度、网络、储存、安全相关、跟namespace相关的属性，都是Pod级别的。&lt;/p&gt;
@@ -17186,7 +17189,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/div&gt;
 &lt;/div&gt;&lt;h4 id=&#34;serviceaccounttoken&#34;&gt;serviceAccountToken&lt;/h4&gt;
 &lt;p&gt;serviceAccountToken是一种特殊的Secret，一般用于访问Kubernetes API Server时提供token作为验证的凭证。Kubernets提供了一个默认的default Service Account，任何运行在Kubernets中的Pod都可以使用，无需显式声明挂载了它。&lt;/p&gt;
-&lt;p&gt;默认挂载路径：/var/run/secrets/kubernetes.io/serviceaccount，里面包含了ca.crt，namespace，token三个文件，用于授权当前Pod访问API Server。&lt;/p&gt;
+&lt;p&gt;默认挂载路径：&lt;code&gt;/var/run/secrets/kubernetes.io/serviceaccount&lt;/code&gt;，里面包含了&lt;code&gt;ca.crt，namespace，token&lt;/code&gt;三个文件，用于授权当前Pod访问API Server。&lt;/p&gt;
 &lt;p&gt;如果要让Pod拥有不同访问API Server的权限，就需要不同的service account，也就需要不同的token了。&lt;/p&gt;
 &lt;h4 id=&#34;挂载宿主机上的目录&#34;&gt;挂载宿主机上的目录&lt;/h4&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -17241,7 +17244,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/data&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;声明了两个容器，都挂载了shared-data这个Volume，且该Volume是hostPath，对应宿主机上的/data目录，所以么，nginx-container 可 以 从 它 的/usr/share/ nginx/html 目 录 中， 读取到debian-container生 成 的 index.html文件。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;声明了两个容器，都挂载了shared-data这个Volume，且该Volume是hostPath，对应宿主机上的/data目录，所以么，nginx-container 可 以 从 它 的&lt;code&gt;/usr/share/ nginx/html&lt;/code&gt; 目 录 中， 读取到debian-container生 成 的 index.html文件。&lt;/p&gt;
 &lt;h3 id=&#34;pod的资源分配-qos&#34;&gt;Pod的资源分配 QoS&lt;/h3&gt;
 &lt;p&gt;Pod的资源分配由定义的Container决定，比如&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -17300,7 +17303,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;当发生资源（Eviction）回收时的策略：&lt;/p&gt;
 &lt;p&gt;首当其冲的，自然是BestEffort类别的Pod。&lt;/p&gt;
 &lt;p&gt;其次，是属于Burstable类别、并且发生“饥饿”的资源使用量已经超出了requests的Pod。&lt;/p&gt;
-&lt;p&gt;最后，才是Guaranteed类别。并且，Kubernetes会保证只有当Guaranteed类别的Pod的资源使用量超过了其limits的限制，或者宿主机本身正处于Memory Pressure状态时，Guaranteed的Pod才可能被选中进行Eviction操 作。&lt;/p&gt;
+&lt;p&gt;最后，才是Guaranteed类别。并且，Kubernetes会保证只有当Guaranteed类别的Pod的资源使用量超过了其limits的限制，或者宿主机本身正处于Memory Pressure状态时，Guaranteed的Pod才可能被选中进行Eviction操作。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h3 id=&#34;pod中的健康检查&#34;&gt;Pod中的健康检查&lt;/h3&gt;
 &lt;p&gt;对于Web应用，最简单的就是由Web应用提供健康检查的接口，我们在定义的API对象的时候设置定时请求来检查运行在容器中的web应用是否健康，主要是为了防止服务未启动完成就被打入流量或者长时间未响应依然没有重启等问题。&lt;/p&gt;
@@ -17335,7 +17338,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/div&gt;
 &lt;/div&gt;&lt;h3 id=&#34;pod的恢复机制&#34;&gt;Pod的恢复机制&lt;/h3&gt;
 &lt;p&gt;API对象中&lt;code&gt;spec.restartPolicy&lt;/code&gt;字段用来描述Pod的恢复策略，默认是always，即容器不在运行状态则重启，OnFailure是只有容器异常时才自动重启，Never是从来不重启容器&lt;/p&gt;
-&lt;p&gt;Pod的恢复过程，永远发生在当前节点，即跟着API对象定义的spec.node的对应的节点，如果要发生在其他节点，则需要deployment的帮助。&lt;/p&gt;
+&lt;p&gt;Pod的恢复过程，永远发生在当前节点，即跟着API对象定义的&lt;code&gt;spec.node&lt;/code&gt;的对应的节点，如果要发生在其他节点，则需要deployment的帮助。&lt;/p&gt;
 &lt;p&gt;当Pod的restartPolicy是always时，Pod就会保持Running状态，无论里面挂掉多少个，因为Pod总会重启这些容器；当restartPolicy是never时，Pod里的所有容器都挂了，才会变成Failed，只有一个容器挂了也是Running。&lt;/p&gt;
 &lt;p&gt;不能简单的依赖Pod的status字段，而是要通过livenessProbe或者readnessProbe来的健康检查来判断是否需要恢复。&lt;/p&gt;
 &lt;h3 id=&#34;podpreset&#34;&gt;PodPreset&lt;/h3&gt;
@@ -21518,7 +21521,7 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;p&gt;设置http缓存规则，控制缓存开关，缓存策略，缓存的有效时间等，请求头和响应头有不同的枚举值&lt;/p&gt;
 &lt;h3 id=&#34;keep-alive&#34;&gt;keep-alive&lt;/h3&gt;
 &lt;p&gt;保持长连接，连接复用，避免频繁建立连接带来的性能损耗。HTTP1.0默认是关闭的，HTTP1.1默认是开启的。对应的key是Connection。可以设置参数&lt;code&gt;Keep-Alive: max=5, timeout=120&lt;/code&gt;表示一次keep-alive可以发送的请求次数是5，连接保持时间是120s，&lt;strong&gt;默认是2小时&lt;/strong&gt;，可以一直进行HTTP请求，但&lt;strong&gt;一个TCP连接同一时间只支持一个HTTP请求&lt;/strong&gt;。&lt;/p&gt;
-&lt;p&gt;不同的浏览器对同一Host建立的TCP连接数量的限制取决于浏览器本身，像Chrome最多允许同时建立6个TCP连接，假如一个HTML页面有很多图片需要加载，且这些图片都是同一Host，且HTTPs，那浏览器在SSL后会和服务器商品是否启用HTTP2，如果启用就可以同一连接下同时下载多个，如果不启用，就仍然用那几个连接，排队去等了。&lt;/p&gt;
+&lt;p&gt;不同的浏览器对同一Host建立的TCP连接数量的限制取决于浏览器本身，像Chrome最多允许同时建立6个TCP连接，假如一个HTML页面有很多图片需要加载，且这些图片都是同一Host，且HTTPs，那浏览器在SSL后会和服务器确认是否启用HTTP2，如果启用就可以同一连接下同时下载多个，如果不启用，就仍然用那几个连接，排队去等了。&lt;/p&gt;
 &lt;p&gt;与TCP的keep-alive不同：&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;ul&gt;
@@ -21572,8 +21575,8 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;p&gt;每个会话会生成一个会话密钥，每个会话的会话密钥均不同。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;总结：非对称加密的手段传递密钥，然后用密钥进行对称加密传递数据，密钥由客户端生成，每次会话密钥都不一样，CA会保存服务端提供的非对称加密的公钥并签名；&lt;/p&gt;
-&lt;p&gt;过程中，客户端会产生两个随机数，第一个用于制作会话密钥，第二个用于验证公钥是否可用；服务端会生成一个随机数，给客户端制作会话密钥；&lt;/p&gt;
+&lt;p&gt;总结：非对称加密的手段传递密钥，然后用密钥进行对称加密传递数据，对称加密的密钥由客户端生成，每次会话密钥都不一样，CA会保存服务端提供的非对称加密的公钥并签名；&lt;/p&gt;
+&lt;p&gt;过程中，客户端会产生两个随机数，第一个用于制作会话密钥(对报文做对称加密时使用)，第二个用于验证公钥是否可用；服务端会生成一个随机数，给客户端制作会话密钥；&lt;/p&gt;
 &lt;h1 id=&#34;rsa非对称加密&#34;&gt;RSA非对称加密&lt;/h1&gt;
 &lt;p&gt;例子：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;公钥为（7，33）
@@ -21934,7 +21937,7 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;流量控制和拥塞控制的区别：&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;流量控制是为了让接收方能来得及接收，而拥塞控制是为了降低整个网络的拥塞程度，此时可以把网络链路想象成水管。&lt;/p&gt;
+&lt;p&gt;流量控制是为了让接收方能来得及接收，而拥塞控制是为了降低整个网络的拥塞程度。&lt;/p&gt;
 &lt;p&gt;参考：https://coolshell.cn/articles/11564.html、https://coolshell.cn/articles/11609.html&lt;/p&gt;
 &lt;h1 id=&#34;udpuser-datagram-protocol-用户数据报协议&#34;&gt;UDP（User Datagram Protocol 用户数据报协议）&lt;/h1&gt;
 &lt;h2 id=&#34;特点-1&#34;&gt;特点&lt;/h2&gt;
