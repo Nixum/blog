@@ -17771,7 +17771,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;与事件驱动的区别：事件驱动是被动型，接收到事件就执行相应的操作，事件是一次性，因此操作失败比较难处理，控制循环是不对轮询操作值只状态与期望一致的&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;与事件驱动的区别：事件驱动是被动型，接收到事件就执行相应的操作，事件是一次性，因此操作失败比较难处理，控制循环是不断轮询判断实际状态是否与期望一致。&lt;/p&gt;
 &lt;h3 id=&#34;deployment&#34;&gt;Deployment&lt;/h3&gt;
 &lt;p&gt;最基本的控制器对象，管理Pod的工具，比如管理多个相同Pod的实例，Deployment和ReplicaSet都能控制Pod的数量，但一般我们使用的还是Deployment，因为其还有其他功能，比如滚动更新、回滚、暂停和恢复等。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -17839,7 +17839,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/div&gt;&lt;p&gt;Deployment想要实现水平扩展/收缩，实际操控的是ReplicaSet对象，而ReplicaSet管理着定义数量的Pod，所以它是一种三层结构，Deployment -&amp;gt; ReplicaSet -&amp;gt; 多个平行的Pod，Deployment是一个两层控制器，Deployment控制的是RepliocaSet的版本，ReplicaSet控制的是Pod的数量。&lt;/p&gt;
 &lt;p&gt;ReplicaSet表示版本，比如上面那份配置，replicas:2是一个版本，replicas:3是一个版本，这里是因为数量不同产生两个版本，每一个版本对应着一个ReplicaSet，由Deployment管理。&lt;/p&gt;
 &lt;p&gt;ReplicaSet是ReplicationController的升级版，都用于确保运行指定数量的Pod副本（像滚动更新、回滚、启动、暂停之类的功能则由Deployment提供），ReplicationController只支持基于等式的selector，比如&lt;code&gt;xxx = yyy或xxx != yyy&lt;/code&gt;，而ReplicaSet支持基于集合的selector，比如 &lt;code&gt;matchExpressions: {key: tier, operator: In, values: [frontend]}&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;当我们修改Deployment的replicas字段时，会触发水平扩展/收缩，修改template.Image或者版本号时，就会触发滚动更新，默认是滚动更新RollingUpdate，另外还能设置成重建Recreate，表示Deployment在更新Pod时，先kill掉所有在运行的Pod，然后创建新的Pod。&lt;/p&gt;
+&lt;p&gt;当我们修改Deployment的replicas字段时，会触发水平扩展/收缩，修改&lt;code&gt;template.Image&lt;/code&gt;或者版本号时，就会触发滚动更新，默认是滚动更新RollingUpdate，另外还能设置成重建Recreate，表示Deployment在更新Pod时，先kill掉所有在运行的Pod，然后创建新的Pod。&lt;/p&gt;
 &lt;p&gt;Controller Manager中的DeploymentController作为管理Deployment资源的控制器，会在启动时通过Informer监听Pod、ReplicaSet和Deployment的变更，一旦变更就会触发DeploymentController中的回调；&lt;/p&gt;
 &lt;p&gt;初始化创建Deployment时，Kubernetes会创建了一个ReplicaSet，并按用户的需求创建了对应数量的Pod副本，当Deployment更新时，Kubernetes会再创建一个新的ReplicaSet，然后按照相同的更新策略逐个调整，将老的ReplicaSet的副本数-1，新ReplicaSet的副本数+1，直到新的ReplicaSet的副本数符合预期，老的ReplicaSet副本数缩减为0。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -17880,14 +17880,14 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;StatefulSet通过PVC + PV + 编号的方式，实现 数据存储与Pod的绑定。每个Pod都会根据编号与对应的PVC绑定，当Pod被删除时，并不会删掉对应的PV，因此在起新的Pod的时候，会根据PVC找到原来的PV。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;StatefulSet&lt;strong&gt;直接管理&lt;/strong&gt;Pod，每个Pod不再认为只是复制集，而是会有hostname、名字、编号等的不同，并生成对应的带有相同编号的DNS记录，对应的带有相同编号的PVC，保证每个Pod都拥有独立的Volume。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;StatefulSet直接管理Pod&lt;/strong&gt;，每个Pod不再认为只是复制集，而是会有hostname、名字、编号等的不同，并生成对应的带有相同编号的DNS记录，对应的带有相同编号的PVC，保证每个Pod都拥有独立的Volume。&lt;/p&gt;
 &lt;p&gt;对于一个副本数为n的StatefulSet，Pod被部署时是按照0~n-1的序号顺序创建的，会等待前一个Pod变为Running和Ready才会启动下一个Pod。使用配置&lt;code&gt;spec.podManagementPolicy: &amp;quot;Parallel&amp;quot;&lt;/code&gt;则可以使得Pod同时创建。&lt;/p&gt;
-&lt;p&gt;StatefulSet的滚动更新，会按照与Pod编号相反的顺序，逐一更新，，如果发生错误，滚动更新会停止；&lt;/p&gt;
+&lt;p&gt;StatefulSet的滚动更新，会按照与Pod编号相反的顺序，逐一更新，如果发生错误，滚动更新会停止；&lt;/p&gt;
 &lt;p&gt;StatefulSet支持按条件更新，通过对&lt;code&gt;spec.updateStrategy.rollingUpdate的partition字段&lt;/code&gt;进行配置，可实现金丝雀部署或灰度发布。比如：&lt;code&gt;{&amp;quot;spec&amp;quot;:{&amp;quot;updateStrategy&amp;quot;:{&amp;quot;type&amp;quot;:&amp;quot;RollingUpdate&amp;quot;,&amp;quot;rollingUpdate&amp;quot;:{&amp;quot;partition&amp;quot;:3}}}}&lt;/code&gt;进行设置后，再继续对&lt;code&gt;spec.template&lt;/code&gt;里进行修改，StatefulSet会对序号大于或等于此序号的Pod进行更新，小于此序号的保存旧版本不变，即使这些Pod被删除和重建，也是用的旧版本。&lt;/p&gt;
 &lt;p&gt;也可以设置&lt;code&gt;spec.updateStrategy.type: OnDelete&lt;/code&gt;时，当&lt;code&gt;spec.template&lt;/code&gt;发生变化时，Pod不会进行更新，需要手动删除，让StatefulSet来重新产生Pod，才会使用新的设置。&lt;/p&gt;
 &lt;p&gt;StatefulSet可用于部署有状态的应用，比如有主从节点MySQL集群，在这个case中，虽然Pod会有相同的template，但是主从Pod里的sidecar执行的动作不一样，而主从Pod可以根据编号来实现，不同类型的Pod存储通过PVC + PV实现。&lt;/p&gt;
-&lt;p&gt;StatefulSet的删除支持级联和非级联两种，非级联删除时，只会删除StatefulSet控制器，不会删除对应的Pod，需要使用参数&lt;code&gt;--cascade=orphan&lt;/code&gt;。当StatefulSet被重新创建时，会再执行一遍Pod的创建，同时下掉之前非级联删除的Pod。非级联删除StatefulSet时，不会删除其对应的Pod相关联的PV卷&lt;/p&gt;
-&lt;p&gt;StatefulSet主要由StatefulSetController、StatefulSetControl和StatefulPodControl三个组件协作来完成StatefulSet的管理，StatefulSetController会同时从PodInformer和ReplicaSetInformer中接受增删查改事件并将事件推送到队列中。&lt;/p&gt;
+&lt;p&gt;StatefulSet的删除支持级联和非级联两种，非级联删除时，只会删除StatefulSet控制器，不会删除对应的Pod，需要使用参数&lt;code&gt;--cascade=orphan&lt;/code&gt;。当StatefulSet被重新创建时，会再执行一遍Pod的创建，同时下掉之前非级联删除的Pod。&lt;strong&gt;非级联删除StatefulSet时，不会删除其对应的Pod相关联的PV卷&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;StatefulSet主要由StatefulSetController、StatefulSetControl和StatefulPodControl三个组件协作来完成；StatefulSet的管理，StatefulSetController会同时从PodInformer和ReplicaSetInformer中接受增删查改事件并将事件推送到队列中。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -17953,15 +17953,15 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h3 id=&#34;daemonset&#34;&gt;DaemonSet&lt;/h3&gt;
-&lt;p&gt;DaemonSet 的会在Kubernetes 集群里的每个节点都运行一个 Daemon Pod，每个节点只允许一个，当有新的节点加入集群后，该Pod会在新节点上被创建出来，节点被删除，该Pod也被删除。&lt;/p&gt;
 &lt;p&gt;一般的Pod都需要节点准备好了(即node的状态是Ready)才可以调度上去，但是有些Pod需要在节点还没准备好的时候就需要部署上去，比如网络相关的Pod，因此需要使用DaemonSet。&lt;/p&gt;
+&lt;p&gt;DaemonSet 的会在Kubernetes 集群里的每个节点都运行一个 Daemon Pod，每个节点只允许一个，当有新的节点加入集群后，该Pod会在新节点上被创建出来，节点被删除，该Pod也被删除。&lt;/p&gt;
 &lt;p&gt;DaemonSet Controller通过 控制循环，在etcd上获取所有Node列表，判断节点上是否已经运行了标签为xxx的Pod，来保证每个节点上只有一个。可以通过在Pod上声明nodeSelector、nodeAffinity、tolerations字段告诉控制器如何选择node。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;在node上打上标签，即可通过nodeSelector选择对应的node；&lt;/li&gt;
 &lt;li&gt;nodeAffinity的功能比nodeSelector强大，支持更加灵活的表达式来选择节点；&lt;/li&gt;
 &lt;li&gt;tolerations来容忍Pod在被打上污点标签的节点也可以部署，因为一般有污点的节点是不允许将Pod部署在上面的。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;DaemonSet是&lt;strong&gt;直接管理&lt;/strong&gt;Pod的，DaemonSet所管理的Pod的调度过程，都由它自己完成，而不是通过Kube-Scheduler完成， 是因为DaemonSet在创建Pod时，会为其增加spce.nodeName字段，此时以及明确了该Pod要运行在哪个节点，就不需要kube-scheduler来调度了，但也带了问题，无论节点可不可用，DaemonSet都会将该Pod往上面调度。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;DaemonSet是直接管理Pod的&lt;/strong&gt;，DaemonSet所管理的Pod的调度过程，都由它自己完成，而不是通过Kube-Scheduler完成， 是因为DaemonSet在创建Pod时，会为其增加&lt;code&gt;spce.nodeName&lt;/code&gt;字段，此时以及明确了该Pod要运行在哪个节点，就不需要kube-scheduler来调度了，但也带了问题，无论节点可不可用，DaemonSet都会将该Pod往上面调度。&lt;/p&gt;
 &lt;p&gt;DaemonSet的应用一般是网络插件的Agent组件、存储插件的Agent组件、节点监控组件、节点日志收集等。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -18020,8 +18020,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h3 id=&#34;job&#34;&gt;Job&lt;/h3&gt;
-&lt;p&gt;Job是一种特殊的Pod，即那些计算完成之后就退出的Pod，指状态变为complated&lt;/p&gt;
-&lt;p&gt;Job 会使用这种携带了 UID 的 Label，为了避免不同 Job 对象所管理的 Pod 发生重合，Job是直接控制Pod的&lt;/p&gt;
+&lt;p&gt;Job是一种特殊的Pod，即那些计算完成之后就退出的Pod，状态变为complated。&lt;/p&gt;
+&lt;p&gt;Job 会使用这种携带了 UID 的 Label，为了避免不同 Job 对象所管理的 Pod 发生重合，Job是直接控制Pod的。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -18038,17 +18038,26 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;completions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;backoffLimit表示失败后的重试次数，下一次重试的动作分别发生在10s、20s、40s&lt;/p&gt;
+&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;backoffLimit表示失败后的重试次数，下一次重试的动作分别发生在10s、20s、40s&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;activeDeadlineSeconds表示最长运行的时间，如果超过该限定时间，则会立即结束&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;parallelism表示一个 Job 在任意时间最多可以启动多少个 Pod 同时运行&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;completions表示 Job 至少要完成的 Pod 数目，即 Job 的最小完成数&lt;/p&gt;
-&lt;p&gt;Job Controller 在控制循环中进行的调谐（Reconcile）操作，是根据实际在 Running 状态 Pod 的数目、已经成功退出的 Pod 的数目，以及 parallelism、completions 参数的值共同计算出在这个周期里，应该创建或者删除的 Pod 数目，然后调用 Kubernetes API 来执行这个操作，当Job执行完处于complate状态时，并不会退出&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Job Controller 在控制循环中进行的调谐（Reconcile）操作，是根据实际在 Running 状态 Pod 的数目、已经成功退出的 Pod 的数目，以及 parallelism、completions 参数的值共同计算出在这个周期里，应该创建或者删除的 Pod 数目，然后调用 Kubernetes API 来执行这个操作，当Job执行完处于complate状态时，并不会退出。&lt;/p&gt;
 &lt;h3 id=&#34;cronjob&#34;&gt;CronJob&lt;/h3&gt;
-&lt;p&gt;如果仍然使用Deployment管理，因为它会对退出的Pod进行滚动更新，所以并不合适，因此需要使用CronJob；&lt;/p&gt;
-&lt;p&gt;作用类似于Job类似于Pod，CronJob类似于Deployment；&lt;/p&gt;
-&lt;p&gt;Cronjob会每隔10s从api-server中取出资源并进行检查是否触发调度创建新的资源，so Cronjob并不能保证在准确的目标时间执行，有一定的滞后性；&lt;/p&gt;
-&lt;p&gt;CronJob使用 spec.schedule来控制，使用jobTemplate来定义job模板，spec.concurrencyPolicy来控制并行策略&lt;/p&gt;
-&lt;p&gt;spec.concurrencyPolicy=Allow（一个Job没执行完，新的Job就能产生）、Forbid（新Job不会被创建）、Replace（新的Job会替换旧的，没有执行完的Job）；&lt;/p&gt;
+&lt;p&gt;如果仍然使用Deployment管理，因为它会对退出的Pod进行滚动更新，所以并不合适，因此需要使用CronJob，作用类似于Job类似于Pod，CronJob类似于Deployment；&lt;/p&gt;
+&lt;p&gt;Cronjob会每隔10s从api-server中取出资源并进行检查是否触发调度创建新的资源，所以&lt;strong&gt;Cronjob并不能保证在准确的目标时间执行，有一定的滞后性&lt;/strong&gt;；&lt;/p&gt;
+&lt;p&gt;CronJob使用 &lt;code&gt;spec.schedule&lt;/code&gt; 来控制，使用jobTemplate来定义job模板，&lt;code&gt;spec.concurrencyPolicy&lt;/code&gt;来控制并行策略&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;spec.concurrencyPolicy&lt;/code&gt;：=Allow：一个Job没执行完，新的Job就能产生、=Forbi：新Job不会被创建、Replace：新的Job会替换旧的，没有执行完的Job；&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -18119,7 +18128,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/div&gt;
 &lt;/div&gt;&lt;h3 id=&#34;operator-与-控制器原理&#34;&gt;Operator 与 控制器原理&lt;/h3&gt;
 &lt;p&gt;本质是一个控制器，控制自定义的CRD的流程控制，执行自定义CRD的行为。&lt;/p&gt;
-&lt;p&gt;CRD（ Custom Resource Definition），一种API插件机制，允许用户在k8s中添加一个跟Pod、Node类型的，新的API资源，即kind为CustomResourceDefinition，类似于类的概念，这样就可以通过这个类，来创建属于这个类的实例(编写yaml文件)，这个实例就称为CR&lt;/p&gt;
+&lt;p&gt;CRD（ Custom Resource Definition），一种API插件机制，允许用户在k8s中添加一个跟Pod、Node类型的，新的API资源，即kind为CustomResourceDefinition，类似于类的概念，这样就可以通过这个类，来创建属于这个类的实例(编写yaml文件)，这个实例就称为CR。&lt;/p&gt;
 &lt;p&gt;比如有CRD为&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -18172,6 +18181,9 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;其中的资源类型、组、版本号要一一对应&lt;/p&gt;
 &lt;p&gt;上面这些操作只是告诉k8s怎么认识yaml文件，接着就需要编写代码，让k8s能够通过yaml配置生成API对象，以及如何使用这些配置的字段属性了，接着，还需要编写操作该API对象的控制器。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;关于Webhook&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Operator中的Webhook，外部对CRD资源的变更，在Controller处理之前都会交给Webhook提前处理，即：Webhook的处理早于Controller的Reconcile方法执行。&lt;/p&gt;
+&lt;p&gt;Webhook的职责是修改和验证，可以集成在Operator中。&lt;/p&gt;
 &lt;h4 id=&#34;client-go&#34;&gt;Client-Go&lt;/h4&gt;
 &lt;p&gt;编写一个Operator时，需要用到Client-Go，实现与API-Server的交互。Client-Go提供了4种交互对象：&lt;/p&gt;
 &lt;ul&gt;
@@ -18186,7 +18198,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;ClientSet：负责操作Kubernetes内置的资源对象，如Pod、Service等；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;DynamicClient：动态客户端，可以对任意的Kubernetes资源对象进行通用操作，包括CRD；本质是通过一个嵌套的&lt;code&gt;map[string]interface{}&lt;/code&gt;对象存储API-Server的返回值，再使用反射机制进行数据绑定，虽然灵活，但无法获取强数据类型的检查和验证&lt;/p&gt;
+&lt;p&gt;DynamicClient：动态客户端，可以对任意的Kubernetes资源对象进行通用操作，包括CRD；本质是通过一个嵌套的&lt;code&gt;map[string]interface{}&lt;/code&gt;对象存储API-Server的返回值，再使用反射机制进行数据绑定，虽然灵活，但无法获取强数据类型的检查和验证。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;本质上都是发送HTTP请求给API-Server，只是RESTClient比较原始，其他Client都对具体资源做了结构体封装。&lt;/p&gt;
@@ -18209,7 +18221,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;这个本地缓存在 Kubernetes 中一般被称为 LocalStore，索引一般被称为 Indexer；一般是一个资源一个Informer；&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Reflector&lt;/strong&gt;：通过 &lt;strong&gt;List-Watch&lt;/strong&gt; 机制获取并监视 API 对象变化的客户端封装，保证本地缓存数据的准确性、顺序性和一致性。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Reflector&lt;/strong&gt;：通过 &lt;strong&gt;List-Watch&lt;/strong&gt; 机制获取并监视 API 对象变化（请求API-Server）的客户端封装，保证本地缓存数据的准确性、顺序性和一致性。&lt;/p&gt;
 &lt;p&gt;List：获取资源的全量列表数据，并同步到本地缓存中；List基于HTTP短链接实现；&lt;/p&gt;
 &lt;p&gt;Watch：负责监听变化的数据，当Watch的资源发生变化时，并将资源对象的变化事件存放到本地队列DeltaFIFO中，触发对应的变更事件进行处理，同时更新本地缓存，使得本地缓存与etcd里的数据一致。Watch基于HTTP长链接。&lt;/p&gt;
 &lt;p&gt;定时同步：定时器触发同步机制，定时更新缓存数据，定时同步的周期时间可配。&lt;/p&gt;
@@ -18231,7 +18243,8 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/ul&gt;
 &lt;p&gt;而 Informer 与我们要编写的控制循环之间，则使用了一个工作队列来进行协同，实际应用中，informers、listers、clientset都是通过CRD代码生成，开发者只需要关注控制循环的具体实现就行。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;SharedInformer&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;为了解决多个控制器操作同一资源的问题，导致对同一资源的重复操作，比如重复缓存。使用SharedInformer后，不管有多少个控制器同时读取事件，都只会调用一个Watch API来Watch上游的API-Server，降低Api-Server的负载，比如 Kube-Controller-Manager。&lt;/p&gt;
+&lt;p&gt;在K8s中，每一个资源都有一个Informer，Informer使用Reflector来监听资源，如果统一资源的Informer实例化太多次，就会有很多重复的步骤。为了解决多个控制器操作同一资源的问题，导致对同一资源的重复操作，比如重复缓存。使用SharedInformer后，不管有多少个控制器同时读取事件，都只会调用一个Watch API来Watch上游的API-Server，降低Api-Server的负载，比如 Kube-Controller-Manager。&lt;/p&gt;
+&lt;p&gt;Informer是一种机制，SharedInformer是其中一种实现。&lt;/p&gt;
 &lt;h2 id=&#34;service&#34;&gt;Service&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -18298,14 +18311,14 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h3 id=&#34;kube-proxy&#34;&gt;kube-proxy&lt;/h3&gt;
-&lt;p&gt;Kubernetes集群中每一个节点都运行着一个kube-proxy，这个进程负责监听kubernetes主节点中Service的增加和删除事件并修改运行代理的配置，为节点内的客户端提供流量转发和负载均衡等功能，kube-proxy有三种模式：&lt;/p&gt;
+&lt;p&gt;Kubernetes集群中每一个节点都运行着一个kube-proxy，这个进程负责监听&lt;strong&gt;Service的增加和删除事件并修改运行代理的配置，比如节点的iptables或ipvs，为节点内的客户端提供流量转发和负载均衡等功能&lt;/strong&gt;，kube-proxy有三种模式：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;userspace：运行在用户空间的代理，对于每一个Service都会在当前的节点上开启一个端口，所有连接到当前代理端口的请求都会被转发到service背后的一组pod上，本质上是在节点的iptable上添加一条规则，通过iptables将流量转发给kube-proxy处理。&lt;/p&gt;
 &lt;p&gt;如果选择userspace模式，每当有新的service被创建时，kube-proxy就会增加一条iptables记录并启动一个goroutine，前者用于将节点中服务对外发出的流量转发给kube-proxy，再由后者一系列goroutine将流量转发到目标的pod上。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;iptables：（默认）直接使用iptables转发当前节点上的全部流量，比userspace模式有更高的吞吐量。&lt;/p&gt;
+&lt;p&gt;iptables：（默认）直接使用iptables转发当前节点上的全部流量，比userspace模式有更高的吞吐量，相比userspace模式，是直接转发流量，不用经过Kube-proxy转发。&lt;/p&gt;
 &lt;p&gt;如果选择iptables模式，所有流量会先经过PREROUTING或者OUTPUT链 ，随后进入Kubernetes自定义的链入口KUBE_SERVICES、单个Service对应的链KUBE-SVC-XXX以及每个pod对应的链KUBE-SEP-XXX，经过这些链的处理，最终才能访问一个服务真正的IP地址。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -18387,19 +18400,19 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;Service的本质是通过kube-proxy在宿主机上设置iptables规则、DNS映射，工作在第四层传输层。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;type=ClusterIP，此时该service只能在集群内部被访问，如果集群外想访问，只能通过kubernetes的proxy模式来访问，比如先开启&lt;code&gt;kubectl proxy --port=8080&lt;/code&gt;在本机打开集群访问的代理，然后通过该端口进行访问，kubernetes会帮我们转发到对应的pod上：&lt;code&gt;curl http://localhost:8080/api/v1/proxy/namespaces/{名称空间}/services/{service名称}/{path}&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;type=ClusterIP，此时该service只能在集群内部被访问&lt;/strong&gt;，如果集群外想访问，只能通过kubernetes的proxy模式来访问，比如先开启&lt;code&gt;kubectl proxy --port=8080&lt;/code&gt;在本机打开集群访问的代理，然后通过该端口进行访问，kubernetes会帮我们转发到对应的pod上：&lt;code&gt;curl http://localhost:8080/api/v1/proxy/namespaces/{名称空间}/services/{service名称}/{path}&lt;/code&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;type=NodePort，集群外部使用 &lt;code&gt;{任何一个节点的IP}:{nodePort}&lt;/code&gt; 访问这个service，会将请求转发到对应的Pod，本质上是kube-proxy为该模式配置一条iptables规则；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;type=NodePort，集群外部使用 &lt;code&gt;{任何一个节点的IP}:{nodePort}&lt;/code&gt; 访问这个service&lt;/strong&gt;，会将请求转发到对应的Pod，本质上是kube-proxy为该模式配置一条iptables规则；&lt;/p&gt;
 &lt;p&gt;默认下nodePort会使用主机的端口范围：30000 - 32767；&lt;/p&gt;
 &lt;p&gt;在这里，请求可能会经过SNAT操作，因为当client通过node2的地址访问一个Service，node2可能会负载均衡将请求转发给node1，node1处理完，经过SNAT，将响应返回给node2，再由node2响应回client，保证了client请求node2后得到的响应也是node2的，此时Pod只知道请求的来源，并不知道真正的发起方；&lt;/p&gt;
-&lt;p&gt;如果Service设置了spec.extrnalTrafficPolicy=local，Pod接收到请求，可以知道真正的外部发起方是谁了。&lt;/p&gt;
+&lt;p&gt;如果Service设置了&lt;code&gt;spec.extrnalTrafficPolicy=local&lt;/code&gt;，Pod接收到请求，可以知道真正的外部发起方是谁了。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;type=LoadBalancer，设置一个外部均衡服务，这个一般由公有云提供，比如aws的NLB，阿里云的LB服务，此时会有ExternalIP，执行LB的域名。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;type=LoadBalancer，设置一个外部均衡服务，这个一般由公有云提供&lt;/strong&gt;，比如aws的NLB，阿里云的LB服务，此时会有ExternalIP，执行LB的域名。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;type=ExternalName，并设置externalName的值，此时不会产生EndPoints、clusterIP，作用是为这个externalName设置了CName。主要用于集群内的Pod访问集群外的服务，比如ExternalName设置为www.google.com，此时pod可以直接通过&lt;code&gt; [svc名称].[namespace名称].svc.cluster.local&lt;/code&gt;即可访问www.google.com&lt;/p&gt;
+&lt;p&gt;**type=ExternalName，**并设置externalName的值，此时不会产生EndPoints、clusterIP，&lt;strong&gt;作用是为这个externalName设置了CName，主要用于集群内的Pod访问集群外的服务&lt;/strong&gt;。比如ExternalName设置为www.google.com，此时pod可以直接通过&lt;code&gt; [svc名称].[namespace名称].svc.cluster.local&lt;/code&gt;即可访问www.google.com&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;设置externalIPs的值，这样也能通过该ip进行访问，前提是该IP对公网暴露，比如aws的弹性ip。&lt;/p&gt;
@@ -18458,12 +18471,12 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/ul&gt;
 &lt;p&gt;然后，服务即可通过环境变量获取要访问的服务的IP和端口，但是这种服务发现方式有一些&lt;strong&gt;缺点&lt;/strong&gt;：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;先前的服务必须先运行起来，否则环境变量无法被注入，导致Pod无法使用该环境变量&lt;/li&gt;
-&lt;li&gt;如果依赖的service被删了或绑定了新地址，环境变量不会被修改，仍然使用旧有地址&lt;/li&gt;
-&lt;li&gt;只有在同一namespace下的Pod内才可以使用此环境变量进行访问，不同namespace下无法通过变量访问&lt;/li&gt;
+&lt;li&gt;先前的服务必须先运行起来，否则环境变量无法被注入，导致Pod无法使用该环境变量；&lt;/li&gt;
+&lt;li&gt;如果依赖的service被删了或绑定了新地址，环境变量不会被修改，仍然使用旧有地址；&lt;/li&gt;
+&lt;li&gt;只有在同一namespace下的Pod内才可以使用此环境变量进行访问，不同namespace下无法通过变量访问；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h4 id=&#34;dns服务&#34;&gt;DNS服务&lt;/h4&gt;
-&lt;p&gt;一般情况下，会使用CoreDNS作为Kubernetes集群的DNS，CoreDNS默认配置的缓存时间是30s，增大cache时间对域名解析TTL敏感型的应用有一定的影响，会延缓应用感知域名解析配置变更时间。&lt;/p&gt;
+&lt;p&gt;一般情况下，会使用CoreDNS作为Kubernetes集群的DNS，&lt;strong&gt;CoreDNS默认配置的缓存时间是30s&lt;/strong&gt;，增大cache时间对域名解析TTL敏感型的应用有一定的影响，会延缓应用感知域名解析配置变更时间。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Kubernetes 通过修改每个 Pod 中每个容器的域名解析配置文件&lt;code&gt;/etc/resolv.conf&lt;/code&gt; 来达到服务发现的目的&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;比如：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -18494,7 +18507,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;span class=&#34;na&#34;&gt;options attempts: 1&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;nameserver指向的IP，就是 coreDNS的service的ClusterIP，所有的域名解析都需要经过coreDNS的ClusterIP来进行解析，不论是Kubernetes内部域名还是外部域名；&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;nameserver指向的IP，就是 coreDNS 的service的ClusterIP，所有的域名解析都需要经过coreDNS的ClusterIP来进行解析，不论是Kubernetes内部域名还是外部域名；&lt;/p&gt;
 &lt;p&gt;coreDNS会监听集群内所有ServiceAPI，以在服务不可用时移除记录，在新服务创建时插入新记录，记录存储在coreDNS的本地缓存中。&lt;/p&gt;
 &lt;p&gt;在这个&lt;code&gt;/etc/resolv.conf&lt;/code&gt;里配置含义为：DNS服务器为172.20.0.10，当查询的关键词中的 &lt;code&gt;.&lt;/code&gt; 的数量少于5个，则根据search中配置的域名进行查询，当查询都没有返回正确响应时再尝试查询关键词本身，比如执行&lt;code&gt;host -v cn.bing.com&lt;/code&gt;，会得到&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -18515,7 +18528,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;span class=&#34;na&#34;&gt;...&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;所以，直接请求集群内部同一namespace下的域名时效率最高，因为只需要查询一次即可找到，比如在同一namespace下直接&lt;code&gt;curl {服务service名} &lt;/code&gt;的效率是比&lt;code&gt;curl {服务service名}.{namespace}&lt;/code&gt;要高，因为少了一次域名查询。这种DNS查询解析叫非全限定域名查找，因为我们配置了&lt;code&gt;ndots=5&lt;/code&gt;，所以当域名中&lt;code&gt;.&lt;/code&gt; 的个数小于5个，就会走search查询解析，如果要使用全限定域名查找，则需要在域名后面加&lt;code&gt;.&lt;/code&gt;，就不会走search查询解析了，比如当&lt;code&gt;cn.bing.com.&lt;/code&gt;此时就只会查询一次了，查不到才会走search查询。也可以通过修改&lt;code&gt;ndots&lt;/code&gt;的数量，来减少域名查询次数的问题，可以在Pod的配置中添加&lt;code&gt;dnsConfig&lt;/code&gt;修改&lt;code&gt;ndots&lt;/code&gt;的值。当容器内部的&lt;code&gt;/etc/resolv.config&lt;/code&gt;都找不到时，就会使用宿主机的&lt;code&gt;/etc/resolv.config&lt;/code&gt;进行查找。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;所以，直接请求集群内部同一namespace下的域名时效率最高，因为只需要查询一次即可找到，比如在同一namespace下直接&lt;code&gt;curl {服务service名} &lt;/code&gt;的效率是比&lt;code&gt;curl {服务service名}.{namespace}&lt;/code&gt;要高，因为少了一次域名查询。这种DNS查询解析叫&lt;strong&gt;非全限定域名查找&lt;/strong&gt;，因为我们配置了&lt;code&gt;ndots=5&lt;/code&gt;，所以当域名中&lt;code&gt;.&lt;/code&gt; 的个数小于5个，就会走search查询解析，如果要使用全限定域名查找，则需要在域名后面加&lt;code&gt;.&lt;/code&gt;，就不会走search查询解析了，比如当&lt;code&gt;cn.bing.com.&lt;/code&gt;此时就只会查询一次了，查不到才会走search查询。也可以通过修改&lt;code&gt;ndots&lt;/code&gt;的数量，来减少域名查询次数的问题，可以在Pod的配置中添加&lt;code&gt;dnsConfig&lt;/code&gt;修改&lt;code&gt;ndots&lt;/code&gt;的值。当容器内部的&lt;code&gt;/etc/resolv.config&lt;/code&gt;都找不到时，就会使用宿主机的&lt;code&gt;/etc/resolv.config&lt;/code&gt;进行查找。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;Kubernetes 集群中支持通过 dnsPolicy 字段为每个 Pod 配置不同的 DNS 策略。目前支持四种策略：&lt;/p&gt;
 &lt;ul&gt;
@@ -18551,8 +18564,8 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;ingress&#34;&gt;Ingress&lt;/h2&gt;
-&lt;p&gt;工作在第七层，应用层，即一般代理Http流量。&lt;/p&gt;
-&lt;p&gt;作用与Service类似，主要是用于对多个service的包装，作为service的service，设置一个统一的负载均衡（这样可以避免每个Service都设置一个LB，也可以避免因为节点扩缩容导致service的端口变化需要修改访问配置），设置Ingress rule，进行反向代理，实现的是Http负责均衡。&lt;/p&gt;
+&lt;p&gt;工作在第七层，应用层，即一般代理HTTP流量。&lt;/p&gt;
+&lt;p&gt;作用与Service类似，主要是用于对多个service的包装，作为service的service，设置一个统一的负载均衡（这样可以避免每个Service都设置一个LB，也可以避免因为节点扩缩容导致service的端口变化需要修改访问配置），设置Ingress rule，进行反向代理，实现的是HTTP负责均衡。&lt;/p&gt;
 &lt;p&gt;Ingress是反向代理的规则，Ingress Controller是负责解析Ingress的规则后进行转发。可以理解为Nginx，本质是将请求通过不同的规则进行路由转发。常见的Ingress Class实现有Nginx-Ingress-Controller、AWS-LB-Ingress-Controller，使用Ingress时会在集群中创建对应的controller pod。&lt;/p&gt;
 &lt;p&gt;Ingress Controller可基于Ingress资源定义的规则将客户端请求流量直接转发到Service对应的后端Pod资源上（比如aws-lb-ingress-controller 的 IP mode），其会绕过Service资源，直接转发到Pod上，省去了kube-proxy实现的端口代理开销。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -18669,7 +18682,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/table&gt;
 &lt;h2 id=&#34;rbac&#34;&gt;RBAC&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;Role和RoleBinding：只针对某一namespace的操作授权，namespace只是逻辑上的隔离。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Role和RoleBinding：只针对某一namespace的操作授权，namespace只是逻辑上的隔离&lt;/strong&gt;。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;以下配置就是给用户名为example-user绑定了一个example-role的角色，该角色只能操作namespace为mynamespace下的pod的所有读操作。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -18725,7 +18738,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;ul&gt;
-&lt;li&gt;ClusterRole和ClusterRoleBinding：针对的是整个集群的操作的授权&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;ClusterRole和ClusterRoleBinding：针对的是整个集群的操作的授权&lt;/strong&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;以下配置就是给用户名为example-user绑定了一个example-role的角色，该角色能对整个集群下的Pod进行读操作。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -18777,7 +18790,7 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;verbs操作可以有get、list、watch、create、update、patch、delete。&lt;/p&gt;
-&lt;p&gt;resources指的是configmaps、pods、services、deployments、nodes。&lt;/p&gt;
+&lt;p&gt;resources指的是configmaps、pods、services、deployments、nodes，即所有定义的CRD。&lt;/p&gt;
 &lt;p&gt;resourceNames指定是对应资源的名称。&lt;/p&gt;
 &lt;p&gt;subjects的类型不止有User，也可以是ServiceAccount，创建该service后，k8s会自动为其分配一个Secret对象，该字段保存一个用来与API Server交互的token，token的内容可以是证书或者密码，以Secret对象的方式保存在etcd中。&lt;/p&gt;
 &lt;p&gt;在Pod中也可以使用ServiceAccount，通过serviceAccountName字段配置使用，如果Pod没有显式使用ServiceAccount，K8s会使用默认的拥有绝大多数权限的default ServiceAccount。创建完ServiceAccount后，会在K8s中产生一个用户名和用户组，&lt;/p&gt;
@@ -18803,8 +18816,8 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;h2 id=&#34;声明式api&#34;&gt;声明式API&lt;/h2&gt;
 &lt;p&gt;通过编排对象，在为它们定义服务的这种方法，就称为声明式API。&lt;/p&gt;
 &lt;p&gt;Pod就是一种API对象，每一个API对象都有一个Metadata字段，表示元数据，通过里面的labels字段（键值对）来找到这个API对象；每一个API对象都有一个Spec字段，来配置这个对象独有的配置，如为Pod添加挂载的Volume。&lt;/p&gt;
-&lt;p&gt;命令式配置文件操作：编写一个yaml配置，使用&lt;code&gt;kubectl create -f config.yaml&lt;/code&gt;创建controller和Pod，然后修改yaml配置，使用&lt;code&gt;kubectl replace -f config.yaml&lt;/code&gt;，更新controller和Pod，kube-apiserver一次只能处理一个命令；或者直接使用命令 &lt;code&gt;kubectl set image ... &lt;/code&gt;或 &lt;code&gt;kubectl edit ...&lt;/code&gt; 这些都属于命令式的。&lt;/p&gt;
-&lt;p&gt;声明式配置文件操作：编写yaml配置和更新yaml配置均使用&lt;code&gt;kubectl apply -f config.yaml&lt;/code&gt;，kube-apiserver一次处理多个命令，并且具备merge能力。&lt;/p&gt;
+&lt;p&gt;命令式配置文件操作：编写一个yaml配置，使用&lt;code&gt;kubectl create -f config.yaml&lt;/code&gt;创建controller和Pod，然后修改yaml配置，使用&lt;code&gt;kubectl replace -f config.yaml&lt;/code&gt;，更新controller和Pod，API-Server一次只能处理一个命令；或者直接使用命令 &lt;code&gt;kubectl set image ... &lt;/code&gt;或 &lt;code&gt;kubectl edit ...&lt;/code&gt; 这些都属于命令式的。&lt;/p&gt;
+&lt;p&gt;声明式配置文件操作：编写yaml配置和更新yaml配置均使用&lt;code&gt;kubectl apply -f config.yaml&lt;/code&gt;，API-Server一次处理多个命令，并且具备merge能力。&lt;/p&gt;
 &lt;p&gt;命令式是告诉API-Server我要做什么操作，而声明式是告诉API-Server我要达到什么样的效果，幂等的操作。&lt;/p&gt;
 &lt;p&gt;所以声明式API可以解决命令式API因为反复重试导致的错误，或者 并发执行时产生的问题。&lt;/p&gt;
 &lt;h3 id=&#34;工作原理&#34;&gt;工作原理&lt;/h3&gt;
@@ -18933,155 +18946,74 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;h2 id=&#34;常用命令&#34;&gt;常用命令&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;  1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;  9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 27
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 28
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 29
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 30
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 31
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 32
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 33
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 34
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 35
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 36
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 37
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 38
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 39
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 40
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 41
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 42
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 43
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 44
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 45
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 46
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 47
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 48
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 49
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 50
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 51
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 52
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 53
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 54
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 55
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 56
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 57
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 58
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 59
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 60
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 61
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 62
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 63
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 64
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 65
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 66
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 67
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 68
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 69
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 70
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 71
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 72
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 73
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 74
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 75
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 76
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 77
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 78
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 79
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 80
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 81
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 82
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 83
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 84
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 85
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 86
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 87
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 88
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 89
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 90
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 91
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 92
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 93
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 94
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 95
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 96
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 97
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 98
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 99
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;100
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;101
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;102
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;103
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;104
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;105
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;106
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;107
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;108
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;109
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;110
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;43
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;44
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;45
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;46
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;47
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;48
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;49
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;50
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;51
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;52
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;53
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;54
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;55
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;56
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;57
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;58
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;59
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;60
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;61
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;62
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;63
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;64
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;65
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
-&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;l&#34;&gt;查看所有Pod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get pod -A&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;查看所有configMap&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get configmap -A&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;查看某个configmap的内容&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl describe configmap confing名字 -n 命名空间&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;将更新的configmap内容更新到etcd中&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl apply -f 文件名&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;删除名字为xxx，namespace为yyy的pod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl delete pods xxx -n yyy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;查看所有Pod以及ip之类的信息&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get pods --all-namespaces -o wide&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;进入pod里，并打开sh命令行&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl exec -it pod名称 -n [名称空间] sh&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;进入pod里的指定容器AA&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl exec -it pod名称 -c 容器名称 sh&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;查看pod 的event&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get event -n [名称空间]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;查看容器日志&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl logs [pod名称] -n [名称空间] -c[pod内容器名称] -f&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;查看pod的yaml内容&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get pod [pod名称] -n osaas -o yaml&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;以yaml格式查看configmap的内容&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get cm [configmap的名称] -n [命名空间] -o yaml&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;对于处于terminating的pod或namespace的删除方法&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;l&#34;&gt;对于处于terminating的pod或namespace的删除方法&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;. 将对应的pod或namespace转成json形式，将属性finalizers改为[]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get [pod或namespace] [对应的名称]  -o json |jq &amp;#39;.spec = {&amp;#34;finalizers&amp;#34;:[]}&amp;#39; &amp;gt; json文件名.json&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;2.&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;打开另一个窗口，起一个代理&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -19093,9 +19025,8 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl get ns [命名空间的值] -o json &amp;gt; xxxx.json，修改finialize为空数组[]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl replace --raw &amp;#34;/api/v1/namespaces/[命名空间的值]/finalize&amp;#34; -f xxx.json&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;删除指定命名空间下所有资源例如pod、deployment、svc，包括里面所有副本&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;delete all -n [命名空间] --all&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl delete all -n [命名空间] --all&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;删除命名空间下的event&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl delete events -n [命名空间] --all&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -19141,14 +19072,6 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;从容器里复制文件出来&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;docker cp 容器id:/容器内文件路径/文件名 /宿主机路径/文件名&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;修改envoy的日志级别&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;curl -XPOST http://localhost:15000/logging?level=debug&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;curl -XPOST http://localhost:15000/logging?level=info&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;查看istio整个服务网格的配置&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istioctl proxy-config routes [istio-ingressgateway pod的名字] -n istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;滚动更新&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubectl patch deployment $APP-stable -n $NAMESPACE --patch &amp;#39;{&amp;#34;spec&amp;#34;: {&amp;#34;template&amp;#34;: {&amp;#34;metadata&amp;#34;: {&amp;#34;labels&amp;#34;:{&amp;#34;cm&amp;#34;:&amp;#34;stable&amp;#34;},&amp;#34;annotations&amp;#34;: {&amp;#34;version/config&amp;#34;: &amp;#34;&amp;#39;$DATE&amp;#39;&amp;#34; }}}}}&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -19514,6 +19437,15 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;li&gt;
 &lt;p&gt;&lt;code&gt;istioctl pc(proxy-config的缩写) [cluster/route...] [pod名称].[命名空间]&lt;/code&gt;查看配置详情。&lt;/p&gt;
 &lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;istioctl proxy-config routes [istio-ingressgateway pod的名字] -n istio-system&lt;/code&gt;查看istio整个服务网格的配置&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;envoy调试&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;进到pod里之后，修改envoy的日志级别
+curl -XPOST http://localhost:15000/logging?level=debug
+curl -XPOST http://localhost:15000/logging?level=info
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
 &lt;p&gt;极客时间-深入剖析k8s-张磊&lt;/p&gt;
