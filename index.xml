@@ -7375,13 +7375,13 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;p&gt;&lt;code&gt;procPin&lt;/code&gt; 将 G 和 P 绑定，防止 G 被抢占。在绑定期间，GC 无法清理缓存的对象；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;code&gt;sync.Pool&lt;/code&gt; 的最底层使用切片加链表来实现双端队列，并将缓存的对象存储在切片中；&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;sync.Pool&lt;/code&gt; 的最底层使用链表，链表元素是切片(当作环形队列)，并将缓存的对象存储在切片中；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;双端队列初始化长度为8，始终保持2的n次幂，两倍两倍的增长，最大的长度是2^30，达到上限时，再执行Put操作就放不进去，也不报错；&lt;/p&gt;
+&lt;p&gt;底层切片初始化长度为8，始终保持2的n次幂的增长，最大的容量是2^30，达到上限时，再生成的队列容量都是2^30；链表的节点的环形队列长度是 &lt;code&gt;head -&amp;gt; 32 -&amp;gt; 16 -&amp;gt; 8 -&amp;gt; tail&lt;/code&gt;；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;Get方法调用时，如果是从其他P的local.shared的尾部窃取复用对象，同时会移除，当最小时收缩成只剩下一个节点时，双端队列的长度会变为2，不会收缩成空链表；&lt;/p&gt;
+&lt;p&gt;Get方法调用时，&lt;strong&gt;如果是从其他P的local.shared的尾部窃取复用对象&lt;/strong&gt;，同时会移除环形队列里的元素，当环形队列被窃取到为空时，会移除当前节点；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;get方法&#34;&gt;Get方法&lt;/h2&gt;
@@ -16728,6 +16728,18 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;核心组件的协作流程&#34;&gt;核心组件的协作流程&lt;/h3&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kubenetes%e7%bb%84%e4%bb%b6%e5%8d%8f%e4%bd%9c%e6%b5%81%e7%a8%8b.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/Kubenetes%e7%bb%84%e4%bb%b6%e5%8d%8f%e4%bd%9c%e6%b5%81%e7%a8%8b.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;以创建Deployment为例，用户或控制器通过kubectl、RestAPI或者其他客户端向API-Server发起创建deployment的请求；&lt;/li&gt;
 &lt;li&gt;API-Server收到创建请求后，经过认证、鉴权、准入三个环节后，将deployment对象保存到etcd中，触发watch机制，通知API-Server，API-Server再调用ControllerManager对应的deployment控制器进行操作；&lt;/li&gt;
@@ -18221,16 +18233,27 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;这个本地缓存在 Kubernetes 中一般被称为 LocalStore，索引一般被称为 Indexer；一般是一个资源一个Informer；&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Reflector&lt;/strong&gt;：通过 &lt;strong&gt;List-Watch&lt;/strong&gt; 机制获取并监视 API 对象变化（请求API-Server）的客户端封装，保证本地缓存数据的准确性、顺序性和一致性。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Reflector&lt;/strong&gt;：通过 &lt;strong&gt;List-Watch&lt;/strong&gt; 机制监听并获取API-Server中资源的create、update、delete事件，并针对事件类型调用对应的处理函数，是k8s统一的异步消息处理机制，保证了消息的实时性、可靠性，保证本地缓存数据的准确性、顺序性和一致性。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
 &lt;p&gt;List：获取资源的全量列表数据，并同步到本地缓存中；List基于HTTP短链接实现；&lt;/p&gt;
-&lt;p&gt;Watch：负责监听变化的数据，当Watch的资源发生变化时，并将资源对象的变化事件存放到本地队列DeltaFIFO中，触发对应的变更事件进行处理，同时更新本地缓存，使得本地缓存与etcd里的数据一致。Watch基于HTTP长链接。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Watch：负责监听变化的数据，当Watch的资源发生变化时，并将资源对象的变化事件存放到本地队列DeltaFIFO中，触发对应的变更事件进行处理，同时更新本地缓存，使得本地缓存与etcd里的数据一致。&lt;/p&gt;
+&lt;p&gt;Watch基于HTTP长链接，使用分块传输编码&lt;code&gt;响应头加上Transfer-Encoding=chunked基于HTTP/1.1，因为在短连接里，客户端需要通过Content-Length或连接是否关闭来判断是否接收完成，可以关掉，使用chunked后，服务端无需使用来告诉客户端响应体的结束位置，结束位置通过/n, /r或0来表示&lt;/code&gt;（1.5以后使用HTTP/2），将数据分解成一系列数据块，一个或多个地发送。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;定时同步：定时器触发同步机制，定时更新缓存数据，定时同步的周期时间可配。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;数据更新的依据来源于 ResourceVersion，当资源发生变化时，ResourceVersion就会以递增的形式更新，保证事件的顺序性，通过比较这个值，来判断资源是否有变化。&lt;/p&gt;
+&lt;p&gt;List-Watch必须一起配合才能保证消息的可靠性，如果仅依靠Watch，当连接断开后，消息就有可能丢失，此时通过List来获取所有数据，还有判断ResourceVersion的值，纠正数据不一致，保证事件不丢失。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;DeltaFIFO&lt;/strong&gt;：增量队列，记录资源变化，Relector相当于队列的生产者；&lt;/p&gt;
 &lt;p&gt;Delta是资源对象存储，保存存储对象的消费类型，作为队列里的消息体，有两个属性，Type表示事件类型，比如&lt;code&gt;Added、Updated、Deleted、Replaced、Sync&lt;/code&gt;，Object表示资源对象，如Pod、Service；&lt;/p&gt;
 &lt;p&gt;FIFO负责接收Reflector传递过来的事件，并将其按顺序存储，然后等待事件的处理函数进行处理，如果出现多个相同事件，则只会被处理一次；&lt;/p&gt;
+&lt;p&gt;DeltaFIFO只会存储Watch返回的各种事件，而LocalStorae只会被Lister的List/gGet方法访问。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;Indexer&lt;/strong&gt;：用来存储资源对象，并自带索引功能的本地存储LocalStore，可以理解为里面有很多map组成的倒排索引和对应的索引处理器；&lt;/p&gt;
@@ -18238,13 +18261,19 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;Index：存储数据，比如：要查找某个命名空间下的Pod，对应的Index类型可以是&lt;code&gt;map[{namespace}]{sets.pod}&lt;/code&gt;；&lt;/p&gt;
 &lt;p&gt;Indexers：存储索引器，key为索引器名称，value为 IndexFunc， 比如&lt;code&gt;map[&amp;quot;namespace&amp;quot;]{IndexFunc}&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;Indices：存储缓存器，key为索引器名称，value为缓存的数据，比如：&lt;code&gt;map[&amp;quot;namespace&amp;quot;]map[{namespace}]{sets.pod}&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;Reflector 从 DeltaFIFO中 将消费出来的资源对象存储到Indexer中，Index库把增量里的API对象保存到本地缓存，并创建索引；Indexer与etcd中的数据完全保持一致，handler处理时，先从本地缓存里拿，拿不到再请求API-Server，减少Client-Go与API-Server交互的压力。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;而 Informer 与我们要编写的控制循环之间，则使用了一个工作队列来进行协同，实际应用中，informers、listers、clientset都是通过CRD代码生成，开发者只需要关注控制循环的具体实现就行。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;整体流程&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Reflector通过List罗列资源，通过Watch监听资源的变更事件，将结果放到DeltaFIFO队列中；&lt;/li&gt;
+&lt;li&gt;然后从 DeltaFIFO中 将消费出来的资源对象存储到Indexer中，Index库把增量里的API对象保存到本地缓存，并创建索引；&lt;/li&gt;
+&lt;li&gt;Indexer与etcd中的数据完全保持一致，handler处理时，先从本地缓存里拿，拿不到再请求API-Server，减少Client-Go与API-Server交互的压力。&lt;/li&gt;
+&lt;li&gt;Informer 与我们要编写的控制循环ControlLoop之间，则使用了一个工作队列WorkQ来进行协同，实际应用中，informers、listers、clientset都是通过CRD代码生成，开发者只需要关注控制循环的具体实现就行。&lt;/li&gt;
+&lt;/ol&gt;
 &lt;p&gt;&lt;strong&gt;SharedInformer&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;在K8s中，每一个资源都有一个Informer，Informer使用Reflector来监听资源，如果统一资源的Informer实例化太多次，就会有很多重复的步骤。为了解决多个控制器操作同一资源的问题，导致对同一资源的重复操作，比如重复缓存。使用SharedInformer后，不管有多少个控制器同时读取事件，都只会调用一个Watch API来Watch上游的API-Server，降低Api-Server的负载，比如 Kube-Controller-Manager。&lt;/p&gt;
 &lt;p&gt;Informer是一种机制，SharedInformer是其中一种实现。&lt;/p&gt;
+&lt;p&gt;通常自定义Controller要求只有一个实例在运行，因为当出现多个实例的时候，会出现并发问题，重复消费事件，如果要实现高可用，需要主从部署，只有主服务处于工作状态，从服务处于暂停状态，当主服务出现问题时，实现主从切换。Client-Go本身提供了leaderelection机制来实现，原理是通过K8s的 &lt;code&gt;endpoints或configmap或lease&lt;/code&gt;实现一个分布式锁（通过resourceVersion + 乐观锁实现，判断资源的id和自己所持有的id是否一致），只有抢到锁的服务才能成为leader，并定期更新，而抢不到的节点会一直等待。当 leader 因为某些异常原因挂掉后，租约到期，其他节点会尝试抢锁，成为新的 leader，成为leader时，对应pod的annotations会更新&lt;code&gt;control-plane.alpha.kubernetes.io/leader&lt;/code&gt;字段。&lt;/p&gt;
 &lt;h2 id=&#34;service&#34;&gt;Service&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -18822,7 +18851,8 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 &lt;p&gt;所以声明式API可以解决命令式API因为反复重试导致的错误，或者 并发执行时产生的问题。&lt;/p&gt;
 &lt;h3 id=&#34;工作原理&#34;&gt;工作原理&lt;/h3&gt;
 &lt;p&gt;k8s根据我们提交的yaml文件创建出一个API对象，一个API对象在etcd里的完整资源路径是由Group（API 组）、Version（API 版本）和 Resource（API 资源类型）三个部分组成的。&lt;/p&gt;
-&lt;p&gt;一个资源可以有多个版本，版本和资源的信息会存储在etcd中，但etcd只会存储资源的一个指定版本，当客户端传入的yaml文件中指定的资源版本和客户端向API-Server请求的资源版本可能并不是etcd中存储的版本时，会进行版本转换。API-Server会维护一个internal版本，当需要版本转换时，任意版本都会先转换为internal版本，再由internal版本转换为指定的目标版本，所以只要保证每个版本都能转换成internal版本，即可支持任意版本间的转换了，对应的CRD代码也要支持新老版本的切换。&lt;/p&gt;
+&lt;p&gt;一个资源可以有多个版本，版本和资源的信息会存储在etcd中，但&lt;strong&gt;etcd只会存储资源的一个指定版本&lt;/strong&gt;，当客户端传入的yaml文件中指定的资源版本和客户端向API-Server请求的资源版本可能并不是etcd中存储的版本时，会进行版本转换（通过在资源中定义 &lt;code&gt;served：控制某个版本是否可读写；storage：判断是否有多个版本&lt;/code&gt;）。&lt;/p&gt;
+&lt;p&gt;API-Server会维护一个internal版本，当需要版本转换时，任意版本都会先转换为internal版本，再由internal版本转换为指定的目标版本，所以只要保证每个版本都能转换成internal版本，即可支持任意版本间的转换了，对应的CRD代码也要支持新老版本的切换。需要编写conversion webhook，这样请求在到达controller时，就会经过webhook进行转换。&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
 	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/API%e5%af%b9%e8%b1%a1%e6%a0%91%e5%bd%a2%e7%bb%93%e6%9e%84.png&#34; &gt;
@@ -19632,10 +19662,10 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;li&gt;无法这样使用select * from table group by column&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;distinct&#34;&gt;distinct&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;select distinct colA, colB from table&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;select distinct 列1, 列2 from 【表名】&lt;/code&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;distinct 接多个列，会对多个列的不同组合都列出来&lt;/li&gt;
-&lt;li&gt;无法这样使用select a, distinct b from table&lt;/li&gt;
+&lt;li&gt;无法这样使用&lt;code&gt;select 列1, distinct 列2 from 【表名】&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;join&#34;&gt;join&lt;/h2&gt;
 &lt;ul&gt;
@@ -19643,16 +19673,17 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;由于有时优化器会选择错误的驱动表，使用 &lt;strong&gt;straight_join&lt;/strong&gt; 则可以让MySQL&lt;strong&gt;默认使用左边的表作为驱动表&lt;/strong&gt;；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;NLJ算法进行join操作&lt;/strong&gt;：当有A、B两表，是一个1对1的关系，逻辑外键在B表带有索引，使用join进行关联查询，小表驱动大表(这样扫描的行数较少)，每扫一行，通过外键索引，在另一个表找对应的行数据，总共执行1条语句，扫描len(A) + len(B) 行，但是如果不使用join查，而是先查出A表所有数据，再根据A的id查回B的数据，虽然扫描的行数一样，但是却执行了len(B) + 1条SQL语句，显然是使用了join的方式性能强，前提是B上带了索引。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NLJ算法进行join操作&lt;/strong&gt;：当有A、B两表，是一个1对1的关系，逻辑外键在B表带有索引，使用join进行关联查询，小表驱动大表(这样扫描的行数较少)，每扫一行B，通过外键索引，在另一个表A找对应的行数据，合并，返回，总共执行1条语句，扫描len(A) + len(B) 行。但是如果不使用join查，而是先查出B表所有数据，再根据B的id查回A的数据，虽然扫描的行数一样，但是却执行了len(B) + 1条SQL语句，显然是使用了join的方式性能强，前提是B上带了索引。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;BNL算法进行join操作&lt;/strong&gt;：如果B上关联键没有使用索引，则算法是这样的，先对A表进行全表扫描存进内存，再对B表进行全表扫描存进内存，然后在内存(join buffer)里进行匹配，如果内存太小，则分块加载，匹配后将结果集返回，清空内存，再分配加载这样循环处理。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;BNL算法进行join操作&lt;/strong&gt;：如果B上关联键没有使用索引，则算法是这样的，先对B表进行全表扫描存进内存，再对A表进行全表扫描，每扫一行A，就在内存(join buffer)里的B进行匹配，返回；如果内存太小，则分块对表B进行加载，全表扫描A，匹配后将结果集返回，清空内存，再分块加载剩下的B，再次全表扫描A，匹配返回，循环处理，直至表B加载完成。分块加载会导致重复扫描表A。&lt;/p&gt;
 &lt;p&gt;对BNL的优化，一种是在业务端查回两张表的数据，在通过hash匹配组合，另一种是查join查询前，先创建临时表，创建索引，查询被驱动表的数据，插入临时表中，与临时表进行join操作，将BNL转为NLJ；&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;select * from a join b on a.id=b.id&lt;/code&gt;，A是驱动表，B是被驱动表；如果是 &lt;code&gt;select * from a, b on a.id=b.id&lt;/code&gt;，则驱动表和被驱动表由MySQL自己决定。&lt;/p&gt;
 &lt;p&gt;小表驱动，小表指的是行数相对少，或者select时表的数据量相对少的表；&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;所以，NLJ算法是从表A每查一行就根据索引去表B匹配一行，MRR优化就是在NLJ基础上，回表的时候根据有序的索引一批一批查，这样就快一点；而BNL算法是同时去查表A和表B的所有行，再进行匹配关联&lt;/strong&gt;；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;所以，NLJ算法是从表B每查一行就根据索引去表A匹配一行，MRR优化就是在NLJ基础上，回表的时候根据有序的索引一批一批查，这样就快一点；而BNL算法是同时去查表A和表B的所有行，再进行匹配关联&lt;/strong&gt;；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;驱动表走全表扫描，被驱动表最好走索引扫描，使用NLJ算法，如果被驱动表是全表扫描，则使用(S)BNL算法&lt;/p&gt;
+&lt;p&gt;驱动表走全表扫描，被驱动表最好走索引扫描，使用NLJ算法，如果被驱动表是全表扫描，则使用(S)BNL算法；即&lt;strong&gt;被驱动表有索引，使用NLJ，被驱动表没索引，使用BNL，都是为了扫描更少的行数&lt;/strong&gt;；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;left join，使用left join时，左边的表不一定是驱动表，如果要使用left join语义，不能把被驱动表的字段放在where条件里做等值和不等值判断，必须放在on里，原因是MySQL会先用on作为条件进行过滤，完了才使用where进行过滤，放在on里能让过滤出来的条数少，要注意两者表达的语义还是有些不同的；&lt;/p&gt;
@@ -19849,6 +19880,12 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/blockquote&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;红黑树的特性&lt;/strong&gt;:
+（1）每个节点要么是黑色，要么是红色。
+（2）根节点是黑色。
+（3）每个叶子节点（NIL）是黑色。（注意：这里叶子节点，是指为空(NIL或NULL)的叶子节点）
+（4）如果一个节点是红色的，则它的子节点必须是黑色的。
+（5）从一个节点到该节点的子孙节点的所有路径上包含相同数目的黑节点。&lt;/p&gt;
 &lt;p&gt;参考&lt;a class=&#34;link&#34; href=&#34;https://www.cnblogs.com/aspirant/p/9214485.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;一步步分析为什么B+树适合作为索引的结构&lt;/a&gt;&lt;/p&gt;
 &lt;h2 id=&#34;4失效情况&#34;&gt;4.失效情况&lt;/h2&gt;
@@ -20082,7 +20119,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;&lt;strong&gt;4大特性&lt;/strong&gt;：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;插入缓冲：使用change buffer，对insert、delete、update、purge都有提升；&lt;/li&gt;
-&lt;li&gt;双写机制：InnoDB在将buffer pool中的Dirty Page脏页刷到磁盘时，会先将dirty page刷到InnoDB ；tablespace中的一个区域，这个区域称为 Double Write Buffer，该区域大小 2MB ，每次写入 1MB，128个页，每个页16k，其中120个页为后台线程批量刷Dirty Page，还有8个也是为了前台起的single page flash线程，用户可以主动请求使用，迅速提升空余的空间，在像Double Write Buffer写入成功后，第二步是将数据分别刷到一个共享空间和真正应该存在的位置；&lt;/li&gt;
+&lt;li&gt;双写机制：InnoDB在将buffer pool中的dirty Page脏页刷到磁盘时，会先将dirty page刷到InnoDB tablespace中的一个区域，这个区域称为 Double Write Buffer，该区域大小 2MB ，每次写入 1MB，128个页，每个页16k，其中120个页为后台线程批量刷Dirty Page，还有8个也是为了前台起的single page flash线程，用户可以主动请求使用，迅速提升空余的空间，在像Double Write Buffer写入成功后，第二步是将数据分别刷到一个共享空间和真正应该存在的位置；&lt;/li&gt;
 &lt;li&gt;自适应哈希索引：InnoDB会监控对表上辅助索引页的查询，如果发现建立hash索引可以提升性能，就会在缓冲池建立hash索引，提升查询性能；&lt;/li&gt;
 &lt;li&gt;预读：用异步将磁盘中的页读取到buffer pool中，预读请求的所有页集中在一个范围内；&lt;/li&gt;
 &lt;/ol&gt;
@@ -20263,6 +20300,8 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;行锁&lt;/strong&gt;：在InnoDB事务中，采用二阶段锁协议，行锁是在事务结束后才释放，在事务过程中，即使一开始用了后面没用到也不会被释放，因此，要把最可能造成锁冲突、最可能影响并发度的锁尽量往后放，减少锁的影响时间；&lt;strong&gt;行锁是统称，主要可以细分为共享锁和排他锁这些&lt;/strong&gt;。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;记录锁&lt;/strong&gt;：行锁，对索引进行锁定，如果是主键索引就会锁一条，但如果是二级索引，就会锁所有匹配的记录。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -20276,8 +20315,21 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;意向排他锁&lt;/strong&gt; - IX锁：表级锁，表示事务持有表中行的排他锁或者打算获取行的排他锁，仅表示意图，不阻塞其他操作，当事务在获取表中的排他行锁时，需要先获取表中的意向排他锁&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;意向锁的作用主要为了解决遍历整个表来寻找行锁的情况，比如在alert语句修改表结构的时候使用，场景：&lt;/p&gt;
 &lt;p&gt;事务A想修改表T的行R，A获得行R的排他锁，锁住了行R，事务B使用Alter Table语句修改表T的结构，此时需要获取表T的共享锁，由于它不知道表T是否存在行锁，只能去遍历，当表有行锁时，只能等行锁释放才能修改表结构，因为遍历很耗性能，所以需要意向锁来解决这个问题，事务A在获得行R的排他锁时，需要先上表T的共享排他锁，事务B在Alter 表T时就可以直接判断该表是否被上行锁了。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;间隙锁&lt;/strong&gt;：当我们用范围条件而不是相等条件检索数据，并请求共享或排他锁时，InnoDB会给符合条件的已有数据记录的索引项加锁；对于键值在条件范围内但并不存在的记录，叫做间隙锁。&lt;/p&gt;
+&lt;p&gt;主要是为了解决幻读问题，只在&lt;strong&gt;可重复读隔离级别下有效&lt;/strong&gt;，一般与行锁一同出现。&lt;/p&gt;
+&lt;p&gt;间隙锁也会导致死锁，比如&lt;strong&gt;两个事务同时在一段范围内的数据加入间隙锁&lt;/strong&gt;(事务间的间隙锁不会冲突，可以加成功)，又insert或update在这个范围内的数据，就会导致死锁&lt;/p&gt;
+&lt;p&gt;另外，&amp;ldquo;间隙&amp;rdquo; 是 由这个间隙右边的记录定义的，也就是说，如果 有索引 c 的值为0，5，10，15，先有事务A查询select c from t where c &amp;gt; 5 lock in share mode，加锁范围是(5, 10], (10, 15], (15, max]，然后有事务B更新update t set c = 1 where c = 5，执行成功，此时c的值有 0，1，10，15，再执行update t set c=5 where c=1;会执行不成功，被blocked住，原因是间隙锁的间隙变成了 [1, 10]，所以更新失败&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Next-Key 锁&lt;/strong&gt; = 间隙锁(gap lock) + 行锁(record lock)，在可重复读隔离级别下，InnoDB在查找和扫描索引时，都会使用Next-Key锁来防止幻读的发生。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;Auto-Inc 锁&lt;/strong&gt;：自增锁，比较特殊，当设置键为自增时使用，比如自增主键，在生成自增id时，会先获取相关表的 Auto-Inc 锁，阻塞其他事务的插入操作，保证自增的唯一性。不遵循二阶段锁协议，因为它并不是在事务提交时释放，而是在inset语句执行后释放，即使是在回滚时，自增值也不会减一。&lt;/p&gt;
@@ -20289,15 +20341,6 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;实际上MVCC得到的快照是逻辑上的数据，是推测出来的，通过当前值，利用事务Id和undo log日志，根据日志&amp;quot;回滚&amp;quot;得到各个版本的数据，事务id可以简单理解为对该行数据进行更改时产生的id，当然一个事务内可以对多条数据进行操作，这多条数据的事务id都是相同的&lt;/p&gt;
 &lt;p&gt;例子：&lt;/p&gt;
 &lt;p&gt;假如一个值1被按顺序改为2、3、4，每一次更改都会记录在回滚日志(undo log)里，如：将2改为1 -&amp;gt; 将3改为2 -&amp;gt; 将4改为3，当前的值是4，在查询这条记录的时候，不同时刻启动的事务会有不同的视图，比如有视图A（将2改成1）里看到的值是1，即同一条记录在数据库中存在多个版本&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;间隙锁&lt;/strong&gt;：当我们用范围条件而不是相等条件检索数据，并请求共享或排他锁时，InnoDB会给符合条件的已有数据记录的索引项加锁；对于键值在条件范围内但并不存在的记录，叫做间隙锁。&lt;/p&gt;
-&lt;p&gt;主要是为了解决幻读问题，只在&lt;strong&gt;可重复读隔离级别下有效&lt;/strong&gt;，一般与行锁一同出现。&lt;/p&gt;
-&lt;p&gt;间隙锁也会导致死锁，比如&lt;strong&gt;两个事务同时在一段范围内的数据加入间隙锁&lt;/strong&gt;(事务间的间隙锁不会冲突，可以加成功)，又insert或update在这个范围内的数据，就会导致死锁&lt;/p&gt;
-&lt;p&gt;另外，&amp;ldquo;间隙&amp;rdquo; 是 由这个间隙右边的记录定义的，也就是说，如果 有索引 c 的值为0，5，10，15，先有事务A查询select c from t where c &amp;gt; 5 lock in share mode，加锁范围是(5, 10], (10, 15], (15, max]，然后有事务B更新update t set c = 1 where c = 5，执行成功，此时c的值有 0，1，10，15，再执行update t set c=5 where c=1;会执行不成功，被blocked住，原因是间隙锁的间隙变成了 [1, 10]，所以更新失败&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Next-Key 锁&lt;/strong&gt; = 间隙锁(gap lock) + 行锁(record lock)，在可重复读隔离级别下，InnoDB在查找和扫描索引时，都会使用Next-Key锁来防止幻读的发生。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;插入意向锁&lt;/strong&gt;（II Gap）：特殊间隙锁，只有在插入时使用，表示插入的意向，属于行级锁，但不与行级锁冲突，而是与间隙锁和 Next-Key 锁冲突，当插入前需要获取插入意向锁，此时会与 Next-Key 锁冲突而阻塞，从而防止幻读。&lt;/p&gt;
@@ -20685,7 +20728,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;设置 &lt;code&gt;innodb_autoinc_lock_mode&lt;/code&gt;，=1时，普通insert语句会执行完之后释放，批量insert时会等到所有批量insert的SQL都结束的时候才释放锁，原因是如果bin log不是row，备库在复制时产生的行的id可能跟主库的不一致问题；=2时，自增id锁每次获取完就会释放。&lt;/p&gt;
-&lt;p&gt;如果选择=1，在批量insert时性能就会很差，MySQL的优化是让insert的语句不使用连续的自增id，不过这样就会让自增id不连续了。所以一般的操作是选择=2，bin log=row；&lt;/p&gt;
+&lt;p&gt;如果选择=1，在批量insert时性能就会很差，MySQL的优化是让insert的语句不使用连续的自增id，不过这样就会让自增id不连续了。所以一般的操作是选择=2，每条insert就释放，bin log=row；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;理论上自增id是无限的，但是因为字段的类型已经限定了最大的位数，比如如果id使用unsigned int是4个字节，上限就是2^32 -1，当达到上限后，自增值不变，就会导致报重复主键的错，所以如果表的上限需要比较大，需要设置成unsigned bigint；&lt;/p&gt;

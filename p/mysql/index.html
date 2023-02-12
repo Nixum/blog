@@ -296,10 +296,10 @@ if (!doNotTrack) {
 <li>无法这样使用select * from table group by column</li>
 </ul>
 <h2 id="distinct">distinct</h2>
-<p><code>select distinct colA, colB from table</code></p>
+<p><code>select distinct 列1, 列2 from 【表名】</code></p>
 <ul>
 <li>distinct 接多个列，会对多个列的不同组合都列出来</li>
-<li>无法这样使用select a, distinct b from table</li>
+<li>无法这样使用<code>select 列1, distinct 列2 from 【表名】</code></li>
 </ul>
 <h2 id="join">join</h2>
 <ul>
@@ -307,16 +307,17 @@ if (!doNotTrack) {
 <p>由于有时优化器会选择错误的驱动表，使用 <strong>straight_join</strong> 则可以让MySQL<strong>默认使用左边的表作为驱动表</strong>；</p>
 </li>
 <li>
-<p><strong>NLJ算法进行join操作</strong>：当有A、B两表，是一个1对1的关系，逻辑外键在B表带有索引，使用join进行关联查询，小表驱动大表(这样扫描的行数较少)，每扫一行，通过外键索引，在另一个表找对应的行数据，总共执行1条语句，扫描len(A) + len(B) 行，但是如果不使用join查，而是先查出A表所有数据，再根据A的id查回B的数据，虽然扫描的行数一样，但是却执行了len(B) + 1条SQL语句，显然是使用了join的方式性能强，前提是B上带了索引。</p>
+<p><strong>NLJ算法进行join操作</strong>：当有A、B两表，是一个1对1的关系，逻辑外键在B表带有索引，使用join进行关联查询，小表驱动大表(这样扫描的行数较少)，每扫一行B，通过外键索引，在另一个表A找对应的行数据，合并，返回，总共执行1条语句，扫描len(A) + len(B) 行。但是如果不使用join查，而是先查出B表所有数据，再根据B的id查回A的数据，虽然扫描的行数一样，但是却执行了len(B) + 1条SQL语句，显然是使用了join的方式性能强，前提是B上带了索引。</p>
 </li>
 <li>
-<p><strong>BNL算法进行join操作</strong>：如果B上关联键没有使用索引，则算法是这样的，先对A表进行全表扫描存进内存，再对B表进行全表扫描存进内存，然后在内存(join buffer)里进行匹配，如果内存太小，则分块加载，匹配后将结果集返回，清空内存，再分配加载这样循环处理。</p>
+<p><strong>BNL算法进行join操作</strong>：如果B上关联键没有使用索引，则算法是这样的，先对B表进行全表扫描存进内存，再对A表进行全表扫描，每扫一行A，就在内存(join buffer)里的B进行匹配，返回；如果内存太小，则分块对表B进行加载，全表扫描A，匹配后将结果集返回，清空内存，再分块加载剩下的B，再次全表扫描A，匹配返回，循环处理，直至表B加载完成。分块加载会导致重复扫描表A。</p>
 <p>对BNL的优化，一种是在业务端查回两张表的数据，在通过hash匹配组合，另一种是查join查询前，先创建临时表，创建索引，查询被驱动表的数据，插入临时表中，与临时表进行join操作，将BNL转为NLJ；</p>
+<p><code>select * from a join b on a.id=b.id</code>，A是驱动表，B是被驱动表；如果是 <code>select * from a, b on a.id=b.id</code>，则驱动表和被驱动表由MySQL自己决定。</p>
 <p>小表驱动，小表指的是行数相对少，或者select时表的数据量相对少的表；</p>
-<p><strong>所以，NLJ算法是从表A每查一行就根据索引去表B匹配一行，MRR优化就是在NLJ基础上，回表的时候根据有序的索引一批一批查，这样就快一点；而BNL算法是同时去查表A和表B的所有行，再进行匹配关联</strong>；</p>
+<p><strong>所以，NLJ算法是从表B每查一行就根据索引去表A匹配一行，MRR优化就是在NLJ基础上，回表的时候根据有序的索引一批一批查，这样就快一点；而BNL算法是同时去查表A和表B的所有行，再进行匹配关联</strong>；</p>
 </li>
 <li>
-<p>驱动表走全表扫描，被驱动表最好走索引扫描，使用NLJ算法，如果被驱动表是全表扫描，则使用(S)BNL算法</p>
+<p>驱动表走全表扫描，被驱动表最好走索引扫描，使用NLJ算法，如果被驱动表是全表扫描，则使用(S)BNL算法；即<strong>被驱动表有索引，使用NLJ，被驱动表没索引，使用BNL，都是为了扫描更少的行数</strong>；</p>
 </li>
 <li>
 <p>left join，使用left join时，左边的表不一定是驱动表，如果要使用left join语义，不能把被驱动表的字段放在where条件里做等值和不等值判断，必须放在on里，原因是MySQL会先用on作为条件进行过滤，完了才使用where进行过滤，放在on里能让过滤出来的条数少，要注意两者表达的语义还是有些不同的；</p>
@@ -513,6 +514,12 @@ if (!doNotTrack) {
 </blockquote>
 </li>
 </ul>
+<p><strong>红黑树的特性</strong>:
+（1）每个节点要么是黑色，要么是红色。
+（2）根节点是黑色。
+（3）每个叶子节点（NIL）是黑色。（注意：这里叶子节点，是指为空(NIL或NULL)的叶子节点）
+（4）如果一个节点是红色的，则它的子节点必须是黑色的。
+（5）从一个节点到该节点的子孙节点的所有路径上包含相同数目的黑节点。</p>
 <p>参考<a class="link" href="https://www.cnblogs.com/aspirant/p/9214485.html"  target="_blank" rel="noopener"
     >一步步分析为什么B+树适合作为索引的结构</a></p>
 <h2 id="4失效情况">4.失效情况</h2>
@@ -746,7 +753,7 @@ if (!doNotTrack) {
 <p><strong>4大特性</strong>：</p>
 <ol>
 <li>插入缓冲：使用change buffer，对insert、delete、update、purge都有提升；</li>
-<li>双写机制：InnoDB在将buffer pool中的Dirty Page脏页刷到磁盘时，会先将dirty page刷到InnoDB ；tablespace中的一个区域，这个区域称为 Double Write Buffer，该区域大小 2MB ，每次写入 1MB，128个页，每个页16k，其中120个页为后台线程批量刷Dirty Page，还有8个也是为了前台起的single page flash线程，用户可以主动请求使用，迅速提升空余的空间，在像Double Write Buffer写入成功后，第二步是将数据分别刷到一个共享空间和真正应该存在的位置；</li>
+<li>双写机制：InnoDB在将buffer pool中的dirty Page脏页刷到磁盘时，会先将dirty page刷到InnoDB tablespace中的一个区域，这个区域称为 Double Write Buffer，该区域大小 2MB ，每次写入 1MB，128个页，每个页16k，其中120个页为后台线程批量刷Dirty Page，还有8个也是为了前台起的single page flash线程，用户可以主动请求使用，迅速提升空余的空间，在像Double Write Buffer写入成功后，第二步是将数据分别刷到一个共享空间和真正应该存在的位置；</li>
 <li>自适应哈希索引：InnoDB会监控对表上辅助索引页的查询，如果发现建立hash索引可以提升性能，就会在缓冲池建立hash索引，提升查询性能；</li>
 <li>预读：用异步将磁盘中的页读取到buffer pool中，预读请求的所有页集中在一个范围内；</li>
 </ol>
@@ -927,6 +934,8 @@ if (!doNotTrack) {
 </li>
 <li>
 <p><strong>行锁</strong>：在InnoDB事务中，采用二阶段锁协议，行锁是在事务结束后才释放，在事务过程中，即使一开始用了后面没用到也不会被释放，因此，要把最可能造成锁冲突、最可能影响并发度的锁尽量往后放，减少锁的影响时间；<strong>行锁是统称，主要可以细分为共享锁和排他锁这些</strong>。</p>
+<ul>
+<li>
 <p><strong>记录锁</strong>：行锁，对索引进行锁定，如果是主键索引就会锁一条，但如果是二级索引，就会锁所有匹配的记录。</p>
 </li>
 <li>
@@ -940,8 +949,21 @@ if (!doNotTrack) {
 </li>
 <li>
 <p><strong>意向排他锁</strong> - IX锁：表级锁，表示事务持有表中行的排他锁或者打算获取行的排他锁，仅表示意图，不阻塞其他操作，当事务在获取表中的排他行锁时，需要先获取表中的意向排他锁</p>
+</li>
+</ul>
 <p>意向锁的作用主要为了解决遍历整个表来寻找行锁的情况，比如在alert语句修改表结构的时候使用，场景：</p>
 <p>事务A想修改表T的行R，A获得行R的排他锁，锁住了行R，事务B使用Alter Table语句修改表T的结构，此时需要获取表T的共享锁，由于它不知道表T是否存在行锁，只能去遍历，当表有行锁时，只能等行锁释放才能修改表结构，因为遍历很耗性能，所以需要意向锁来解决这个问题，事务A在获得行R的排他锁时，需要先上表T的共享排他锁，事务B在Alter 表T时就可以直接判断该表是否被上行锁了。</p>
+<ul>
+<li>
+<p><strong>间隙锁</strong>：当我们用范围条件而不是相等条件检索数据，并请求共享或排他锁时，InnoDB会给符合条件的已有数据记录的索引项加锁；对于键值在条件范围内但并不存在的记录，叫做间隙锁。</p>
+<p>主要是为了解决幻读问题，只在<strong>可重复读隔离级别下有效</strong>，一般与行锁一同出现。</p>
+<p>间隙锁也会导致死锁，比如<strong>两个事务同时在一段范围内的数据加入间隙锁</strong>(事务间的间隙锁不会冲突，可以加成功)，又insert或update在这个范围内的数据，就会导致死锁</p>
+<p>另外，&ldquo;间隙&rdquo; 是 由这个间隙右边的记录定义的，也就是说，如果 有索引 c 的值为0，5，10，15，先有事务A查询select c from t where c &gt; 5 lock in share mode，加锁范围是(5, 10], (10, 15], (15, max]，然后有事务B更新update t set c = 1 where c = 5，执行成功，此时c的值有 0，1，10，15，再执行update t set c=5 where c=1;会执行不成功，被blocked住，原因是间隙锁的间隙变成了 [1, 10]，所以更新失败</p>
+</li>
+<li>
+<p><strong>Next-Key 锁</strong> = 间隙锁(gap lock) + 行锁(record lock)，在可重复读隔离级别下，InnoDB在查找和扫描索引时，都会使用Next-Key锁来防止幻读的发生。</p>
+</li>
+</ul>
 </li>
 <li>
 <p><strong>Auto-Inc 锁</strong>：自增锁，比较特殊，当设置键为自增时使用，比如自增主键，在生成自增id时，会先获取相关表的 Auto-Inc 锁，阻塞其他事务的插入操作，保证自增的唯一性。不遵循二阶段锁协议，因为它并不是在事务提交时释放，而是在inset语句执行后释放，即使是在回滚时，自增值也不会减一。</p>
@@ -953,15 +975,6 @@ if (!doNotTrack) {
 <p>实际上MVCC得到的快照是逻辑上的数据，是推测出来的，通过当前值，利用事务Id和undo log日志，根据日志&quot;回滚&quot;得到各个版本的数据，事务id可以简单理解为对该行数据进行更改时产生的id，当然一个事务内可以对多条数据进行操作，这多条数据的事务id都是相同的</p>
 <p>例子：</p>
 <p>假如一个值1被按顺序改为2、3、4，每一次更改都会记录在回滚日志(undo log)里，如：将2改为1 -&gt; 将3改为2 -&gt; 将4改为3，当前的值是4，在查询这条记录的时候，不同时刻启动的事务会有不同的视图，比如有视图A（将2改成1）里看到的值是1，即同一条记录在数据库中存在多个版本</p>
-</li>
-<li>
-<p><strong>间隙锁</strong>：当我们用范围条件而不是相等条件检索数据，并请求共享或排他锁时，InnoDB会给符合条件的已有数据记录的索引项加锁；对于键值在条件范围内但并不存在的记录，叫做间隙锁。</p>
-<p>主要是为了解决幻读问题，只在<strong>可重复读隔离级别下有效</strong>，一般与行锁一同出现。</p>
-<p>间隙锁也会导致死锁，比如<strong>两个事务同时在一段范围内的数据加入间隙锁</strong>(事务间的间隙锁不会冲突，可以加成功)，又insert或update在这个范围内的数据，就会导致死锁</p>
-<p>另外，&ldquo;间隙&rdquo; 是 由这个间隙右边的记录定义的，也就是说，如果 有索引 c 的值为0，5，10，15，先有事务A查询select c from t where c &gt; 5 lock in share mode，加锁范围是(5, 10], (10, 15], (15, max]，然后有事务B更新update t set c = 1 where c = 5，执行成功，此时c的值有 0，1，10，15，再执行update t set c=5 where c=1;会执行不成功，被blocked住，原因是间隙锁的间隙变成了 [1, 10]，所以更新失败</p>
-</li>
-<li>
-<p><strong>Next-Key 锁</strong> = 间隙锁(gap lock) + 行锁(record lock)，在可重复读隔离级别下，InnoDB在查找和扫描索引时，都会使用Next-Key锁来防止幻读的发生。</p>
 </li>
 <li>
 <p><strong>插入意向锁</strong>（II Gap）：特殊间隙锁，只有在插入时使用，表示插入的意向，属于行级锁，但不与行级锁冲突，而是与间隙锁和 Next-Key 锁冲突，当插入前需要获取插入意向锁，此时会与 Next-Key 锁冲突而阻塞，从而防止幻读。</p>
@@ -1349,7 +1362,7 @@ if (!doNotTrack) {
 </li>
 <li>
 <p>设置 <code>innodb_autoinc_lock_mode</code>，=1时，普通insert语句会执行完之后释放，批量insert时会等到所有批量insert的SQL都结束的时候才释放锁，原因是如果bin log不是row，备库在复制时产生的行的id可能跟主库的不一致问题；=2时，自增id锁每次获取完就会释放。</p>
-<p>如果选择=1，在批量insert时性能就会很差，MySQL的优化是让insert的语句不使用连续的自增id，不过这样就会让自增id不连续了。所以一般的操作是选择=2，bin log=row；</p>
+<p>如果选择=1，在批量insert时性能就会很差，MySQL的优化是让insert的语句不使用连续的自增id，不过这样就会让自增id不连续了。所以一般的操作是选择=2，每条insert就释放，bin log=row；</p>
 </li>
 <li>
 <p>理论上自增id是无限的，但是因为字段的类型已经限定了最大的位数，比如如果id使用unsigned int是4个字节，上限就是2^32 -1，当达到上限后，自增值不变，就会导致报重复主键的错，所以如果表的上限需要比较大，需要设置成unsigned bigint；</p>
