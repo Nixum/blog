@@ -341,7 +341,7 @@ if (!doNotTrack) {
 <li>
 <p>G：即goroutine，代码中的<code>go func{}</code>，代表一个待执行的任务</p>
 <ul>
-<li>一个G最多占有CPU 10ms，防止其他G饿死。</li>
+<li><strong>一个G最多占有CPU 10ms</strong>，防止其他G饿死。</li>
 <li>每个Goroutine都有自己独立的栈存放当前的运行内存及状态，当G被调离CPU时，调度器会负责把CPU寄存器的值保存在G对象的成员变量中，当G被调度运行起来时，调度器又会负责把G对象的成员变量所保存的寄存器的值恢复到CPU的寄存器中。</li>
 </ul>
 <p>栈扩张：每一个G都有自己的栈空间，为了避免G过多导致使用过多的内存，一开始只会分配给G一块很小的栈空间，比如2k，当函数发现栈空间不足时，就会申请一块新的栈空间并把原来的栈内容复制过去，这就是G中_Gcopystack状态，64位机器最大是1GB，32位为256MB。</p>
@@ -353,7 +353,7 @@ if (!doNotTrack) {
 <p>M的数量不一定和P匹配，可以设置多个M，M和P绑定后才可运行，多余的M会处于休眠状态；</p>
 </li>
 <li>
-<p>调度器最多可创建10000个M，但最多只有GOMAXPROCS个活跃线程能够正常运行，或者自旋；</p>
+<p>调度器最多可创建10k个M，但最多只有GOMAXPROCS个活跃线程能够正常运行，或者自旋；</p>
 <p>所以一般情况下，会设置与P一样数量的M，让所有的调度都发生在用户态，减少额外的调度和上下文切换开销；</p>
 </li>
 <li>
@@ -362,7 +362,7 @@ if (!doNotTrack) {
 </ul>
 </li>
 <li>
-<p>P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程M需要的上下文（局部计算资源，用于在同一线程写多个goroutine的切换），由P来负责调度线程上的LRQ，是实现从N：1到N：M映射的关键，存在的意义在于工作窃取算法，同时也是为了保证在发生系统调用时，M阻塞，此时P就可以交给其他M继续执行，即hand off策略。</p>
+<p>P：即processor，处理器的抽象，运行在线程上的本地调度器，用来管理和执行goroutine，使得goroutine在一个线程上跑，提供了线程M需要的上下文（局部计算资源，用于在同一线程写多个goroutine的切换），由P来负责调度线程上的LRQ，是实现从N：1到N：M映射的关键，存在的意义在于工作窃取算法，同时也是为了保证在发生系统调用时，M阻塞，释放P，MP分离，此时P就可以交给其他M继续执行，即hand off策略。</p>
 <ul>
 <li>
 <p>P的个数取决于<strong>GOMAXPROCS</strong>，默认使用CPU的个数，这些P会绑定到不同内核线程，尽量提升性能，让每个核都有代码在跑。在确定了P的最大数量n后，当程序运行时，创建n个P，P代表代表并发度；</p>
@@ -423,7 +423,7 @@ if (!doNotTrack) {
 <p>阻塞结束后，该M和G会尝试找回原来的P（有利于数据局部性），如果原来的P没空，则获取其他空闲的P，放入其LRQ，等待执行；如果没有空闲的P，则G放入GRQ，M继续休眠；（<strong>hand off策略</strong>）</p>
 </li>
 <li>
-<p>G被调用运行时，会尝试唤醒其他空闲的M和P进行组合，由于M和P由于刚被唤醒，进入自旋状态，G0发现P的LRQ队列没有G，则先去GRQ里进行working stealing，如果GRQ里没有，则去其他P的LRQ里working stealing；</p>
+<p>G被调用运行时，会尝试唤醒其他空闲的M和P进行组合，由于M和P由于刚被唤醒，进入自旋状态，G0发现P的LRQ队列没有G，则先去GRQ里获取，如果GRQ里没有，则去其他P的LRQ里working stealing；</p>
 </li>
 </ul>
 <p><strong>如果是网络IO</strong>，比如通过netpoller进行网络系统调用，调度器可以防止G在进行这些系统调用时阻塞M，使得M可以执行P的LRQ中的其他G，而不需要使用新的M，该G在netpoller执行完后，会重新回到之前P的LRQ中（或者被放到GRQ），等待调用。执行网络系统调用不需要额外的M，netpoller使用系统线程时刻处理一个有效的事件循环（通过linux上的epoll实现，网络相关fd与G绑定），即在这种场景下，G会和M、P分离，G挂在了netpoller下。（<strong>网络调用导致G阻塞，会由netpoller接管，M不阻塞，此时M可以继续执行下一个G</strong>）</p>
@@ -471,9 +471,9 @@ if (!doNotTrack) {
 </div>
 </div><h2 id="调度过程中存在的阻塞">调度过程中存在的阻塞</h2>
 <ul>
-<li>网络IO</li>
-<li>系统调用syscall</li>
-<li>channel，select，锁等待</li>
+<li>网络IO（M可以执行其他G）</li>
+<li>系统调用syscall（M与G绑定阻塞，释放P，此时M无法执行其他G）</li>
+<li>channel，select，锁等待（M可以执行其他G）</li>
 <li>runtime.Gosched()运行时调度</li>
 </ul>
 <h2 id="调度器的策略">调度器的策略</h2>
@@ -484,7 +484,7 @@ if (!doNotTrack) {
 </ul>
 <h2 id="调度抢占的时机">调度(抢占)的时机</h2>
 <ul>
-<li>go调度器，本质是为需要执行的G寻找M以及P，不是一个实体，调度是需要发生调度时由M执行runtime.schedule方法进行；</li>
+<li>go调度器，本质是为需要执行的G寻找M以及P，不是一个实体，调度是需要发生调度时由M执行<code>runtime.schedule方法</code>进行；</li>
 <li>函数调用期间，如G需要栈扩容，就会调度另一个G</li>
 <li>调度器初始化时，会依次调用mcommoninit：初始化M资源池、procresize：初始化P资源池、newproc：G的运行现场和调度队列；</li>
 <li>channel、mutex等sync操作发生协程阻塞；</li>
@@ -666,9 +666,9 @@ if (!doNotTrack) {
 </table>
 <h2 id="泄露与排查">泄露与排查</h2>
 <p>goroutine的泄露一般会导致内存的泄露，最终导致OOM，原因一般是该运行完成的goroutine一直在运行，没有结束，可能的原因是goroutine内阻塞，死循环。</p>
-<p>检查工具：pprof，请求/debug/pprof/goroutine接口或者heap接口，判断内存占用走势，分析内存使用情况。一般的走势是整体向上递增，伴随一个一个的峰谷。</p>
+<p>检查工具：pprof，请求<code>/debug/pprof/goroutine接口或者heap接口</code>，判断内存占用走势，分析内存使用情况。一般的走势是整体向上递增，伴随一个一个的峰谷。</p>
 <h1 id="内存模型">内存模型</h1>
-<p>Go 的内存分配器基于tcmalloc的内存分配算法，它是一个带内存池的分配器，底层直接调用操作系统的mmap函数实现内存分配，减少内存碎片，提升内存利用率。</p>
+<p>Go 的内存分配器基于tcmalloc的内存分配算法，它是一个带内存池的o分配器，底层直接调用操作系统的mmap函数实现内存分配，减少内存碎片，提升内存利用率。</p>
 <p>Go中为每个系统线程分配一个本地的mcache，少量的地址分配就直接从mcache中分配，并且定期做垃圾回收，将线程的mcache中的空闲内存返回给全局控制堆。</p>
 <p>根据对象中是否含有指针以及对象大小，内存分配过程分为 3 类：</p>
 <ul>

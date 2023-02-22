@@ -249,7 +249,20 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <li>最后，节点的kubelet会一直监听API-Server的Pod资源变化，当发现有新的Pod对象分配到自己所在的节点时，kubelet就会通过gRPC通信，通过CRI向容器运行时创建容器，运行起来。</li>
 </ol>
 <h2 id="api-server">API-Server</h2>
-<p>api-server在收到请求后，会进行一系列的执行链路。</p>
+<blockquote>
+<p>API-Server 作为统一入口，任何对数据的操作都必须经过 API-Server。API-Server负责各个模块之间的通信，集群里的功能模块通过API-Server将信息存入到etcd中，etcd 存储集群的数据信息，其他模块通过API-Server读取这些信息，实现来模块之间的交互。</p>
+</blockquote>
+<p>主要场景：</p>
+<ol>
+<li>节点上的 Kubelet 会周期性的调用api-server的接口，上报节点信息，API-Server将节点信息更新到etcd中</li>
+<li>节点上的 Kubelet 会通过API-Server上的Watch接口，监听Pod信息，判断Pod是要从本节点进行调度、删除还是修改</li>
+<li>Controller Manager的Node-Controller模块会通过API-Server的Watch接口，监控节点信息，进行相应的处理</li>
+<li>Scheduler通过API-Server的Watch接口，监听Pod的信息进行调度</li>
+</ol>
+<h3 id="原理">原理</h3>
+<p>API-Server本质上也是控制器那一套，通过List-Watch和缓存机制，来解决被大量调用的问题，保证消息实时性、可靠性、顺序性和性能，另外其他模块也是差不多的机制，对集群信息进行了缓存，通过List-Watch进行更新进行保证。</p>
+<h3 id="流程">流程</h3>
+<p>api-server在收到请求后，会进行一系列的执行链路：</p>
 <ol>
 <li>认证：校验发起请求的用户身份是否合法，支持多种方式如x509客户端证书认证、静态token认证、webhook认证</li>
 <li>限速：默认读 400/s，写 200/s，1.19版本以前不支持根据请求类型进行分类、按优先级限速，1.19版本以后支持将请求按重要程度分类限速，支持多租户，可有效保障Leader选举之类的高优先级请求得到及时响应，防止一个异常client导致整个集群被限速。</li>
@@ -260,7 +273,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </ol>
 <h2 id="调度器scheduler">调度器Scheduler</h2>
 <p>主要职责就是为新创建的Pod寻找合适的节点，默认调度器会先调用一组叫Predicate的调度算法检查每个Node，再调用一组叫Priority的调度算法为上一步结果里的每个Node打分，将新创建的Pod调度到得分最高的Node上。</p>
-<h3 id="原理">原理</h3>
+<h3 id="原理-1">原理</h3>
 <p><figure 
 	>
 	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/k8s%e9%bb%98%e8%ae%a4%e8%b0%83%e5%ba%a6%e5%8e%9f%e7%90%86.png" >
@@ -534,7 +547,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <blockquote>
 <p>静态pod是由kubelet进行管理的仅存在于特定Node的Pod上，他们不能通过API Server进行管理，无法与ReplicationController、Deployment或者DaemonSet进行关联，并且kubelet无法对他们进行健康检查。静态Pod总是由kubelet进行创建，并且总是在kubelet所在的Node上运行。</p>
 </blockquote>
-<h3 id="原理-1">原理</h3>
+<h3 id="原理-2">原理</h3>
 <p>由于不同容器间可能存在依赖关系（如启动顺序的依赖），因此k8s会起一个中间容器Infra容器，来关联其他容器，infra容器一定是最先起的，其他容器通过Join Network Namespace的方式与Infa容器进行关联。</p>
 <p><strong>一个 Pod 只有一个 IP 地址，由Pod内容器共享，Pod 的生命周期只跟 Infra 容器一致，Infra管理共享资源</strong>。</p>
 <p>kubelet会为每个节点上创建一个基本的cbr0网桥，并为每一个Pod创建veth虚拟网络设备，绑定一个IP地址，同一个Pod中的所有容器会通过这个网络设备共享网络，从而能通过localhost相互访问彼此暴露的端口和服务。</p>
@@ -1257,7 +1270,7 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 </div>
 </div><h2 id="控制器模型">控制器模型</h2>
 <p>常见的控制器有Deployment、Job、CronbJob、ReplicaSet、StatefulSet、DaemonSet等，他们是用于创建和管理Pod的实例，能够在集群层面提供复制、发布以及健康检查等功能，这些控制器都运行在Kubernetes集群的Master节点上，这些控制器会随Controller Manager的启动而运行，监听集群状态的变更来调整对应对象的状态。</p>
-<h3 id="原理-2">原理</h3>
+<h3 id="原理-3">原理</h3>
 <p>控制循环：在一个无限循环内不断的轮询集群中的对象，将其状态与期望的状态做对比后，对该对象采取相应的操作。实际状态来自集群本身，如Kubelet汇报的容器状态、节点状态，监控系统的监控数据；期望状态来自用户提交的yaml文件；对象X指的是Pod或是其他受控制器控制的对象。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1763,6 +1776,50 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>Indices：存储缓存器，key为索引器名称，value为缓存的数据，比如：<code>map[&quot;namespace&quot;]map[{namespace}]{sets.pod}</code></p>
 </li>
 </ul>
+<p><strong>SharedInformer</strong></p>
+<p>在K8s中，每一个资源都有一个Informer，Informer使用Reflector来监听资源，如果统一资源的Informer实例化太多次，就会有很多重复的步骤。为了解决多个控制器操作同一资源的问题，导致对同一资源的重复操作，比如重复缓存。使用SharedInformer后，不管有多少个控制器同时读取事件，都只会调用一个Watch API来Watch上游的API-Server，降低Api-Server的负载，比如 Kube-Controller-Manager。</p>
+<p>Informer是一种机制，SharedInformer是其中一种实现。</p>
+<p>通常自定义Controller要求只有一个实例在运行，因为当出现多个实例的时候，会出现并发问题，重复消费事件，如果要实现高可用，需要主从部署，只有主服务处于工作状态，从服务处于暂停状态，当主服务出现问题时，实现主从切换。Client-Go本身提供了leaderelection机制来实现，原理是通过K8s的 <code>endpoints或configmap或lease</code>实现一个分布式锁（通过resourceVersion + 乐观锁实现，判断资源的id和自己所持有的id是否一致），只有抢到锁的服务才能成为leader，并定期更新，而抢不到的节点会一直等待。当 leader 因为某些异常原因挂掉后，租约到期，其他节点会尝试抢锁，成为新的 leader，成为leader时，对应pod的annotations会更新<code>control-plane.alpha.kubernetes.io/leader</code>字段。</p>
+<p><strong>WorkQueue</strong></p>
+<blockquote>
+<p>WorkQueue支持三种队列：FIFO队列、延时队列、限速队列，供不同场景下使用。</p>
+<p>从event handler触发的事件会先放入WorkQueue中，WorkQueue是一个去重队列，内部除了 Queue队列 外还带有 Processing Set 和 Dirty Set记录，用来实现同一个资源对象的多次事件触发，入队列后会去重，不会被多个worker同时处理。</p>
+<ul>
+<li>
+<p>Queue队列：实际存储元素的地方，保证元素有序，本质是一个slice；</p>
+</li>
+<li>
+<p>Dirty Set：保证去重，还能保证处理一个元素之前哪怕被添加多次（并发），也只会被处理一次；</p>
+</li>
+<li>
+<p>Processing Set：标记机制，标记一个元素是否被处理，保证只有一个元素在Queue队列里被处理；</p>
+</li>
+</ul>
+</blockquote>
+<p>并发处理流程：</p>
+<p>Add方法：</p>
+<ol>
+<li>元素被Add时，首先会检查其是否存在于Dirty Set中，如果存在则直接丢弃，不存在才加入，保证Dirty Set中不会有多个指向同一resource的相同元素存在；</li>
+<li>元素被添加进Dirty Set后，再判断Processing Set是否存在，如果存在则跳出，防止同一元素被并发处理，不存在则加入Queue队列；</li>
+</ol>
+<p>Get方法：</p>
+<ol>
+<li>元素被Get时，Reconcile Loop从Queue队列队首中取出元素，并放入Processing Set中，防止并发处理同一元素；</li>
+<li>最后从Dirty Set中删除该元素，因为 Dirty Set 是为了实现的待消费去重, 既然从 Queue队列 拿走元素, Dirty Set 也需要删除；</li>
+</ol>
+<p>Done方法：</p>
+<ol>
+<li>
+<p>Reconcile Loop处理结束后，从Processing Set中删除元素；</p>
+</li>
+<li>
+<p>如果 Dirty Set 中存在相同resource的元素，就会被放入Queue队列；</p>
+<p>这里的意思是，如果一个元素正在被处理，又再次加入了相同的元素，由于该元素还没处理完，只能把该元素先放入Dirty Set中，因为Queue队列会被多个协程消费，只放在Dirty Set中保证同一元素不会被并发消费，当元素处理完时，再重新进入Queue队列，因为此时该元素已经被处理过，是最新的了。</p>
+</li>
+</ol>
+<blockquote>
+<p>这样就解决了去重的问题，还解决了同一个对象并发处理的顺序问题，只不过可能和原来请求的顺序不太一致，相同资源的请求被delay了，但是不影响最终结果，也实现了无锁的操作。</p>
+</blockquote>
 <p><strong>整体流程</strong></p>
 <ol>
 <li>Reflector通过List罗列资源，通过Watch监听资源的变更事件，将结果放到DeltaFIFO队列中；</li>
@@ -1770,10 +1827,6 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <li>Indexer与etcd中的数据完全保持一致，handler处理时，先从本地缓存里拿，拿不到再请求API-Server，减少Client-Go与API-Server交互的压力。</li>
 <li>Informer 与我们要编写的控制循环ControlLoop之间，则使用了一个工作队列WorkQ来进行协同，实际应用中，informers、listers、clientset都是通过CRD代码生成，开发者只需要关注控制循环的具体实现就行。</li>
 </ol>
-<p><strong>SharedInformer</strong></p>
-<p>在K8s中，每一个资源都有一个Informer，Informer使用Reflector来监听资源，如果统一资源的Informer实例化太多次，就会有很多重复的步骤。为了解决多个控制器操作同一资源的问题，导致对同一资源的重复操作，比如重复缓存。使用SharedInformer后，不管有多少个控制器同时读取事件，都只会调用一个Watch API来Watch上游的API-Server，降低Api-Server的负载，比如 Kube-Controller-Manager。</p>
-<p>Informer是一种机制，SharedInformer是其中一种实现。</p>
-<p>通常自定义Controller要求只有一个实例在运行，因为当出现多个实例的时候，会出现并发问题，重复消费事件，如果要实现高可用，需要主从部署，只有主服务处于工作状态，从服务处于暂停状态，当主服务出现问题时，实现主从切换。Client-Go本身提供了leaderelection机制来实现，原理是通过K8s的 <code>endpoints或configmap或lease</code>实现一个分布式锁（通过resourceVersion + 乐观锁实现，判断资源的id和自己所持有的id是否一致），只有抢到锁的服务才能成为leader，并定期更新，而抢不到的节点会一直等待。当 leader 因为某些异常原因挂掉后，租约到期，其他节点会尝试抢锁，成为新的 leader，成为leader时，对应pod的annotations会更新<code>control-plane.alpha.kubernetes.io/leader</code>字段。</p>
 <h2 id="service">Service</h2>
 <ul>
 <li>
@@ -3000,6 +3053,10 @@ curl -XPOST http://localhost:15000/logging?level=info
     >详解 Kubernetes Pod 的实现原理</a></p>
 <p><a class="link" href="https://draveness.me/understanding-kubernetes/"  target="_blank" rel="noopener"
     >谈 Kubernetes 的架构设计与实现原理</a></p>
+<p><a class="link" href="https://kingjcy.github.io/post/cloud/paas/base/kubernetes/k8s-apiserver/"  target="_blank" rel="noopener"
+    >云计算K8s组件系列（一）&mdash;- K8s apiserver 详解</a></p>
+<p><a class="link" href="https://github.com/rfyiamcool/notes/blob/main/kubernetes_client_go_workqueue_code.md"  target="_blank" rel="noopener"
+    >源码分析 kubernetes client-go workqueue 的实现原理</a></p>
 
 </section>
 
@@ -3251,10 +3308,15 @@ curl -XPOST http://localhost:15000/logging?level=info
             <li><a href="#核心组件的协作流程">核心组件的协作流程</a></li>
           </ol>
         </li>
-        <li><a href="#api-server">API-Server</a></li>
-        <li><a href="#调度器scheduler">调度器Scheduler</a>
+        <li><a href="#api-server">API-Server</a>
           <ol>
             <li><a href="#原理">原理</a></li>
+            <li><a href="#流程">流程</a></li>
+          </ol>
+        </li>
+        <li><a href="#调度器scheduler">调度器Scheduler</a>
+          <ol>
+            <li><a href="#原理-1">原理</a></li>
             <li><a href="#调度策略">调度策略</a></li>
             <li><a href="#常见的调度方式">常见的调度方式</a></li>
             <li><a href="#优先级与抢占机制">优先级与抢占机制</a>
@@ -3279,7 +3341,7 @@ curl -XPOST http://localhost:15000/logging?level=info
         </li>
         <li><a href="#pod">Pod</a>
           <ol>
-            <li><a href="#原理-1">原理</a></li>
+            <li><a href="#原理-2">原理</a></li>
             <li><a href="#关于pause容器--infra容器">关于Pause容器 / Infra容器</a></li>
             <li><a href="#pod在k8s中的生命周期">Pod在K8s中的生命周期</a></li>
             <li><a href="#side-car">Side Car</a></li>
@@ -3315,7 +3377,7 @@ curl -XPOST http://localhost:15000/logging?level=info
         </li>
         <li><a href="#控制器模型">控制器模型</a>
           <ol>
-            <li><a href="#原理-2">原理</a></li>
+            <li><a href="#原理-3">原理</a></li>
             <li><a href="#deployment">Deployment</a></li>
             <li><a href="#statefulset">StatefulSet</a></li>
             <li><a href="#daemonset">DaemonSet</a></li>
