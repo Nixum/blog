@@ -301,7 +301,7 @@ if (!doNotTrack) {
 <li><code>memory.usage_in_bytes</code>：表示当前控制组里所有进程实际使用的内存总和，与limit_in_bytes的值越接近，越容易触发OOM Killed。</li>
 </ul>
 <p>当发送OOM killed时，可以查看内核日志 <code>journalctl -k 或者 查看日志文件 /var/log/message</code></p>
-<p>Memory Cgroup只统计了RSS和Page Cache这两部分内存，两者的和等于memory.usage_in_bytes，当控制组里的进程要申请新的物理内存，但<code>memory.usage_in_bytes</code>已超过<code>memory.limit_in_bytes</code>，此时会启用page frame reclaim内存页面回收机制，回收Page Cache的内存。</p>
+<p>Memory Cgroup只统计了RSS和Page Cache这两部分内存，两者的和等于 <code>memory.usage_in_bytes</code>，当控制组里的进程要申请新的物理内存，但<code>memory.usage_in_bytes</code>已超过<code>memory.limit_in_bytes</code>，此时会启用<code>page frame reclaim内存页面</code>回收机制，回收Page Cache的内存。</p>
 <p>判断容器真实的内存使用量，不能仅靠Memory Cgroup里的<code>memory.usage_in_bytes</code>，而需要<code>memory.stat</code>里的rss值，该值才真正反应了容器使用的真实物理内存的大小。</p>
 <h2 id="swap">Swap</h2>
 <p>容器可以使用Swap空间，但会导致Memory Cgroup失效，比如在Swap空间足够的情况下，设置容器limit为512MB，然后容器申请了1G内存，是可以申请成功的，此时容器的RSS为512MB，Swap只剩下512MB空闲。</p>
