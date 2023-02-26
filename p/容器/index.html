@@ -157,7 +157,7 @@ if (!doNotTrack) {
 <p><strong>与虚拟化的区别</strong>：虚拟化是在操作系统和硬件上进行隔离，虚拟机上的应用需要经过虚拟机再经过宿主机，有两个内核，本身就有消耗，而容器化后的应用仅仅只是宿主机上的进程而已，只用到宿主机一个内核；</p>
 <p>因为namespace隔离的并不彻底，由于内核共享，容器化应用仍然可以把宿主机的所有资源都吃掉，有些资源不能通过namespace隔离，比如修改了容器上的时间，宿主机上的时间也会被改变，因此需要Cgroups；</p>
 <h2 id="cgroups---资源限制">Cgroups - 资源限制</h2>
-<p>是用来制造约束的主要手段，即对进程设置资源能够使用的上限，如CPU、内存、IO设备的流量等</p>
+<p>是用来制造约束的主要手段，即控制进程组的优先级，设置进程能够使用的资源上限，如CPU、内存、IO设备的流量等</p>
 <p>比如，限定容器只能使用宿主机20%的CPU</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -170,12 +170,37 @@ if (!doNotTrack) {
 </div><blockquote>
 <p>Cgroups 通过不同的子系统限制了不同的资源，每个子系统限制一种资源。每个子系统限制资源的方式都是类似的，就是把相关的一组进程分配到一个控制组里，然后通过树结构进行管理，每个控制组都设有自己的资源控制参数。</p>
 </blockquote>
+<p><strong>相互关系</strong>：</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/Cgroup%e7%9b%b8%e4%ba%92%e5%85%b3%e7%b3%bb.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/Cgroup%e7%9b%b8%e4%ba%92%e5%85%b3%e7%b3%bb.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<p><code>/sys/fs/cgroup/cpu/{task}/</code>目录表示task这个任务挂在了CPU Cgroup下，在这个目录下有很多的配置文件，比如<code>cpu.cfd_quota_us、cgroup.procs</code>等，文件内容是该task所属进程的PID；</p>
+<p><code>/proc/{PID号}/cgroup</code>文件表示这个进程涉及到的所有cgroup子系统的信息</p>
 <p>常见的Cgroups子系统</p>
 <ul>
-<li>CPU 子系统，用来限制一个控制组（一组进程，你可以理解为一个容器里所有的进程）可使用的最大 CPU。</li>
-<li>memory 子系统，用来限制一个控制组最大的内存使用量。</li>
-<li>pids 子系统，用来限制一个控制组里最多可以运行多少个进程。</li>
-<li>cpuset 子系统， 这个子系统来限制一个控制组里的进程可以在哪几个物理 CPU 上运行。</li>
+<li>
+<p>CPU 子系统，用来限制一个控制组（一组进程，你可以理解为一个容器里所有的进程）可使用的最大 CPU，配合cfs（完全公平调度算法）实现CPU的分配和管理。</p>
+<p>cpu share：用于cfs中调度的权重，条件相同的情况下，cpushare值越高，分得的时间片越多。</p>
+<p>cpu set：主要用于设置CPU的亲和性，可以限制cgroup中的进程只能在指定的CPU上运行，或者不能在指定的CPU上运行，同时cpuset还能设置内存的亲和性。</p>
+</li>
+<li>
+<p>memory 子系统，用来限制一个控制组最大的内存使用量。</p>
+</li>
+<li>
+<p>pids 子系统，用来限制一个控制组里最多可以运行多少个进程。</p>
+</li>
+<li>
+<p>cpuset 子系统， 这个子系统来限制一个控制组里的进程可以在哪几个物理 CPU 上运行。</p>
+</li>
 </ul>
 <p>Cgroups 有 v1 和 v2 两个版本，v1中每个进程在各个Cgroups子系统中独立配置，可以属于不同的group，比较灵活但因为每个子系统都是独立的，会导致对同一进程的资源协调困难，比如同一容器配置了Memory Cgroup和Blkio Cgroup，但是它们间无法相互协作。</p>
 <p>v2针对此做了改进，使各个子系统可以协调统一管理资源。</p>
@@ -457,9 +482,18 @@ if (!doNotTrack) {
 <p>使用User Namespace，可以把容器中root用户映射称宿主机上的普通用户，解决uid冲突共享问题，<strong>目前Kebernetes还不支持User Namespace(当前时间20210920，不过github上有pr了)</strong></p>
 <h1 id="runc-与-oci">runC 与 OCI</h1>
 <ul>
-<li>OCI：围绕容器格式和运行时制定一个开放的工业化标准，包含容器运行时标准 （runtime spec）和 容器镜像标准（image spec）。</li>
-<li>runC：一个轻量工具，基于libcontainer库，由golang语言实现，不需要docker引擎，它根据 OCI 标准来创建和运行容器的，但不包含镜像管理功能。</li>
-<li>OCI bundle ：包括容器的文件系统和一个 config.json 文件。有了容器的根文件系统后就可以通过 runc spec 命令来生成 config.json 文件，config.json 文件用于说明如何运行容器，包括要运行的命令、权限、环境变量等等内容</li>
+<li>
+<p>OCI：Open Container Initiatives，围绕容器格式和运行时制定一个开放的工业化标准，包含容器运行时标准 （runtime spec）和 容器镜像标准（image spec）。</p>
+<p>容器镜像标准 image spec：包含了文件系统、config文件、manifest文件、index文件；</p>
+<p>容器运行时标准 runtime spec：包含容器运行状态以及需要提供的命令；</p>
+</li>
+<li>
+<p>runC：一个轻量工具，基于libcontainer库，由golang语言实现，不需要docker引擎，它根据 OCI 标准来创建和运行容器的，即runC是OCI运行时标准的一个实现，不包含镜像管理功能。</p>
+<p>runC成为容器运行时实现的标准，而containerd是Docker出的一个中间层，为runC提供接口，供上层Docker Daemon调用。</p>
+</li>
+<li>
+<p>OCI bundle ：包括容器的文件系统和一个 config.json 文件。有了容器的根文件系统后就可以通过 runc spec 命令来生成 config.json 文件，config.json 文件用于说明如何运行容器，包括要运行的命令、权限、环境变量等等内容</p>
+</li>
 </ul>
 <p>OCI 定义的容器状态：</p>
 <blockquote>

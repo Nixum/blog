@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    9 minute read
+                    10 minute read
                 </time>
             </div>
         
@@ -160,6 +160,11 @@ if (!doNotTrack) {
 <p>defer和return同时出现时，先return后defer，defer可以修改到return里的变量；</p>
 </li>
 <li>
+<p>return 是非原子性的，需要两步，执行前首先要为返回值赋值，然后 return 将返回值返回调用处。</p>
+<p><strong>defer 和 return 的执行顺序是：1. 先为返回值赋值；2. 然后执行 defer；3. 然后 return 到函数调用处</strong></p>
+<p>要注意defer里使用的变量是否被提前声明</p>
+</li>
+<li>
 <p>panic被触发时，控制权就交给了defer</p>
 <p>遇到panic时，会先遍历此协程内的defer链表，并执行defer，如果在执行过程中遇到recover，则停止panic，返回recover处继续往下执行，如果没遇到recover，则遍历完本协程的defer链表后，向stderr抛出panic信息；</p>
 </li>
@@ -167,7 +172,129 @@ if (!doNotTrack) {
 <p>执行defer过程中出现panic，此时的panic会覆盖它之前的panic，直至被捕获或抛出；</p>
 </li>
 </ul>
-<h1 id="内存对齐">内存对齐</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">test1</span><span class="p">())</span> <span class="c1">// 0 0
+</span><span class="c1"></span>	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">test2</span><span class="p">())</span> <span class="c1">// 3 3
+</span><span class="c1"></span>    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">test21</span><span class="p">())</span> <span class="c1">// 0 3
+</span><span class="c1"></span>	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">test3</span><span class="p">())</span> <span class="c1">// 0 4
+</span><span class="c1"></span>	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">test4</span><span class="p">())</span> <span class="c1">// 0 5
+</span><span class="c1"></span>    <span class="c1">// 注意返回值是否已经声明了变量
+</span><span class="c1"></span>    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">test5</span><span class="p">())</span> <span class="c1">// 1 0
+</span><span class="c1"></span>    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nf">test51</span><span class="p">())</span> <span class="c1">// 1 1
+</span><span class="c1"></span>	<span class="k">return</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">test1</span><span class="p">()</span> <span class="p">(</span><span class="nx">v</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">defer</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="s">&#34; &#34;</span><span class="p">)</span> <span class="c1">// 0
+</span><span class="c1"></span>	<span class="k">return</span> <span class="nx">v</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">test2</span><span class="p">()</span> <span class="p">(</span><span class="nx">v</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">defer</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="s">&#34; &#34;</span><span class="p">)</span> <span class="c1">// 3
+</span><span class="c1"></span>	<span class="p">}()</span>
+	<span class="k">return</span> <span class="mi">3</span>
+<span class="p">}</span>
+<span class="c1">// test2 和 test21 的差异在于闭包
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">test21</span><span class="p">()</span> <span class="p">(</span><span class="nx">v</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">defer</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="s">&#34; &#34;</span><span class="p">)</span> <span class="c1">// 0
+</span><span class="c1"></span>	<span class="k">return</span> <span class="mi">3</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">test3</span><span class="p">()</span> <span class="p">(</span><span class="nx">v</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">defer</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="s">&#34; &#34;</span><span class="p">)</span> <span class="c1">// 0
+</span><span class="c1"></span>	<span class="nx">v</span> <span class="p">=</span> <span class="mi">3</span>
+	<span class="k">return</span> <span class="mi">4</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">test4</span><span class="p">()</span> <span class="p">(</span><span class="nx">v</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">defer</span> <span class="kd">func</span><span class="p">(</span><span class="nx">n</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="s">&#34; &#34;</span><span class="p">)</span> <span class="c1">// 0
+</span><span class="c1"></span>	<span class="p">}(</span><span class="nx">v</span><span class="p">)</span>
+	<span class="k">return</span> <span class="mi">5</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">test5</span><span class="p">()</span> <span class="kt">int</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">i</span> <span class="kt">int</span>
+	<span class="k">defer</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">i</span><span class="o">++</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="s">&#34; &#34;</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="c1">// 1
+</span><span class="c1"></span>	<span class="p">}()</span>
+	<span class="k">return</span> <span class="nx">i</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">test51</span><span class="p">()</span> <span class="p">(</span><span class="nx">i</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">defer</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">i</span><span class="o">++</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="s">&#34; &#34;</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="c1">// 1
+</span><span class="c1"></span>	<span class="p">}()</span>
+	<span class="k">return</span> <span class="nx">i</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="内存对齐">内存对齐</h1>
 <p>CPU读取数据时不会一个字节一个字节去读取，而是一块一块，块的大小可以是2、4、6、8、16字节，块大小称为内存访问粒度。32位CPU一次读取4个字节，64位CPU一次读取8个字节。</p>
 <p>如果未进行内存对齐，会导致CPU进行两次内存访问，并且需要花费额外的时钟周期来处理对齐及运算，如果对齐了内存，一次读取就能访问完成，内存对齐可能会耗费额外的空间，但是可以加快读取效率，标准的空间换时间做法。</p>
 <p>以32位CPU对齐为例：</p>
@@ -765,6 +892,9 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 </li>
 <li>
 <p>有个特殊的key值math.NaN，它每次生成的哈希值是不一样的，这会造成m[math.NaN]是拿不到值的，而且多次对它赋值，会让map中存在多个math.NaN的key。</p>
+</li>
+<li>
+<p>当map出现并发读写时，不是抛出panic错误，而是fatal错误，fatal错误不可被recover，程序会直接退出；原因是当存在并发读写时，如果被recover了，会导致其他协程出现读取错误的情况。</p>
 </li>
 </ul>
 <h2 id="创建初始化">创建初始化</h2>

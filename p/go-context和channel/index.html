@@ -598,7 +598,21 @@ if (!doNotTrack) {
 </code></pre></td></tr></table>
 </div>
 </div><h2 id="timerctx">timerCtx</h2>
-<p>可超时自动取消的context，内部使用cancelCtx + timer实现，调用<code>WithDeadline()</code>方法可以创建timerCtx用于超时取消操作</p>
+<p>可超时自动取消的context，内部使用cancelCtx + timer实现，调用<code>WithDeadline()</code>方法可以创建timerCtx用于超时取消操作。</p>
+<p>WithTimeout()方法和WithDeadline()方法，效果是一样的，只是时间的效果不一样。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">WithTimeout</span><span class="p">(</span><span class="nx">parent</span> <span class="nx">Context</span><span class="p">,</span> <span class="nx">timeout</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Duration</span><span class="p">)</span> <span class="p">(</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">CancelFunc</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nf">WithDeadline</span><span class="p">(</span><span class="nx">parent</span><span class="p">,</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Add</span><span class="p">(</span><span class="nx">timeout</span><span class="p">))</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>关于withTimeout()方法，返回的cancel函数，即使不主动调用，也不影响资源的最终释放，它到时间了也会自动调用，建议是提前主动调用，尽快释放，避免等待时间过长导致浪费。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
