@@ -15635,7 +15635,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;补偿事务，每一个操作都要有对应的确认和补偿，类似于2pc，但2pc在于DB层面，TCC在于业务层面，每个业务逻辑都需要实现try-confirm-cancel的操作。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Try阶段&lt;/strong&gt;：对于操作的数据行，增加字段表示其状态，表示正在操作，预留必须的资源；&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Confirm阶段&lt;/strong&gt;：只操作预留资源，将try阶段中表示数据状态的字段修改为确认状态，表示已经完成操作，&lt;strong&gt;操作需要幂等；&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Cancel阶段&lt;/strong&gt;：将try阶段进行的操作进行回滚；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Cancel阶段&lt;/strong&gt;：将try阶段进行的操作进行回滚，&lt;strong&gt;操作需要幂等；&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;通过不断重试，并发的时候还是需要分布式锁，TCC主要是保证业务逻辑的完整性。&lt;/p&gt;
 &lt;p&gt;比如，在订单创建并减库存的场景中，&lt;/p&gt;
 &lt;p&gt;Try阶段：订单创建时发出订单创建的事件，此时订单状态是创建中，库存服务接收到后，并不是直接减库存，而是先冻结库存，将要扣减的库存数冻结起来，订单创建完成；&lt;/p&gt;
@@ -15665,6 +15665,13 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 	&lt;/a&gt;
 	
 &lt;/figure&gt;&lt;/p&gt;
+&lt;h3 id=&#34;tcc可能存在的问题&#34;&gt;TCC可能存在的问题&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;因为重试的存在，confirm和cancel需要保证幂等，可以使用事务记录表 + 状态来实现，confirm和cancel只有在存在事务记录，且状态为try时才能执行；&lt;/li&gt;
+&lt;li&gt;try时，需要上锁保证并发安全，之后confirm和cancel就可以不用加锁直接完成，因为try时已经保证了数据的一致性；&lt;/li&gt;
+&lt;li&gt;可能网络或者其他原因，导致参与者cancel早于try之前被接收到（confirm则不会，因为confirm必定是try执行成果之后才会出现），此时可能产生空回滚，同样也可以使用事务记录表 + 状态来保证cancel时可以识别出是否已经执行过try操作；&lt;/li&gt;
+&lt;li&gt;可能因为网络超时等原因，参与者先cancel了，此时事务已经被判定结束，然后才接收到try，导致事务阶段一直处于try阶段，造成资源悬挂，同样也可以使用事务记录表 + 状态来解决，保证已结束的事务不会执行try操作；&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h2 id=&#34;四本地消息表&#34;&gt;四、本地消息表&lt;/h2&gt;
 &lt;p&gt;适合解决分布式最终一致性问题。&lt;/p&gt;
 &lt;p&gt;事务性消息：本地事务和发送消息是原子性操作；&lt;/p&gt;
