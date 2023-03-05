@@ -8,6 +8,73 @@
     <language>en-us</language>
     <lastBuildDate>Sun, 28 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>网络</title>
+      <link>http://nixum.cc/p/%E7%BD%91%E7%BB%9C/</link>
+      <pubDate>Sun, 22 Sep 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E7%BD%91%E7%BB%9C/</guid>
+      <description>[TOC]
+基本    OSI七层模型 对应网络协议 作用     应用层 HTTP、TFTP、FTP、NFS、SMTP、Telnet 应用程序间通信的网络协议   表示层 Rlogin、SNMP、Gopher 数据格式化、加密、解密   会话层 SMTP、DNS 建立、维护、管理会话连接   传输层 TCP、UDP 建立、维护、管理端到端连接   网络层 IP、ICMP、ARP、RARP、AKP、UUCP IP寻址和路由选择   数据链路层 FDDI、Ethernet、Arpanet、PDN、SLIP、PPP 控制网络层与物理层间的通信   物理层 IEEE 802.1A、IEEE 802.2到802.11 比特流传输    数据链路层：
+ 数据包叫Frame，“帧”； 由两部分组成：标头和数据，标头标明数据发送者、接收者、数据类型； 用MAC地址定位数据包路径； 相关设备是交换机；  网络层：
+ 数据包叫packet，“包”； IPv4：32个二进制，4字节*8位；IPv6：1同一子网28个二进制，8字节*16位； 子网掩码与IP的and运算判断是否为同一子网下； 路由：把数据从原地址转发到目标地址，同一局域网内，通过广播的方式找到，不同局域网内，原主机先将包根据网关添加路由器/主机地址，通过交换机的广播方式发给目标主机，原主机将数据包传输给目标主机，再由目标主机根据MAC广播交给对应目标 ARP协议：IP与MAC地址的映射，仅限IPv4，IPv6使用 Neighbor Discovery Protocol替代； 相关设备是路由器，网关  传输层：</description>
+    </item>
+    
+    <item>
+      <title>etcd和ZooKeeper</title>
+      <link>http://nixum.cc/p/etcd%E5%92%8Czookeeper/</link>
+      <pubDate>Wed, 23 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/etcd%E5%92%8Czookeeper/</guid>
+      <description>[TOC]
+ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，在极端环境下，ZooKeeper可能会丢弃一些请求，消费者程序需要重新请求才能获得结果。另外在进行leader选举时集群都是不可用，所以说，ZooKeeper不能保证服务可用性。
+使用场景  集群管理，监控节点存活状态 主节点选举，当服务以master-salve模式进行部署，当主节点挂掉后选出新的主节点 服务发现 分布式锁，提供独占锁、共享锁 分布式自增id 搭配Kafka、dubbo等使用  特点  顺序一致性：同一客户端发起的事务请求，最终将会严格地按照顺序被应用到 ZooKeeper 中去。 原子性：所有事务请求的处理结果在整个集群中所有机器上的应用情况是一致的，也就是说，要么整个集群中所有的机器都成功应用了某一个事务，要么都没有应用。 单一系统映像：无论客户端连到哪一个 ZooKeeper 服务器上，其看到的服务端数据模型都是一致的。 可靠性：一旦一次更改请求被应用，更改的结果就会被持久化，直到被下一次更改覆盖。  数据模型 类似文件系统，根节点为 / ，每创建一个节点会从根节点开始挂，树形结构，每个数据节点称为znode，可以存储数据，每个znode还有自己所属的节点类型和节点状态
+  持久节点：一旦创建就一直存在，直到将其删除。 持久顺序节点：一个父节点可以为其子节点 维护一个创建的先后顺序 ，这个顺序体现在 节点名称 上，是节点名称后自动添加一个由 10 位数字组成的数字串，从 0 开始计数。 临时节点：临时节点的生命周期是与 客户端会话 绑定的，会话消失则节点消失 。临时节点 只能做叶子节点 ，不能创建子节点。 临时顺序节点：父节点可以创建一个维持了顺序的临时节点(和前面的持久顺序性节点一样)。   ZAB协议 通过ZAB协议保证注册到ZooKeeper上的主从节点状态同步，该协议有两种模式
+  崩溃恢复
+当整个 Zookeeper 集群刚刚启动或者Leader服务器宕机、重启或者网络故障导致不存在过半的服务器与 Leader 服务器保持正常通信时，所有服务器进入崩溃恢复模式，首先选举产生新的 Leader 服务器，然后集群中 Follower 服务器开始与新的 Leader 服务器进行数据同步。
+  消息广播
+当集群中超过半数机器与该 Leader 服务器完成数据同步之后，退出恢复模式进入消息广播模式，Leader 服务器开始接收客户端的事务请求生成事物提案（超过半数同意）来进行事务请求处理。</description>
+    </item>
+    
+    <item>
+      <title>消息队列</title>
+      <link>http://nixum.cc/p/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/</link>
+      <pubDate>Tue, 22 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/</guid>
+      <description>[TOC]
+使用场景  秒杀系统，一般秒杀系统处理包含几个步骤：风险控制、库存锁定、生成订单、短信通知、更新统计数据等，而决定秒杀是否成功只在前两个步骤，后续的操作就可以通过消息队列异步处理完成，加快整个流程的处理，减少等待时间，提升并发量。 隔离网关和后端服务，实现流量控制，保护后端服务，但会增加系统调用链，导致总体响应变长，异步增加系统复杂性。 令牌桶，目的也是进行流量控制。 服务解耦，数据同步，比如订单系统在订单状态发生变化时发出消息通知，其他服务订阅后做相应处理。 连接流计算任务和数据，比如集群日志处理，大数据统计 将消息广播给其他接收者  好处 流量削峰和流量控制、异步处理、解耦、广播、最终一致性
+缺点 可用性降低、复杂度提高、一致性问题、消息延迟
+常见消息队列    特性 ActiveMQ RabbitMQ RocketMQ Kafaka     单机吞吐量 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 10万级，RocketMQ也是可以支撑高吞吐的一种MQ 10万级别，这是kafka最大的优点，就是吞吐量高。一般配合大数据类的系统来进行实时数据计算、日志采集等场景   topic数量对吞吐量的影响  使用队列模型，通过Exchange模块实现发布-订阅模型，Exchange位于生产者和队列之间，由Exchange决定将详细投递到哪个队列。 topic可以达到几百，几千个的级别，吞吐量会有较小幅度的下降这是RocketMQ的一大优势，在同等机器下，可以支撑大量的topic topic从几十个到几百个的时候，吞吐量会大幅度下降。所以在同等机器下，kafka尽量保证topic数量不要过多。如果要支撑大规模topic，需要增加更多的机器资源   可用性 高，基于主从架构实现高可用性 高，基于主从架构实现高可用性 非常高，分布式架构 非常高，kafka是分布式的，一个数据多个副本，少数机器宕机，不会丢失数据，不会导致不可用   消息可靠性 有较低的概率丢失数据  经过参数优化配置，可以做到0丢失 经过参数优化配置，消息可以做到0丢失   时效性 ms级 微秒级，这是rabbitmq的一大特点，延迟是最低的 ms级 延迟在ms级以内   功能支持 MQ领域的功能极其完备 基于erlang开发，所以并发能力很强，性能极其好，延时很低 MQ功能较为完善，还是分布式的，扩展性好 功能较为简单，主要支持简单的MQ功能，在大数据领域的实时计算以及日志采集被大规模使用，是事实上的标准   优劣势总结 非常成熟，功能强大，在业内大量的公司以及项目中都有应用。偶尔会有较低概率丢失消息，而且现在社区以及国内应用都越来越少，官方社区现在对ActiveMQ 5.</description>
+    </item>
+    
+    <item>
+      <title>Redis</title>
+      <link>http://nixum.cc/p/redis/</link>
+      <pubDate>Sun, 09 Aug 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/redis/</guid>
+      <description>[TOC]
+数据类型及结构 数据类型 具体的分为5种基本类型和3种特殊类型：
+String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet
+  String：简单动态字符串(SDS)
+场景：缓存、token、限流、分布式id
+  List：压缩列表（元素数量小于512，且所有元素的长度都小于64字节） + 双向链表，高版本是快表（其他情况使用）
+场景：用户消息时间线、消息队列
+  Hash：压缩列表（元素数量小于512，且key和value字符串长度都小于64字节） + 哈希表（其他情况使用）
+场景：存储对象缓存、根据key进行统计
+  Set：数组（带有编码类型字段，所以元素可以使用整型表示，少于512个时使用）+ 哈希表（key为set中的元素，value为null，其他情况使用）
+场景：交集、并集、点赞、签到、随机弹出获取元素
+  ZSet：压缩列表（元素小于128个，且所有元素的长度小于64字节时使用） + 跳表 （其他情况使用）
+场景：排行榜
+  另外三种扩展类型：
+ Bitmap：位存储，基于String，原理：String类型会保存二进制字节数组，只有0和1两个值，对于这个字节数组的每个bit来表示一个元素的二值状态； HyperLogLog：基数统计，类似set，主要作用是使用少量固定的内存（12KB内存即可统计2^64个不同元素）去存储并识别有大量元素的集合中的唯一元素，能快速算出集合内的元素个数，误差率0.81%；版本2.8.9之后才有 Geo：推算地理位置，比如两地之间的距离，方圆几里的人；版本3.2之后才有 Stream：5.0之后的版本才有，Stream会在第一次使用 xadd 指令追加消息时自动创建。  Consumer Group：消费组，一个消费组有多个消费者，这些消费者是竞争关系； Last_delivered_id：游标，每个消费组的游标，组内任意一个消费者读取了消息都会使游标向前移动； pending_ids：消费者的状态变量，用于维护消费者未确认的id，记录当前已经被客户端读取但还没有被ACK的消息。如果客户端没有ACK，这个变量里面的消息ID会越来越多，一旦某个消息被ACK，它就开始减少，用来确保客户端至少消费了消息一次，而不会在网络传输的中途丢失了没处理。 消息ID：组成方式毫秒级时间戳 - 序号，消息ID也可以自定义，但必须是整数-整数，且能后面加入的消息ID要大于前面的消息ID。Redis本身会记录 lastest_generated_id，防止时间回拨导致ID问题； 消息内容：键值对，类似Hash的结构；     
+底层数据结构 Redis所有类型有一个顶层的数据结构叫RedisObject，这个RedisObject底层对应着具体对象类型和其编码方式。
+之所以有RedisObject对象，是因为每种不同的数据类型有不同的编码方式和结构，Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，还需要根据数据类型的不同编码进行多态处理。
+比如：SADD命令只能用于Set，LPUSH命令只能用于List，而DEL、TTL又能用于所有键，要正确实现这些命令，就需要为不同类型的键设置不同的处理方式；另外，同一种数据类型可能由不同的数据结构实现，比如List，底层可能是压缩列表或者双向链表，因此还需要知道数据类型的编码方式。
+1 2 3 4 5 6 7 8 9 10 11 12 13  typedef struct redisObject { // 类型，如String、List  unsigned type:4; // 编码方式：如SDS、压缩列表、跳表等  unsigned encoding:4; // LRU - 24位, 记录最后一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）  unsigned lru:LRU_BITS; // LRU_BITS: 24  // 引用计数，新创建对象时值为1，当对该对象进行共享时值+1，使用完一个对象后值-1，=0时被GC回收  int refcount; // 指向底层数据结构实例，具体的实例，由type和encoding决定  void *ptr; } robj;    当执行一个处理数据类型命令的时候，redis执行以下步骤</description>
+    </item>
+    
+    <item>
       <title>MongoDB</title>
       <link>http://nixum.cc/p/mongodb/</link>
       <pubDate>Sun, 28 Nov 2021 00:00:00 +0000</pubDate>
@@ -30,6 +97,101 @@ $facet/$bucket：分面搜索，根据不同范围条件，多个维度一次性
 文档模型设计原则   传统关系型数据库设计，从概念模型 -》逻辑模型 -》物理模型，关系明确，遵循三范式（1.要有主键，列不可分，2.每列与主键相关，3.不能存在传递依赖(不允许字段冗余)），表现形式上，一对多关系，外键在多那张表上，多对多关系，会有第三张表来做关联
 对于文档模型，一般对应关系型数据库设计的逻辑模型阶段，通过嵌套实体数组，map或者引用字段来处理实体间的关系，字段冗余限制宽松
   实体间的关系，一对一使用嵌套map来表示；一对多使用嵌套数组表示；多对多使用嵌套数组+冗余字段来表示；此外，也可以通过嵌套数组存id + 另一张表来表示实体间的关系，通过id来进行联表（使用aggregate + $lookup）</description>
+    </item>
+    
+    <item>
+      <title>MySQL</title>
+      <link>http://nixum.cc/p/mysql/</link>
+      <pubDate>Thu, 09 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/mysql/</guid>
+      <description>[TOC]
+基础架构 MySQL逻辑架构图  
+ 连接器：负责跟客户端建立连接、获取权限、维持和管理连接。登录进去后修改权限，默认是将在下一次登录后生效 查询缓存：MySQL接收到查询请求后会先查询缓存，key是查询语句，value是查询结果，之后经过执行器的权限判断再返回，如果查不到则往后走。不建议使用，因为若有更新操作，会删除对应表的缓存，可能导致缓存命中低，可以设置query_cache_type=demand，默认不使用缓存，需要在查询时显示指定。MySQL8.0删除此功能 分析器：对SQL语句进行分析，词法分析判断各个字符串代表的含义（包括列是否存在），语法分析判断SQL的语法是否正确，这一层操作之后，MySQL就知道你要做什么了 优化器：决定是否要使用索引，使用哪个索引，决定表的连接顺序 执行器：先判断是否有对该表的操作权限，之后判断要使用哪个引擎提供的接口 引擎：对数据进行具体操作的执行者，事务和索引都是在这层做的，但具体需要引擎支持，例如MyISAM不支持事务，InnoDB支持  日志系统 关于物理日志和逻辑日志：物理日志记录每一个page具体存储的值，在这个数据页上做了什么修改，比如redo log；而逻辑日志记录每一个page中数据的变动过程，比如undo log、bin log、relay log；
+比如一个page页中一个数据从 1 改到 2 ，再改到 3，物理日志记录最后一个值是 3 ，逻辑日志记录 1 -&amp;gt; 2, 2-&amp;gt;3 的过程。
+  redo log重做日志：InnoDB独有，物理日志，记录这个页做了什么改动，使用二阶段提交保证两份日志逻辑一致。当有日志要写入时，先写到redo log buffer后状态是prepare，开始写bin log cache，bin log 写完后，事务提交，redo log 改为commit状态，redo log写完，此时事务就算完成；这里描述的写redo log和bin log都只写在了缓冲区，何时写进磁盘，是根据innodb_flush_log_at_trx_commit和sync_binlog配置决定。用于实现数据持久化，以及宕机恢复数据。
+redo log 本质上记录了对某个表空间的某个数据页的某个偏移量修改了哪几个字节的值，具体修改的值是什么，一条redo log也就几个字节到十几个字节，格式是 日志类型，表空间ID，数据页号，数据页偏移量，具体修改的数据。redo log buffer默认是16MB，redo log 数据内容是记在 redo log block 里的，写满一个就存到redo log buffer里，然后写下一个，直到 buffer 满了，此时会强制刷盘。
+redo log 是固定大小的，比如有一组4个文件组成的“环形队列”，环形写入，一个文件写完就写下一个，4个轮转，作用是redo log刷盘完成之后这部分内存就能重新利用；首位指针表示当前记录的位置和当前擦除位置。当前擦除位置是一个叫 LSN（log sequence number）的检查点，表示在LSN之前的数据（缓冲池里的数据页、索引页）都已经持久化到磁盘了，redo log文件里在LSN检查点之前的内容才允许被覆盖，擦除或覆盖之前一定会刷到磁盘。</description>
+    </item>
+    
+    <item>
+      <title>Gin框架原理</title>
+      <link>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</guid>
+      <description>[TOC]
+标准库net/http demo:
+定义了一个路由 /hello，绑定了一个handler，输出当前path，ListenAndServe方法启动web服务，第一个参数表示监听的端口，第二个参数代表 处理所有的HTTP请求 的实例，等于nil时会使用默认的DefaultServeMux。
+该demo是基于标准库实现的Web框架入口。
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17  func main() { http.HandleFunc(&amp;#34;/hello&amp;#34;, func (w http.ResponseWriter, req *http.Request) { fmt.Fprintf(w, &amp;#34;URL.Path = %q\n&amp;#34;, req.URL.Path) }) log.Fatal(http.ListenAndServe(&amp;#34;:8080&amp;#34;, nil)) } // http.ListenAndServe()方法第二个参数的实现： type Handler interface { ServeHTTP(ResponseWriter, *Request) } // 注册handler默认使用DefaultServeMux，与ListenAndServe第二个参数使用的处理器一致。 // 将path和对应的handler方法保存在DefaultServeMux的map中，等请求进来进行匹配处理。 func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) { DefaultServeMux.HandleFunc(pattern, handler) }   http.</description>
+    </item>
+    
+    <item>
+      <title>Go</title>
+      <link>http://nixum.cc/p/go/</link>
+      <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go/</guid>
+      <description>[TOC]
+以下基于go.1.14
+函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
+go在编译时会自动判断函数是否可以内联，当函数内包含以下内容时不会被内联：闭包调用，select，for，defer，go关键字创建的协程等。
+内联的好处：因为函数调用被内联了，可以减少栈帧的创建，减少读写寄存器的读取，减少参数和函数的拷贝，提升性能
+缺点：堆栈panic显示的行数可能不准确、增加编译出来的包的大小
+编译时使用go build -gcflags=&amp;quot;-m -m&amp;quot; main.go可以知道编译器的内联优化策略，
+go编译时默认会使用内联优化，使用go build --gcflags=&amp;quot;-l&amp;quot; main.go可禁掉全局内联，如果传递两个或以上-l，则会打开内联；
+defer   多个defer是栈的关系，先进后出，即在一个函数中，写在前面的defer会比写在后面的defer调用得晚；
+  defer和return同时出现时，先return后defer，defer可以修改到return里的变量；
+  return 是非原子性的，需要两步，执行前首先要为返回值赋值，然后 return 将返回值返回调用处。
+defer 和 return 的执行顺序是：1. 先为返回值赋值；2. 然后执行 defer；3. 然后 return 到函数调用处
+要注意defer里使用的变量是否被提前声明
+  panic被触发时，控制权就交给了defer
+遇到panic时，会先遍历此协程内的defer链表，并执行defer，如果在执行过程中遇到recover，则停止panic，返回recover处继续往下执行，如果没遇到recover，则遍历完本协程的defer链表后，向stderr抛出panic信息；
+  执行defer过程中出现panic，此时的panic会覆盖它之前的panic，直至被捕获或抛出；
+  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58  func main() { fmt.</description>
+    </item>
+    
+    <item>
+      <title>Go Context和Channel</title>
+      <link>http://nixum.cc/p/go-context%E5%92%8Cchannel/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go-context%E5%92%8Cchannel/</guid>
+      <description>[TOC]
+Context 一个接口，包含如下方法，主要用于实现主协程对子协程的控制，作用包括取消执行、设置超时时间、携带键值对等
+1 2 3 4 5 6 7 8 9 10  type Context interface { // 获取到期时间，如果没有，ok则返回false 	Deadline() (deadline time.Time, ok bool) // 返回一个chan，表示取消信号，如果通道关闭则代表该 Context 已经被取消；如果返回的为 nil，则代表该 Context 是一个永远不会被取消的 Context。  Done() &amp;lt;-chan struct{} // 返回该 Context 被取消的原因。如果只使用 Context 包的 Context 类型的话，那么只可能返回 Canceled （代表被明确取消）或者 DeadlineExceeded （因超时而取消）  Err() error // 获取Context中的键值对 	Value(key interface{}) interface{} }   一个demo，引用：通知多个子goroutine退出运行
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73  package main import ( &amp;#34;context&amp;#34; &amp;#34;crypto/md5&amp;#34; &amp;#34;fmt&amp;#34; &amp;#34;io/ioutil&amp;#34; &amp;#34;net/http&amp;#34; &amp;#34;sync&amp;#34; &amp;#34;time&amp;#34; ) type favContextKey string func main() { wg := &amp;amp;sync.</description>
+    </item>
+    
+    <item>
+      <title>Go Goroutine和GC</title>
+      <link>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</guid>
+      <description>[TOC]
+Runtime  不同于Java，Go没有虚拟机，很多东西比如自动GC、对操作系统和CPU相关操作都变成了函数，写在runtime包里。 Runtime提供了go代码运行时所需要的基础设施，如协程调度、内存管理、GC、map、channel、string等内置类型的实现、对操作系统和CPU相关操作进行封装。 诸如go、new、make、-&amp;gt;、&amp;lt;-等关键字都被编译器编译成runtime包里的函数 build成可执行文件时，Runtime会和用户代码一起进行打包。  pprof 使用net/http/pprof库，进行HTTP服务进行分析，需要主动开启，比如import _ &amp;quot;net/http/pprof&amp;quot;，使用默认的http.DefaultServeMux，默认端口是6060；也可自定义Mux，手动注册路由。
+pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能：
+   类型 描述     allocs 查询内存分配情况，所有对象的内存分配，在堆（Heap）分配的时候，记录一下调用堆栈。默认情况下，是每 1000 次分配，取样一次，这个数值可以改变。栈(Stack)分配 由于会随时释放，因此不会被内存分析所记录。由于内存分析是取样方式，并且也因为其记录的是分配内存，而不是使用内存。开启后会对runtime产生压力，通过runtime.MemProfileRate设置采样的内存比例，默认大小是512kb。   blocks 查询阻塞操作情况，类似于 CPU 性能分析，但是它所记录的是 goroutine 等待资源所花的时间。阻塞分析对分析程序并发瓶颈非常有帮助，阻塞性能分析可以显示出什么时候出现了大批的 goroutine 被阻塞了。阻塞性能分析是特殊的分析工具，在排除 CPU 和内存瓶颈前，不应该用它来分析。   cmdline 应用启动命令及参数   goroutine 当前所有协程的堆栈信息，开启时会STW   heap 堆上内存使用情况采样信息，活跃对象的内存分配   mutex 锁持有的堆栈，次数(采样)的信息   profile CPU占用情况采样，启动后会对runtime产生压力，runtime每10ms会STW，记录当前运行的 goroutine 的调用堆栈及相关数据   threadcreate 系统线程创建情况的采样信息，不会STW   trace 程序运行跟踪信息，跟踪GC和G调度      curl http://ip:port/debug/pprof/{上面列表的功能} &amp;gt; profile文件名 把此时的统计下载下来；像trace、profile 默认采集时间是30s，可以使用参数 seconds=xx 来调整采样时间；</description>
+    </item>
+    
+    <item>
+      <title>Go Sync包相关</title>
+      <link>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</guid>
+      <description>[TOC]
+变量可见性 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
+happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。
+Go不像Java有volatile关键字实现CPU屏障来保证指令不重排，而是使用不同架构的内存屏障指令来实现同一的并发原语。
+Go只保证goroutine内部重排对读写顺序没有影响，如果存在共享变量的访问，则影响另一个goroutine。因此当有多个goroutine对共享变量的操作时，需要保证对该共享变量操作的happens-before顺序。
+1 2 3 4 5 6 7 8 9 10 11  // 例子： var a, b int go func() { a := 5 b := 1 } go func() { for b == 1 {} fmt.Println(a) } // 当两个goroutine同时执行时，因为指令重排的缘故，第二个goroutine打印a可能是5，也可能是0   证heppens before的手段   init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。
+  全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。
+init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。
+当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数
+  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37  var ( a = c + b // == 9  b = f() // == 4  c = f() // == 5  d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description>
     </item>
     
     <item>
@@ -59,6 +221,25 @@ cpu set：主要用于设置CPU的亲和性，可以限制cgroup中的进程只�
   memory 子系统，用来限制一个控制组最大的内存使用量。
   pids 子系统，用来限制一个控制组里最多可以运行多少个进程。
   cpuset 子系统， 这个子系统来限制一个控制组里的进程可以在哪几个物理 CPU 上运行。</description>
+    </item>
+    
+    <item>
+      <title>Kubernetes和Istio</title>
+      <link>http://nixum.cc/p/kubernetes%E5%92%8Cistio/</link>
+      <pubDate>Wed, 22 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/kubernetes%E5%92%8Cistio/</guid>
+      <description>[TOC]
+Kubernetes 当前Kubernetes社区对外宣传是单个集群最多支持5000个节点，Pod总数不超过150k，容器总数不超过300k，单节点Pod数量不超过100个。
+基本  
+容器的本质是进程，Kubernetes相当于操作系统，管理这些进程组。
+  CNI：Container Network Interface，容器网络接口规范，如 Flannel、Calico、AWS VPC CNI
+  CRI：Container Runtime Interface，容器运行时的各项核心操作的接口规范，是一组gRPC接口。包含两类服务，镜像服务和运行时服务。镜像服务提供下载、检查和删除镜像的RPC接口；运行时服务包含用于管理容器生命周期，与容器交互的调用的RPC接口（exec / attach / port-forward等）。dockershim、containerd、cri-o都是遵循CRI的容器运行时，称为高层级运行时。
+  CSI：Container Storage Interface，容器存储的接口规范，如PV、PVC
+  OCI：Open Container Initiative，容器运行时和镜像操作规范，镜像规范规定高层级运行时会下载一个OCI镜像，并把它解压称OCI运行时文件系统包；运行时规范描述如何从OCI运行时文件系统包运行容器程序，并且定义其配置、运行环境和生命周期。定义新容器的namespaces、cgroups和根文件系统；它的一个参考实现是runC，称为底层级运行时。
+  CRD：Custom Resource Definition，自定义的资源对象，即yaml文件中的Kind，如Operator就是实现CRD的控制器，之后直接使用Operator创建的CRD声明对象即可使用
+每一个对象都包含两个嵌套对象来描述规格（Spec）和状态（Status），对象的规格就算我们期望的目标状态，而状态描述了对象当前状态，这一部分由Kubernetes本身提供和管理，通过describe才能看到Status的信息。
+1 2 3 4 5 6 7  type Deployment struct { metav1.TypeMeta `json:&amp;#34;,inline&amp;#34;` metav1.ObjectMeta `json:&amp;#34;metadata,omitempty&amp;#34; protobuf:&amp;#34;bytes,1,opt,name=metadata&amp;#34;` Spec DeploymentSpec `json:&amp;#34;spec,omitempty&amp;#34; protobuf:&amp;#34;bytes,2,opt,name=spec&amp;#34;` Status DeploymentStatus `json:&amp;#34;status,omitempty&amp;#34; protobuf:&amp;#34;bytes,3,opt,name=status&amp;#34;` }     Master节点作用：编排、管理、调度用户提交的作业</description>
     </item>
     
     <item>
@@ -105,102 +286,6 @@ cpu set：主要用于设置CPU的亲和性，可以限制cgroup中的进程只�
     </item>
     
     <item>
-      <title>Gin框架原理</title>
-      <link>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</link>
-      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</guid>
-      <description>[TOC]
-标准库net/http demo:
-定义了一个路由 /hello，绑定了一个handler，输出当前path，ListenAndServe方法启动web服务，第一个参数表示监听的端口，第二个参数代表 处理所有的HTTP请求 的实例，等于nil时会使用默认的DefaultServeMux。
-该demo是基于标准库实现的Web框架入口。
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17  func main() { http.HandleFunc(&amp;#34;/hello&amp;#34;, func (w http.ResponseWriter, req *http.Request) { fmt.Fprintf(w, &amp;#34;URL.Path = %q\n&amp;#34;, req.URL.Path) }) log.Fatal(http.ListenAndServe(&amp;#34;:8080&amp;#34;, nil)) } // http.ListenAndServe()方法第二个参数的实现： type Handler interface { ServeHTTP(ResponseWriter, *Request) } // 注册handler默认使用DefaultServeMux，与ListenAndServe第二个参数使用的处理器一致。 // 将path和对应的handler方法保存在DefaultServeMux的map中，等请求进来进行匹配处理。 func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) { DefaultServeMux.HandleFunc(pattern, handler) }   http.</description>
-    </item>
-    
-    <item>
-      <title>Go Context和Channel</title>
-      <link>http://nixum.cc/p/go-context%E5%92%8Cchannel/</link>
-      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/go-context%E5%92%8Cchannel/</guid>
-      <description>[TOC]
-Context 一个接口，包含如下方法，主要用于实现主协程对子协程的控制，作用包括取消执行、设置超时时间、携带键值对等
-1 2 3 4 5 6 7 8 9 10  type Context interface { // 获取到期时间，如果没有，ok则返回false 	Deadline() (deadline time.Time, ok bool) // 返回一个chan，表示取消信号，如果通道关闭则代表该 Context 已经被取消；如果返回的为 nil，则代表该 Context 是一个永远不会被取消的 Context。  Done() &amp;lt;-chan struct{} // 返回该 Context 被取消的原因。如果只使用 Context 包的 Context 类型的话，那么只可能返回 Canceled （代表被明确取消）或者 DeadlineExceeded （因超时而取消）  Err() error // 获取Context中的键值对 	Value(key interface{}) interface{} }   一个demo，引用：通知多个子goroutine退出运行
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73  package main import ( &amp;#34;context&amp;#34; &amp;#34;crypto/md5&amp;#34; &amp;#34;fmt&amp;#34; &amp;#34;io/ioutil&amp;#34; &amp;#34;net/http&amp;#34; &amp;#34;sync&amp;#34; &amp;#34;time&amp;#34; ) type favContextKey string func main() { wg := &amp;amp;sync.</description>
-    </item>
-    
-    <item>
-      <title>Go Goroutine和GC</title>
-      <link>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</link>
-      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</guid>
-      <description>[TOC]
-Runtime  不同于Java，Go没有虚拟机，很多东西比如自动GC、对操作系统和CPU相关操作都变成了函数，写在runtime包里。 Runtime提供了go代码运行时所需要的基础设施，如协程调度、内存管理、GC、map、channel、string等内置类型的实现、对操作系统和CPU相关操作进行封装。 诸如go、new、make、-&amp;gt;、&amp;lt;-等关键字都被编译器编译成runtime包里的函数 build成可执行文件时，Runtime会和用户代码一起进行打包。  pprof 使用net/http/pprof库，进行HTTP服务进行分析，需要主动开启，比如import _ &amp;quot;net/http/pprof&amp;quot;，使用默认的http.DefaultServeMux，默认端口是6060；也可自定义Mux，手动注册路由。
-pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能：
-   类型 描述     allocs 查询内存分配情况，所有对象的内存分配，在堆（Heap）分配的时候，记录一下调用堆栈。默认情况下，是每 1000 次分配，取样一次，这个数值可以改变。栈(Stack)分配 由于会随时释放，因此不会被内存分析所记录。由于内存分析是取样方式，并且也因为其记录的是分配内存，而不是使用内存。开启后会对runtime产生压力，通过runtime.MemProfileRate设置采样的内存比例，默认大小是512kb。   blocks 查询阻塞操作情况，类似于 CPU 性能分析，但是它所记录的是 goroutine 等待资源所花的时间。阻塞分析对分析程序并发瓶颈非常有帮助，阻塞性能分析可以显示出什么时候出现了大批的 goroutine 被阻塞了。阻塞性能分析是特殊的分析工具，在排除 CPU 和内存瓶颈前，不应该用它来分析。   cmdline 应用启动命令及参数   goroutine 当前所有协程的堆栈信息，开启时会STW   heap 堆上内存使用情况采样信息，活跃对象的内存分配   mutex 锁持有的堆栈，次数(采样)的信息   profile CPU占用情况采样，启动后会对runtime产生压力，runtime每10ms会STW，记录当前运行的 goroutine 的调用堆栈及相关数据   threadcreate 系统线程创建情况的采样信息，不会STW   trace 程序运行跟踪信息，跟踪GC和G调度      curl http://ip:port/debug/pprof/{上面列表的功能} &amp;gt; profile文件名 把此时的统计下载下来；像trace、profile 默认采集时间是30s，可以使用参数 seconds=xx 来调整采样时间；</description>
-    </item>
-    
-    <item>
-      <title>Go Sync包相关</title>
-      <link>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</link>
-      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</guid>
-      <description>[TOC]
-变量可见性 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
-happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。
-Go不像Java有volatile关键字实现CPU屏障来保证指令不重排，而是使用不同架构的内存屏障指令来实现同一的并发原语。
-Go只保证goroutine内部重排对读写顺序没有影响，如果存在共享变量的访问，则影响另一个goroutine。因此当有多个goroutine对共享变量的操作时，需要保证对该共享变量操作的happens-before顺序。
-1 2 3 4 5 6 7 8 9 10 11  // 例子： var a, b int go func() { a := 5 b := 1 } go func() { for b == 1 {} fmt.Println(a) } // 当两个goroutine同时执行时，因为指令重排的缘故，第二个goroutine打印a可能是5，也可能是0   证heppens before的手段   init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。
-  全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。
-init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。
-当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数
-  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37  var ( a = c + b // == 9  b = f() // == 4  c = f() // == 5  d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description>
-    </item>
-    
-    <item>
-      <title>Go</title>
-      <link>http://nixum.cc/p/go/</link>
-      <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/go/</guid>
-      <description>[TOC]
-以下基于go.1.14
-函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
-go在编译时会自动判断函数是否可以内联，当函数内包含以下内容时不会被内联：闭包调用，select，for，defer，go关键字创建的协程等。
-内联的好处：因为函数调用被内联了，可以减少栈帧的创建，减少读写寄存器的读取，减少参数和函数的拷贝，提升性能
-缺点：堆栈panic显示的行数可能不准确、增加编译出来的包的大小
-编译时使用go build -gcflags=&amp;quot;-m -m&amp;quot; main.go可以知道编译器的内联优化策略，
-go编译时默认会使用内联优化，使用go build --gcflags=&amp;quot;-l&amp;quot; main.go可禁掉全局内联，如果传递两个或以上-l，则会打开内联；
-defer   多个defer是栈的关系，先进后出，即在一个函数中，写在前面的defer会比写在后面的defer调用得晚；
-  defer和return同时出现时，先return后defer，defer可以修改到return里的变量；
-  return 是非原子性的，需要两步，执行前首先要为返回值赋值，然后 return 将返回值返回调用处。
-defer 和 return 的执行顺序是：1. 先为返回值赋值；2. 然后执行 defer；3. 然后 return 到函数调用处
-要注意defer里使用的变量是否被提前声明
-  panic被触发时，控制权就交给了defer
-遇到panic时，会先遍历此协程内的defer链表，并执行defer，如果在执行过程中遇到recover，则停止panic，返回recover处继续往下执行，如果没遇到recover，则遍历完本协程的defer链表后，向stderr抛出panic信息；
-  执行defer过程中出现panic，此时的panic会覆盖它之前的panic，直至被捕获或抛出；
-  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58  func main() { fmt.</description>
-    </item>
-    
-    <item>
-      <title>etcd和ZooKeeper</title>
-      <link>http://nixum.cc/p/etcd%E5%92%8Czookeeper/</link>
-      <pubDate>Wed, 23 Sep 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/etcd%E5%92%8Czookeeper/</guid>
-      <description>[TOC]
-ZooKeeper ZooKeeper保证的是CP，不保证每次服务请求的可用性，在极端环境下，ZooKeeper可能会丢弃一些请求，消费者程序需要重新请求才能获得结果。另外在进行leader选举时集群都是不可用，所以说，ZooKeeper不能保证服务可用性。
-使用场景  集群管理，监控节点存活状态 主节点选举，当服务以master-salve模式进行部署，当主节点挂掉后选出新的主节点 服务发现 分布式锁，提供独占锁、共享锁 分布式自增id 搭配Kafka、dubbo等使用  特点  顺序一致性：同一客户端发起的事务请求，最终将会严格地按照顺序被应用到 ZooKeeper 中去。 原子性：所有事务请求的处理结果在整个集群中所有机器上的应用情况是一致的，也就是说，要么整个集群中所有的机器都成功应用了某一个事务，要么都没有应用。 单一系统映像：无论客户端连到哪一个 ZooKeeper 服务器上，其看到的服务端数据模型都是一致的。 可靠性：一旦一次更改请求被应用，更改的结果就会被持久化，直到被下一次更改覆盖。  数据模型 类似文件系统，根节点为 / ，每创建一个节点会从根节点开始挂，树形结构，每个数据节点称为znode，可以存储数据，每个znode还有自己所属的节点类型和节点状态
-  持久节点：一旦创建就一直存在，直到将其删除。 持久顺序节点：一个父节点可以为其子节点 维护一个创建的先后顺序 ，这个顺序体现在 节点名称 上，是节点名称后自动添加一个由 10 位数字组成的数字串，从 0 开始计数。 临时节点：临时节点的生命周期是与 客户端会话 绑定的，会话消失则节点消失 。临时节点 只能做叶子节点 ，不能创建子节点。 临时顺序节点：父节点可以创建一个维持了顺序的临时节点(和前面的持久顺序性节点一样)。   ZAB协议 通过ZAB协议保证注册到ZooKeeper上的主从节点状态同步，该协议有两种模式
-  崩溃恢复
-当整个 Zookeeper 集群刚刚启动或者Leader服务器宕机、重启或者网络故障导致不存在过半的服务器与 Leader 服务器保持正常通信时，所有服务器进入崩溃恢复模式，首先选举产生新的 Leader 服务器，然后集群中 Follower 服务器开始与新的 Leader 服务器进行数据同步。
-  消息广播
-当集群中超过半数机器与该 Leader 服务器完成数据同步之后，退出恢复模式进入消息广播模式，Leader 服务器开始接收客户端的事务请求生成事物提案（超过半数同意）来进行事务请求处理。</description>
-    </item>
-    
-    <item>
       <title>Java IO</title>
       <link>http://nixum.cc/p/java-io/</link>
       <pubDate>Tue, 22 Sep 2020 00:00:00 +0000</pubDate>
@@ -241,18 +326,6 @@ CORS 浏览器的同源政策的同源指的是：协议相同、域名相同、
 对于跨域产生的问题，如CSRF跨域请求攻击的解决方案，可参考：美团:如何防止csrf
 session和cookie   首先Http是无状态的，因此需要通过session、cookie来达到记录用户状态的目的。
   传统的session、cookie：session存用户信息，保存在服务端中，cookie里存session对应的sessionId，保存在客户端中，用于找到对应的session，每次请求都会带上该cookie来表示此用户。</description>
-    </item>
-    
-    <item>
-      <title>消息队列</title>
-      <link>http://nixum.cc/p/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/</link>
-      <pubDate>Tue, 22 Sep 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/</guid>
-      <description>[TOC]
-使用场景  秒杀系统，一般秒杀系统处理包含几个步骤：风险控制、库存锁定、生成订单、短信通知、更新统计数据等，而决定秒杀是否成功只在前两个步骤，后续的操作就可以通过消息队列异步处理完成，加快整个流程的处理，减少等待时间，提升并发量。 隔离网关和后端服务，实现流量控制，保护后端服务，但会增加系统调用链，导致总体响应变长，异步增加系统复杂性。 令牌桶，目的也是进行流量控制。 服务解耦，数据同步，比如订单系统在订单状态发生变化时发出消息通知，其他服务订阅后做相应处理。 连接流计算任务和数据，比如集群日志处理，大数据统计 将消息广播给其他接收者  好处 流量削峰和流量控制、异步处理、解耦、广播、最终一致性
-缺点 可用性降低、复杂度提高、一致性问题、消息延迟
-常见消息队列    特性 ActiveMQ RabbitMQ RocketMQ Kafaka     单机吞吐量 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 万级，吞吐量比RocketMQ和Kafka要低了一个数量级 10万级，RocketMQ也是可以支撑高吞吐的一种MQ 10万级别，这是kafka最大的优点，就是吞吐量高。一般配合大数据类的系统来进行实时数据计算、日志采集等场景   topic数量对吞吐量的影响  使用队列模型，通过Exchange模块实现发布-订阅模型，Exchange位于生产者和队列之间，由Exchange决定将详细投递到哪个队列。 topic可以达到几百，几千个的级别，吞吐量会有较小幅度的下降这是RocketMQ的一大优势，在同等机器下，可以支撑大量的topic topic从几十个到几百个的时候，吞吐量会大幅度下降。所以在同等机器下，kafka尽量保证topic数量不要过多。如果要支撑大规模topic，需要增加更多的机器资源   可用性 高，基于主从架构实现高可用性 高，基于主从架构实现高可用性 非常高，分布式架构 非常高，kafka是分布式的，一个数据多个副本，少数机器宕机，不会丢失数据，不会导致不可用   消息可靠性 有较低的概率丢失数据  经过参数优化配置，可以做到0丢失 经过参数优化配置，消息可以做到0丢失   时效性 ms级 微秒级，这是rabbitmq的一大特点，延迟是最低的 ms级 延迟在ms级以内   功能支持 MQ领域的功能极其完备 基于erlang开发，所以并发能力很强，性能极其好，延时很低 MQ功能较为完善，还是分布式的，扩展性好 功能较为简单，主要支持简单的MQ功能，在大数据领域的实时计算以及日志采集被大规模使用，是事实上的标准   优劣势总结 非常成熟，功能强大，在业内大量的公司以及项目中都有应用。偶尔会有较低概率丢失消息，而且现在社区以及国内应用都越来越少，官方社区现在对ActiveMQ 5.</description>
     </item>
     
     <item>
@@ -338,67 +411,6 @@ BASE理论 BASE理论是对CAP三者均衡的结果，基于CAP理论演化而�
     </item>
     
     <item>
-      <title>Redis</title>
-      <link>http://nixum.cc/p/redis/</link>
-      <pubDate>Sun, 09 Aug 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/redis/</guid>
-      <description>[TOC]
-数据类型及结构 数据类型 具体的分为5种基本类型和3种特殊类型：
-String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、ZSet
-  String：简单动态字符串(SDS)
-场景：缓存、token、限流、分布式id
-  List：压缩列表（元素数量小于512，且所有元素的长度都小于64字节） + 双向链表，高版本是快表（其他情况使用）
-场景：用户消息时间线、消息队列
-  Hash：压缩列表（元素数量小于512，且key和value字符串长度都小于64字节） + 哈希表（其他情况使用）
-场景：存储对象缓存、根据key进行统计
-  Set：数组（带有编码类型字段，所以元素可以使用整型表示，少于512个时使用）+ 哈希表（key为set中的元素，value为null，其他情况使用）
-场景：交集、并集、点赞、签到、随机弹出获取元素
-  ZSet：压缩列表（元素小于128个，且所有元素的长度小于64字节时使用） + 跳表 （其他情况使用）
-场景：排行榜
-  另外三种扩展类型：
- Bitmap：位存储，基于String，原理：String类型会保存二进制字节数组，只有0和1两个值，对于这个字节数组的每个bit来表示一个元素的二值状态； HyperLogLog：基数统计，类似set，主要作用是使用少量固定的内存（12KB内存即可统计2^64个不同元素）去存储并识别有大量元素的集合中的唯一元素，能快速算出集合内的元素个数，误差率0.81%；版本2.8.9之后才有 Geo：推算地理位置，比如两地之间的距离，方圆几里的人；版本3.2之后才有 Stream：5.0之后的版本才有，Stream会在第一次使用 xadd 指令追加消息时自动创建。  Consumer Group：消费组，一个消费组有多个消费者，这些消费者是竞争关系； Last_delivered_id：游标，每个消费组的游标，组内任意一个消费者读取了消息都会使游标向前移动； pending_ids：消费者的状态变量，用于维护消费者未确认的id，记录当前已经被客户端读取但还没有被ACK的消息。如果客户端没有ACK，这个变量里面的消息ID会越来越多，一旦某个消息被ACK，它就开始减少，用来确保客户端至少消费了消息一次，而不会在网络传输的中途丢失了没处理。 消息ID：组成方式毫秒级时间戳 - 序号，消息ID也可以自定义，但必须是整数-整数，且能后面加入的消息ID要大于前面的消息ID。Redis本身会记录 lastest_generated_id，防止时间回拨导致ID问题； 消息内容：键值对，类似Hash的结构；     
-底层数据结构 Redis所有类型有一个顶层的数据结构叫RedisObject，这个RedisObject底层对应着具体对象类型和其编码方式。
-之所以有RedisObject对象，是因为每种不同的数据类型有不同的编码方式和结构，Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，还需要根据数据类型的不同编码进行多态处理。
-比如：SADD命令只能用于Set，LPUSH命令只能用于List，而DEL、TTL又能用于所有键，要正确实现这些命令，就需要为不同类型的键设置不同的处理方式；另外，同一种数据类型可能由不同的数据结构实现，比如List，底层可能是压缩列表或者双向链表，因此还需要知道数据类型的编码方式。
-1 2 3 4 5 6 7 8 9 10 11 12 13  typedef struct redisObject { // 类型，如String、List  unsigned type:4; // 编码方式：如SDS、压缩列表、跳表等  unsigned encoding:4; // LRU - 24位, 记录最后一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）  unsigned lru:LRU_BITS; // LRU_BITS: 24  // 引用计数，新创建对象时值为1，当对该对象进行共享时值+1，使用完一个对象后值-1，=0时被GC回收  int refcount; // 指向底层数据结构实例，具体的实例，由type和encoding决定  void *ptr; } robj;    当执行一个处理数据类型命令的时候，redis执行以下步骤</description>
-    </item>
-    
-    <item>
-      <title>Kubernetes和Istio</title>
-      <link>http://nixum.cc/p/kubernetes%E5%92%8Cistio/</link>
-      <pubDate>Wed, 22 Jul 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/kubernetes%E5%92%8Cistio/</guid>
-      <description>[TOC]
-Kubernetes 当前Kubernetes社区对外宣传是单个集群最多支持5000个节点，Pod总数不超过150k，容器总数不超过300k，单节点Pod数量不超过100个。
-基本  
-容器的本质是进程，Kubernetes相当于操作系统，管理这些进程组。
-  CNI：Container Network Interface，容器网络接口规范，如 Flannel、Calico、AWS VPC CNI
-  CRI：Container Runtime Interface，容器运行时的各项核心操作的接口规范，是一组gRPC接口。包含两类服务，镜像服务和运行时服务。镜像服务提供下载、检查和删除镜像的RPC接口；运行时服务包含用于管理容器生命周期，与容器交互的调用的RPC接口（exec / attach / port-forward等）。dockershim、containerd、cri-o都是遵循CRI的容器运行时，称为高层级运行时。
-  CSI：Container Storage Interface，容器存储的接口规范，如PV、PVC
-  OCI：Open Container Initiative，容器运行时和镜像操作规范，镜像规范规定高层级运行时会下载一个OCI镜像，并把它解压称OCI运行时文件系统包；运行时规范描述如何从OCI运行时文件系统包运行容器程序，并且定义其配置、运行环境和生命周期。定义新容器的namespaces、cgroups和根文件系统；它的一个参考实现是runC，称为底层级运行时。
-  CRD：Custom Resource Definition，自定义的资源对象，即yaml文件中的Kind，如Operator就是实现CRD的控制器，之后直接使用Operator创建的CRD声明对象即可使用
-每一个对象都包含两个嵌套对象来描述规格（Spec）和状态（Status），对象的规格就算我们期望的目标状态，而状态描述了对象当前状态，这一部分由Kubernetes本身提供和管理，通过describe才能看到Status的信息。
-1 2 3 4 5 6 7  type Deployment struct { metav1.TypeMeta `json:&amp;#34;,inline&amp;#34;` metav1.ObjectMeta `json:&amp;#34;metadata,omitempty&amp;#34; protobuf:&amp;#34;bytes,1,opt,name=metadata&amp;#34;` Spec DeploymentSpec `json:&amp;#34;spec,omitempty&amp;#34; protobuf:&amp;#34;bytes,2,opt,name=spec&amp;#34;` Status DeploymentStatus `json:&amp;#34;status,omitempty&amp;#34; protobuf:&amp;#34;bytes,3,opt,name=status&amp;#34;` }     Master节点作用：编排、管理、调度用户提交的作业</description>
-    </item>
-    
-    <item>
-      <title>MySQL</title>
-      <link>http://nixum.cc/p/mysql/</link>
-      <pubDate>Thu, 09 Jul 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/mysql/</guid>
-      <description>[TOC]
-基础架构 MySQL逻辑架构图  
- 连接器：负责跟客户端建立连接、获取权限、维持和管理连接。登录进去后修改权限，默认是将在下一次登录后生效 查询缓存：MySQL接收到查询请求后会先查询缓存，key是查询语句，value是查询结果，之后经过执行器的权限判断再返回，如果查不到则往后走。不建议使用，因为若有更新操作，会删除对应表的缓存，可能导致缓存命中低，可以设置query_cache_type=demand，默认不使用缓存，需要在查询时显示指定。MySQL8.0删除此功能 分析器：对SQL语句进行分析，词法分析判断各个字符串代表的含义（包括列是否存在），语法分析判断SQL的语法是否正确，这一层操作之后，MySQL就知道你要做什么了 优化器：决定是否要使用索引，使用哪个索引，决定表的连接顺序 执行器：先判断是否有对该表的操作权限，之后判断要使用哪个引擎提供的接口 引擎：对数据进行具体操作的执行者，事务和索引都是在这层做的，但具体需要引擎支持，例如MyISAM不支持事务，InnoDB支持  日志系统 关于物理日志和逻辑日志：物理日志记录每一个page具体存储的值，在这个数据页上做了什么修改，比如redo log；而逻辑日志记录每一个page中数据的变动过程，比如undo log、bin log、relay log；
-比如一个page页中一个数据从 1 改到 2 ，再改到 3，物理日志记录最后一个值是 3 ，逻辑日志记录 1 -&amp;gt; 2, 2-&amp;gt;3 的过程。
-  redo log重做日志：InnoDB独有，物理日志，记录这个页做了什么改动，使用二阶段提交保证两份日志逻辑一致。当有日志要写入时，先写到redo log buffer后状态是prepare，开始写bin log cache，bin log 写完后，事务提交，redo log 改为commit状态，redo log写完，此时事务就算完成；这里描述的写redo log和bin log都只写在了缓冲区，何时写进磁盘，是根据innodb_flush_log_at_trx_commit和sync_binlog配置决定。用于实现数据持久化，以及宕机恢复数据。
-redo log 本质上记录了对某个表空间的某个数据页的某个偏移量修改了哪几个字节的值，具体修改的值是什么，一条redo log也就几个字节到十几个字节，格式是 日志类型，表空间ID，数据页号，数据页偏移量，具体修改的数据。redo log buffer默认是16MB，redo log 数据内容是记在 redo log block 里的，写满一个就存到redo log buffer里，然后写下一个，直到 buffer 满了，此时会强制刷盘。
-redo log 是固定大小的，比如有一组4个文件组成的“环形队列”，环形写入，一个文件写完就写下一个，4个轮转，作用是redo log刷盘完成之后这部分内存就能重新利用；首位指针表示当前记录的位置和当前擦除位置。当前擦除位置是一个叫 LSN（log sequence number）的检查点，表示在LSN之前的数据（缓冲池里的数据页、索引页）都已经持久化到磁盘了，redo log文件里在LSN检查点之前的内容才允许被覆盖，擦除或覆盖之前一定会刷到磁盘。</description>
-    </item>
-    
-    <item>
       <title>操作系统</title>
       <link>http://nixum.cc/p/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/</link>
       <pubDate>Mon, 09 Mar 2020 00:00:00 +0000</pubDate>
@@ -427,18 +439,6 @@ Linux高清全结构图：https://makelinux.github.io/kernel/map/
 分离硬件的相关性 分离硬件的相关性其实就是屏蔽底层硬件操作细节，形成一个独立的软件抽象层，对外提供接口，方便应用层接入。
 是内核设计的一种指导思想，所以在设计操作系统内核的时候，就可以分为
  内核接口层：向应用层提供系统接口函数； 内核功能层：系统函数的主要实现，实现进程管理、内存管理、中断管理、设备管理、驱动、文件系统等； 内核硬件层：对硬件资源的操作，比如初始化CPU、内存、中断控制、其他IO设备  混合内核 混合内核在微内核的基础上进行改进，层次分明，动态加载模块到内核，兼具宏内核和微内核的优点。</description>
-    </item>
-    
-    <item>
-      <title>网络</title>
-      <link>http://nixum.cc/p/%E7%BD%91%E7%BB%9C/</link>
-      <pubDate>Sun, 22 Sep 2019 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/%E7%BD%91%E7%BB%9C/</guid>
-      <description>[TOC]
-基本    OSI七层模型 对应网络协议 作用     应用层 HTTP、TFTP、FTP、NFS、SMTP、Telnet 应用程序间通信的网络协议   表示层 Rlogin、SNMP、Gopher 数据格式化、加密、解密   会话层 SMTP、DNS 建立、维护、管理会话连接   传输层 TCP、UDP 建立、维护、管理端到端连接   网络层 IP、ICMP、ARP、RARP、AKP、UUCP IP寻址和路由选择   数据链路层 FDDI、Ethernet、Arpanet、PDN、SLIP、PPP 控制网络层与物理层间的通信   物理层 IEEE 802.1A、IEEE 802.2到802.11 比特流传输    数据链路层：
- 数据包叫Frame，“帧”； 由两部分组成：标头和数据，标头标明数据发送者、接收者、数据类型； 用MAC地址定位数据包路径； 相关设备是交换机；  网络层：
- 数据包叫packet，“包”； IPv4：32个二进制，4字节*8位；IPv6：1同一子网28个二进制，8字节*16位； 子网掩码与IP的and运算判断是否为同一子网下； 路由：把数据从原地址转发到目标地址，同一局域网内，通过广播的方式找到，不同局域网内，原主机先将包根据网关添加路由器/主机地址，通过交换机的广播方式发给目标主机，原主机将数据包传输给目标主机，再由目标主机根据MAC广播交给对应目标 ARP协议：IP与MAC地址的映射，仅限IPv4，IPv6使用 Neighbor Discovery Protocol替代； 相关设备是路由器，网关  传输层：</description>
     </item>
     
     <item>

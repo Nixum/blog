@@ -8,31 +8,6 @@
     <language>en-us</language>
     <lastBuildDate>Sun, 28 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>MongoDB</title>
-      <link>http://nixum.cc/p/mongodb/</link>
-      <pubDate>Sun, 28 Nov 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/mongodb/</guid>
-      <description>[TOC]
-特点  分布式数据库，Json数据模型，面向对象数据模型，不强制表的scheme 当应用场景不清晰时，可以直接以对象模型直接存储，无需关心字段，表结构灵活，动态增加新字段 不用太过关注表间的关系，可直接嵌套存储，将多种关系存储在同一张表上，同时也加快查表，因为它可以减少磁盘定位次数，如果是关系型数据库，同时查多张表就需要定位多次 原生支持高可用，一般的部署方式是部署三个节点replica set，最多50个；多replica set可以实现自恢复（当主节点挂点后会选出从节点），异地容灾，数据库滚动更新 原生支持横向扩展，通过水平扩展分片实现，外部并不感知有多少个分片，只会当成一个分片使用 支持字段级加密，针对隐私数据，比如身份证、电话等，在入库时可以进行加密，查询时解密 支持地理位置经纬度查询 强大的聚合查询，适合报表、时序数据  NoSQL语句 客户端使用驱动时连接的执行流程
- 客户端执行流程 
-数据库端执行流程
- 数据库端执行流程 
-要获取ticket是因为MongoDB默认存储引擎wiredtiger的机制，ticket代表着系统资源的数量，ticket数量有限，读写操作都需要先获得ticket才可以进行下一步操作，机制类似信号量。
-连接 连接mongoDB语句，当有多节点或多分片时，连接也要写上，mongodb://节点1的host:port, 节点2的host:port,.../databaseName?[options: maxPoolSize(java默认是100), maxWaitTime(查询的最大等待事件), writeConcern, readConcern]
-mongoDB驱动里已提供负载均衡，多节点探测
-聚合 作用相当与group by，可作用与多个collection，可进行查询和计算。Mongo的聚合操作发生在pipeline中，由多个stage组成，有点像责任链，通过多个state来过滤，聚合数据，每一个{}代表一个state
-demo
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19  MySQL中的SELECTdepartment,count(null)asemp_QTYFROMUserWHEREgender=&amp;#39;female&amp;#39;GROUPBYdepartmentHAVINGcount(*)&amp;lt;10等价于mongo中的db.user.aggregate([{$match:{gender:&amp;#39;female&amp;#39;}},{$group:{_id:&amp;#39;$DEPARTMENT&amp;#39;,emp_qty:{$sum:1}}},{$match:{emp_qty:{$lt:10}}}])  几个比较特别的运算符
-$unwind：将查询到的数组展开
-$grouphLookup：图搜索
-$facet/$bucket：分面搜索，根据不同范围条件，多个维度一次性进行分组输出
-文档模型设计原则   传统关系型数据库设计，从概念模型 -》逻辑模型 -》物理模型，关系明确，遵循三范式（1.要有主键，列不可分，2.每列与主键相关，3.不能存在传递依赖(不允许字段冗余)），表现形式上，一对多关系，外键在多那张表上，多对多关系，会有第三张表来做关联
-对于文档模型，一般对应关系型数据库设计的逻辑模型阶段，通过嵌套实体数组，map或者引用字段来处理实体间的关系，字段冗余限制宽松
-  实体间的关系，一对一使用嵌套map来表示；一对多使用嵌套数组表示；多对多使用嵌套数组+冗余字段来表示；此外，也可以通过嵌套数组存id + 另一张表来表示实体间的关系，通过id来进行联表（使用aggregate + $lookup）</description>
-    </item>
-    
-    <item>
       <title>Redis</title>
       <link>http://nixum.cc/p/redis/</link>
       <pubDate>Sun, 09 Aug 2020 00:00:00 +0000</pubDate>
@@ -57,6 +32,31 @@ String、List(一般当成队列，尽量少使用随机读写)、Hash、Set、Z
 之所以有RedisObject对象，是因为每种不同的数据类型有不同的编码方式和结构，Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，还需要根据数据类型的不同编码进行多态处理。
 比如：SADD命令只能用于Set，LPUSH命令只能用于List，而DEL、TTL又能用于所有键，要正确实现这些命令，就需要为不同类型的键设置不同的处理方式；另外，同一种数据类型可能由不同的数据结构实现，比如List，底层可能是压缩列表或者双向链表，因此还需要知道数据类型的编码方式。
 1 2 3 4 5 6 7 8 9 10 11 12 13  typedef struct redisObject { // 类型，如String、List  unsigned type:4; // 编码方式：如SDS、压缩列表、跳表等  unsigned encoding:4; // LRU - 24位, 记录最后一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）  unsigned lru:LRU_BITS; // LRU_BITS: 24  // 引用计数，新创建对象时值为1，当对该对象进行共享时值+1，使用完一个对象后值-1，=0时被GC回收  int refcount; // 指向底层数据结构实例，具体的实例，由type和encoding决定  void *ptr; } robj;    当执行一个处理数据类型命令的时候，redis执行以下步骤</description>
+    </item>
+    
+    <item>
+      <title>MongoDB</title>
+      <link>http://nixum.cc/p/mongodb/</link>
+      <pubDate>Sun, 28 Nov 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/mongodb/</guid>
+      <description>[TOC]
+特点  分布式数据库，Json数据模型，面向对象数据模型，不强制表的scheme 当应用场景不清晰时，可以直接以对象模型直接存储，无需关心字段，表结构灵活，动态增加新字段 不用太过关注表间的关系，可直接嵌套存储，将多种关系存储在同一张表上，同时也加快查表，因为它可以减少磁盘定位次数，如果是关系型数据库，同时查多张表就需要定位多次 原生支持高可用，一般的部署方式是部署三个节点replica set，最多50个；多replica set可以实现自恢复（当主节点挂点后会选出从节点），异地容灾，数据库滚动更新 原生支持横向扩展，通过水平扩展分片实现，外部并不感知有多少个分片，只会当成一个分片使用 支持字段级加密，针对隐私数据，比如身份证、电话等，在入库时可以进行加密，查询时解密 支持地理位置经纬度查询 强大的聚合查询，适合报表、时序数据  NoSQL语句 客户端使用驱动时连接的执行流程
+ 客户端执行流程 
+数据库端执行流程
+ 数据库端执行流程 
+要获取ticket是因为MongoDB默认存储引擎wiredtiger的机制，ticket代表着系统资源的数量，ticket数量有限，读写操作都需要先获得ticket才可以进行下一步操作，机制类似信号量。
+连接 连接mongoDB语句，当有多节点或多分片时，连接也要写上，mongodb://节点1的host:port, 节点2的host:port,.../databaseName?[options: maxPoolSize(java默认是100), maxWaitTime(查询的最大等待事件), writeConcern, readConcern]
+mongoDB驱动里已提供负载均衡，多节点探测
+聚合 作用相当与group by，可作用与多个collection，可进行查询和计算。Mongo的聚合操作发生在pipeline中，由多个stage组成，有点像责任链，通过多个state来过滤，聚合数据，每一个{}代表一个state
+demo
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19  MySQL中的SELECTdepartment,count(null)asemp_QTYFROMUserWHEREgender=&amp;#39;female&amp;#39;GROUPBYdepartmentHAVINGcount(*)&amp;lt;10等价于mongo中的db.user.aggregate([{$match:{gender:&amp;#39;female&amp;#39;}},{$group:{_id:&amp;#39;$DEPARTMENT&amp;#39;,emp_qty:{$sum:1}}},{$match:{emp_qty:{$lt:10}}}])  几个比较特别的运算符
+$unwind：将查询到的数组展开
+$grouphLookup：图搜索
+$facet/$bucket：分面搜索，根据不同范围条件，多个维度一次性进行分组输出
+文档模型设计原则   传统关系型数据库设计，从概念模型 -》逻辑模型 -》物理模型，关系明确，遵循三范式（1.要有主键，列不可分，2.每列与主键相关，3.不能存在传递依赖(不允许字段冗余)），表现形式上，一对多关系，外键在多那张表上，多对多关系，会有第三张表来做关联
+对于文档模型，一般对应关系型数据库设计的逻辑模型阶段，通过嵌套实体数组，map或者引用字段来处理实体间的关系，字段冗余限制宽松
+  实体间的关系，一对一使用嵌套map来表示；一对多使用嵌套数组表示；多对多使用嵌套数组+冗余字段来表示；此外，也可以通过嵌套数组存id + 另一张表来表示实体间的关系，通过id来进行联表（使用aggregate + $lookup）</description>
     </item>
     
     <item>

@@ -21,6 +21,31 @@
     </item>
     
     <item>
+      <title>Go</title>
+      <link>http://nixum.cc/p/go/</link>
+      <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go/</guid>
+      <description>[TOC]
+以下基于go.1.14
+函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
+go在编译时会自动判断函数是否可以内联，当函数内包含以下内容时不会被内联：闭包调用，select，for，defer，go关键字创建的协程等。
+内联的好处：因为函数调用被内联了，可以减少栈帧的创建，减少读写寄存器的读取，减少参数和函数的拷贝，提升性能
+缺点：堆栈panic显示的行数可能不准确、增加编译出来的包的大小
+编译时使用go build -gcflags=&amp;quot;-m -m&amp;quot; main.go可以知道编译器的内联优化策略，
+go编译时默认会使用内联优化，使用go build --gcflags=&amp;quot;-l&amp;quot; main.go可禁掉全局内联，如果传递两个或以上-l，则会打开内联；
+defer   多个defer是栈的关系，先进后出，即在一个函数中，写在前面的defer会比写在后面的defer调用得晚；
+  defer和return同时出现时，先return后defer，defer可以修改到return里的变量；
+  return 是非原子性的，需要两步，执行前首先要为返回值赋值，然后 return 将返回值返回调用处。
+defer 和 return 的执行顺序是：1. 先为返回值赋值；2. 然后执行 defer；3. 然后 return 到函数调用处
+要注意defer里使用的变量是否被提前声明
+  panic被触发时，控制权就交给了defer
+遇到panic时，会先遍历此协程内的defer链表，并执行defer，如果在执行过程中遇到recover，则停止panic，返回recover处继续往下执行，如果没遇到recover，则遍历完本协程的defer链表后，向stderr抛出panic信息；
+  执行defer过程中出现panic，此时的panic会覆盖它之前的panic，直至被捕获或抛出；
+  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58  func main() { fmt.</description>
+    </item>
+    
+    <item>
       <title>Go Context和Channel</title>
       <link>http://nixum.cc/p/go-context%E5%92%8Cchannel/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
@@ -60,31 +85,6 @@ Go只保证goroutine内部重排对读写顺序没有影响，如果存在共享
 init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。
 当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数
   1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37  var ( a = c + b // == 9  b = f() // == 4  c = f() // == 5  d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description>
-    </item>
-    
-    <item>
-      <title>Go</title>
-      <link>http://nixum.cc/p/go/</link>
-      <pubDate>Sat, 07 Nov 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/go/</guid>
-      <description>[TOC]
-以下基于go.1.14
-函数内联优化 函数内联优化：在A函数中调用了B函数，内联后，B函数的代码直接在A函数内原地展开，代替这个函数实现，当有多次调用时，就会多次展开
-go在编译时会自动判断函数是否可以内联，当函数内包含以下内容时不会被内联：闭包调用，select，for，defer，go关键字创建的协程等。
-内联的好处：因为函数调用被内联了，可以减少栈帧的创建，减少读写寄存器的读取，减少参数和函数的拷贝，提升性能
-缺点：堆栈panic显示的行数可能不准确、增加编译出来的包的大小
-编译时使用go build -gcflags=&amp;quot;-m -m&amp;quot; main.go可以知道编译器的内联优化策略，
-go编译时默认会使用内联优化，使用go build --gcflags=&amp;quot;-l&amp;quot; main.go可禁掉全局内联，如果传递两个或以上-l，则会打开内联；
-defer   多个defer是栈的关系，先进后出，即在一个函数中，写在前面的defer会比写在后面的defer调用得晚；
-  defer和return同时出现时，先return后defer，defer可以修改到return里的变量；
-  return 是非原子性的，需要两步，执行前首先要为返回值赋值，然后 return 将返回值返回调用处。
-defer 和 return 的执行顺序是：1. 先为返回值赋值；2. 然后执行 defer；3. 然后 return 到函数调用处
-要注意defer里使用的变量是否被提前声明
-  panic被触发时，控制权就交给了defer
-遇到panic时，会先遍历此协程内的defer链表，并执行defer，如果在执行过程中遇到recover，则停止panic，返回recover处继续往下执行，如果没遇到recover，则遍历完本协程的defer链表后，向stderr抛出panic信息；
-  执行defer过程中出现panic，此时的panic会覆盖它之前的panic，直至被捕获或抛出；
-  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58  func main() { fmt.</description>
     </item>
     
   </channel>
