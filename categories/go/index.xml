@@ -8,16 +8,45 @@
     <language>en-us</language>
     <lastBuildDate>Mon, 22 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/categories/go/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Gin框架原理</title>
-      <link>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</link>
+      <title>Go Sync包相关</title>
+      <link>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
-      <guid>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</guid>
+      <guid>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</guid>
       <description>[TOC]
-标准库net/http demo:
-定义了一个路由 /hello，绑定了一个handler，输出当前path，ListenAndServe方法启动web服务，第一个参数表示监听的端口，第二个参数代表 处理所有的HTTP请求 的实例，等于nil时会使用默认的DefaultServeMux。
-该demo是基于标准库实现的Web框架入口。
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17  func main() { http.HandleFunc(&amp;#34;/hello&amp;#34;, func (w http.ResponseWriter, req *http.Request) { fmt.Fprintf(w, &amp;#34;URL.Path = %q\n&amp;#34;, req.URL.Path) }) log.Fatal(http.ListenAndServe(&amp;#34;:8080&amp;#34;, nil)) } // http.ListenAndServe()方法第二个参数的实现： type Handler interface { ServeHTTP(ResponseWriter, *Request) } // 注册handler默认使用DefaultServeMux，与ListenAndServe第二个参数使用的处理器一致。 // 将path和对应的handler方法保存在DefaultServeMux的map中，等请求进来进行匹配处理。 func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) { DefaultServeMux.HandleFunc(pattern, handler) }   http.</description>
+变量可见性 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
+happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。
+Go不像Java有volatile关键字实现CPU屏障来保证指令不重排，而是使用不同架构的内存屏障指令来实现同一的并发原语。
+Go只保证goroutine内部重排对读写顺序没有影响，如果存在共享变量的访问，则影响另一个goroutine。因此当有多个goroutine对共享变量的操作时，需要保证对该共享变量操作的happens-before顺序。
+1 2 3 4 5 6 7 8 9 10 11  // 例子： var a, b int go func() { a := 5 b := 1 } go func() { for b == 1 {} fmt.Println(a) } // 当两个goroutine同时执行时，因为指令重排的缘故，第二个goroutine打印a可能是5，也可能是0   证heppens before的手段   init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。
+  全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。
+init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。
+当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数
+  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37  var ( a = c + b // == 9  b = f() // == 4  c = f() // == 5  d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description>
+    </item>
+    
+    <item>
+      <title>Go Goroutine和GC</title>
+      <link>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</guid>
+      <description>[TOC]
+Runtime  不同于Java，Go没有虚拟机，很多东西比如自动GC、对操作系统和CPU相关操作都变成了函数，写在runtime包里。 Runtime提供了go代码运行时所需要的基础设施，如协程调度、内存管理、GC、map、channel、string等内置类型的实现、对操作系统和CPU相关操作进行封装。 诸如go、new、make、-&amp;gt;、&amp;lt;-等关键字都被编译器编译成runtime包里的函数 build成可执行文件时，Runtime会和用户代码一起进行打包。  pprof 使用net/http/pprof库，进行HTTP服务进行分析，需要主动开启，比如import _ &amp;quot;net/http/pprof&amp;quot;，使用默认的http.DefaultServeMux，默认端口是6060；也可自定义Mux，手动注册路由。
+pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能：
+   类型 描述     allocs 查询内存分配情况，所有对象的内存分配，在堆（Heap）分配的时候，记录一下调用堆栈。默认情况下，是每 1000 次分配，取样一次，这个数值可以改变。栈(Stack)分配 由于会随时释放，因此不会被内存分析所记录。由于内存分析是取样方式，并且也因为其记录的是分配内存，而不是使用内存。开启后会对runtime产生压力，通过runtime.MemProfileRate设置采样的内存比例，默认大小是512kb。   blocks 查询阻塞操作情况，类似于 CPU 性能分析，但是它所记录的是 goroutine 等待资源所花的时间。阻塞分析对分析程序并发瓶颈非常有帮助，阻塞性能分析可以显示出什么时候出现了大批的 goroutine 被阻塞了。阻塞性能分析是特殊的分析工具，在排除 CPU 和内存瓶颈前，不应该用它来分析。   cmdline 应用启动命令及参数   goroutine 当前所有协程的堆栈信息，开启时会STW   heap 堆上内存使用情况采样信息，活跃对象的内存分配   mutex 锁持有的堆栈，次数(采样)的信息   profile CPU占用情况采样，启动后会对runtime产生压力，runtime每10ms会STW，记录当前运行的 goroutine 的调用堆栈及相关数据   threadcreate 系统线程创建情况的采样信息，不会STW   trace 程序运行跟踪信息，跟踪GC和G调度      curl http://ip:port/debug/pprof/{上面列表的功能} &amp;gt; profile文件名 把此时的统计下载下来；像trace、profile 默认采集时间是30s，可以使用参数 seconds=xx 来调整采样时间；</description>
+    </item>
+    
+    <item>
+      <title>Go Context和Channel</title>
+      <link>http://nixum.cc/p/go-context%E5%92%8Cchannel/</link>
+      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/go-context%E5%92%8Cchannel/</guid>
+      <description>[TOC]
+Context 一个接口，包含如下方法，主要用于实现主协程对子协程的控制，作用包括取消执行、设置超时时间、携带键值对等
+1 2 3 4 5 6 7 8 9 10  type Context interface { // 获取到期时间，如果没有，ok则返回false 	Deadline() (deadline time.Time, ok bool) // 返回一个chan，表示取消信号，如果通道关闭则代表该 Context 已经被取消；如果返回的为 nil，则代表该 Context 是一个永远不会被取消的 Context。  Done() &amp;lt;-chan struct{} // 返回该 Context 被取消的原因。如果只使用 Context 包的 Context 类型的话，那么只可能返回 Canceled （代表被明确取消）或者 DeadlineExceeded （因超时而取消）  Err() error // 获取Context中的键值对 	Value(key interface{}) interface{} }   一个demo，引用：通知多个子goroutine退出运行
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73  package main import ( &amp;#34;context&amp;#34; &amp;#34;crypto/md5&amp;#34; &amp;#34;fmt&amp;#34; &amp;#34;io/ioutil&amp;#34; &amp;#34;net/http&amp;#34; &amp;#34;sync&amp;#34; &amp;#34;time&amp;#34; ) type favContextKey string func main() { wg := &amp;amp;sync.</description>
     </item>
     
     <item>
@@ -46,45 +75,16 @@ defer 和 return 的执行顺序是：1. 先为返回值赋值；2. 然后执行
     </item>
     
     <item>
-      <title>Go Context和Channel</title>
-      <link>http://nixum.cc/p/go-context%E5%92%8Cchannel/</link>
+      <title>Gin框架原理</title>
+      <link>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</link>
       <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
       
-      <guid>http://nixum.cc/p/go-context%E5%92%8Cchannel/</guid>
+      <guid>http://nixum.cc/p/gin%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/</guid>
       <description>[TOC]
-Context 一个接口，包含如下方法，主要用于实现主协程对子协程的控制，作用包括取消执行、设置超时时间、携带键值对等
-1 2 3 4 5 6 7 8 9 10  type Context interface { // 获取到期时间，如果没有，ok则返回false 	Deadline() (deadline time.Time, ok bool) // 返回一个chan，表示取消信号，如果通道关闭则代表该 Context 已经被取消；如果返回的为 nil，则代表该 Context 是一个永远不会被取消的 Context。  Done() &amp;lt;-chan struct{} // 返回该 Context 被取消的原因。如果只使用 Context 包的 Context 类型的话，那么只可能返回 Canceled （代表被明确取消）或者 DeadlineExceeded （因超时而取消）  Err() error // 获取Context中的键值对 	Value(key interface{}) interface{} }   一个demo，引用：通知多个子goroutine退出运行
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73  package main import ( &amp;#34;context&amp;#34; &amp;#34;crypto/md5&amp;#34; &amp;#34;fmt&amp;#34; &amp;#34;io/ioutil&amp;#34; &amp;#34;net/http&amp;#34; &amp;#34;sync&amp;#34; &amp;#34;time&amp;#34; ) type favContextKey string func main() { wg := &amp;amp;sync.</description>
-    </item>
-    
-    <item>
-      <title>Go Goroutine和GC</title>
-      <link>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</link>
-      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/go-goroutine%E5%92%8Cgc/</guid>
-      <description>[TOC]
-Runtime  不同于Java，Go没有虚拟机，很多东西比如自动GC、对操作系统和CPU相关操作都变成了函数，写在runtime包里。 Runtime提供了go代码运行时所需要的基础设施，如协程调度、内存管理、GC、map、channel、string等内置类型的实现、对操作系统和CPU相关操作进行封装。 诸如go、new、make、-&amp;gt;、&amp;lt;-等关键字都被编译器编译成runtime包里的函数 build成可执行文件时，Runtime会和用户代码一起进行打包。  pprof 使用net/http/pprof库，进行HTTP服务进行分析，需要主动开启，比如import _ &amp;quot;net/http/pprof&amp;quot;，使用默认的http.DefaultServeMux，默认端口是6060；也可自定义Mux，手动注册路由。
-pprof提供应用运行的过程中分析当前应用的各项指标来辅助进行性能优化以及问题排查功能，提供以下功能：
-   类型 描述     allocs 查询内存分配情况，所有对象的内存分配，在堆（Heap）分配的时候，记录一下调用堆栈。默认情况下，是每 1000 次分配，取样一次，这个数值可以改变。栈(Stack)分配 由于会随时释放，因此不会被内存分析所记录。由于内存分析是取样方式，并且也因为其记录的是分配内存，而不是使用内存。开启后会对runtime产生压力，通过runtime.MemProfileRate设置采样的内存比例，默认大小是512kb。   blocks 查询阻塞操作情况，类似于 CPU 性能分析，但是它所记录的是 goroutine 等待资源所花的时间。阻塞分析对分析程序并发瓶颈非常有帮助，阻塞性能分析可以显示出什么时候出现了大批的 goroutine 被阻塞了。阻塞性能分析是特殊的分析工具，在排除 CPU 和内存瓶颈前，不应该用它来分析。   cmdline 应用启动命令及参数   goroutine 当前所有协程的堆栈信息，开启时会STW   heap 堆上内存使用情况采样信息，活跃对象的内存分配   mutex 锁持有的堆栈，次数(采样)的信息   profile CPU占用情况采样，启动后会对runtime产生压力，runtime每10ms会STW，记录当前运行的 goroutine 的调用堆栈及相关数据   threadcreate 系统线程创建情况的采样信息，不会STW   trace 程序运行跟踪信息，跟踪GC和G调度      curl http://ip:port/debug/pprof/{上面列表的功能} &amp;gt; profile文件名 把此时的统计下载下来；像trace、profile 默认采集时间是30s，可以使用参数 seconds=xx 来调整采样时间；</description>
-    </item>
-    
-    <item>
-      <title>Go Sync包相关</title>
-      <link>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</link>
-      <pubDate>Mon, 22 Mar 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/go-sync%E5%8C%85%E7%9B%B8%E5%85%B3/</guid>
-      <description>[TOC]
-变量可见性 由于不同的架构和不同的编译器优化，会发生指令重排，导致程序运行时不一定会按照代码的顺序执行，因此两个goroutine在处理共享变量时，能够看到其他goroutine对这个变量进行的写结果。
-happens-before：程序的执行顺序和代码的顺序一样，就算真的发生了重排，从行为上也能保证和代码的指定顺序一样。
-Go不像Java有volatile关键字实现CPU屏障来保证指令不重排，而是使用不同架构的内存屏障指令来实现同一的并发原语。
-Go只保证goroutine内部重排对读写顺序没有影响，如果存在共享变量的访问，则影响另一个goroutine。因此当有多个goroutine对共享变量的操作时，需要保证对该共享变量操作的happens-before顺序。
-1 2 3 4 5 6 7 8 9 10 11  // 例子： var a, b int go func() { a := 5 b := 1 } go func() { for b == 1 {} fmt.Println(a) } // 当两个goroutine同时执行时，因为指令重排的缘故，第二个goroutine打印a可能是5，也可能是0   证heppens before的手段   init函数：同一个包下可以有多个init函数，多个签名相同的init函数；main函数一定在导入的包的init函数执行之后执行；当有多个init函数时，从main文件出发，递归找到对应的包 - 包内文件名顺序 - 一个文件内init函数顺序执行init函数。
-  全局变量：包级别的变量在同一个文件中是按照声明顺序逐个初始化的；当该变量在初始化时依赖其它的变量时，则会先初始化该依赖的变量。同一个包下的多个文件，会按照文件名的排列顺序进行初始化。
-init函数也是如此，当init函数引用了全局变量a，运行main函数时，肯定是先初始化a，再执行init函数。
-当init函数和全局变量无引用关系时，先初始化全局变量，再执行init函数
-  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37  var ( a = c + b // == 9  b = f() // == 4  c = f() // == 5  d = 3 // 全部初始化完成后 == 5 ) func f() int { d++ return d } --- func init() { a += 1 fmt.</description>
+标准库net/http demo:
+定义了一个路由 /hello，绑定了一个handler，输出当前path，ListenAndServe方法启动web服务，第一个参数表示监听的端口，第二个参数代表 处理所有的HTTP请求 的实例，等于nil时会使用默认的DefaultServeMux。
+该demo是基于标准库实现的Web框架入口。
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17  func main() { http.HandleFunc(&amp;#34;/hello&amp;#34;, func (w http.ResponseWriter, req *http.Request) { fmt.Fprintf(w, &amp;#34;URL.Path = %q\n&amp;#34;, req.URL.Path) }) log.Fatal(http.ListenAndServe(&amp;#34;:8080&amp;#34;, nil)) } // http.ListenAndServe()方法第二个参数的实现： type Handler interface { ServeHTTP(ResponseWriter, *Request) } // 注册handler默认使用DefaultServeMux，与ListenAndServe第二个参数使用的处理器一致。 // 将path和对应的handler方法保存在DefaultServeMux的map中，等请求进来进行匹配处理。 func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) { DefaultServeMux.HandleFunc(pattern, handler) }   http.</description>
     </item>
     
   </channel>
