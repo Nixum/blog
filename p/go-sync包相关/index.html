@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    12 minute read
+                    15 minute read
                 </time>
             </div>
         
@@ -769,26 +769,41 @@ if (!doNotTrack) {
 </span><span class="c1"></span>    <span class="nx">writerSem</span> <span class="kt">uint32</span>  <span class="c1">// writer信号量 
 </span><span class="c1"></span>    <span class="nx">readerSem</span> <span class="kt">uint32</span>  <span class="c1">// reader信号量 
 </span><span class="c1"></span>    <span class="nx">readerCount</span> <span class="kt">int32</span> <span class="c1">// reader的数量，可以是负数，负数表示此时有writer等待请求锁，此时会阻塞reader
-</span><span class="c1"></span>    <span class="nx">readerWait</span> <span class="kt">int32</span>  <span class="c1">// 等待读完成的reader的数量
+</span><span class="c1"></span>    <span class="nx">readerWait</span> <span class="kt">int32</span>  <span class="c1">// 等待读完成的reader的数量，保证写操作不会被读操作阻塞而饿死
 </span><span class="c1"></span><span class="p">}</span>
 <span class="kd">const</span> <span class="nx">rwmutexMaxReaders</span> <span class="p">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">30</span> <span class="c1">// 最大的reader数量
 </span></code></pre></td></tr></table>
 </div>
 </div><h2 id="基本-1">基本</h2>
 <ul>
-<li>主要提升Mutex在读多写少的场景下的吞吐量，读时共享锁，写时排他锁，基于Mutex实现</li>
-<li>由5个方法构成：
+<li>
+<p>主要提升Mutex在读多写少的场景下的吞吐量，读时共享锁，写时排他锁，基于Mutex实现</p>
+</li>
+<li>
+<p>由5个方法构成：</p>
 <ul>
 <li>Lock/Unlock：写操作时调用的方法。如果锁已经被 reader 或者 writer 持有，那么，Lock 方法会一直阻塞，直到能获取到锁；Unlock 则是配对的释放锁的方法。</li>
 <li>RLock/RUnlock：读操作时调用的方法。如果锁已经被 writer 持有的话，RLock 方法会一直阻塞，直到能获取到锁，否则就直接返回；而 RUnlock 是 reader 释放锁的方法。</li>
 <li>RLocker：这个方法的作用是为读操作返回一个 Locker 接口的对象。它的 Lock 方法会调用 RWMutex 的 RLock 方法，它的 Unlock 方法会调用 RWMutex 的 RUnlock 方法</li>
 </ul>
 </li>
-<li>同Mutex，RWMutex的零值是未加锁状态，无需显示地初始化</li>
-<li>由于读写锁的存在，可能会有饥饿问题：比如因为读多写少，导致写锁一直加不上，因此go的RWMutex使用的是写锁优先策略，如果已经有一个writer在等待请求锁的话，会阻止新的reader请求读锁，优先保证writer。如果已经有一些reader请求了读锁，则新请求的writer会等待在其之前的reader都释放掉读锁后才请求获取写锁，等待writer解锁后，后续的reader才能继续请求锁。</li>
-<li>同Mutex，均为不可重入，使用时应避免复制；要注意reader在加读锁后，不能加写锁，否则会形成相互依赖导致死锁；注意reader是可以重复加读锁的，重复加读锁时，外层reader必须=里层的reader释放锁后自己才能释放锁。</li>
-<li>必须先使用RLock / Lock方法才能使用RUnlock / Unlock方法，否则会panic，重复释放锁也会panic。</li>
-<li>可以利用RWMutex实现线程安全的map</li>
+<li>
+<p>同Mutex，RWMutex的零值是未加锁状态，无需显示地初始化</p>
+</li>
+<li>
+<p>由于读写锁的存在，可能会有饥饿问题：比如因为读多写少，导致写锁一直加不上，因此go的RWMutex使用的是写锁优先策略，如果已经有一个writer在等待请求锁的话，会阻止新的reader请求读锁，优先保证writer。如果已经有一些reader请求了读锁，则新请求的writer会等待在其之前的reader都释放掉读锁后才请求获取写锁，等待writer解锁后，后续的reader才能继续请求锁。</p>
+</li>
+<li>
+<p>同Mutex，均为不可重入，使用时应避免复制；</p>
+<p>要注意reader在加读锁后，加写锁，但必须要先解除读锁后才能解除写锁，否则会形成相互依赖导致死锁；比如先加读锁，再加写锁，解除写锁，解除读锁，这样就会导致死锁，因为加写锁时，需要读锁先释放，而读锁释放又依赖写锁释放，从而导致死锁</p>
+<p>注意reader是可以重复加读锁的，重复加读锁时，外层reader必须=里层的reader释放锁后自己才能释放锁。</p>
+</li>
+<li>
+<p>必须先使用RLock / Lock方法才能使用RUnlock / Unlock方法，否则会panic，重复释放锁也会panic。</p>
+</li>
+<li>
+<p>可以利用RWMutex实现线程安全的map</p>
+</li>
 </ul>
 <h2 id="rlock--runlock-方法">RLock / RUnlock 方法</h2>
 <p><strong>仅对readerCount值进行原子操作</strong>，还有就是操作当前goroutine和reader信号量</p>
@@ -796,18 +811,139 @@ if (!doNotTrack) {
 <li>RLock时，对readerCount的值+1，判断是否&lt; 0，如果是，说明此时有writer在竞争锁或已持有锁，则将当前goroutine加入readerSem指向的队列中，进行等待，防止写锁饥饿。</li>
 <li>RUnlock时，对readerCount的值-1，判断是否&lt;0，如果是，说明当前有writer在竞争锁，调用rUnlockSlow方法，对readerWait的值-1，判断是否=0，如果是，说明当前goroutine是最后一个要解除读锁的，此时会唤醒要请求写锁的writer。</li>
 </ol>
-<h2 id="lock方法-1">Lock方法</h2>
-<p>RWMutex<strong>内部使用Mutex实现写锁互斥</strong>，解决多个writer间的竞争</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">rw</span> <span class="o">*</span><span class="nx">RWMutex</span><span class="p">)</span> <span class="nf">RLock</span><span class="p">()</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerCount</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">{</span>
+        <span class="c1">// readerCount小于0，说明有Writer，此时阻塞读操作
+</span><span class="c1"></span>		<span class="nf">runtime_SemacquireMutex</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerSem</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">rw</span> <span class="o">*</span><span class="nx">RWMutex</span><span class="p">)</span> <span class="nf">RUnlock</span><span class="p">()</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">r</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerCount</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span> <span class="nx">r</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="c1">// readerCount小于0，说明有Writer，判断要不要唤醒被阻塞的Writer
+</span><span class="c1"></span>		<span class="nx">rw</span><span class="p">.</span><span class="nf">rUnlockSlow</span><span class="p">(</span><span class="nx">r</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// 进入此方法说明有正在等待的writer
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">rw</span> <span class="o">*</span><span class="nx">RWMutex</span><span class="p">)</span> <span class="nf">rUnlockSlow</span><span class="p">(</span><span class="nx">r</span> <span class="kt">int32</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">r</span><span class="o">+</span><span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">r</span><span class="o">+</span><span class="mi">1</span> <span class="o">==</span> <span class="o">-</span><span class="nx">rwmutexMaxReaders</span> <span class="p">{</span>
+		<span class="nx">race</span><span class="p">.</span><span class="nf">Enable</span><span class="p">()</span>
+		<span class="nf">throw</span><span class="p">(</span><span class="s">&#34;sync: RUnlock of unlocked RWMutex&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerWait</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="c1">// readerWaiter等于0，说明此时是最后一个reader，此时可以唤醒被阻塞的writer
+</span><span class="c1"></span>		<span class="nf">runtime_Semrelease</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">writerSem</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="lock方法-1">Lock方法</h2>
+<p>RWMutex<strong>内部使用Mutex实现写锁互斥</strong>，解决多个writer间的竞争，readerWait实现写操作不会被读操作阻塞而饿死。</p>
 <ol>
 <li>调用w的Lock方法加锁，防止其他writer上锁，反转 readerCount的值并更新到RWMutex中，使其变成负数（readerCount - rwmutexMaxReaders + rwmutexMaxReaders）告诉reader有writer要请求锁</li>
 <li>如果此时readerCount != 0，说明当前有reader持有读锁，需要记录需要等待完成的reader的数量，即readerWait的值（readerWaiter + 第1步算的readerCount的值），并且如果此时readerWait != 0，将当前goroutine加入writerSema指向的队列中，进行等待。直到有goroutine调用RUnlock方法且是最后一个释放锁时，才会被唤醒。</li>
 </ol>
-<h2 id="unlock方法-1">Unlock方法</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">rw</span> <span class="o">*</span><span class="nx">RWMutex</span><span class="p">)</span> <span class="nf">Lock</span><span class="p">()</span> <span class="p">{</span>
+	<span class="c1">// 加锁，保证只有一个writer能处理
+</span><span class="c1"></span>	<span class="nx">rw</span><span class="p">.</span><span class="nx">w</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="c1">// readerCount取反进行更新，表示有writer在执行，阻塞后面的读操作，
+</span><span class="c1"></span>    <span class="c1">// 因为readerCount，readerWait都是全局变量，在读锁方法那边是没有锁保护的，所以是cas保证并发安全
+</span><span class="c1"></span>    <span class="c1">// readerCount再取反回来，用来更新readerWait的值，判断是否有读操作在等待
+</span><span class="c1"></span>	<span class="nx">r</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerCount</span><span class="p">,</span> <span class="o">-</span><span class="nx">rwmutexMaxReaders</span><span class="p">)</span> <span class="o">+</span> <span class="nx">rwmutexMaxReaders</span>
+	<span class="c1">// readerWait 不等于0，说明有reader在执行，需要挂起当前的写操作，直到RUnlock被调用来唤醒
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">r</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerWait</span><span class="p">,</span> <span class="nx">r</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nf">runtime_SemacquireMutex</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">writerSem</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="unlock方法-1">Unlock方法</h2>
+<p>通过readerWait来唤醒所有正在等待的reader</p>
 <ol>
 <li>反转readerCount的值（readerCount + rwmutexMaxReaders），使其变成reader的数量，唤醒这些reader</li>
 <li>调用w的Unlock方法释放当前goroutine的锁，让其他writer可以继续竞争。</li>
 </ol>
-<h1 id="syncmap">sync.Map</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">rw</span> <span class="o">*</span><span class="nx">RWMutex</span><span class="p">)</span> <span class="nf">Unlock</span><span class="p">()</span> <span class="p">{</span>
+	<span class="c1">// 反转readerCount值使其变正数，表示可以进行读操作
+</span><span class="c1"></span>	<span class="nx">r</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">AddInt32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerCount</span><span class="p">,</span> <span class="nx">rwmutexMaxReaders</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">r</span> <span class="o">&gt;=</span> <span class="nx">rwmutexMaxReaders</span> <span class="p">{</span>
+		<span class="nx">race</span><span class="p">.</span><span class="nf">Enable</span><span class="p">()</span>
+		<span class="nf">throw</span><span class="p">(</span><span class="s">&#34;sync: Unlock of unlocked RWMutex&#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="c1">// 根据readerWait唤醒正在阻塞的读操作
+</span><span class="c1"></span>	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="nx">r</span><span class="p">);</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="nf">runtime_Semrelease</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rw</span><span class="p">.</span><span class="nx">readerSem</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="c1">// 解锁，允许其他写操作执行
+</span><span class="c1"></span>	<span class="nx">rw</span><span class="p">.</span><span class="nx">w</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="syncmap">sync.Map</h1>
 <h2 id="数据结构-2">数据结构</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -914,7 +1050,63 @@ if (!doNotTrack) {
 </li>
 </ol>
 <p>总结：如果是新key，则加锁，优先put到dirty中，如果是dirty为空，则创建新dirty，将read中非删除键值对赋值给新dirty，将read标记为有key在dirty中但不存在在read中，解锁；如果是已存在的key，由于read和dirty的value是同一个引用，直接cas更新read即可。</p>
-<h2 id="load方法">Load方法</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="nx">read</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Load</span><span class="p">().(</span><span class="nx">readOnly</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">read</span><span class="p">.</span><span class="nx">m</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">ok</span> <span class="o">&amp;&amp;</span> <span class="nx">e</span><span class="p">.</span><span class="nf">tryStore</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+
+	<span class="nx">m</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="nx">read</span><span class="p">,</span> <span class="nx">_</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Load</span><span class="p">().(</span><span class="nx">readOnly</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">read</span><span class="p">.</span><span class="nx">m</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">ok</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">e</span><span class="p">.</span><span class="nf">unexpungeLocked</span><span class="p">()</span> <span class="p">{</span>
+			<span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="p">=</span> <span class="nx">e</span>
+		<span class="p">}</span>
+		<span class="nx">e</span><span class="p">.</span><span class="nf">storeLocked</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">value</span><span class="p">)</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">[</span><span class="nx">key</span><span class="p">];</span> <span class="nx">ok</span> <span class="p">{</span>
+		<span class="nx">e</span><span class="p">.</span><span class="nf">storeLocked</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">value</span><span class="p">)</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">!</span><span class="nx">read</span><span class="p">.</span><span class="nx">amended</span> <span class="p">{</span>
+            <span class="c1">// 将readMap中非删除的键值对赋值给dirtyMap
+</span><span class="c1"></span>			<span class="nx">m</span><span class="p">.</span><span class="nf">dirtyLocked</span><span class="p">()</span>
+            <span class="c1">// 标记dirtyMap中包含readMap中不存在的键值对
+</span><span class="c1"></span>			<span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Store</span><span class="p">(</span><span class="nx">readOnly</span><span class="p">{</span><span class="nx">m</span><span class="p">:</span> <span class="nx">read</span><span class="p">.</span><span class="nx">m</span><span class="p">,</span> <span class="nx">amended</span><span class="p">:</span> <span class="kc">true</span><span class="p">})</span>
+		<span class="p">}</span>
+		<span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="p">=</span> <span class="nf">newEntry</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">m</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="load方法">Load方法</h2>
 <p><strong>将dirty提升为read这个操作在load方法中执行。</strong></p>
 <ol>
 <li>不加锁，优先读取read中的键值对，判断key是否存在，存在则返回；</li>
@@ -924,8 +1116,74 @@ if (!doNotTrack) {
 <li>同时增加miss的值(miss表示读取穿透的次数)，当miss的值等于dirty的长度时，就会将dirty提升为read，只需简单的赋值即可，然后将dirty置为null，重置miss数，避免总是从dirty中加锁读取；</li>
 <li>解锁，将dirty中的查询结果返回；</li>
 </ol>
-<p>总结：优先读read中的key，判断read的标记，加锁，判断dirty是否包含read中不存在的key，如果是，才会去读dirty，同时miss值+1，当miss值=dirty长度时，将dirty中非删除的键值对赋值给read，解锁。</p>
-<h2 id="delete方法">Delete方法</h2>
+<p>总结：优先读read中的key，判断read的标记，加锁，判断dirty是否包含read中不存在的key，如果是，才会去读dirty，同时miss值+1，当miss值=dirty长度时，将dirty中的键值对赋值给read，解锁。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Map</span><span class="p">)</span> <span class="nf">Load</span><span class="p">(</span><span class="nx">key</span> <span class="kd">interface</span><span class="p">{})</span> <span class="p">(</span><span class="nx">value</span> <span class="kd">interface</span><span class="p">{},</span> <span class="nx">ok</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">read</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Load</span><span class="p">().(</span><span class="nx">readOnly</span><span class="p">)</span>
+	<span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">read</span><span class="p">.</span><span class="nx">m</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="o">&amp;&amp;</span> <span class="nx">read</span><span class="p">.</span><span class="nx">amended</span> <span class="p">{</span>
+		<span class="nx">m</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+		<span class="nx">read</span><span class="p">,</span> <span class="nx">_</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Load</span><span class="p">().(</span><span class="nx">readOnly</span><span class="p">)</span>
+		<span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">read</span><span class="p">.</span><span class="nx">m</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span>
+		<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="o">&amp;&amp;</span> <span class="nx">read</span><span class="p">.</span><span class="nx">amended</span> <span class="p">{</span>
+			<span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span>
+            <span class="c1">// 增加miss的值，判断释放要将dity提升为read
+</span><span class="c1"></span>			<span class="nx">m</span><span class="p">.</span><span class="nf">missLocked</span><span class="p">()</span>
+		<span class="p">}</span>
+		<span class="nx">m</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">false</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">e</span><span class="p">.</span><span class="nf">load</span><span class="p">()</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Map</span><span class="p">)</span> <span class="nf">missLocked</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">m</span><span class="p">.</span><span class="nx">misses</span><span class="o">++</span>
+	<span class="k">if</span> <span class="nx">m</span><span class="p">.</span><span class="nx">misses</span> <span class="p">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+    <span class="c1">// 将dirtyMap提升给readMap
+</span><span class="c1"></span>	<span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Store</span><span class="p">(</span><span class="nx">readOnly</span><span class="p">{</span><span class="nx">m</span><span class="p">:</span> <span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">})</span>
+	<span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span> <span class="p">=</span> <span class="kc">nil</span>
+	<span class="nx">m</span><span class="p">.</span><span class="nx">misses</span> <span class="p">=</span> <span class="mi">0</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="delete方法">Delete方法</h2>
 <p><strong>将dirty提升为read这个操作也会在delete方法中执行。</strong></p>
 <ol>
 <li>判断read中是否存在该key；</li>
@@ -934,7 +1192,61 @@ if (!doNotTrack) {
 <li>如果存在该key（此时该键值对只会在read中存在），自旋，直接在该key对应的entry打上expunged标记，表示删除；</li>
 </ol>
 <p>总结：如果dirty中存在该key，dirty中该键值对会被真正的删除，但此时read中的键值对还没被删除，只是其key对应的value被打上一个expunged标记，表示删除，使其在被get的时候能分辨出来，read中该key真正的删除只有在将dirty提升为read的时候；</p>
-<h2 id="loadorstore方法">LoadOrStore方法</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Map</span><span class="p">)</span> <span class="nf">Delete</span><span class="p">(</span><span class="nx">key</span> <span class="kd">interface</span><span class="p">{})</span> <span class="p">{</span>
+	<span class="nx">m</span><span class="p">.</span><span class="nf">LoadAndDelete</span><span class="p">(</span><span class="nx">key</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">Map</span><span class="p">)</span> <span class="nf">LoadAndDelete</span><span class="p">(</span><span class="nx">key</span> <span class="kd">interface</span><span class="p">{})</span> <span class="p">(</span><span class="nx">value</span> <span class="kd">interface</span><span class="p">{},</span> <span class="nx">loaded</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">read</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Load</span><span class="p">().(</span><span class="nx">readOnly</span><span class="p">)</span>
+	<span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">read</span><span class="p">.</span><span class="nx">m</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="o">&amp;&amp;</span> <span class="nx">read</span><span class="p">.</span><span class="nx">amended</span> <span class="p">{</span>
+		<span class="nx">m</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+		<span class="nx">read</span><span class="p">,</span> <span class="nx">_</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">read</span><span class="p">.</span><span class="nf">Load</span><span class="p">().(</span><span class="nx">readOnly</span><span class="p">)</span>
+		<span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">read</span><span class="p">.</span><span class="nx">m</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span>
+		<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="o">&amp;&amp;</span> <span class="nx">read</span><span class="p">.</span><span class="nx">amended</span> <span class="p">{</span>
+			<span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span>
+			<span class="nb">delete</span><span class="p">(</span><span class="nx">m</span><span class="p">.</span><span class="nx">dirty</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span>
+			<span class="c1">// 增加miss的值，判断释放要将dity提升为read
+</span><span class="c1"></span>			<span class="nx">m</span><span class="p">.</span><span class="nf">missLocked</span><span class="p">()</span>
+		<span class="p">}</span>
+		<span class="nx">m</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">ok</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">e</span><span class="p">.</span><span class="nb">delete</span><span class="p">()</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">false</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="loadorstore方法">LoadOrStore方法</h2>
 <p>基本上和Store方法一样，只是增多一点逻辑：如果该key存在且没有被标记为删除，则返回原来的value和true，不存在则进行store，返回该value和false。</p>
 <h1 id="waitgroup">WaitGroup</h1>
 <h2 id="数据结构-3">数据结构</h2>
