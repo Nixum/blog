@@ -1047,6 +1047,8 @@ value：无
 </span><span class="lnt">73
 </span><span class="lnt">74
 </span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">LRUCache</span> <span class="kd">struct</span> <span class="p">{</span>
@@ -1088,7 +1090,8 @@ value：无
         <span class="nx">lru</span><span class="p">.</span><span class="nf">addFirst</span><span class="p">(</span><span class="nx">newNode</span><span class="p">)</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">)</span> <span class="p">&gt;</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">cap</span> <span class="p">{</span>
-        <span class="nb">delete</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">,</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">.</span><span class="nx">key</span><span class="p">)</span>
+        <span class="c1">// 一定要先delete，不然执行完remove，
+</span><span class="c1"></span>        <span class="nb">delete</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">,</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">.</span><span class="nx">key</span><span class="p">)</span>
         <span class="nx">lru</span><span class="p">.</span><span class="nf">remove</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">)</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -1107,7 +1110,8 @@ value：无
 <span class="p">}</span>
 
 <span class="kd">func</span> <span class="p">(</span><span class="nx">lru</span> <span class="o">*</span><span class="nx">LRUCache</span><span class="p">)</span> <span class="nf">remove</span><span class="p">(</span><span class="nx">n</span> <span class="o">*</span><span class="nx">Node</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">if</span> <span class="nx">n</span> <span class="o">==</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span> <span class="p">{</span>
+    <span class="c1">// n的next和pre要置为null，防止内存泄漏
+</span><span class="c1"></span>    <span class="k">if</span> <span class="nx">n</span> <span class="o">==</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span> <span class="p">{</span>
         <span class="nx">lru</span><span class="p">.</span><span class="nx">head</span> <span class="p">=</span> <span class="nx">n</span><span class="p">.</span><span class="nx">next</span>
         <span class="k">if</span> <span class="nx">n</span><span class="p">.</span><span class="nx">next</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
             <span class="nx">n</span><span class="p">.</span><span class="nx">next</span><span class="p">.</span><span class="nx">pre</span> <span class="p">=</span> <span class="kc">nil</span>

@@ -12383,10 +12383,10 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;li&gt;事务提交：将redo_log_buf中的数据写入redo log file日志文件中，并将redo log file持久化到磁盘，清除提交事务对象的snapshot对象，修改当前提交的事务的transaction_id状态为WT_TNX_NONE，保证其他事务在创建snapshot时看到本次事务的状态是已提交&lt;/li&gt;
 &lt;li&gt;事务回滚：遍历operation_array，对每个数组单元对应update的transaction_id状态设置以为WT_TXN_ABORTED，标示mvcc 对应的修改单元值被回滚，在其他读事务进行mvcc读操作的时候，跳过这个放弃的值即可&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;多文档事务错误处理机制&lt;/p&gt;
+&lt;p&gt;多文档事务错误处理机制：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;当一个事务开始后，如果事务要修改的文档在事务外部被修改过，则事务修改这个文档时会触发Abort错误，因为此时的修改存在冲突，这种情况下，事务终止，应用端需要重做事务。&lt;/li&gt;
-&lt;li&gt;如果一个事务已经开始修改一个文档，在事务以外尝试修改同一个文档，则事务以外的修改会等待事务完成才能继续进行。&lt;/li&gt;
+&lt;li&gt;写冲突：当一个事务开始后，如果事务要修改的文档在事务外部被修改过，则事务修改这个文档时会触发Abort错误，因为此时的修改存在冲突，这种情况下，事务终止，应用端需要重做事务。&lt;/li&gt;
+&lt;li&gt;写等待：如果一个事务已经开始修改一个文档，在事务以外尝试修改同一个文档，则事务以外的修改会等待事务完成才能继续进行。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h4 id=&#34;事务隔离级别&#34;&gt;事务隔离级别&lt;/h4&gt;
 &lt;p&gt;不同于MySQL，MongoDB的Wired Tiger的事务均基于snapshot实现了。&lt;/p&gt;
@@ -12396,15 +12396,19 @@ PROJECTION：限定返回字段时候stage的返回
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Read-Commited：提交读，默认，事务开启时，只能读到别的事务最新修改且已提交的值，这种隔离级别下可能在一个长事务多次读取一个值时前后读取不一致，出现不可重复读现象；&lt;/p&gt;
-&lt;p&gt;WT引擎会在当前事务下，执行每一个操作前都对系统中的事务做一次snapshot，然后在这个snapshot上读写；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;Snapshot-Isolation：快照隔离，事务开启时，只能读到当前事务前最后提交的值，整个事务期间只能看到这个版本的snapshot，不管这个值在此期间被其他事务修改了多少次，防止不可重复读；&lt;/p&gt;
+&lt;p&gt;WT引擎会在当前事务下，执行每一个操作前都对系统中的事务做一次snapshot，然后在这个snapshot上读写；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;因为Mongo中的事务是真的单一文档实现，所以不存在幻读现象。当有事务同时对同一文档做修改时还是会加锁，行锁的规则跟MySQL类似，也是分读写锁和意向读写锁。&lt;/p&gt;
+&lt;h4 id=&#34;锁&#34;&gt;锁&lt;/h4&gt;
+&lt;p&gt;MongoDB本身提供了三种粒度的锁：Global（锁所有库）、Database（锁库）、Collection（锁集合），Document级别的锁由存储引擎提供，比如WiredTiger有提供，MMapv1则没有；&lt;/p&gt;
+&lt;p&gt;当有事务同时对同一文档做修改时还是会加锁，行锁的规则跟MySQL类似，也是分读写锁和意向读写锁，对document写入时，先加排他锁，再加意向锁。&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;但实现原理不太一致&lt;/p&gt;
+&lt;p&gt;对于大多数读写操作，WiredTiger 存储引擎使用乐观并发控制。WiredTiger 仅在全局，数据库和集合级别使用意向锁。当存储引擎检测到两个操作之间的冲突时，会发生写入冲突，导致 MongoDB 透明地重试该操作。一些全局操作 (通常是涉及多个数据库的短期操作) 仍然需要全局 “实例范围” 锁定。其他一些操作（例如删除集合）仍需要独占数据库锁。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
 &lt;p&gt;为了解决写写冲突，写操作写入时，会做校验，确保从读开始没有其他写操作修改相应数据。如果有了修改，就重新执行整个写操作。这样就减少了资源被锁住的时间，成本是多个写操作修改相同数据时，有可能会发生多次重试。对于读多写少，写冲突少的情况，这种交换是合适的。这种并发处理机制称为乐观并发控制，即乐观锁。和悲观锁相比，通过增加校验和重试机制，放弃了在整个过程上加锁。&lt;/p&gt;
 &lt;p&gt;insert：库级别的意向读锁(r)，表级别的意向读锁(r)，文档级别的读锁(R)&lt;/p&gt;
 &lt;p&gt;update：库级别的意向写锁(w)，表级别的意向写锁(w)，文档级别的写锁(W)&lt;/p&gt;
@@ -17267,11 +17271,25 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/ul&gt;
 &lt;p&gt;缺点：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;最大并发数限制：使用 32 个整数的 32 位，即 32*32=1024 来标识 fd；&lt;/li&gt;
+&lt;li&gt;fd_set有个数限制，最大并发数限制：使用 32 个整数的 32 位，即 32*32=1024 来标识 fd；&lt;/li&gt;
 &lt;li&gt;每次调用 select，都需要把 fd 集合从用户态拷贝到内核态，这个开销在 fd 很多时会很大；&lt;/li&gt;
 &lt;li&gt;性能衰减严重：每次 kernel 都需要线性扫描整个 fd_set，所以随着监控的描述符 fd 数量增长，其 I/O 性能会线性下降；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
+&lt;p&gt;总结：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;用户态有一个fd_set，是一个bitmap，表示要监听哪些fd；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;调用select时，从用户态把fd_set全量复制到内核态，由内核态遍历整个fd_set来判断是否有数据到来，置位表示有数据，把fd_set返回给用户态；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;用户态再遍历整个fd_set，和原始的fd_set比较，才知道哪个监听的fd是有数据的；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;fd_set不可重用，处理完这个fd_set后，还得reset整个fd_set，之所以不可重用，是因为fd_set在select前后有两层语义，select前把要监听的fd置为1，select后把有数据fd的置为1；&lt;/p&gt;
+&lt;p&gt;内核遍历判断这个fd_set时是阻塞的；&lt;/p&gt;
 &lt;h4 id=&#34;poll&#34;&gt;poll&lt;/h4&gt;
 &lt;blockquote&gt;
 &lt;ul&gt;
@@ -17279,11 +17297,21 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;li&gt;poll 解决了最大文件描述符数量限制的问题，但是同样需要从用户态拷贝所有的 fd 到内核态，也需要线性遍历所有的 fd 集合，所以它和 select 只是实现细节上的区分，并没有本质上的区别。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
+&lt;p&gt;总结：poll工作原理和select一样，只是对select做了一定优化，重新对fd做了一个包装，不再使用fd_set，而是使用pollfd，里面有events表示要监听的状态，revents表示内核实际收到的状态，解决fd_set不可重用的问题；另外，fd_set是一个bitmap，长度限制在1024，pollfd是个链表，长度上限就高很多了；&lt;/p&gt;
 &lt;h4 id=&#34;epoll&#34;&gt;epoll&lt;/h4&gt;
 &lt;blockquote&gt;
 &lt;p&gt;虽然原理差不多，但select&amp;amp;poll 错误预估了一件事，当数十万并发连接存在时，可能每一毫秒只有数百个活跃的连接，同时其余数十万连接在这一毫秒是非活跃的。当进程认为需要找出有报文到达的活跃连接时，就会调用select&amp;amp;poll，所以select&amp;amp;poll在高并发时会被频繁调用，如果全部待监控的连接数很多，但活跃连接很少，就会有效率问题了。&lt;/p&gt;
 &lt;p&gt;epoll优化了select性能开销很大，文件描述符数量少的问题。&lt;/p&gt;
-&lt;p&gt;实现上，epoll分清了高频和低频调用，内部存储分为两种：一个是监听列表，使用红黑树存储所有监听的fd，每个插入或删除的fd性能稳定，插入时会为该fd注册一个回调函数。一个是就绪列表，使用链表存储，阻塞监听。当fd就绪时，就会触发回调函数由内核调用，把就绪的fd放到一个就绪链表里，epoll会去检查这个链表，保证每次拿到的都是可用的fd，所以epoll不需要把全部监听的fd集合都从用户态拷贝到内核态，只需要拷贝需要用的fd，保证了每个fd在其生命周期只拷贝一次。&lt;/p&gt;
+&lt;p&gt;实现上，epoll分清了高频和低频调用，内部存储分为两种：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;一个是监听列表，使用红黑树存储所有监听的fd，每个插入或删除的fd性能稳定，插入时会为该fd注册一个回调函数，保证了每个fd在其生命周期只拷贝一次&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;一个是就绪列表，使用链表存储，阻塞监听。当fd就绪时，就会触发回调函数由内核调用，把就绪的fd放到就绪链表里。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;epoll会去检查就绪链表，保证每次拿到的都是可用的fd，所以epoll不需要把全部监听的fd集合都从用户态拷贝到内核态，只需要拷贝已就绪的fd。&lt;/p&gt;
 &lt;p&gt;select&amp;amp;poll 调用时会将全部监听的 fd 从用户态空间拷贝至内核态空间并线性扫描一遍找出就绪的 fd 再返回到用户态，epoll 内的实现只会直接返回已就绪 fd，因此 epoll 的 I/O 性能不会像 select&amp;amp;poll 那样随着监听的 fd 数量增加而出现线性衰减，实现高效。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;h2 id=&#34;零拷贝&#34;&gt;零拷贝&lt;/h2&gt;
@@ -22783,6 +22811,8 @@ value：无
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;73
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;74
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;75
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;76
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;77
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;LRUCache&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -22824,7 +22854,8 @@ value：无
         &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;addFirst&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;newNode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
     &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
     &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;nodeMap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cap&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-        &lt;span class=&#34;nb&#34;&gt;delete&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;nodeMap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;tail&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;// 一定要先delete，不然执行完remove，
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nb&#34;&gt;delete&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;nodeMap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;tail&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
         &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;remove&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;tail&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
     &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -22843,7 +22874,8 @@ value：无
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
 &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;LRUCache&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;remove&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Node&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;head&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// n的next和pre要置为null，防止内存泄漏
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;head&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
         &lt;span class=&#34;nx&#34;&gt;lru&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;head&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;next&lt;/span&gt;
         &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;next&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
             &lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;next&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;pre&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
