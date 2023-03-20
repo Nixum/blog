@@ -3648,11 +3648,22 @@ curl -XPOST http://localhost:15000/logging?level=info
 	
 &lt;/figure&gt;&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;mutexLocked 对应右边低位第一个bit，1 代表锁被占用，0代表锁空闲&lt;/li&gt;
-&lt;li&gt;mutexWoken 对应右边低位第二个bit，1 表示已唤醒，0表示未唤醒&lt;/li&gt;
-&lt;li&gt;mutexStarving 对应右边低位第三个bit，1 代表锁处于饥饿模式，0代表锁处于正常模式&lt;/li&gt;
-&lt;li&gt;mutexWaiterShift 值为3，根据 &lt;code&gt;mutex.state &amp;gt;&amp;gt; mutexWaiterShift&lt;/code&gt; 得到当前阻塞的&lt;code&gt;goroutine&lt;/code&gt;数目，最多可以阻塞&lt;code&gt;2^29&lt;/code&gt;个&lt;code&gt;goroutine&lt;/code&gt;。&lt;/li&gt;
-&lt;li&gt;starvationThresholdNs 值为1e6纳秒，也就是1毫秒，当等待队列中队首goroutine等待时间超过&lt;code&gt;starvationThresholdNs&lt;/code&gt;也就是1毫秒，mutex进入饥饿模式。&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;mutexLocked 对应右边低位第一个bit，1 代表锁被占用，0代表锁空闲&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;mutexWoken 对应右边低位第二个bit，1 表示已唤醒，0表示未唤醒&lt;/p&gt;
+&lt;p&gt;从正常模式被唤醒，用于加锁和解锁过程中的通信，比如同一时刻，一个协程在解锁，一个协程在加锁，正在加锁的协程可能在自旋，此时标记为唤醒，另一个协程解锁后，锁立马被这个协程拿到，避免唤醒存在阻塞队列中的协程；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;mutexStarving 对应右边低位第三个bit，1 代表锁处于饥饿模式，0代表锁处于正常模式&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;mutexWaiterShift 值为3，根据 &lt;code&gt;mutex.state &amp;gt;&amp;gt; mutexWaiterShift&lt;/code&gt; 得到当前阻塞的&lt;code&gt;goroutine&lt;/code&gt;数目，最多可以阻塞&lt;code&gt;2^29&lt;/code&gt;个&lt;code&gt;goroutine&lt;/code&gt;。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;starvationThresholdNs 值为1e6纳秒，也就是1毫秒，当等待队列中队首goroutine等待时间超过&lt;code&gt;starvationThresholdNs&lt;/code&gt;也就是1毫秒，mutex进入饥饿模式。&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;基本&#34;&gt;基本&lt;/h2&gt;
 &lt;ul&gt;
@@ -3664,9 +3675,9 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;锁有两种模式：正常模式和饥饿模式&lt;/p&gt;
-&lt;p&gt;正常模式下，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;正常模式下&lt;/strong&gt;，如果Mutex已被一个goroutine获取了锁，其他等待的goroutine们会一直等待，组成等待队列，当该goroutine释放锁后，等待的goroutine是以先进先出的队列排队获取锁；&lt;/p&gt;
 &lt;p&gt;如果此时有新的goroutine也在获取锁，会参与到获取锁的竞争中，这是非公平的，因为新请求锁的goroutine是在CPU上被运行，并且数量也可能很多，所以被唤醒的goroutine获取锁的概率并不大，所以，如果等待队列中的goroutine等待超过1ms，则会优先加入到队列的头部，如果超过1ms都没有获取到锁，则进入饥饿模式；&lt;/p&gt;
-&lt;p&gt;饥饿模式下，锁的所有权会直接从释放锁的goroutine转交给队首的goroutine，新请求锁的goroutine就算锁的空闲状态也不会去获取锁，也不会自旋，直接加入等待队列的队尾，以此解决等待的goroutine的饥饿问题；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;饥饿模式下&lt;/strong&gt;，锁的所有权会直接从释放锁的goroutine转交给队首的goroutine，新请求锁的goroutine就算锁的空闲状态也不会去获取锁，也不会自旋，直接加入等待队列的队尾，以此解决等待的goroutine的饥饿问题；&lt;/p&gt;
 &lt;p&gt;恢复为正常模式的条件：一个goroutine获取锁后，当前goroutine是队列的最后一个，退出饥饿模式；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -3692,10 +3703,10 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;h2 id=&#34;lock方法&#34;&gt;Lock方法&lt;/h2&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;调用Lock的goroutine通过CAS的方式获取锁，如果获取到了直接返回；&lt;/p&gt;
+&lt;p&gt;调用Lock的goroutine通过&lt;strong&gt;CAS的方式设置锁标志&lt;/strong&gt;，如果获取到了直接返回；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;否则进入lockSlow方法，lockSlow方法主要是通过自旋等待锁的释放；自旋是为了不让goroutine进入休眠，让其在一段时间内保持运行，忙等待快速获取锁；&lt;/p&gt;
+&lt;p&gt;否则进入&lt;code&gt;lockSlow方法&lt;/code&gt;，&lt;code&gt;lockSlow方法&lt;/code&gt;主要是通过自旋等待锁的释放；自旋是为了不让goroutine进入休眠，让其在一段时间内保持运行，忙等待快速获取锁；&lt;/p&gt;
 &lt;p&gt;goroutine本身进入自旋的条件比较苛刻：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -4000,7 +4011,7 @@ curl -XPOST http://localhost:15000/logging?level=info
     &lt;span class=&#34;c1&#34;&gt;// 修改state的状态为释放锁
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;atomic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;AddInt32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;state&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexLocked&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-		&lt;span class=&#34;c1&#34;&gt;// 说明此时没有成功解锁
+		&lt;span class=&#34;c1&#34;&gt;// 说明此时没有成功解锁，或者有其他goroutine在等待解锁
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;unlockSlow&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;new&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -4015,7 +4026,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 		&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 			&lt;span class=&#34;c1&#34;&gt;// 如果没有等待的goroutine，或者 锁有以下几种情况时，直接返回
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 1. 锁被其他goroutine获取了
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 2. 或者有等待的goroutine被唤醒，不用再唤醒其他goroutine，可以直接返回
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 2. 或者有等待的goroutine被唤醒，不用再唤醒阻塞队列里的goroutine，可以直接返回
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;            &lt;span class=&#34;c1&#34;&gt;// 3. 或者锁是饥饿模式，锁之后要直接交给等待队列队首的goroutine
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;			&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexWaiterShift&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;||&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;old&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexLocked&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexWoken&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mutexStarving&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 				&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt;
@@ -4045,7 +4056,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;li&gt;可重入锁&lt;/li&gt;
 &lt;li&gt;增加tryLock方法，通过返回true或false来表示获取锁成功或失败，主要用于控制获取锁失败后的行为，而不用阻塞在方法调用上&lt;/li&gt;
 &lt;li&gt;增加等待计数器，比如等待多少时间后还没获取到锁则放弃&lt;/li&gt;
-&lt;li&gt;增加可观测性指标，比如等待锁的goroutine的数量，需要使用unsafe.Pointer方法获取Mutex中的state的值，解析出正在等待的goroutine的数量&lt;/li&gt;
+&lt;li&gt;增加可观测性指标，比如等待锁的goroutine的数量，需要使用&lt;code&gt;unsafe.Pointer方法&lt;/code&gt;获取Mutex中的state的值，解析出正在等待的goroutine的数量&lt;/li&gt;
 &lt;li&gt;实现线程安全的队列，通过在出队和入队方法中使用Mutex保证线程安全&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;关于mutex中的sema&#34;&gt;关于Mutex中的sema&lt;/h2&gt;
@@ -4093,12 +4104,14 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;同Mutex，RWMutex的零值是未加锁状态，无需显示地初始化&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;由于读写锁的存在，可能会有饥饿问题：比如因为读多写少，导致写锁一直加不上，因此go的RWMutex使用的是写锁优先策略，如果已经有一个writer在等待请求锁的话，会阻止新的reader请求读锁，优先保证writer。如果已经有一些reader请求了读锁，则新请求的writer会等待在其之前的reader都释放掉读锁后才请求获取写锁，等待writer解锁后，后续的reader才能继续请求锁。&lt;/p&gt;
+&lt;p&gt;由于读写锁的存在，可能会有饥饿问题：比如因为读多写少，导致写锁一直加不上，因此go的RWMutex使用的是写锁优先策略：&lt;/p&gt;
+&lt;p&gt;如果已经有一个writer在等待请求锁的话，会阻止新的reader请求读锁，优先保证writer。&lt;/p&gt;
+&lt;p&gt;如果已经有一些reader请求了读锁，则新请求的writer会等待在其之前的reader都释放掉读锁后才请求获取写锁，等待writer解锁后，后续的reader才能继续请求锁。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;同Mutex，均为不可重入，使用时应避免复制；&lt;/p&gt;
-&lt;p&gt;要注意reader在加读锁后，加写锁，但必须要先解除读锁后才能解除写锁，否则会形成相互依赖导致死锁；比如先加读锁，再加写锁，解除写锁，解除读锁，这样就会导致死锁，因为加写锁时，需要读锁先释放，而读锁释放又依赖写锁释放，从而导致死锁&lt;/p&gt;
-&lt;p&gt;注意reader是可以重复加读锁的，重复加读锁时，外层reader必须=里层的reader释放锁后自己才能释放锁。&lt;/p&gt;
+&lt;p&gt;要注意reader在加读锁后，想要加写锁，则必须要先解除读锁后才能解除写锁，否则会形成相互依赖导致死锁；比如先加读锁，再加写锁，解除写锁，解除读锁，这样就会导致死锁，因为加写锁时，需要读锁先释放，而读锁释放又依赖写锁释放，从而导致死锁&lt;/p&gt;
+&lt;p&gt;注意reader是可以重复加读锁的，重复加读锁时，外层reader必须等里层的reader释放锁后自己才能释放锁。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;必须先使用RLock / Lock方法才能使用RUnlock / Unlock方法，否则会panic，重复释放锁也会panic。&lt;/p&gt;
@@ -4111,7 +4124,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;&lt;strong&gt;仅对readerCount值进行原子操作&lt;/strong&gt;，还有就是操作当前goroutine和reader信号量&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;RLock时，对readerCount的值+1，判断是否&amp;lt; 0，如果是，说明此时有writer在竞争锁或已持有锁，则将当前goroutine加入readerSem指向的队列中，进行等待，防止写锁饥饿。&lt;/li&gt;
-&lt;li&gt;RUnlock时，对readerCount的值-1，判断是否&amp;lt;0，如果是，说明当前有writer在竞争锁，调用rUnlockSlow方法，对readerWait的值-1，判断是否=0，如果是，说明当前goroutine是最后一个要解除读锁的，此时会唤醒要请求写锁的writer。&lt;/li&gt;
+&lt;li&gt;RUnlock时，对readerCount的值-1，判断是否&amp;lt;0，如果是，说明当前有writer在竞争锁，调用&lt;code&gt;rUnlockSlow方法&lt;/code&gt;，对readerWait的值-1，判断是否=0，如果是，说明当前goroutine是最后一个要解除读锁的，此时会唤醒要请求写锁的writer。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -4170,10 +4183,10 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;lock方法-1&#34;&gt;Lock方法&lt;/h2&gt;
-&lt;p&gt;RWMutex&lt;strong&gt;内部使用Mutex实现写锁互斥&lt;/strong&gt;，解决多个writer间的竞争，readerWait实现写操作不会被读操作阻塞而饿死。&lt;/p&gt;
+&lt;p&gt;RWMutex&lt;strong&gt;内部使用Mutex实现写锁互斥&lt;/strong&gt;，解决多个writer间的竞争，readerWait字段实现写操作不会被读操作阻塞而饿死。&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;调用w的Lock方法加锁，防止其他writer上锁，反转 readerCount的值并更新到RWMutex中，使其变成负数（readerCount - rwmutexMaxReaders + rwmutexMaxReaders）告诉reader有writer要请求锁&lt;/li&gt;
-&lt;li&gt;如果此时readerCount != 0，说明当前有reader持有读锁，需要记录需要等待完成的reader的数量，即readerWait的值（readerWaiter + 第1步算的readerCount的值），并且如果此时readerWait != 0，将当前goroutine加入writerSema指向的队列中，进行等待。直到有goroutine调用RUnlock方法且是最后一个释放锁时，才会被唤醒。&lt;/li&gt;
+&lt;li&gt;调用w的Lock方法加锁，防止其他writer上锁，cas反转 readerCount的值并更新到RWMutex中，使其变成负数&lt;code&gt;readerCount - rwmutexMaxReaders&lt;/code&gt; 告诉reader有writer要请求锁；&lt;/li&gt;
+&lt;li&gt;如果此时&lt;code&gt;readerCount != 0&lt;/code&gt;，说明当前有reader持有读锁，需要记录需要等待完成的reader的数量，即readerWait的值（readerWaiter + readerCount），并且如果此时readerWait != 0，将当前goroutine加入writerSema指向的队列中，进行等待。直到有goroutine调用RUnlock方法且是最后一个释放锁时，才会被唤醒。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -4206,9 +4219,8 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;unlock方法-1&#34;&gt;Unlock方法&lt;/h2&gt;
-&lt;p&gt;通过readerWait来唤醒所有正在等待的reader&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;反转readerCount的值（readerCount + rwmutexMaxReaders），使其变成reader的数量，唤醒这些reader&lt;/li&gt;
+&lt;li&gt;cas反转readerCount的值（readerCount + rwmutexMaxReaders），使其变成reader的数量，唤醒这些reader&lt;/li&gt;
 &lt;li&gt;调用w的Unlock方法释放当前goroutine的锁，让其他writer可以继续竞争。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -4342,7 +4354,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;如果read中不存在，则读取dirty，判断dirty是否存在，存在则更新dirty的键值对；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;如果dirty不存在，且dirty中不存在有的键值对在read中没有，如果dirty为空，创建新dirty，同时需要遍历把read中非删除的键值对赋给dirty；更新read的值，表明dirty中存在read中没有的键值对；&lt;/p&gt;
+&lt;p&gt;如果dirty不存在，且dirty中不存在有的键值对在read中没有，如果dirty为空，创建新dirty，同时需要遍历把read中非删除的键值对赋给dirty；更新&lt;code&gt;read.amended&lt;/code&gt;的值，表明dirty中存在read中没有的键值对；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;最后再将新的键值对添加到dirty中；&lt;/p&gt;
@@ -4418,7 +4430,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;li&gt;同时增加miss的值(miss表示读取穿透的次数)，当miss的值等于dirty的长度时，就会将dirty提升为read，只需简单的赋值即可，然后将dirty置为null，重置miss数，避免总是从dirty中加锁读取；&lt;/li&gt;
 &lt;li&gt;解锁，将dirty中的查询结果返回；&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;总结：优先读read中的key，判断read的标记，加锁，判断dirty是否包含read中不存在的key，如果是，才会去读dirty，同时miss值+1，当miss值=dirty长度时，将dirty中的键值对赋值给read，解锁。&lt;/p&gt;
+&lt;p&gt;总结：优先读read中的key，读不到，判断read的标记（dirty是否包含read中不存在的key），加锁，再读read，还读不到，再判断dirty是否包含read中不存在的key，如果是，才会去读dirty，同时miss值+1，当miss值=dirty长度时，将dirty中的键值对赋值给read，解锁。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -4490,10 +4502,10 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;ol&gt;
 &lt;li&gt;判断read中是否存在该key；&lt;/li&gt;
 &lt;li&gt;如果read中不存在，且dirty中包含了read中不存在的key，加锁；&lt;/li&gt;
-&lt;li&gt;如果read中真的不存在，且dirty中包含了read中不存在的key，删除dirty中该key和value，此时miss也会 + 1，当miss值=dirty长度时，将dirty中非删除的键值对赋值给read；&lt;/li&gt;
+&lt;li&gt;如果read中真的不存在，且dirty中包含了read中不存在的key，删除dirty中该key和value，此时miss也会 + 1，当miss值=dirty长度时，将dirty中非删除的键值对赋值给read，解锁；&lt;/li&gt;
 &lt;li&gt;如果存在该key（此时该键值对只会在read中存在），自旋，直接在该key对应的entry打上expunged标记，表示删除；&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;总结：如果dirty中存在该key，dirty中该键值对会被真正的删除，但此时read中的键值对还没被删除，只是其key对应的value被打上一个expunged标记，表示删除，使其在被get的时候能分辨出来，read中该key真正的删除只有在将dirty提升为read的时候；&lt;/p&gt;
+&lt;p&gt;总结：优先读read，读不到，加锁，如果dirty中存在该key，dirty中该键值对会被真正的删除，但此时read中的键值对还没被删除，只是其key对应的value被打上一个expunged标记，表示删除，使其在被get的时候能分辨出来，read中该key真正的删除只有在将dirty提升为read的时候；&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -4520,6 +4532,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;Delete&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;interface&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{})&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -4542,7 +4555,8 @@ curl -XPOST http://localhost:15000/logging?level=info
 		&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mu&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Unlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-		&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;delete&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;// 自旋，cas给key打上删除标记
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;delete&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 	&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -4869,7 +4883,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 
     &lt;span class=&#34;c1&#34;&gt;// 每个 P 的本地队列，实际类型为 [P]poolLocal数组，长度是固定的，P的id对应[P]poolLocal下标索引，通过这样的设计，多个 G 使用同一个Pool时，减少竞争，提升性能
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;local&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt;
-	&lt;span class=&#34;c1&#34;&gt;// [P]poolLocal 本地队列的大小
+	&lt;span class=&#34;c1&#34;&gt;// [P]poolLocal 本地队列的长度
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;localSize&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;
 
     &lt;span class=&#34;c1&#34;&gt;// GC 时使用，分别接管 local 和 localSize，victim机制用于减少GC后冷启动导致的性能抖动，让对象分配更平滑，降低GC压力的同时提高命中率，由poolCleanup()方法操作
@@ -5091,7 +5105,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;li&gt;遍历allPools数组，将local对象赋值给victim，local对象赋值为nil；&lt;/li&gt;
 &lt;li&gt;然后将allPools赋值给oldPools，allPools置为nil；&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;当GC开始时候，就会将 victim cache 中所有对象的回收（因为已经被置为null了）。因为victim cache的设计，pool中的复用对象会在每两个GC循环中清除；&lt;/p&gt;
+&lt;p&gt;当GC开始时候，就会将 oldPools数组中 pool对象 已释放的 victim cache 中所有对象的回收（因为已经被置为null了）。因为victim cache的设计，pool中的复用对象会在每两个GC循环中清除；&lt;/p&gt;
 &lt;h1 id=&#34;原子操作&#34;&gt;原子操作&lt;/h1&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -7468,7 +7482,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;&lt;strong&gt;当recvq中没有等待的接收者，且buf区存在空余空间时&lt;/strong&gt;，会使用&lt;code&gt;chanbuf()&lt;/code&gt;函数获取&lt;strong&gt;sendx索引值&lt;/strong&gt;，计算出下一个可以存储数据的位置，然后调用&lt;code&gt;typedmemmove()&lt;/code&gt;函数将要发送的数据拷贝到buff区，增加sendx索引和qcount计数器，完成之后解锁，返回成功；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;阻塞发送 - &lt;strong&gt;最后才是保存在待发送队列，阻塞&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;阻塞发送 - &lt;strong&gt;最后才保存在待发送队列，阻塞（阻塞只发生在这里，此时G和M分离）&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当recvq中没有等待的接收者，且buf区已满或不存在buf区时&lt;/strong&gt;，会先调用&lt;code&gt;getg()&lt;/code&gt;函数获取正在发送者的goroutine，执行&lt;code&gt;acquireSudog()&lt;/code&gt;函数获取sudoG对象，设置此次阻塞发送的相关信息（如发送的channel、是否在select控制结构中和待发送数据的内存地址、发送数据的goroutine）&lt;/p&gt;
 &lt;p&gt;然后将该sudoG对象加入sendq队列，调用&lt;code&gt;goparkunlock()&lt;/code&gt;函数让当前发送者的goroutine进入等待状态，表示当前goroutine正在等待其他goroutine从channel中接收数据，等待调度器唤醒；&lt;/p&gt;
 &lt;p&gt;此时len()返回值为0，数据的发送是阻塞在方法中的。&lt;/p&gt;
@@ -7592,9 +7606,14 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;108
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;109
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;110
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;111
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;112
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;113
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// ep指的是用来发送数据的内存指针，数据类型与hchan中的类型一致
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// 返回值表示带发送的数据是否 send 成功，即是否被接受，比如进buff或者被接收者接收；
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// ch &amp;lt;- [val] 时，block=true; select时，block=false
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;chansend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;hchan&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ep&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;block&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;callerpc&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 	&lt;span class=&#34;c1&#34;&gt;// 如果chan是nil，则把发送者的goroutine park（阻塞休眠），此时发送者将被永久阻塞
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -7609,7 +7628,8 @@ curl -XPOST http://localhost:15000/logging?level=info
 		&lt;span class=&#34;nf&#34;&gt;racereadpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;raceaddr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(),&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;callerpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;funcPC&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;chansend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
-    &lt;span class=&#34;c1&#34;&gt;// 当chan不为null，且没被close，full方法判断chan发送是否阻塞，是则直接返回true
+    &lt;span class=&#34;c1&#34;&gt;// 下面代码进针对select场景
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 当chan不为null，且没被close，full方法判断chan发送是否阻塞，是则直接返回true
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// full方法有两种情况判断是否可发送
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 1. 如果hchan.dataqsiz=0，说明是阻塞队列，如果此时hchan.recvq.first==nil，说明没有接收者，发送阻塞
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 2. 比较hchan.qcount是否等于hchan.dataqsiz，如果是说明chan已满，发送阻塞
@@ -7707,7 +7727,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;接收数据&#34;&gt;接收数据&lt;/h2&gt;
-&lt;p&gt;使用&lt;code&gt; str &amp;lt;- ch 或 str, ok &amp;lt;- ch (ok用于判断ch是否关闭，如果没有ok，可能会无法分辨str接收到的零值是发送者发的还是ch关闭)&lt;/code&gt;接收数据，会转化为调用chanrecv1和chanrecv2函数，但最终会调用chanrecv函数接收数据。chanrecv1和chanrecv2函数都是设置阻塞参数为true。&lt;/p&gt;
+&lt;p&gt;使用&lt;code&gt; str &amp;lt;- ch 或 str, ok &amp;lt;- ch (ok用于判断ch是否关闭，如果没有ok，可能会无法分辨str接收到的零值是发送者发的还是ch关闭)&lt;/code&gt;接收数据，会转化为调用&lt;code&gt;chanrecv1和chanrecv2函数&lt;/code&gt;，但最终会调用&lt;code&gt;chanrecv函数&lt;/code&gt;接收数据。chanrecv1和chanrecv2函数都是设置阻塞参数为true。&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
 &lt;p&gt;如果chan是nil，则把接收者的goroutine park（阻塞休眠），接收者被永久阻塞；&lt;/p&gt;
@@ -7732,7 +7752,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;这个和chansend共用一把锁，所以不会有并发问题；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;阻塞接收 - &lt;strong&gt;最后才是保存在接收等待队列，阻塞&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;阻塞接收 - &lt;strong&gt;最后才是保存在接收等待队列，阻塞（阻塞只发生在这里，此时G和M分离）&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当channel的sendq队列没有等待状态的goroutine，且buf区不存在数据时&lt;/strong&gt;，执行&lt;code&gt;acquireSudog()&lt;/code&gt;函数获取sudoG对象，设置此次阻塞发送的相关信息（如发送的channel、是否在select控制结构中和待发送数据的内存地址、发送数据的goroutine）&lt;/p&gt;
 &lt;p&gt;然后将该sudoG对象加入待发送recvq队列，调用&lt;code&gt;goparkunlock()&lt;/code&gt;函数让当前接收者的goroutine进入等待状态，表示当前goroutine正在等待其他goroutine从channel中发送数据，等待调度器唤醒；&lt;/p&gt;
 &lt;p&gt;此时方法会阻塞在ch的接收中，len()返回值为0；&lt;/p&gt;
@@ -7897,9 +7917,12 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;149
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;150
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;151
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;152
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;153
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// ep指的是用来接收数据的内存指针，数据类型与hchan中的类型一致
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// [val] &amp;lt;- ch 时，block=true; select时，block=false
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;chanrecv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;hchan&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ep&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;block&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;selected&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;received&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;debugChan&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 		&lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;chanrecv: chan=&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;\n&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
@@ -7912,7 +7935,8 @@ curl -XPOST http://localhost:15000/logging?level=info
 		&lt;span class=&#34;nf&#34;&gt;gopark&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;waitReasonChanReceiveNilChan&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;traceEvGoStop&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 		&lt;span class=&#34;nf&#34;&gt;throw&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;unreachable&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-	&lt;span class=&#34;c1&#34;&gt;// 当chan不为nil，在没有获取锁的情况下，检查chan的buf区大小和是否存在可接收数据
+    &lt;span class=&#34;c1&#34;&gt;// 这段代码仅针对select的场景
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 当chan不为nil，在没有获取锁的情况下，检查chan的buf区大小和是否存在可接收数据
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// empty方法是原子检查，检查chan.dataqsiz、chan.qcount是否为0，发送队列是否为空
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;block&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;empty&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;atomic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Load&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;closed&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -8065,7 +8089,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;优先释放所有的接收者&lt;/strong&gt;：&lt;/p&gt;
 &lt;p&gt;将接收者等待队列中的sudoG对象加入到待清除队列glist中，这里会优先回收接收者，这样即使从close中的chan读取数据，也不会panic，最多读到默认值；&lt;/p&gt;
-&lt;p&gt;这样第6步执行的时候，才会先执行接收者，接收后面发送者的数据，否则发送者发送的数据无法被先接收。&lt;/p&gt;
+&lt;p&gt;这样第6步执行的时候，才会先执行接收者，接收后面发送者的数据（buff数组里的，因为sender里的会被panic掉），否则发送者发送的数据无法被先接收。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;其次是释放所有发送者&lt;/strong&gt;：
@@ -8138,6 +8162,9 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;56
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;57
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;58
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;59
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;60
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;61
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;closechan&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;hchan&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -8158,7 +8185,8 @@ curl -XPOST http://localhost:15000/logging?level=info
 		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 			&lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;// 销毁资源
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 			&lt;span class=&#34;nf&#34;&gt;typedmemclr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elemtype&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 			&lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -8172,13 +8200,15 @@ curl -XPOST http://localhost:15000/logging?level=info
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 		&lt;span class=&#34;nx&#34;&gt;glist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;push&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;gp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-	&lt;span class=&#34;c1&#34;&gt;// 释放所有发送者：将所有发送者的sudoG等待队列加入到待清除的队列glist中，这里可能会产生panic
+	&lt;span class=&#34;c1&#34;&gt;// 释放所有发送者：将所有发送者的sudoG等待队列加入到待清除的队列glist中
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 如果发送者队列存在发送者，那这些发送者所在的goroutine会产生panic
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 		&lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;sendq&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;dequeue&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
 		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 			&lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-		&lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;// 销毁资源
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
 		&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;releasetime&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 			&lt;span class=&#34;nx&#34;&gt;sg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;releasetime&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;cputicks&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
 		&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
@@ -8301,8 +8331,8 @@ curl -XPOST http://localhost:15000/logging?level=info
     &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;make&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;chan&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
     &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;++&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;span class=&#34;c1&#34;&gt;// 这个放在外层和放在里层的效果不同，都可以控制并发量，但是前者会阻塞for循环，后者不会
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;
-      &lt;span class=&#34;k&#34;&gt;go&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;k&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;   &lt;span class=&#34;c1&#34;&gt;// 放满三个后就会阻塞循环，此时最多存在3个goroutine
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;      &lt;span class=&#34;k&#34;&gt;go&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;k&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
           &lt;span class=&#34;nx&#34;&gt;fmt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Println&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;k&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// do something...
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;          &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Sleep&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Second&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
           &lt;span class=&#34;c1&#34;&gt;// 防止泄露
