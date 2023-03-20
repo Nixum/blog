@@ -143,12 +143,12 @@ if (!doNotTrack) {
 
     <section class="article-content">
     <p>[TOC]</p>
-<h1 id="runtime">Runtime</h1>
+<h1 id="runtime">runtime</h1>
 <ul>
 <li>不同于Java，Go没有虚拟机，很多东西比如自动GC、对操作系统和CPU相关操作都变成了函数，写在runtime包里。</li>
-<li>Runtime提供了go代码运行时所需要的基础设施，如协程调度、内存管理、GC、map、channel、string等内置类型的实现、对操作系统和CPU相关操作进行封装。</li>
+<li>runtime提供了go代码运行时所需要的基础设施，如协程调度、内存管理、GC、map、channel、string等内置类型的实现、对操作系统和CPU相关操作进行封装。</li>
 <li>诸如go、new、make、-&gt;、&lt;-等关键字都被编译器编译成runtime包里的函数</li>
-<li>build成可执行文件时，Runtime会和用户代码一起进行打包。</li>
+<li>build成可执行文件时，runtime会和用户代码一起进行打包。</li>
 </ul>
 <h1 id="pprof">pprof</h1>
 <p>使用<code>net/http/pprof</code>库，进行HTTP服务进行分析，需要主动开启，比如<code>import _ &quot;net/http/pprof&quot;</code>，使用默认的<code>http.DefaultServeMux</code>，默认端口是6060；也可自定义Mux，手动注册路由。</p>
@@ -163,7 +163,7 @@ if (!doNotTrack) {
 <tbody>
 <tr>
 <td>allocs</td>
-<td>查询内存分配情况，所有对象的内存分配，在堆（Heap）分配的时候，记录一下调用堆栈。默认情况下，是每 1000 次分配，取样一次，这个数值可以改变。栈(Stack)分配 由于会随时释放，因此不会被内存分析所记录。由于内存分析是取样方式，并且也因为其记录的是分配内存，而不是使用内存。开启后会对runtime产生压力，通过runtime.MemProfileRate设置采样的内存比例，默认大小是512kb。</td>
+<td>查询内存分配情况，所有对象的内存分配，在堆（Heap）分配的时候，记录一下调用堆栈。默认情况下，是每 1000 次分配，取样一次，这个数值可以改变。栈(Stack)分配 由于会随时释放，因此不会被内存分析所记录。由于内存分析是取样方式，并且也因为其记录的是分配内存，而不是使用内存。开启后会对runtime产生压力，通过<code>runtime.MemProfileRate</code>设置采样的内存比例，默认大小是512kb。</td>
 </tr>
 <tr>
 <td>blocks</td>
@@ -407,7 +407,7 @@ if (!doNotTrack) {
 <p>以上过程由M执行 runtime.schedule 函数来执行调度。</p>
 </li>
 <li>
-<p>当P的LRQ满时，会把当前P的LRQ前一半的G打乱顺序后转移到GRQ；</p>
+<p><strong>当P的LRQ满时，会把当前P的LRQ前一半的G打乱顺序后转移到GRQ</strong>；</p>
 <p>如果此时runnext也有G，则新创建的G会替换runnext中的G，原来runnext中的G跟着LRQ中挑出来的那些G一起加入GRQ；</p>
 </li>
 <li>
@@ -484,7 +484,7 @@ if (!doNotTrack) {
 </ul>
 <h2 id="调度抢占的时机">调度(抢占)的时机</h2>
 <ul>
-<li>go调度器，本质是为需要执行的G寻找M以及P，不是一个实体，调度是需要发生调度时由M执行<code>runtime.schedule方法</code>进行；</li>
+<li>go调度器，本质是为需要执行的G寻找M以及P，不是一个实体，调度是需要发生调度时由M执行<code>runtime.schedule函数</code>进行；</li>
 <li>函数调用期间，如G需要栈扩容，就会调度另一个G</li>
 <li>调度器初始化时，会依次调用mcommoninit：初始化M资源池、procresize：初始化P资源池、newproc：G的运行现场和调度队列；</li>
 <li>channel、mutex等sync操作发生协程阻塞；</li>
@@ -583,24 +583,24 @@ if (!doNotTrack) {
 <td>刚刚被分配，还没被初始化</td>
 </tr>
 <tr>
-<td>_Grunnable</td>
+<td><strong>_Grunnable</strong></td>
 <td>1</td>
 <td>表示在runqueue上，即LRQ，还没有被执行，此时的G才能被M执行，进入Grunning状态</td>
 </tr>
 <tr>
-<td>_Grunning</td>
+<td><strong>_Grunning</strong></td>
 <td>2</td>
 <td>执行中，不在runqueue上，与M、P绑定</td>
 </tr>
 <tr>
-<td>_Gsyscall</td>
+<td><strong>_Gsyscall</strong></td>
 <td>3</td>
 <td>在执行系统调用，没有执行go代码，没在runqueue上，只与M绑定，此时P转移到其他M中</td>
 </tr>
 <tr>
-<td>_Gwaiting</td>
+<td><strong>_Gwaiting</strong></td>
 <td>4</td>
-<td>被阻塞（如IO、GC、chan阻塞、锁）不在runqueue，但一定在某个地方，比如channel中，锁排队中等</td>
+<td><strong>被阻塞（如IO、GC、chan阻塞、锁）不在runqueue，但一定在某个地方，比如channel中，锁排队中等</strong></td>
 </tr>
 <tr>
 <td>_Gdead</td>
@@ -668,7 +668,7 @@ if (!doNotTrack) {
 <p>goroutine的泄露一般会导致内存的泄露，最终导致OOM，原因一般是该运行完成的goroutine一直在运行，没有结束，可能的原因是goroutine内阻塞，死循环。</p>
 <p>检查工具：pprof，请求<code>/debug/pprof/goroutine接口或者heap接口</code>，判断内存占用走势，分析内存使用情况。一般的走势是整体向上递增，伴随一个一个的峰谷。</p>
 <h1 id="内存模型">内存模型</h1>
-<p>Go 的内存分配器基于tcmalloc的内存分配算法，它是一个带内存池的o分配器，底层直接调用操作系统的mmap函数实现内存分配，减少内存碎片，提升内存利用率。</p>
+<p>Go 的内存分配器基于tcmalloc的内存分配算法，它是一个带内存池的分配器，底层直接调用操作系统的mmap函数实现内存分配，减少内存碎片，提升内存利用率。</p>
 <p>Go中为每个系统线程分配一个本地的mcache，少量的地址分配就直接从mcache中分配，并且定期做垃圾回收，将线程的mcache中的空闲内存返回给全局控制堆。</p>
 <p>根据对象中是否含有指针以及对象大小，内存分配过程分为 3 类：</p>
 <ul>
@@ -810,7 +810,7 @@ if (!doNotTrack) {
 <h2 id="三色标记">三色标记</h2>
 <ul>
 <li>白色：潜在垃圾，其内存可能会被垃圾收集器回收；</li>
-<li>灰色：活跃对象，因为存在指向白色对象的外部指针，垃圾收集器只会对象进行扫描，通过引入灰色标记这一中间状态，使得用户代码和标记代码可以并发执行，无需STW，减少停顿时间；</li>
+<li>灰色：活跃对象，因为存在指向白色对象的外部指针，垃圾收集器只会对象进行扫描，<strong>通过引入灰色标记这一中间状态，使得用户代码和标记代码可以并发执行，无需STW，减少停顿时间</strong>；</li>
 <li>黑色：活跃对象，包括不存在任何引用外部指针对象以及从根对象可达的对象；</li>
 </ul>
 <p><figure 
@@ -974,7 +974,7 @@ if (!doNotTrack) {
 </ol>
 </li>
 </ol>
-<p>并发垃圾回收是先STW找到所有的Root对象，开启写屏障，然后结束STW，让垃圾标记线程和用户线程并发执行，垃圾标记完成后，再次开启STW，停止写屏障，清理内存。</p>
+<p>并发垃圾回收是先STW找到所有的Root对象，开启写屏障，然后结束STW，让垃圾标记线程和用户线程并发执行，垃圾标记完成后，再次开启STW，停止写屏障，统计GC信息，结束STW，清理内存。</p>
 <p><figure 
 	>
 	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/GC%e6%89%a7%e8%a1%8c%e6%b5%81%e7%a8%8b.png" >
@@ -1000,7 +1000,9 @@ if (!doNotTrack) {
 <h2 id="gc性能优化技巧">GC性能优化技巧</h2>
 <ul>
 <li>
+<p>slice或map提前预分配</p>
 <p>slice预先分配内存，因为slice扩容时会返回新的slice，如果频繁扩容会增加GC压力；</p>
+<p>map同理；</p>
 </li>
 <li>
 <p>slice的缩容，比如一个 <code>arr = make([]*obj, 6)</code> 缩容时，当<code>arr = arr[:3]</code>时，底层数组后面 3 个元素已经无法访问了，但是其关联的堆上内存依然无法释放，触发把对应下标的元素置为nil；</p>
@@ -1067,9 +1069,6 @@ if (!doNotTrack) {
 </li>
 <li>
 <p>尽可能使用字节数少的类型，比如当我们知道某些数字的使用只会在一定范围内，直接使用int8类型</p>
-</li>
-<li>
-<p>切片或map提前预分配</p>
 </li>
 <li>
 <blockquote>
@@ -1401,7 +1400,7 @@ if (!doNotTrack) {
                 <div class="widget--toc">
                     <nav id="TableOfContents">
   <ol>
-    <li><a href="#runtime">Runtime</a></li>
+    <li><a href="#runtime">runtime</a></li>
     <li><a href="#pprof">pprof</a></li>
     <li><a href="#netpoller">netpoller</a></li>
     <li><a href="#goroutine">Goroutine</a>
