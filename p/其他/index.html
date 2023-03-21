@@ -1090,7 +1090,7 @@ value：无
         <span class="nx">lru</span><span class="p">.</span><span class="nf">addFirst</span><span class="p">(</span><span class="nx">newNode</span><span class="p">)</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">)</span> <span class="p">&gt;</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">cap</span> <span class="p">{</span>
-        <span class="c1">// 一定要先delete，不然执行完remove，
+        <span class="c1">// 一定要先delete，如果先remove，会导致找不回tail的key进行delete，
 </span><span class="c1"></span>        <span class="nb">delete</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">nodeMap</span><span class="p">,</span> <span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">.</span><span class="nx">key</span><span class="p">)</span>
         <span class="nx">lru</span><span class="p">.</span><span class="nf">remove</span><span class="p">(</span><span class="nx">lru</span><span class="p">.</span><span class="nx">tail</span><span class="p">)</span>
     <span class="p">}</span>
@@ -1478,8 +1478,8 @@ value：无
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kn">import</span> <span class="s">&#34;container/heap&#34;</span>
 
 <span class="kd">type</span> <span class="nx">LFUNode</span> <span class="kd">struct</span> <span class="p">{</span>
+  	<span class="nx">key</span>   <span class="kt">string</span>
 	<span class="nx">val</span>   <span class="kt">string</span>
-	<span class="nx">key</span>   <span class="kt">string</span>
 	<span class="nx">freq</span>  <span class="kt">int</span> <span class="c1">// 用于优先级，key的使用频率
 </span><span class="c1"></span>	<span class="nx">count</span> <span class="kt">int</span> <span class="c1">// 用于当freq相同时的比较淘汰，总的获取次数，类似时间戳的概念
 </span><span class="c1"></span>	<span class="nx">index</span> <span class="kt">int</span> <span class="c1">// 最小堆中元素的下标，用于重建最小堆.
