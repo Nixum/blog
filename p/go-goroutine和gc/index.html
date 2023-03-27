@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    5 minute read
+                    6 minute read
                 </time>
             </div>
         
@@ -273,7 +273,150 @@ if (!doNotTrack) {
 </blockquote>
 <p>总结：当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中；当IO可用时，在 epoll 的 <code>eventpoll.rdr</code> 中等待的 G 会被放到 <code>eventpoll.rdllist</code> 链表里并通过 <code>netpoll</code> 中的 <code>epoll_wait</code> 系统调用<strong>返回放置到GRQ或者 P 的LRQ</strong>，标记为 <code>_Grunnable</code> ，等待 P 绑定 M 恢复执行。</p>
 <h1 id="goroutine">Goroutine</h1>
-<h2 id="基本">基本</h2>
+<h2 id="结构">结构</h2>
+<h3 id="g">G</h3>
+<p>goroutine本质是一个执行流，通过<code>go func(){}()</code>会开启一个协程，等待被调度，编译的时候，会变成 <code>runtime.g</code> 结构体，用于调度，func函数会挂在 <code>runtime.g</code> 的startpc字段，func函数的入参会拷贝到栈中，sched用于保存协程切换时的pc位置和栈位置；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 实际不止这些字段
+</span><span class="c1"></span><span class="kd">type</span> <span class="nx">g</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">goid</span>   <span class="kt">int64</span>  <span class="c1">// 协程id
+</span><span class="c1"></span>	<span class="nx">status</span> <span class="kt">uint32</span> <span class="c1">// 协程状态
+</span><span class="c1"></span>	<span class="nx">stack</span>  <span class="kd">struct</span> <span class="p">{</span> <span class="c1">// 协程使用的栈
+</span><span class="c1"></span>		<span class="nx">lo</span> <span class="kt">uintptr</span> <span class="c1">// 该协程拥有的栈低位
+</span><span class="c1"></span>		<span class="nx">hi</span> <span class="kt">uintptr</span> <span class="c1">// 该协程拥有的栈高位
+</span><span class="c1"></span>	<span class="p">}</span>
+	<span class="nx">sched</span>       <span class="nx">gobuf</span>          <span class="c1">// g的运行现场，用于切换时保存上下文
+</span><span class="c1"></span>	<span class="nx">stackgroud0</span> <span class="kt">uintptr</span>        <span class="c1">// 用于栈扩张
+</span><span class="c1"></span>	<span class="nx">stackgroud1</span> <span class="kt">uintptr</span>        <span class="c1">// 用于栈收缩
+</span><span class="c1"></span>	<span class="nx">m</span>           <span class="o">*</span><span class="nx">m</span>             <span class="c1">// 当前g绑定的m
+</span><span class="c1"></span>	<span class="nx">param</span>       <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="c1">// wakeup时使用，参数传入
+</span><span class="c1"></span>	<span class="nx">waitsince</span>   <span class="kt">int64</span>          <span class="c1">// g被阻塞后的近似时间
+</span><span class="c1"></span>	<span class="nx">waitreason</span>  <span class="nx">waitReason</span>     <span class="c1">// g被阻塞的原因
+</span><span class="c1"></span>	<span class="nx">preempt</span>     <span class="kt">bool</span>           <span class="c1">// 抢占调度标志
+</span><span class="c1"></span>	<span class="nx">lockedm</span>     <span class="nx">muintptr</span>       <span class="c1">// 如果调用了LockOsThread，g就会被绑定在m上
+</span><span class="c1"></span>	<span class="nx">gopc</span>        <span class="kt">uintptr</span>        <span class="c1">// 创建goroutine语句的指令地址
+</span><span class="c1"></span>	<span class="nx">startpc</span>     <span class="kt">uintptr</span>        <span class="c1">// goroutine函数的指令地址
+</span><span class="c1"></span>	<span class="nx">timeer</span>      <span class="o">*</span><span class="nx">timer</span>         <span class="c1">// time.Sleep缓存的定时器
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">gobuf</span> <span class="kd">struct</span> <span class="p">{</span>
+    <span class="nx">sp</span> <span class="kt">uintptr</span> <span class="c1">// 栈指针的位置
+</span><span class="c1"></span>    <span class="nx">pc</span> <span class="kt">uintptr</span> <span class="c1">// 运行到的程序位置，程序计数器的值
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="m">M</h3>
+<p>G要调度到M上才能运行，M是真正工作的实体，保存了自身使用的栈信息，当前正在M上执行的G信息，与之绑定的P信息等。m结构体记录了与之对应的内核线程的栈信息，在执行调度时使用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 实际不止这些字段
+</span><span class="c1"></span><span class="kd">type</span> <span class="nx">m</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">g0</span>         <span class="o">*</span><span class="nx">g</span>         <span class="c1">// 执行用户goroutine时，使用用户goroutine自己的栈，因此调度时会发生栈的切换
+</span><span class="c1"></span>	<span class="nx">tls</span>        <span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="kt">uintptr</span> <span class="c1">// LocalThreadStorage，通过tls结构体实现m与工作线程的绑定
+</span><span class="c1"></span>	<span class="nx">curg</span>       <span class="o">*</span><span class="nx">g</span>         <span class="c1">// 指向正在运行的goroutine对象
+</span><span class="c1"></span>	<span class="nx">p</span>          <span class="nx">puintptr</span>   <span class="c1">// 当前工作线程绑定的P
+</span><span class="c1"></span>	<span class="nx">preemptoff</span> <span class="kt">string</span>     <span class="c1">// 该字段不等于空字符串时，保存curg始终在这个m上运行
+</span><span class="c1"></span>	<span class="nx">spinning</span>   <span class="kt">bool</span>       <span class="c1">// 为true表示当前m处于自旋状态，正在从其他线程偷任务
+</span><span class="c1"></span>	<span class="nx">blocked</span>    <span class="kt">bool</span>       <span class="c1">// m正阻塞在note上
+</span><span class="c1"></span>	<span class="nx">park</span>       <span class="nx">note</span>       <span class="c1">// 没有goroutine需要运行时，工作线程sleep在这个park成员上，其他线程通过这个park唤醒该工作线程
+</span><span class="c1"></span>	<span class="nx">alllink</span>    <span class="o">*</span><span class="nx">m</span>         <span class="c1">// 记录所有工作线程的链表
+</span><span class="c1"></span>    <span class="nx">locks</span>      <span class="kt">int32</span>      <span class="c1">// 锁的计数器，非0表示对m上锁，禁止被抢占
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="p">P</h3>
+<p>为M的执行提供上下文，保存M执行G的一些资源，一个M只有绑定了P才能执行goroutine</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">p</span> <span class="kd">struct</span> <span class="p">{</span>
+    <span class="nx">id</span>          <span class="kt">int32</span>         <span class="c1">// 在allp中的索引
+</span><span class="c1"></span>	<span class="nx">schedtick</span>   <span class="kt">uint32</span>        <span class="c1">// 每次调用schedule时会加一
+</span><span class="c1"></span>	<span class="nx">syscalltick</span> <span class="kt">uint32</span>        <span class="c1">// 每次系统调用时会加一
+</span><span class="c1"></span>	<span class="nx">sysmontick</span>  <span class="nx">sysmontick</span>    <span class="c1">// 用于sysmon线程记录被监控p的系统调用时间和运行时间
+</span><span class="c1"></span>    <span class="nx">m</span>           <span class="nx">muintptr</span>      <span class="c1">// 执行绑定的m，如果p是idle的话，这个指针是nil
+</span><span class="c1"></span>	<span class="nx">runqhead</span>    <span class="kt">uint32</span>        <span class="c1">// 本地运行队列的队头
+</span><span class="c1"></span>	<span class="nx">runqtail</span>    <span class="kt">uint32</span>        <span class="c1">// 本地运行队列的队尾
+</span><span class="c1"></span>	<span class="nx">runq</span>        <span class="p">[</span><span class="mi">256</span><span class="p">]</span><span class="nx">guintptr</span> <span class="c1">// 本地运行队列，一个256长度的数组
+</span><span class="c1"></span>	<span class="c1">// runnext非空，表示有一个G在执行，状态是runnable
+</span><span class="c1"></span>	<span class="c1">// 这个G被当前G修改为ready状态时，相比runq中的G有更高的优先级
+</span><span class="c1"></span>	<span class="c1">// 如果当前G还有剩余的可用时间，那就运行这个G
+</span><span class="c1"></span>	<span class="c1">// 运行之后，该G会记串当前G的剩余时间
+</span><span class="c1"></span>	<span class="nx">runnext</span> <span class="nx">guintptr</span>
+	<span class="c1">// 空闲g链表
+</span><span class="c1"></span>	<span class="nx">gFree</span> <span class="kd">struct</span> <span class="p">{</span>
+		<span class="nx">gList</span>
+		<span class="nx">n</span> <span class="kt">int32</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="基本">基本</h2>
 <ul>
 <li>
 <p>GPM模型 - M：N调度模型</p>
@@ -1408,6 +1551,13 @@ if (!doNotTrack) {
     <li><a href="#netpoller">netpoller</a></li>
     <li><a href="#goroutine">Goroutine</a>
       <ol>
+        <li><a href="#结构">结构</a>
+          <ol>
+            <li><a href="#g">G</a></li>
+            <li><a href="#m">M</a></li>
+            <li><a href="#p">P</a></li>
+          </ol>
+        </li>
         <li><a href="#基本">基本</a></li>
         <li><a href="#早期调度模型-mg模型">早期调度模型-MG模型</a></li>
         <li><a href="#调度器的gpm模型">调度器的GPM模型</a></li>

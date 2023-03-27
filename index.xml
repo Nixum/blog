@@ -5596,7 +5596,150 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/blockquote&gt;
 &lt;p&gt;总结：当处理网络IO的goroutine被阻塞住时，通过netpoll + 非阻塞IO，让G不会因为系统调用而陷入内核态，只是被runtime调用gopark住，此时G会被放置到某个wait queue中；当IO可用时，在 epoll 的 &lt;code&gt;eventpoll.rdr&lt;/code&gt; 中等待的 G 会被放到 &lt;code&gt;eventpoll.rdllist&lt;/code&gt; 链表里并通过 &lt;code&gt;netpoll&lt;/code&gt; 中的 &lt;code&gt;epoll_wait&lt;/code&gt; 系统调用&lt;strong&gt;返回放置到GRQ或者 P 的LRQ&lt;/strong&gt;，标记为 &lt;code&gt;_Grunnable&lt;/code&gt; ，等待 P 绑定 M 恢复执行。&lt;/p&gt;
 &lt;h1 id=&#34;goroutine&#34;&gt;Goroutine&lt;/h1&gt;
-&lt;h2 id=&#34;基本&#34;&gt;基本&lt;/h2&gt;
+&lt;h2 id=&#34;结构&#34;&gt;结构&lt;/h2&gt;
+&lt;h3 id=&#34;g&#34;&gt;G&lt;/h3&gt;
+&lt;p&gt;goroutine本质是一个执行流，通过&lt;code&gt;go func(){}()&lt;/code&gt;会开启一个协程，等待被调度，编译的时候，会变成 &lt;code&gt;runtime.g&lt;/code&gt; 结构体，用于调度，func函数会挂在 &lt;code&gt;runtime.g&lt;/code&gt; 的startpc字段，func函数的入参会拷贝到栈中，sched用于保存协程切换时的pc位置和栈位置；&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// 实际不止这些字段
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;g&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;goid&lt;/span&gt;   &lt;span class=&#34;kt&#34;&gt;int64&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// 协程id
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;status&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint32&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 协程状态
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;stack&lt;/span&gt;  &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 协程使用的栈
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nx&#34;&gt;lo&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 该协程拥有的栈低位
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;		&lt;span class=&#34;nx&#34;&gt;hi&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 该协程拥有的栈高位
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;sched&lt;/span&gt;       &lt;span class=&#34;nx&#34;&gt;gobuf&lt;/span&gt;          &lt;span class=&#34;c1&#34;&gt;// g的运行现场，用于切换时保存上下文
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;stackgroud0&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 用于栈扩张
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;stackgroud1&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 用于栈收缩
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;           &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;             &lt;span class=&#34;c1&#34;&gt;// 当前g绑定的m
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;param&lt;/span&gt;       &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// wakeup时使用，参数传入
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;waitsince&lt;/span&gt;   &lt;span class=&#34;kt&#34;&gt;int64&lt;/span&gt;          &lt;span class=&#34;c1&#34;&gt;// g被阻塞后的近似时间
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;waitreason&lt;/span&gt;  &lt;span class=&#34;nx&#34;&gt;waitReason&lt;/span&gt;     &lt;span class=&#34;c1&#34;&gt;// g被阻塞的原因
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;preempt&lt;/span&gt;     &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;           &lt;span class=&#34;c1&#34;&gt;// 抢占调度标志
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;lockedm&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;muintptr&lt;/span&gt;       &lt;span class=&#34;c1&#34;&gt;// 如果调用了LockOsThread，g就会被绑定在m上
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;gopc&lt;/span&gt;        &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 创建goroutine语句的指令地址
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;startpc&lt;/span&gt;     &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// goroutine函数的指令地址
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;timeer&lt;/span&gt;      &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;timer&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;// time.Sleep缓存的定时器
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;gobuf&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;sp&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 栈指针的位置
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;pc&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 运行到的程序位置，程序计数器的值
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;m&#34;&gt;M&lt;/h3&gt;
+&lt;p&gt;G要调度到M上才能运行，M是真正工作的实体，保存了自身使用的栈信息，当前正在M上执行的G信息，与之绑定的P信息等。m结构体记录了与之对应的内核线程的栈信息，在执行调度时使用。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// 实际不止这些字段
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;g0&lt;/span&gt;         &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;g&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;// 执行用户goroutine时，使用用户goroutine自己的栈，因此调度时会发生栈的切换
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;tls&lt;/span&gt;        &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// LocalThreadStorage，通过tls结构体实现m与工作线程的绑定
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;curg&lt;/span&gt;       &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;g&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;// 指向正在运行的goroutine对象
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;          &lt;span class=&#34;nx&#34;&gt;puintptr&lt;/span&gt;   &lt;span class=&#34;c1&#34;&gt;// 当前工作线程绑定的P
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;preemptoff&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;     &lt;span class=&#34;c1&#34;&gt;// 该字段不等于空字符串时，保存curg始终在这个m上运行
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;spinning&lt;/span&gt;   &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;       &lt;span class=&#34;c1&#34;&gt;// 为true表示当前m处于自旋状态，正在从其他线程偷任务
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;blocked&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;       &lt;span class=&#34;c1&#34;&gt;// m正阻塞在note上
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;park&lt;/span&gt;       &lt;span class=&#34;nx&#34;&gt;note&lt;/span&gt;       &lt;span class=&#34;c1&#34;&gt;// 没有goroutine需要运行时，工作线程sleep在这个park成员上，其他线程通过这个park唤醒该工作线程
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;alllink&lt;/span&gt;    &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;// 记录所有工作线程的链表
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;locks&lt;/span&gt;      &lt;span class=&#34;kt&#34;&gt;int32&lt;/span&gt;      &lt;span class=&#34;c1&#34;&gt;// 锁的计数器，非0表示对m上锁，禁止被抢占
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;p&#34;&gt;P&lt;/h3&gt;
+&lt;p&gt;为M的执行提供上下文，保存M执行G的一些资源，一个M只有绑定了P才能执行goroutine&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;id&lt;/span&gt;          &lt;span class=&#34;kt&#34;&gt;int32&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;// 在allp中的索引
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;schedtick&lt;/span&gt;   &lt;span class=&#34;kt&#34;&gt;uint32&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 每次调用schedule时会加一
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;syscalltick&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint32&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 每次系统调用时会加一
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;sysmontick&lt;/span&gt;  &lt;span class=&#34;nx&#34;&gt;sysmontick&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 用于sysmon线程记录被监控p的系统调用时间和运行时间
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;           &lt;span class=&#34;nx&#34;&gt;muintptr&lt;/span&gt;      &lt;span class=&#34;c1&#34;&gt;// 执行绑定的m，如果p是idle的话，这个指针是nil
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;runqhead&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;uint32&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 本地运行队列的队头
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;runqtail&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;uint32&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// 本地运行队列的队尾
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;runq&lt;/span&gt;        &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;256&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;guintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 本地运行队列，一个256长度的数组
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// runnext非空，表示有一个G在执行，状态是runnable
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 这个G被当前G修改为ready状态时，相比runq中的G有更高的优先级
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 如果当前G还有剩余的可用时间，那就运行这个G
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;c1&#34;&gt;// 运行之后，该G会记串当前G的剩余时间
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;runnext&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;guintptr&lt;/span&gt;
+	&lt;span class=&#34;c1&#34;&gt;// 空闲g链表
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;gFree&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+		&lt;span class=&#34;nx&#34;&gt;gList&lt;/span&gt;
+		&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int32&lt;/span&gt;
+	&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;基本&#34;&gt;基本&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;GPM模型 - M：N调度模型&lt;/p&gt;
@@ -8522,7 +8665,140 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;h1 id=&#34;timer&#34;&gt;Timer&lt;/h1&gt;
+&lt;/div&gt;&lt;h1 id=&#34;select&#34;&gt;select&lt;/h1&gt;
+&lt;h2 id=&#34;结构&#34;&gt;结构&lt;/h2&gt;
+&lt;p&gt;select在runtime中不存在结构体表示，但是case倒是有&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// scase.kind
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// send 或者 recv 发生在一个 nil channel 上，就有可能出现这种情况
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;caseNil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;iota&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;caseRecv&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;caseSend&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;caseDefault&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+&lt;span class=&#34;c1&#34;&gt;// select 中每一个 case 的数据结构定义
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;scase&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 接收 或 发送数据的变量地址
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;    &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;hchan&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 存储正在使用的chan
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;kind&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint16&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// case的种类
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;releasetime&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int64&lt;/span&gt;
+	&lt;span class=&#34;nx&#34;&gt;pc&lt;/span&gt;          &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// return pc (for race detector / msan)
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;基本-1&#34;&gt;基本&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;非阻塞收发：select不会等待其他chan准备就绪，会非阻塞读取或写入数据，直接执行default条件中的内容并返回。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;make&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;chan&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;println&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;println&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;default&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;随机执行：select遇到多个case就绪，会进行随机选择&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;nx&#34;&gt;ch1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;make&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;chan&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;ch2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;make&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;chan&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;j&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ch1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;println&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;j&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ch2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+        &lt;span class=&#34;nb&#34;&gt;println&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;编译器会对select中的case进行优化，总共有四种情况：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;不包含任何case，即空select，此时会阻塞当前的goroutine&lt;/li&gt;
+&lt;li&gt;只包含一个case，此时select会被优化成 if ，当chan没有数据可接收时，就会把阻塞当前goroutine，直到有数据到来；如果chan是nil，就会永远阻塞当前goroutine&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;c1&#34;&gt;// ...    
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;// 会被优化成
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;nf&#34;&gt;block&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;存在两个case，其中一个是default：&lt;/li&gt;
+&lt;li&gt;通用的select条件：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;timer&#34;&gt;Timer&lt;/h1&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.cyhone.com/articles/analysis-of-golang-timer/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;https://www.cyhone.com/articles/analysis-of-golang-timer/&lt;/a&gt;&lt;/p&gt;
 &lt;h1 id=&#34;时间轮&#34;&gt;时间轮&lt;/h1&gt;
@@ -11444,12 +11720,13 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;排他锁&lt;/strong&gt; - X锁（SQL + for update）：行锁，事务T对数据A加上排他锁，则其他事务不能再对A加任何类型的锁。获得排它锁的事务即能读数据又能修改数据。&lt;/p&gt;
+&lt;p&gt;与乐观锁和排他锁的差别：&lt;strong&gt;乐观锁和排他锁是针对select而言的&lt;/strong&gt;，并不是数据库实际存在的锁；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;意向共享锁&lt;/strong&gt; - IS锁：表级锁，表示事务持有表中行的共享锁或者打算获取行的共享锁，仅表示意图，不阻塞其他操作，当事务在获取表中的共享行锁时，需要先获取表中的意向共享锁&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;意向共享锁&lt;/strong&gt; - IS锁：表级锁，表示事务持有表中行的共享锁或者打算获取行的共享锁，仅表示意图，不阻塞其他操作，当事务在获取表中的共享行锁时，需要先获取表中的意向共享锁；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;意向排他锁&lt;/strong&gt; - IX锁：表级锁，表示事务持有表中行的排他锁或者打算获取行的排他锁，仅表示意图，不阻塞其他操作，当事务在获取表中的排他行锁时，需要先获取表中的意向排他锁&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;意向排他锁&lt;/strong&gt; - IX锁：表级锁，表示事务持有表中行的排他锁或者打算获取行的排他锁，仅表示意图，不阻塞其他操作，当事务在获取表中的排他行锁时，需要先获取表中的意向排他锁；&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
@@ -15064,24 +15341,52 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;h2 id=&#34;通用头&#34;&gt;通用头&lt;/h2&gt;
 &lt;h3 id=&#34;cache-control&#34;&gt;cache-control&lt;/h3&gt;
 &lt;p&gt;设置http缓存规则，控制缓存开关，缓存策略，缓存的有效时间等，请求头和响应头有不同的枚举值&lt;/p&gt;
-&lt;h3 id=&#34;keep-alive&#34;&gt;keep-alive&lt;/h3&gt;
-&lt;p&gt;保持长连接，连接复用，避免频繁建立连接带来的性能损耗。HTTP1.0默认是关闭的，HTTP1.1默认是开启的。对应的key是Connection。可以设置参数&lt;code&gt;Keep-Alive: max=5, timeout=120&lt;/code&gt;表示一次keep-alive可以发送的请求次数是5，连接保持时间是120s，&lt;strong&gt;默认是2小时&lt;/strong&gt;，可以一直进行HTTP请求，但&lt;strong&gt;一个TCP连接同一时间只支持一个HTTP请求&lt;/strong&gt;。&lt;/p&gt;
-&lt;p&gt;不同的浏览器对同一Host建立的TCP连接数量的限制取决于浏览器本身，像Chrome最多允许同时建立6个TCP连接，假如一个HTML页面有很多图片需要加载，且这些图片都是同一Host，且HTTPs，那浏览器在SSL后会和服务器确认是否启用HTTP2，如果启用就可以同一连接下同时下载多个，如果不启用，就仍然用那几个连接，排队去等了。&lt;/p&gt;
+&lt;h3 id=&#34;connection-keep-alive&#34;&gt;Connection: keep-alive&lt;/h3&gt;
+&lt;p&gt;保持长连接，连接复用，避免频繁建立连接带来的性能损耗。HTTP1.0默认是关闭的，HTTP1.1默认是开启的。对应的key是Connection。可以设置参数&lt;code&gt;Keep-Alive: max=5, timeout=120&lt;/code&gt;表示一次keep-alive可以发送的请求次数是5，连接保持时间是120s，&lt;strong&gt;默认是2小时&lt;/strong&gt;，可以一直进行HTTP请求，但&lt;strong&gt;一个TCP连接同一时间只支持一个HTTP请求&lt;/strong&gt;，即一次连接中，请求是一个个处理的，如果前一个没处理完，没办法处理下一个，也就是下一个不返回。&lt;/p&gt;
+&lt;p&gt;不同的浏览器对同一Host建立的TCP连接数量的限制取决于浏览器本身，像Chrome最多允许同时建立6个TCP连接，假如一个HTML页面有很多图片需要加载，且这些图片都是同一Host，且HTTPs，那浏览器在TLS 后会和服务器确认是否启用HTTP2，如果启用就可以同一连接下同时下载多个，如果不启用，就仍然用那几个连接，排队去等了。&lt;/p&gt;
+&lt;p&gt;另外多个HTTP连接，是可以建立在一个TCP连接上的。&lt;/p&gt;
 &lt;p&gt;与TCP的keep-alive不同：&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;ul&gt;
-&lt;li&gt;TCP 的 KeepAlive 是由操作系统内核来控制，通过 &lt;code&gt;keep-alive&lt;/code&gt; 报文来防止 TCP 连接被对端、防火墙或其他中间设备意外中断，和上层应用没有任何关系，只负责维护单个 TCP 连接的状态，其上层应用可以复用该 TCP 长连接，也可以关闭该 TCP 长连接。&lt;/li&gt;
-&lt;li&gt;HTTP 的 KeepAlive 机制则是和自己的业务密切相关的，浏览器通过头部告知服务器要复用这个 TCP 连接，请不要随意关闭。只有到了 &lt;code&gt;keepalive&lt;/code&gt; 头部规定的 &lt;code&gt;timeout&lt;/code&gt; 才会关闭该 TCP 连接，不过这具体依赖应用服务器，应用服务器也可以根据自己的设置在响应后主动关闭这个 TCP 连接，只要在响应的时候携带 &lt;code&gt;Connection: Close&lt;/code&gt; 告知对方&lt;/li&gt;
+&lt;li&gt;TCP 的 keep-alive 是由操作系统内核来控制，存在于内核态，通过 &lt;code&gt;keep-alive&lt;/code&gt; 报文来防止 TCP 连接被对端、防火墙或其他中间设备意外中断，主要的作用是保活，和上层应用没有任何关系，只负责维护单个 TCP 连接的状态，其上层应用可以复用该 TCP 长连接，也可以关闭该 TCP 长连接。&lt;/li&gt;
+&lt;li&gt;HTTP 的 keep-alive是由应用层控制，存在于用户态， 机制则是和自己的业务密切相关的，浏览器通过头部告知服务器要&lt;strong&gt;复用这个 TCP 连接，请不要随意关闭&lt;/strong&gt;。只有到了 &lt;code&gt;keep-alive&lt;/code&gt; 头部规定的 &lt;code&gt;timeout&lt;/code&gt; 才会关闭该 TCP 连接，不过这具体依赖应用服务器，应用服务器也可以根据自己的设置在响应后主动关闭这个 TCP 连接，只要在响应的时候携带 &lt;code&gt;Connection: Close&lt;/code&gt; 告知对方&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
+&lt;p&gt;但是可见，两种keep-alive都是为了连接复用&lt;/p&gt;
 &lt;h3 id=&#34;content-length&#34;&gt;Content-Length&lt;/h3&gt;
 &lt;p&gt;表示本次响应的数据长度，后面的字节就属于下一个响应的了，因为HTTP是基于TCP进行通信的，应用层需要解决粘包的问题，HTTP为了解决这个问题，有两种解决方案：1. 设置Content-Length作为响应的边界；2. 响应体设置回车符、换行符作为响应的边界，常见于&lt;code&gt;Transfer-Encoding=chunked&lt;/code&gt;&lt;/p&gt;
 &lt;h3 id=&#34;upgrade&#34;&gt;Upgrade&lt;/h3&gt;
 &lt;p&gt;一般是用于协议升级，比如WebSocket，浏览器与服务器使用WebSocket通信时，会先通过普通的HTTP建立连接，在请求头里带上&lt;code&gt;Upgrade: WebSocket; Connection: Upgrade; Sec-WebSocket-Key: 随机生成的base64码&lt;/code&gt;，发送给服务器。&lt;/p&gt;
 &lt;p&gt;如果服务器支持WebSocket协议，就会走WebSocket握手流程，根据客户端生成的basae64码，使用公钥变成另一个字符串，放在&lt;code&gt;Set-WebSocket-Accept&lt;/code&gt;响应头中，并带上101响应码，表示协议切换，要建立起WebSocket连接。&lt;/p&gt;
-&lt;h1 id=&#34;https&#34;&gt;HTTPs&lt;/h1&gt;
+&lt;h3 id=&#34;http缓存&#34;&gt;HTTP缓存&lt;/h3&gt;
+&lt;p&gt;对于一些重复性的HTTP请求，比如每次请求得到的数据都是一样的，就可以把这对请求响应缓存在本地，从而提升性能。&lt;/p&gt;
+&lt;h4 id=&#34;强制缓存&#34;&gt;强制缓存&lt;/h4&gt;
+&lt;p&gt;由两个响应头字段实现：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Cache-Control: 值可以是max-age=x秒，或者 s-maxage=x秒（代理缓存，如CDN），或者public、private表示缓存是否共享，或者no-cache表明不缓存，或者no-store表示禁止缓存&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Expires: 值可以是 max-age+请求时间，但需要配合Last-modified使用，或者直接是绝对时间，表示缓存什么时候到期&lt;/code&gt;，&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;Cache-Control&lt;/code&gt;的优先级高于&lt;code&gt;Expires&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;客户端接收到的响应头包括这两个字段中的一个时，在之后的时间里就不会去请求服务端获取数据，直接使用本地缓存，本地缓存一般是直接存在磁盘，响应码后面会直接标识 &lt;code&gt;200（from dish cache）&lt;/code&gt;&lt;/p&gt;
+&lt;h4 id=&#34;协商缓存&#34;&gt;协商缓存&lt;/h4&gt;
+&lt;p&gt;客户端与服务端协商，根据结果判断是否使用本地缓存，有两种头部&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;请求头中的If-Modified-Since，表示用来与响应资源比较，判断是否缓存是否被修改过，单位是秒&lt;/code&gt;配合&lt;code&gt;响应头中的Last-Modified，表示响应资源的最后修改时间，单位是秒&lt;/code&gt;字段实现，如果缓存被修改过，返回&lt;code&gt;HTTP 200&lt;/code&gt;，如果没被修改过，返回&lt;code&gt;HTTP 304&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;响应头中的ETag，表示缓存响应标识&lt;/code&gt;配合&lt;code&gt;请求头中的If-None-Match，表示资源过期时，如果响应头里有Etag，则再次向服务器发起请求时，会设置If-None-Match的值位Etag&lt;/code&gt;，服务器会对比&lt;code&gt;If-None-Match&lt;/code&gt;的值，如果有缓存有修改，返回304，否则返回200&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;ETag&lt;/code&gt;的优先级高于&lt;code&gt;Last-Modified&lt;/code&gt;，ETag可以解决那种文件内容不变，但文件修改时间改变的场景；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;https&#34;&gt;HTTPS&lt;/h1&gt;
+&lt;p&gt;HTTPS主要解决HTTP的安全问题，如报文内容安全（加密解决），防篡改（签名解决），防冒充（CA认证解决）。&lt;/p&gt;
 &lt;p&gt;HTTPS = HTTP + SSL/TLS，SSL是介于HTTP之下TCP之上的协议层，提供 加密明文，验证身份，保证报文完整 的保障。TLS是升级版的SSL，作用类似，比SSL多了些其他功能，现在绝大多数浏览器都不支持SSL了，而是支持TLS。&lt;/p&gt;
-&lt;p&gt;HTTP 先和 SSL（Secure Sockets Layer）通信，再由 SSL 和 TCP 通信。一般情况下，TLS需要先经过TCP三次握手，建立可靠连接之后，才能做TLS握手的事。&lt;/p&gt;
+&lt;p&gt;HTTP 先和 TLS 通信，再由 TLS 和 TCP 通信。一般情况下，TLS需要先经过TCP三次握手，建立可靠连接之后，才能做TLS握手的事。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;加密&lt;/p&gt;
@@ -15090,19 +15395,19 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;验证身份&lt;/p&gt;
-&lt;p&gt;通过第三方（CA）发布SSL证书，对通信方进行认证&lt;/p&gt;
+&lt;p&gt;通过第三方（CA）发布TLS 证书，对通信方进行认证&lt;/p&gt;
 &lt;p&gt;服务器的运营人员向 CA 提出公开密钥的申请，CA 在判明提出申请者的身份之后，会对已申请的公开密钥做数字签名，然后分配这个已签名的公开密钥，并将该公开密钥放入公开密钥证书后绑定在一起。&lt;/p&gt;
-&lt;p&gt;所以这里涉及到两个公钥，一个是服务端用于SSL的公钥，一个是CA证书的公钥；&lt;/p&gt;
-&lt;p&gt;所以，&lt;strong&gt;SSL证书主要是表明了该域名归属，日期等信息，还包含了用于报文加密的公钥和私钥以及数字签名，SSL证书被服务端持有&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;所以这里涉及到两个公钥，一个是服务端用于 TLS 的公钥，一个是CA证书的公钥；&lt;/p&gt;
+&lt;p&gt;所以，&lt;strong&gt;TLS 证书主要是表明了该域名归属，日期等信息，还包含了用于报文加密的公钥和私钥以及数字签名，TLS 证书被服务端持有&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;进行 HTTPs 通信时，服务器会把证书发送给客户端。客户端取得其中的公开密钥之后，先使用数字签名进行验证，如果验证通过，就可以开始通信了，通信时使用上述的加密机制保护报文；&lt;/p&gt;
 &lt;p&gt;证书信任的方式：操作系统和浏览器内置；CA颁发；手动导入证书&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;保护报文完整&lt;/p&gt;
-&lt;p&gt;SSL 提供&lt;strong&gt;报文摘要&lt;/strong&gt;功能（即签名）结合加密和认证来进行完整性保护&lt;/p&gt;
+&lt;p&gt;TLS 提供&lt;strong&gt;报文摘要&lt;/strong&gt;功能（即签名）结合加密和认证来进行完整性保护&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&lt;strong&gt;在HTTP的基础上，以TLS 1.2版本为例，RSA握手流程：&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;在HTTP的基础上，以TLS 1.2版本为例，RSA算法的握手流程：&lt;/strong&gt;&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
 &lt;p&gt;客户端访问服务端的网页，首先经过浏览器内置的受信任的CA机构列表，查看该服务器是否向CA机构提供了证书；CA会对服务端提供的公钥和服务端的相关信息进行Hash，然后用CA的私钥进行签名，将签名的公钥和服务端提供的公钥和信息一起整成一份证书；&lt;/p&gt;
@@ -15227,7 +15532,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;提供全双工通信&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;面向字节流（把应用层传下来的报文看成字节流，把字节流组织成大小不等的数据块）&lt;/p&gt;
+&lt;p&gt;面向字节流（把应用层传下来的报文看成字节流，把字节流组织成大小不等的数据块，可能会导致队头阻塞，比如后面序号的包都收到了，但是前面序号的包没收到，此时应用层无法读取这部分数据）&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;头部20字节&lt;/p&gt;
@@ -21956,6 +22261,8 @@ TERMINATED：terminated()方法执行过后变成这个
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;如果更新数据库层面有重试机制，那在set的时候就不能使用&lt;code&gt;inventory = inventory - 扣减数量&lt;/code&gt;这种方案了，因为这种操作是不幂等的，重试会导致重复扣减，所以得先计算出扣减完之后的inventory值，在set才能保证更新时幂等。&lt;/p&gt;
+&lt;p&gt;没办法在开启事务后，通过&lt;code&gt;select语句 + in share mode + update语句&lt;/code&gt;来实现，虽然 &lt;code&gt;in share mode&lt;/code&gt;不会阻塞其他请求的读请求，但是会导致第二个在更新的时候有问题，比如阻塞或者更新错误，除非加上库存余量判断，但是如果加上更新余量的判断，还不如一开始就直接使用这个去扣减库存。&lt;/p&gt;
+&lt;p&gt;在这个场景下，使用这两种锁的差别，像排他锁，比较严格，锁的条数会比较多，可能会影响其他请求的读写，而共享锁，虽然锁完不影响读，适合读多写少的场景，但是也可能会导致业务方面的问题。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;（建议使用，其他方案都不建议，数据库方案是性能比较差，分布式锁方案是可靠性比较差）库存扣减主要是包含两部分，超卖校验、扣减数据的持久化，因此，可以分离这两部分，只要超卖校验能通过，直接改库即可，可以利用Redis单线程操作并发安全的能力，把库存存在Redis中实现校验。&lt;/p&gt;
