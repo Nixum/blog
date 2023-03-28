@@ -533,7 +533,24 @@ if (!doNotTrack) {
 </li>
 <li>
 <p>一个数组可以创建多个slice，一个slice也可以创建多个slice，但是新老slice会共用底层数组，新老slice的修改都会互相影响。但是如果新slice经过append，使得slice底层数组扩容了，此时slice引用了新的数组，此时新老slice就不会互相影响了。</p>
-</li>
+<p>语法：<code>ns = slice1[起始下标:结束下标(不包括):cap容量]</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="nx">slice</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">}</span>
+<span class="nx">s</span> <span class="o">:=</span> <span class="nx">slice</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="c1">// s = [1]
+</span><span class="c1"></span><span class="nx">s</span> <span class="p">=</span> <span class="nx">slice</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="c1">// s = [1, 2], len=2, cap=2
+</span><span class="c1"></span><span class="nx">s</span> <span class="p">=</span> <span class="nx">slice</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span> <span class="c1">// s = [1, 2], len=2, cap=5
+</span><span class="c1"></span><span class="nx">s</span> <span class="p">=</span> <span class="nx">slice</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span> <span class="c1">// s=[], len=0, cap=0
+</span></code></pre></td></tr></table>
+</div>
+</div></li>
 </ul>
 <p>使用new()和make()的区别</p>
 <blockquote>

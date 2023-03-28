@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    17 minute read
+                    18 minute read
                 </time>
             </div>
         
@@ -2243,7 +2243,7 @@ if (!doNotTrack) {
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">const</span> <span class="p">(</span>
-    <span class="c1">// scase.kind
+    <span class="c1">// scase.kind，到时select就是轮询判断这些类型的
 </span><span class="c1"></span>    <span class="c1">// send 或者 recv 发生在一个 nil channel 上，就有可能出现这种情况
 </span><span class="c1"></span>    <span class="nx">caseNil</span> <span class="p">=</span> <span class="kc">iota</span>
     <span class="nx">caseRecv</span>
@@ -2264,7 +2264,7 @@ if (!doNotTrack) {
 </div>
 </div><h2 id="基本-1">基本</h2>
 <ul>
-<li>非阻塞收发：select不会等待其他chan准备就绪，会非阻塞读取或写入数据，直接执行default条件中的内容并返回。</li>
+<li>非阻塞收发：当chan中存在可接收数据，直接处理那个chan，否则执行default语句</li>
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -2345,12 +2345,157 @@ if (!doNotTrack) {
 </span></code></pre></td></tr></table>
 </div>
 </div><ul>
-<li>存在两个case，其中一个是default：</li>
-<li>通用的select条件：</li>
+<li>
+<p>存在两个case，其中一个是default：</p>
+<ul>
+<li>
+<p>发送，这种情况下，发送是不阻塞的：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1">// 一定要1及以上，才会走case，如果是0会死锁，直接走default，
+</span><span class="c1"></span><span class="k">select</span> <span class="p">{</span>
+<span class="k">case</span> <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="nx">i</span><span class="p">:</span>
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="k">default</span><span class="p">:</span>
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+<span class="c1">// 底层调用的是chansend(c, elem, false, getcallerpc())，这里的阻塞参数是false， 表示这次发送不会阻塞
+</span><span class="c1"></span><span class="k">if</span> <span class="nf">selectnbsend</span><span class="p">(</span><span class="nx">ch</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>接收，这种情况下，chan有值就走case，否则走default</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="k">select</span> <span class="p">{</span>
+<span class="k">case</span> <span class="nx">v</span> <span class="o">&lt;-</span> <span class="nx">ch</span><span class="p">:</span> <span class="c1">// case v, received &lt;- ch:
+</span><span class="c1"></span>    <span class="c1">// ...
+</span><span class="c1"></span><span class="k">default</span><span class="p">:</span>
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="k">if</span> <span class="nf">selectnbrecv</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">v</span><span class="p">,</span> <span class="nx">ch</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// if selectnbrecv2(&amp;v, &amp;received, ch) {
+</span><span class="c1"></span>    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+</li>
+<li>
+<p>通用的select条件：比如select里包含多个case，会编译成通过<code>runtime的selectgo方法</code>处理case，如果<code>selectgo</code>会接收 case的序号 还有 是否被接收的标识，然后被编译成多个if，用于判断选中哪个case。</p>
+</li>
 </ul>
 </li>
 </ul>
-<h1 id="timer">Timer</h1>
+<h2 id="流程">流程</h2>
+<ol>
+<li>获取case数组，随机打乱，确定打乱后的轮询顺序数组pollorder和加锁顺序数组lockorder，数组里存放的元素是chan</li>
+<li>按加锁顺序数组，调用chan的锁，依次进行锁定</li>
+<li>循环遍历轮询顺序数组
+1.</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">selectgo</span><span class="p">(</span><span class="nx">cas0</span> <span class="o">*</span><span class="nx">scase</span><span class="p">,</span> <span class="nx">order0</span> <span class="o">*</span><span class="kt">uint16</span><span class="p">,</span> <span class="nx">ncases</span> <span class="kt">int</span><span class="p">)</span> <span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">cas1</span> <span class="o">:=</span> <span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">]</span><span class="nx">scase</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">cas0</span><span class="p">))</span>
+    <span class="nx">order1</span> <span class="o">:=</span> <span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">17</span><span class="p">]</span><span class="kt">uint16</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">order0</span><span class="p">))</span>
+
+    <span class="nx">scases</span> <span class="o">:=</span> <span class="nx">cas1</span><span class="p">[:</span><span class="nx">ncases</span><span class="p">:</span><span class="nx">ncases</span><span class="p">]</span>
+    <span class="c1">// 轮询顺序数组
+</span><span class="c1"></span>    <span class="nx">pollorder</span> <span class="o">:=</span> <span class="nx">order1</span><span class="p">[:</span><span class="nx">ncases</span><span class="p">:</span><span class="nx">ncases</span><span class="p">]</span>
+    <span class="c1">// 加锁顺序数组
+</span><span class="c1"></span>    <span class="nx">lockorder</span> <span class="o">:=</span> <span class="nx">order1</span><span class="p">[</span><span class="nx">ncases</span><span class="p">:][:</span><span class="nx">ncases</span><span class="p">:</span><span class="nx">ncases</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">scases</span> <span class="p">{</span>
+        <span class="nx">cas</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">scases</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nx">cas</span><span class="p">.</span><span class="nx">c</span> <span class="o">==</span> <span class="kc">nil</span> <span class="o">&amp;&amp;</span> <span class="nx">cas</span><span class="p">.</span><span class="nx">kind</span> <span class="o">!=</span> <span class="nx">caseDefault</span> <span class="p">{</span>
+            <span class="o">*</span><span class="nx">cas</span> <span class="p">=</span> <span class="nx">scase</span><span class="p">{}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// 根据chan的地址排序
+</span><span class="c1"></span>    <span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">ncases</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+        <span class="c1">// 随机轮询，避免chan饿死
+</span><span class="c1"></span>        <span class="nx">j</span> <span class="o">:=</span> <span class="nf">fastrandn</span><span class="p">(</span><span class="nb">uint32</span><span class="p">(</span><span class="nx">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="nx">pollorder</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="p">=</span> <span class="nx">pollorder</span><span class="p">[</span><span class="nx">j</span><span class="p">]</span>
+        <span class="nx">pollorder</span><span class="p">[</span><span class="nx">j</span><span class="p">]</span> <span class="p">=</span> <span class="nb">uint16</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="c1">// 按照之前生成的加锁顺序锁定 select 语句中包含所有的 Channel
+</span><span class="c1"></span>    <span class="nf">sellock</span><span class="p">(</span><span class="nx">scases</span><span class="p">,</span> <span class="nx">lockorder</span><span class="p">)</span>
+
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="timer">Timer</h1>
 <p><a class="link" href="https://www.cyhone.com/articles/analysis-of-golang-timer/"  target="_blank" rel="noopener"
     >https://www.cyhone.com/articles/analysis-of-golang-timer/</a></p>
 <h1 id="时间轮">时间轮</h1>
@@ -2686,6 +2831,7 @@ if (!doNotTrack) {
       <ol>
         <li><a href="#结构">结构</a></li>
         <li><a href="#基本-1">基本</a></li>
+        <li><a href="#流程">流程</a></li>
       </ol>
     </li>
     <li><a href="#timer">Timer</a></li>
