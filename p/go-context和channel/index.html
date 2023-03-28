@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    18 minute read
+                    19 minute read
                 </time>
             </div>
         
@@ -1443,7 +1443,7 @@ if (!doNotTrack) {
 <p>同步接收 - <strong>如果无buf，消费发送等待队列中G的数据，如果buf满，先拿buf区的，发送的再加入</strong></p>
 <p><strong>当chan的sendq队列存在等待状态的goroutine时</strong>（能拿到就说明要不就是buf区为0，要不就是buf区已满）</p>
 <p><strong>如果是无buf区的chan</strong>，直接使用<code>recv()</code>函数从阻塞的发送者中获取数据；</p>
-<p><strong>如果是有buf区的chan</strong>，说明此时buf区已满，则先从buf区中获取可接收的数据（从buf区中copy到接收者的内存），然后从sendq队列的队首中读取待发送的数据，加入到buf区中（将发送者的数据copy到buf区），更新可接收和可发送的下标chan.recvx和sendx的值；</p>
+<p><strong>如果是有buf区的chan</strong>，说明此时buf区已满，则先从buf区中获取可接收的数据（从buf区中copy到接收者的内存），然后从sendq队列的队首中读取待发送的数据，加入到buf区中（将发送者的数据copy到buf区，替换刚刚buf区copy出去的位置），更新可接收和可发送的下标chan.recvx和sendx的值；</p>
 <p>最后调用<code>goready()</code>函数将等待发送数据而阻塞gorouotine的状态从Gwaiting 或者 Gscanwaiting 改变成 Grunnable，把goroutine绑定到P的LRQ中，<strong>等待下一轮调度时</strong>立即释放这个等待发送数据的goroutine；</p>
 </li>
 <li>
@@ -2254,8 +2254,8 @@ if (!doNotTrack) {
 <span class="c1">// select 中每一个 case 的数据结构定义
 </span><span class="c1"></span><span class="kd">type</span> <span class="nx">scase</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="nx">elem</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="c1">// 接收 或 发送数据的变量地址
-</span><span class="c1"></span>	<span class="nx">c</span>    <span class="o">*</span><span class="nx">hchan</span> <span class="c1">// 存储正在使用的chan
-</span><span class="c1"></span>	<span class="nx">kind</span> <span class="kt">uint16</span> <span class="c1">// case的种类
+</span><span class="c1"></span>	<span class="nx">c</span>    <span class="o">*</span><span class="nx">hchan</span>         <span class="c1">// 存储正在使用的chan
+</span><span class="c1"></span>	<span class="nx">kind</span> <span class="kt">uint16</span>         <span class="c1">// case的种类
 </span><span class="c1"></span>
 	<span class="nx">releasetime</span> <span class="kt">int64</span>
 	<span class="nx">pc</span>          <span class="kt">uintptr</span> <span class="c1">// return pc (for race detector / msan)
@@ -2311,13 +2311,15 @@ if (!doNotTrack) {
     <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><ul>
+</div><p>编译器会对select中的case进行优化，总共有四种情况：</p>
+<ol>
 <li>
-<p>编译器会对select中的case进行优化，总共有四种情况：</p>
-<ul>
-<li>不包含任何case，即空select，此时会阻塞当前的goroutine</li>
-<li>只包含一个case，此时select会被优化成 if ，当chan没有数据可接收时，就会把阻塞当前goroutine，直到有数据到来；如果chan是nil，就会永远阻塞当前goroutine</li>
-</ul>
+<p>不包含任何case，即空select，此时会阻塞当前的goroutine</p>
+</li>
+<li>
+<p>只包含一个case，此时select会被优化成 if ，当chan没有数据可接收时，就会把阻塞当前goroutine，直到有数据到来；如果chan是nil，就会永远阻塞当前goroutine</p>
+</li>
+</ol>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -2344,12 +2346,12 @@ if (!doNotTrack) {
 <span class="c1">// ...
 </span></code></pre></td></tr></table>
 </div>
-</div><ul>
+</div><ol start="3">
 <li>
 <p>存在两个case，其中一个是default：</p>
 <ul>
-<li>
-<p>发送，这种情况下，发送是不阻塞的：</p>
+<li>发送，这种情况下，发送是不阻塞的：</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -2382,9 +2384,9 @@ if (!doNotTrack) {
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div></li>
-<li>
-<p>接收，这种情况下，chan有值就走case，否则走default</p>
+</div><ul>
+<li>接收，这种情况下，chan有值就走case，否则走default</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -2401,36 +2403,121 @@ if (!doNotTrack) {
 </span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="k">select</span> <span class="p">{</span>
-<span class="k">case</span> <span class="nx">v</span> <span class="o">&lt;-</span> <span class="nx">ch</span><span class="p">:</span> <span class="c1">// case v, received &lt;- ch:
-</span><span class="c1"></span>    <span class="c1">// ...
-</span><span class="c1"></span><span class="k">default</span><span class="p">:</span>
-    <span class="c1">// ...
-</span><span class="c1"></span><span class="p">}</span>
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">  <span class="k">select</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="nx">v</span> <span class="o">&lt;-</span> <span class="nx">ch</span><span class="p">:</span> <span class="c1">// case v, received &lt;- ch:
+</span><span class="c1"></span>      <span class="c1">// ...
+</span><span class="c1"></span>  <span class="k">default</span><span class="p">:</span>
+      <span class="c1">// ...
+</span><span class="c1"></span>  <span class="p">}</span>
 
-<span class="k">if</span> <span class="nf">selectnbrecv</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">v</span><span class="p">,</span> <span class="nx">ch</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// if selectnbrecv2(&amp;v, &amp;received, ch) {
-</span><span class="c1"></span>    <span class="c1">// ...
-</span><span class="c1"></span><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-    <span class="c1">// ...
-</span><span class="c1"></span><span class="p">}</span>
+  <span class="k">if</span> <span class="nf">selectnbrecv</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">v</span><span class="p">,</span> <span class="nx">ch</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// if selectnbrecv2(&amp;v, &amp;received, ch) {
+</span><span class="c1"></span>      <span class="c1">// ...
+</span><span class="c1"></span>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="c1">// ...
+</span><span class="c1"></span>  <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>通用的select条件：比如select里包含多个case，会编译成通过<code>runtime的selectgo方法</code>处理case，<code>selectgo</code>会返回 case的序号 还有 是否被接收的标识，然后被编译成多个if，用于判断选中哪个case。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">  <span class="nx">selv</span> <span class="o">:=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="nx">scase</span><span class="p">{}</span>
+  <span class="nx">order</span> <span class="o">:=</span> <span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="kt">uint16</span>
+  <span class="k">for</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">cas</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">cases</span> <span class="p">{</span>
+      <span class="nx">c</span> <span class="o">:=</span> <span class="nx">scase</span><span class="p">{}</span>
+      <span class="nx">c</span><span class="p">.</span><span class="nx">kind</span> <span class="p">=</span> <span class="o">...</span>
+      <span class="nx">c</span><span class="p">.</span><span class="nx">elem</span> <span class="p">=</span> <span class="o">...</span>
+      <span class="nx">c</span><span class="p">.</span><span class="nx">c</span> <span class="p">=</span> <span class="o">...</span>
+  <span class="p">}</span>
+  <span class="nx">chosen</span><span class="p">,</span> <span class="nx">revcOK</span> <span class="o">:=</span> <span class="nf">selectgo</span><span class="p">(</span><span class="nx">selv</span><span class="p">,</span> <span class="nx">order</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+  <span class="k">if</span> <span class="nx">chosen</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+      <span class="c1">// ...
+</span><span class="c1"></span>      <span class="k">break</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="nx">chosen</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">{</span>
+      <span class="c1">// ...
+</span><span class="c1"></span>      <span class="k">break</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="nx">chosen</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">{</span>
+      <span class="c1">// ...
+</span><span class="c1"></span>      <span class="k">break</span>
+  <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
 </div></li>
-</ul>
+</ol>
+<h2 id="selectgo的流程">selectgo的流程</h2>
+<ol>
+<li>
+<p>获取case数组，随机打乱，确定打乱后的轮询顺序数组pollorder和加锁顺序数组lockorder，数组里存放的元素是chan</p>
 </li>
 <li>
-<p>通用的select条件：比如select里包含多个case，会编译成通过<code>runtime的selectgo方法</code>处理case，如果<code>selectgo</code>会接收 case的序号 还有 是否被接收的标识，然后被编译成多个if，用于判断选中哪个case。</p>
+<p>按加锁顺序数组，调用chan的锁，依次进行锁定</p>
 </li>
-</ul>
+<li>
+<p>进入主循环，遍历 轮询顺序数组pollorder</p>
 </li>
-</ul>
-<h2 id="流程">流程</h2>
-<ol>
-<li>获取case数组，随机打乱，确定打乱后的轮询顺序数组pollorder和加锁顺序数组lockorder，数组里存放的元素是chan</li>
-<li>按加锁顺序数组，调用chan的锁，依次进行锁定</li>
-<li>循环遍历轮询顺序数组
-1.</li>
 </ol>
+<p><strong>第一阶段</strong>，查找是否已经存在准备就绪的chan（此时的chan可以执行收发操作）此时需要处理四种类型的case：</p>
+<ol>
+<li>
+<p>当case不包含chan时，直接跳过；</p>
+</li>
+<li>
+<p>当case会从chan中接收数据时：</p>
+</li>
+</ol>
+<ul>
+<li>如果当前chan的<code>sendq队列</code>上有等待的goroutine，就会跳到 <code>recv标签</code>，如果没有buf区，则从<code>sendq队列</code>上获取数据，否则，从chan的buf区读取数据后，将<code>sendq队列</code>中等待的goroutine中的数据放入到buf区中相同的位置；</li>
+<li>如果当前chan的buf区不为空，就跳到<code>bufrecv标签</code>，从chan的buf区中获取数据</li>
+<li>如果当前chan已经被关闭，就会跳到 <code>rclose标签</code> 做一些清除的收尾工作；</li>
+</ul>
+<ol start="3">
+<li>当case会从chan中发送数据时：</li>
+</ol>
+<ul>
+<li>如果当前chan已经被关闭，会直接跳到 <code>sclose标签</code>，触发panic；</li>
+<li>如果当前chan的<code>recvq队列</code>上有等待的goroutine，就跳到 <code>send标签</code> 向chan发送数据；</li>
+<li>如果当前chan的缓冲区存在空闲位置，就会将等待发送的数据存入缓冲区中，因为select相当于有接收者了，不会出现发送阻塞的情况；</li>
+</ul>
+<ol start="4">
+<li>当case是default时，表示前面的所有case都没有被执行，此时会解锁所有的chan并返回（意味着当前select结构的收发都是非阻塞的），直接执行default内容；</li>
+</ol>
+<p>第一阶段只是查找所有case中是否有可以立即被处理的chan，无论是数据是在等待的goroutine上，还是buf区中，只要存在数据满足条件就会立即处理，然后返回；如果不能立刻找到活跃的chan，就会进入下一循环；</p>
+<p><strong>第二阶段</strong>，将当前goroutine加入到chan对应的收发队列上并等待其他goroutine的唤醒:</p>
+<ul>
+<li>将当前goroutine，包装成sudogo，遍历case，加入到case的chan的<code>sendq队列</code>或者<code>recvq队列</code>中（同时，这个sudog会关联当前case的chan，然后将这些sudog组成链表，挂在当前goroutine下，用于唤醒之后的查找）</li>
+<li>调用<code>gopark函数</code>挂起当前goroutine，等待被调度器唤醒；</li>
+</ul>
+<p><strong>第三阶段</strong>，当前goroutine被唤醒后，找到满足条件的chan并进行处理：</p>
+<ul>
+<li>等到select对应的chan准备好后，当前goroutine会被调度器唤醒，被唤醒后，获取当前goroutine的sudog，依次对比所有case里chan对应的sudog结构，找到被唤醒的case，并释放其他未被使用的sudog结构；</li>
+<li>由于当前的select结构已经被挑选了其中一个case执行，剩下的case中没有被用到的sudog会被直接忽略并释放掉，为了不影响chan的正常使用，还需要将这些废弃的sudog从chan中出队；</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -2491,7 +2578,7 @@ if (!doNotTrack) {
     <span class="c1">// 按照之前生成的加锁顺序锁定 select 语句中包含所有的 Channel
 </span><span class="c1"></span>    <span class="nf">sellock</span><span class="p">(</span><span class="nx">scases</span><span class="p">,</span> <span class="nx">lockorder</span><span class="p">)</span>
 
-    <span class="c1">// ...
+    <span class="c1">// ...后面太长就不贴了
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
@@ -2831,7 +2918,7 @@ if (!doNotTrack) {
       <ol>
         <li><a href="#结构">结构</a></li>
         <li><a href="#基本-1">基本</a></li>
-        <li><a href="#流程">流程</a></li>
+        <li><a href="#selectgo的流程">selectgo的流程</a></li>
       </ol>
     </li>
     <li><a href="#timer">Timer</a></li>

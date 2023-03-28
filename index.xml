@@ -6135,16 +6135,52 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;goroutine的泄露一般会导致内存的泄露，最终导致OOM，原因一般是该运行完成的goroutine一直在运行，没有结束，可能的原因是goroutine内阻塞，死循环。&lt;/p&gt;
 &lt;p&gt;检查工具：pprof，请求&lt;code&gt;/debug/pprof/goroutine接口或者heap接口&lt;/code&gt;，判断内存占用走势，分析内存使用情况。一般的走势是整体向上递增，伴随一个一个的峰谷。&lt;/p&gt;
 &lt;h1 id=&#34;内存模型&#34;&gt;内存模型&lt;/h1&gt;
-&lt;p&gt;Go 的内存分配器基于tcmalloc的内存分配算法，它是一个带内存池的分配器，底层直接调用操作系统的mmap函数实现内存分配，减少内存碎片，提升内存利用率。&lt;/p&gt;
-&lt;p&gt;Go中为每个系统线程分配一个本地的mcache，少量的地址分配就直接从mcache中分配，并且定期做垃圾回收，将线程的mcache中的空闲内存返回给全局控制堆。&lt;/p&gt;
+&lt;p&gt;当程序开始启动，runtime的页分配器向操作系统申请内存，并预留内存驻留在runtime中，一旦用户程序需要进行内存分配，就可以从runtime的对象分配器分配新的内存进行使用；当用户程序不在使用这些所申请的内存后，runtime的垃圾回收器将这些内存进行标记，并重新在runtime进行管理和再分配；对于某些长期不再使用的内存，拾荒器会负责将这部分内存归还给操作系统，减轻整个应用程序的总内存消耗。&lt;/p&gt;
+&lt;p&gt;Go的runtime就是传统意义上的栈，不开放给用户态代码；而传统意义上的堆，被Go的runtime划分为两部分：一个是Go runtime自身所需的堆内存（也是堆外内存，例如mheap、mcentral、mcache），另一部分用于Go用户态所使用的堆内存，也叫Go堆，Go堆负责用户态对象的存放，以及goroutine的执行栈。&lt;/p&gt;
+&lt;p&gt;Go 的内存分配器基于tcmalloc的内存分配算法，它是一个带内存池的分配器，底层直接调用操作系统的mmap函数实现内存分配，减少内存碎片，提升内存利用率。tcmalloc的核心思想是为每个线程实现一个线程局部缓存，并同时区分了小对象（小于32KB）和大对象分配两种类型，管理的内存单元是跨度，对应go里的mspan。&lt;/p&gt;
+&lt;p&gt;所以Go的分配思路是，runtime为每个系统线程分配一个本地的mcache，少量的内存分配就直接从mcache中分配，并且定期做垃圾回收，将线程的mcache中的空闲内存返回给全局控制堆；当线程的本地mcache不够用时，就向堆中申请。&lt;/p&gt;
+&lt;p&gt;内存浪费有两种，一种是内存对齐产生的浪费，一种是每次需要分配内存时，每个大小等级都设计了自己的页数，当需要该大小等级的新对象时，会选择给定大小最多12.5%的浪费。&lt;/p&gt;
+&lt;p&gt;基于这两种浪费的控制，设计了大约67种内存块类别，每一类别都有自己对象的空闲链表。小于32K的内存分配被向上取整到对应的尺寸类别，从相应的空闲链表中分配。一页内存只可以被分裂成同一种尺寸类别的对象，然后由空闲链表分配器管理。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_%e5%88%86%e9%85%8d%e5%99%a8%e7%bb%93%e6%9e%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_%e5%88%86%e9%85%8d%e5%99%a8%e7%bb%93%e6%9e%84.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;Go内存管理可以看成一个两级的内存管理结构，mheap和mcache。上面一级管理的基本单位是页，用于分配大对象，每次分配都是若干连续的页，也就是若干个4KB的大小，使用的数据结构是mheap和mspan，用BestFit算法做分配，用位示图做回收。下面一级管理的基本单位是不同类型的固定大小的对象，更像一个对象池而不是内存池，用引用计数做回收，使用的数据结构是mcache。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;mspan：是mheap管理内存最基本的结构，由一连串的页(连续8KB)组成的双向链表，每个节点保存起始页地址，span大小，span中页的数量，是Go堆内存单元的基本大小；&lt;/li&gt;
+&lt;li&gt;mcache：局部缓存，是P中的内存缓存，是堆的一部分，每个尺寸对应一个空闲的单链表。一次对象分配时，总是会先从这样的线程局部缓存中获取内存（比如 用于小对象（&amp;lt;=32KB）的内存分配），当mcache中的mspan不够用时，才会去向堆外内存mcentral中获取新的mspan；&lt;/li&gt;
+&lt;li&gt;mcentral：从mheap中申请mspan，将mspan划分成各种小尺寸对象，将相同大小的span聚合起来，每个mcentral保存一种特定大小的全局mspan列表，提供给mcache使用；&lt;/li&gt;
+&lt;li&gt;mheap：用于大对象（&amp;gt;32KB）的内存分配，GC的主要地方；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果mcache有空闲的空间，那直接在mcache分配，如果没有，则尝试去mcentral中获取一个空闲的mspan，如果mcentral中也没有可用的mspan，则去mheap向操作系统申请可用的mspan。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_mem_alloc_summary.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_mem_alloc_summary.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;p&gt;根据对象中是否含有指针以及对象大小，内存分配过程分为 3 类：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;tiny：小于16 byte 并且 没有指针的对象；分配最复杂；&lt;/li&gt;
-&lt;li&gt;small：有指针 或者 大小大于等于16 byte 并且小于等于 32 KB 的对象；&lt;/li&gt;
-&lt;li&gt;large：大小大于 32KB 的对象；&lt;/li&gt;
+&lt;li&gt;tiny：小于16 byte 并且 没有指针的对象，分配最复杂，容易产生内存碎片，Go会把这些tiny都嵌入到一个16K的对象中；&lt;/li&gt;
+&lt;li&gt;small：有指针 或者 大小大于等于16 byte 并且小于等于 32 KB 的对象；小于32K的为小对象，小对象从本地内存链表mcache中分配；如果不够，就会向其上级mcentral获取新mspan链表，不够再继续向上级获取；&lt;/li&gt;
+&lt;li&gt;large：大于 32KB 的对象，属于大对象，直接从全局控制堆（中心内存堆）上以页（4K）为单位进行分配，大对象总是以页对齐的，一个页可以存入一些相同大小的小对象；&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;小于32K的为小对象，小对象从本地内存链表中分配；&lt;/p&gt;
-&lt;p&gt;大于32K为大对象，直接从全局控制堆（中心内存堆）上以页（4K）为单位进行分配，大对象总是以页对齐的，一个页可以存入一些相同大小的小对象；&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;我们可以将内存分配的路径与 CPU 的多级缓存作类比，这里 mcache 内部的 tiny 可以类比为 L1 cache，而 alloc 数组中的元素可以类比为 L2 cache，全局的 mheap.mcentral 结构为 L3 cache，mheap.arena 是 L4，L4 是以页为单位将内存向下派发的，由 pageAlloc 来管理 arena 中的空闲内存。&lt;/p&gt;
 &lt;table&gt;
@@ -6185,29 +6221,6 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/table&gt;
 &lt;p&gt;large 内存分配稍微特殊一些，没有上面复杂的缓存流程，而是直接从 mheap.arenas 中要内存，直接走 pageAlloc 页分配器。&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;大约有100种内存块类别，每一类别都有自己对象的空闲链表。小于32K的内存分配被向上取整到对应的尺寸类别，从相应的空闲链表中分配。一页内存只可以被分裂成同一种尺寸类别的对象，然后由空闲链表分配器管理。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Go内存管理可以看成一个两级的内存管理结构，mheap和mcache。上面一级管理的基本单位是页，用于分配大对象，每次分配都是若干连续的页，也就是若干个4KB的大小，使用的数据结构是mheap和mspan，用BestFit算法做分配，用位示图做回收。下面一级管理的基本单位是不同类型的固定大小的对象，更像一个对象池而不是内存池，用引用计数做回收，使用的数据结构是mcache。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;mcache：P中的内存缓存，用于小对象（&amp;lt;=32KB）的内存分配，是堆的一部分；&lt;/li&gt;
-&lt;li&gt;mspan：是mheap管理内存最基本的结构，双向链表，保存起始页地址，span大小，span中页的数量；&lt;/li&gt;
-&lt;li&gt;mcentral：将相同大小的span聚合起来，每个mcentral包含两个mspan链表&lt;/li&gt;
-&lt;li&gt;mheap：用于大对象（&amp;gt;32KB）的内存分配，GC的主要地方&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;如果mcache有空闲的空间，那直接在mcache分配，如果没有，则尝试去mcentral中获取一个空闲的mspan，如果mcentral中也没有可用的mspan，则去mheap向操作系统申请可用的mspan。&lt;/p&gt;
-&lt;p&gt;&lt;figure 
-	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_mem_alloc_summary.png&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/go_mem_alloc_summary.png&#34;
-			
-			
-			
-			loading=&#34;lazy&#34;
-			&gt;
-	&lt;/a&gt;
-	
-&lt;/figure&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
 &lt;h1 id=&#34;逃逸分析&#34;&gt;逃逸分析&lt;/h1&gt;
 &lt;p&gt;之所以需要逃逸分析，是因为GC只清理堆内存，函数执行时内存分配在栈上，函数结束时栈内存会被回收，无需GC。&lt;/p&gt;
 &lt;ul&gt;
@@ -6225,7 +6238,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;go中逃逸分析只针对指针，一个值引用变量如果没有被取址，那它永远不可能逃逸&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;使用&lt;code&gt;go run -gcflags &amp;quot;-m -l&amp;quot;&lt;/code&gt;命令运行时加入参数，-m表示打印逃逸分析信息，-l 表示禁止内联编译&lt;/p&gt;
+&lt;p&gt;使用&lt;code&gt;go run -gcflags &amp;quot;-m -l&amp;quot;&lt;/code&gt;命令runtime加入参数，-m表示打印逃逸分析信息，-l 表示禁止内联编译&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;逃逸场景&#34;&gt;逃逸场景&lt;/h2&gt;
@@ -7891,7 +7904,7 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;p&gt;同步接收 - &lt;strong&gt;如果无buf，消费发送等待队列中G的数据，如果buf满，先拿buf区的，发送的再加入&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;当chan的sendq队列存在等待状态的goroutine时&lt;/strong&gt;（能拿到就说明要不就是buf区为0，要不就是buf区已满）&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;如果是无buf区的chan&lt;/strong&gt;，直接使用&lt;code&gt;recv()&lt;/code&gt;函数从阻塞的发送者中获取数据；&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;如果是有buf区的chan&lt;/strong&gt;，说明此时buf区已满，则先从buf区中获取可接收的数据（从buf区中copy到接收者的内存），然后从sendq队列的队首中读取待发送的数据，加入到buf区中（将发送者的数据copy到buf区），更新可接收和可发送的下标chan.recvx和sendx的值；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;如果是有buf区的chan&lt;/strong&gt;，说明此时buf区已满，则先从buf区中获取可接收的数据（从buf区中copy到接收者的内存），然后从sendq队列的队首中读取待发送的数据，加入到buf区中（将发送者的数据copy到buf区，替换刚刚buf区copy出去的位置），更新可接收和可发送的下标chan.recvx和sendx的值；&lt;/p&gt;
 &lt;p&gt;最后调用&lt;code&gt;goready()&lt;/code&gt;函数将等待发送数据而阻塞gorouotine的状态从Gwaiting 或者 Gscanwaiting 改变成 Grunnable，把goroutine绑定到P的LRQ中，&lt;strong&gt;等待下一轮调度时&lt;/strong&gt;立即释放这个等待发送数据的goroutine；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -8702,8 +8715,8 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;span class=&#34;c1&#34;&gt;// select 中每一个 case 的数据结构定义
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;scase&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;unsafe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pointer&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 接收 或 发送数据的变量地址
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;    &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;hchan&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 存储正在使用的chan
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;kind&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint16&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// case的种类
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;    &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;hchan&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;// 存储正在使用的chan
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;kind&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint16&lt;/span&gt;         &lt;span class=&#34;c1&#34;&gt;// case的种类
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;releasetime&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int64&lt;/span&gt;
 	&lt;span class=&#34;nx&#34;&gt;pc&lt;/span&gt;          &lt;span class=&#34;kt&#34;&gt;uintptr&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// return pc (for race detector / msan)
@@ -8759,13 +8772,15 @@ curl -XPOST http://localhost:15000/logging?level=info
     &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;ul&gt;
+&lt;/div&gt;&lt;p&gt;编译器会对select中的case进行优化，总共有四种情况：&lt;/p&gt;
+&lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;编译器会对select中的case进行优化，总共有四种情况：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;不包含任何case，即空select，此时会阻塞当前的goroutine&lt;/li&gt;
-&lt;li&gt;只包含一个case，此时select会被优化成 if ，当chan没有数据可接收时，就会把阻塞当前goroutine，直到有数据到来；如果chan是nil，就会永远阻塞当前goroutine&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;不包含任何case，即空select，此时会阻塞当前的goroutine&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;只包含一个case，此时select会被优化成 if ，当chan没有数据可接收时，就会把阻塞当前goroutine，直到有数据到来；如果chan是nil，就会永远阻塞当前goroutine&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -8792,12 +8807,12 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;span class=&#34;c1&#34;&gt;// ...
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;ul&gt;
+&lt;/div&gt;&lt;ol start=&#34;3&#34;&gt;
 &lt;li&gt;
 &lt;p&gt;存在两个case，其中一个是default：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;发送，这种情况下，发送是不阻塞的：&lt;/p&gt;
+&lt;li&gt;发送，这种情况下，发送是不阻塞的：&lt;/li&gt;
+&lt;/ul&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -8830,9 +8845,9 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;接收，这种情况下，chan有值就走case，否则走default&lt;/p&gt;
+&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;接收，这种情况下，chan有值就走case，否则走default&lt;/li&gt;
+&lt;/ul&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -8849,36 +8864,121 @@ curl -XPOST http://localhost:15000/logging?level=info
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
-&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// case v, received &amp;lt;- ch:
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// ...
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// ...
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;  &lt;span class=&#34;k&#34;&gt;select&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;case&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// case v, received &amp;lt;- ch:
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;      &lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;k&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+      &lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 
-&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;selectnbrecv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// if selectnbrecv2(&amp;amp;v, &amp;amp;received, ch) {
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// ...
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// ...
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;selectnbrecv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// if selectnbrecv2(&amp;amp;v, &amp;amp;received, ch) {
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;      &lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+      &lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;通用的select条件：比如select里包含多个case，会编译成通过&lt;code&gt;runtime的selectgo方法&lt;/code&gt;处理case，&lt;code&gt;selectgo&lt;/code&gt;会返回 case的序号 还有 是否被接收的标识，然后被编译成多个if，用于判断选中哪个case。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;  &lt;span class=&#34;nx&#34;&gt;selv&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;scase&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}&lt;/span&gt;
+  &lt;span class=&#34;nx&#34;&gt;order&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;uint16&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;cas&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;cases&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+      &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;scase&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}&lt;/span&gt;
+      &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;kind&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;
+      &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;elem&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;
+      &lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+  &lt;span class=&#34;nx&#34;&gt;chosen&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;revcOK&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;selectgo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;selv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;order&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;chosen&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+      &lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;      &lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;chosen&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+      &lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;      &lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;chosen&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+      &lt;span class=&#34;c1&#34;&gt;// ...
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;      &lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;/li&gt;
-&lt;/ul&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;selectgo的流程&#34;&gt;selectgo的流程&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;获取case数组，随机打乱，确定打乱后的轮询顺序数组pollorder和加锁顺序数组lockorder，数组里存放的元素是chan&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;通用的select条件：比如select里包含多个case，会编译成通过&lt;code&gt;runtime的selectgo方法&lt;/code&gt;处理case，如果&lt;code&gt;selectgo&lt;/code&gt;会接收 case的序号 还有 是否被接收的标识，然后被编译成多个if，用于判断选中哪个case。&lt;/p&gt;
+&lt;p&gt;按加锁顺序数组，调用chan的锁，依次进行锁定&lt;/p&gt;
 &lt;/li&gt;
-&lt;/ul&gt;
+&lt;li&gt;
+&lt;p&gt;进入主循环，遍历 轮询顺序数组pollorder&lt;/p&gt;
 &lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;流程&#34;&gt;流程&lt;/h2&gt;
-&lt;ol&gt;
-&lt;li&gt;获取case数组，随机打乱，确定打乱后的轮询顺序数组pollorder和加锁顺序数组lockorder，数组里存放的元素是chan&lt;/li&gt;
-&lt;li&gt;按加锁顺序数组，调用chan的锁，依次进行锁定&lt;/li&gt;
-&lt;li&gt;循环遍历轮询顺序数组
-1.&lt;/li&gt;
 &lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;第一阶段&lt;/strong&gt;，查找是否已经存在准备就绪的chan（此时的chan可以执行收发操作）此时需要处理四种类型的case：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;当case不包含chan时，直接跳过；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;当case会从chan中接收数据时：&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;如果当前chan的&lt;code&gt;sendq队列&lt;/code&gt;上有等待的goroutine，就会跳到 &lt;code&gt;recv标签&lt;/code&gt;，如果没有buf区，则从&lt;code&gt;sendq队列&lt;/code&gt;上获取数据，否则，从chan的buf区读取数据后，将&lt;code&gt;sendq队列&lt;/code&gt;中等待的goroutine中的数据放入到buf区中相同的位置；&lt;/li&gt;
+&lt;li&gt;如果当前chan的buf区不为空，就跳到&lt;code&gt;bufrecv标签&lt;/code&gt;，从chan的buf区中获取数据&lt;/li&gt;
+&lt;li&gt;如果当前chan已经被关闭，就会跳到 &lt;code&gt;rclose标签&lt;/code&gt; 做一些清除的收尾工作；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;当case会从chan中发送数据时：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;如果当前chan已经被关闭，会直接跳到 &lt;code&gt;sclose标签&lt;/code&gt;，触发panic；&lt;/li&gt;
+&lt;li&gt;如果当前chan的&lt;code&gt;recvq队列&lt;/code&gt;上有等待的goroutine，就跳到 &lt;code&gt;send标签&lt;/code&gt; 向chan发送数据；&lt;/li&gt;
+&lt;li&gt;如果当前chan的缓冲区存在空闲位置，就会将等待发送的数据存入缓冲区中，因为select相当于有接收者了，不会出现发送阻塞的情况；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol start=&#34;4&#34;&gt;
+&lt;li&gt;当case是default时，表示前面的所有case都没有被执行，此时会解锁所有的chan并返回（意味着当前select结构的收发都是非阻塞的），直接执行default内容；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;第一阶段只是查找所有case中是否有可以立即被处理的chan，无论是数据是在等待的goroutine上，还是buf区中，只要存在数据满足条件就会立即处理，然后返回；如果不能立刻找到活跃的chan，就会进入下一循环；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;第二阶段&lt;/strong&gt;，将当前goroutine加入到chan对应的收发队列上并等待其他goroutine的唤醒:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;将当前goroutine，包装成sudogo，遍历case，加入到case的chan的&lt;code&gt;sendq队列&lt;/code&gt;或者&lt;code&gt;recvq队列&lt;/code&gt;中（同时，这个sudog会关联当前case的chan，然后将这些sudog组成链表，挂在当前goroutine下，用于唤醒之后的查找）&lt;/li&gt;
+&lt;li&gt;调用&lt;code&gt;gopark函数&lt;/code&gt;挂起当前goroutine，等待被调度器唤醒；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;第三阶段&lt;/strong&gt;，当前goroutine被唤醒后，找到满足条件的chan并进行处理：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;等到select对应的chan准备好后，当前goroutine会被调度器唤醒，被唤醒后，获取当前goroutine的sudog，依次对比所有case里chan对应的sudog结构，找到被唤醒的case，并释放其他未被使用的sudog结构；&lt;/li&gt;
+&lt;li&gt;由于当前的select结构已经被挑选了其中一个case执行，剩下的case中没有被用到的sudog会被直接忽略并释放掉，为了不影响chan的正常使用，还需要将这些废弃的sudog从chan中出队；&lt;/li&gt;
+&lt;/ul&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -8939,7 +9039,7 @@ curl -XPOST http://localhost:15000/logging?level=info
     &lt;span class=&#34;c1&#34;&gt;// 按照之前生成的加锁顺序锁定 select 语句中包含所有的 Channel
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nf&#34;&gt;sellock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;scases&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lockorder&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 
-    &lt;span class=&#34;c1&#34;&gt;// ...
+    &lt;span class=&#34;c1&#34;&gt;// ...后面太长就不贴了
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
@@ -17789,6 +17889,10 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 后来另一个核又读取了A数据，此时状态为S共享，数据还是干净的，
 接着其中一个核修改了数据A，此时会向其他核广播数据已被修改，让其他核的数据状态变为I失效，而本核的数据还没回写内存，状态则变为M已修改，等待后续刷新缓存后，数据变回E独占，其他核由于数据已失效，读数据A时需要重新从内存读到高速缓存，此时数据又共享了&lt;/p&gt;
 &lt;/blockquote&gt;
+&lt;h2 id=&#34;关于堆内存和栈内存&#34;&gt;关于堆内存和栈内存&lt;/h2&gt;
+&lt;p&gt;堆内存和栈内存是基于对象生命周期、分配、回收的时机进行划分&lt;/p&gt;
+&lt;p&gt;栈内存：一般是一种后进先出（LIFO）的数据结构，对连续内存的线性分配，用来存储函数调用时的局部变量、函数参数和返回值等临时性的数据简单高效，方便回收。&lt;/p&gt;
+&lt;p&gt;堆内存：动态分配的内存，用来存储程序运行时动态创建的对象、数组等数据，比如指针依赖，全局变量。由于堆内存的大小和生命周期都比较不确定，所以操作系统需要动态地管理它。在使用堆内存时，程序需要显式地申请内存空间，并在不再需要时释放它，否则就可能导致内存泄漏等问题。&lt;/p&gt;
 &lt;h2 id=&#34;linux内存管理&#34;&gt;Linux内存管理&lt;/h2&gt;
 &lt;h3 id=&#34;伙伴系统&#34;&gt;伙伴系统&lt;/h3&gt;
 &lt;p&gt;Linux使用分页机制管理物理内存系统，把物理内存分成4KB大小的页面进行管理，通过一个Page结构体表示一个物理内存页面。&lt;/p&gt;
