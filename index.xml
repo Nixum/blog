@@ -15809,15 +15809,52 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;h2 id=&#34;应用场景&#34;&gt;应用场景&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;HTTP、FTP、SSH、SMTP&lt;/li&gt;
+&lt;li&gt;HTTP、FTP文件传输、SSH、SMTP&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2 id=&#34;连接与关闭连接&#34;&gt;连接与关闭连接&lt;/h2&gt;
-&lt;p&gt;SYN：发起一个新连接&lt;/p&gt;
+&lt;h2 id=&#34;包头&#34;&gt;包头&lt;/h2&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			alt=&#34;TCP包头&#34;&gt;
+	&lt;/a&gt;
+	
+	&lt;figcaption&gt;TCP包头&lt;/figcaption&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;端口号&lt;/strong&gt;：用于找到对应的应用，TCP包是没有IP地址的，因为IP数据是网络层的事，所以这一层只有端口号；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;序号&lt;/strong&gt;：让包能顺序发送和接收，&lt;strong&gt;解决乱序问题，也可以区分连接的阶段，区分不同的连接&lt;/strong&gt;。三次握手除了确立双方建立连接，最重要的是确立双方包的序列号，每一次连接都要有不同的序列号用于区别，序列号的起始通常是随时间，如果每次连接的序列号相同，可能会导致前一次连接的包发送到了下一次连接里；序号的增加和传输的字节数相关；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;确认序列号&lt;/strong&gt;：发出去的数据包时进行确认的标记，&lt;strong&gt;解决丢包问题&lt;/strong&gt;，接收方回复的ACK包的确认序号 = 发送方数据包的序号 + TCP的数据载荷字节数，注意此时的载荷数据可能是这一次报文的完整数据，也有可能是包含了上一次报文的部分数据和此次报文的部分数据；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;状态位&lt;/strong&gt;：客户端和服务端连接的状态，即包的类型，操控TCP的状态机；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;窗口大小&lt;/strong&gt;：&lt;strong&gt;解决流量控制问题&lt;/strong&gt;，标识自己当前的处理能力；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;TCP通过四元组可以唯一的确定一个连接&lt;/strong&gt;，四元组：源地址、源端口、目的地址、目的端口，其中，源地址、目标地址在IP头部中，告诉IP协议发送报文给目标主机，源端口和目标端口在TCP头部中，告诉TCP协议要把报文发给哪个进程。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;TCP和UDP可以使用同一个端口&lt;/strong&gt;，因为TCP和UDP在内核中是两个独立的模块，&lt;strong&gt;主机收到数据包后，可以在IP包头的协议号里判断数据包是TCP还是UDP&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;在客户端中，针对同一个端口，可以与多个不同的服务端建立TCP连接，原因是TCP是通过四元组确定一个唯一连接的，&lt;strong&gt;对客户端来说，只要多个服务端的IP不同，就可以复用同一个端口&lt;/strong&gt;，不会导致连接冲突的问题。&lt;/p&gt;
+&lt;p&gt;同理，在服务端中，只要绑定的IP不是同一个，就可以复用同一个端口，一般针对服务端绑定IP来说，有几种可能，比如本身机器的IP，或者 127.0.0.1 或者 0.0.0.0（比较特殊，在没设置&lt;code&gt;SO_REUSEPORT&lt;/code&gt;情况下，表示绑定该主机上的所有IP）&lt;/p&gt;
+&lt;p&gt;理论上，服务端单机TCP的最大连接数 = 客户端IP数 x 客户端端口数，即 2^32 * 2^16 = 2^48，但会受操作系统资源影响，所以有一定的上限，以Linux为例，影响因素有：文件描述符限制、内存限制；&lt;/p&gt;
+&lt;h2 id=&#34;建立连接与关闭连接&#34;&gt;建立连接与关闭连接&lt;/h2&gt;
+&lt;p&gt;SYN：发起一个新连接，并在其序号进行初始值的设定&lt;/p&gt;
 &lt;p&gt;ACK：回复，确认序号有效&lt;/p&gt;
-&lt;p&gt;FIN：释放一个连接&lt;/p&gt;
 &lt;p&gt;ack：回复，确认序号，=发送方seq+1&lt;/p&gt;
-&lt;p&gt;RST：复位标志，需要重新连接&lt;/p&gt;
-&lt;p&gt;FIN：结束连接&lt;/p&gt;
+&lt;p&gt;FIN：释放一个连接&lt;/p&gt;
+&lt;p&gt;RST：复位标志，表示TCP连接中出现异常，需要重新连接&lt;/p&gt;
+&lt;p&gt;FIN：表示今后不再有数据发送，希望断开连接&lt;/p&gt;
 &lt;h3 id=&#34;三次握手&#34;&gt;三次握手&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
@@ -15835,24 +15872,48 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/figure&gt;&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;第一次握手：Client将标志位SYN置为1，随机产生一个值seq=J，并将该数据包发送给Server，Client进入SYN_SENT状态，等待Server确认。 每一端先发出去的都会有SYN，收到之后会发出ACK。&lt;/p&gt;
+&lt;p&gt;第一次握手：Client将标志位SYN置为1，随机产生一个值seq=j，并将该数据包发送给Server，Client进入SYN_SENT状态，等待Server确认。 每一端先发出去的都会有SYN，收到之后会发出ACK。&lt;/p&gt;
 &lt;p&gt;如果client发送失败，会周期性进行超时重传，直到收到server的确认。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;第二次握手：Server收到数据包后由标志位SYN=1知道Client请求建立连接，Server将标志位SYN和ACK都置为1，ack=J+1，随机产生一个值seq=K，并将该数据包发送给Client以确认连接请求，Server进入SYN_RCVD状态。&lt;/p&gt;
+&lt;p&gt;第二次握手：Server收到数据包后由标志位SYN=1知道Client请求建立连接，Server将标志位SYN和ACK都置为1，ack=j+1，随机产生一个值seq=K，并将该数据包发送给Client以确认连接请求，Server进入SYN_RCVD状态。&lt;/p&gt;
 &lt;p&gt;如果server发送响应失败，会周期性进行超时重传，直到收到client的确认。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;第三次握手：Client收到确认后，检查ack是否为J+1，ACK是否为1，如果正确则将标志位ACK置为1，ack=K+1，并将该数据包发送给Server，Server检查ack是否为K+1，ACK是否为1，如果正确则连接建立成功，Client和Server进入ESTABLISHED状态，可以开始传输数据了。&lt;/p&gt;
-&lt;p&gt;client第三次握手，此时client会认为自己已经established，server还未收到，此时仍然为active状态：如果server一直没收到连接请求，server会重复第二次握手，直到自己收到第三次握手的请求，此时server才是established；如果此时client发送了data数据且加上了ACK，server也会切换为established；如果server有数据发送却发送不出，也会重复第二次握手。&lt;/p&gt;
+&lt;p&gt;第三次握手：Client收到确认后，检查ack是否为j+1，ACK是否为1，如果正确则将标志位ACK置为1，ack=k+1，并将该数据包发送给Server，Server检查ack是否为k+1，ACK是否为1，如果正确则连接建立成功，Client和Server进入ESTABLISHED状态，可以开始传输数据了。&lt;/p&gt;
+&lt;p&gt;第三次握手可以顺便携带数据，前两次则不行。&lt;/p&gt;
+&lt;p&gt;client第三次握手，此时client会认为自己已经ESTABLISHED，server还未收到，此时仍然为active状态：如果server一直没收到连接请求，server会重复第二次握手，直到自己收到第三次握手的请求，此时server才是ESTABLISHED；如果此时client发送了data数据且加上了ACK，server也会切换为established；如果server有数据发送却发送不出，也会重复第二次握手。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;&lt;strong&gt;三次握手建立连接后，还有一件重要的事情是确定TCP包的序号&lt;/strong&gt;，每个连接都要有不同的序号，序号的起始号随时间变化，每4ms加一，如果有重复，需要4个多小时后才会出现，因为IP包头里有TTL(生存时间)，超过4小时早过期了。&lt;/p&gt;
-&lt;p&gt;之所以要确认包的序号是因为有可能出现client与server建立连接并进行通信后断开重连，如果每次连接没有新的起始序号，会导致server分辨不出收到的包是这次连接的还是上次连接的。这个号会作为以后的数据通信序号，以保证应用层接收到的数据不会因网络传输问题而乱序。&lt;/p&gt;
+&lt;h4 id=&#34;作用&#34;&gt;作用&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;三次握手后初始化socket，序号和窗口大小，并建立TCP连接。&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;确定双方TCP包的起始序号，保证连接后的可靠有序传输&lt;/strong&gt;：比如接收方可以去除重复的数据、接收方可以按序号进行顺序接收、或者用于标识已发送的数据包中，哪些已被对方接收。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;确定了序号就可以区分新老连接，防止旧的重复连接初始化造成混乱&lt;/strong&gt;：由于可能出现client与server建立连接并进行通信后断开重连，如果每次连接没有新的起始序号，会导致server分辨不出收到的包是这次连接的还是上次连接的，这个号会作为以后的数据通信序号，以保证应用层接收到的数据不会因网络传输问题而乱序。&lt;/p&gt;
+&lt;p&gt;另外，每个连接都会有不同的序号，序号的起始号随时间变化，每4ms加一，如果有重复，需要4个多小时后才会出现，因为IP包头里有TTL(生存时间)，超过4小时早过期了。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;server端多出一个状态，用来检查client端是否接收到自己的报文，从而&lt;strong&gt;避免客户端重复建立连接，造成不必要的资源浪费&lt;/strong&gt;。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;为什么不能用两次握手进行连接？&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;一个重要的原因，是双方需要确认好起始的序列号，双方的初始序列号必须保持一致，来保证连接后的可靠传输，即&lt;strong&gt;双方都需要确认对方收到了自己的序列号&lt;/strong&gt;。&lt;/p&gt;
-&lt;p&gt;如果两次握手确定连接，client发送连接请求给server，server接收后发送响应给client，此时连接建立，client可以正常的发送和接收，但是server并不知道自己发送的请求client有没有收到，此时&lt;strong&gt;server端无法确认自己的序列号&lt;/strong&gt;，那它会认为没有确立连接，一直等待client的确认信号，忽略其他数据，server发出的数据被忽略，则会一直发送。&lt;/p&gt;
-&lt;p&gt;另外，还会有一个问题，如果是两次握手建立连接，如果client在重复发送连接请求给server，server收到连接请求，响应回去，建立连接后，因为序列号问题，那些重复的连接请求包到达了server，此时&lt;strong&gt;server端也无法分辨是数据包还是连接包&lt;/strong&gt;。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;因为两次握手，只保证一方的初始序号能被对方成功接收，双方无法确认对方收到了自己的序号&lt;/strong&gt;：&lt;/p&gt;
+&lt;p&gt;如果两次握手确定连接，client发送连接请求给server，server接收后发送响应给client，此时连接建立，client可以正常的发送和接收，但是server并不知道自己发送的请求client有没有收到，此时server端无法确认自己的序列号。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;因为两次握手，server端没有中间状态给客户端来阻止历史连接&lt;/strong&gt;：&lt;/p&gt;
+&lt;p&gt;如果client重复发送连接请求给server，server收到连接请求，响应回去后就建立连接，意味着这时双方可以互发数据，但如果此时客户端没有进入ESTABLISHED状态，重复发起连接，server端无法分辨是数据包还是连接包（因为此时server端已经认为双方可以互发数据包了，server端只有在收到RST报文才会断开连接）。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;因为两次握手，如果server端每收到SYN就建立连接，会导致建立多个冗余的无效连接，造成资源浪费&lt;/strong&gt;：&lt;/p&gt;
+&lt;p&gt;因为server端没有中间状态来检测client端是否接收到自己回复的ACK，如果client端重复发送多个SYN报文，而server端每次收到SYN就建立连接，就会建立多个冗余的无效连接，造成资源浪费。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;另外，三次握手是因为第二次握手的时候，server收到client的请求和自己的请求一次性响应回了client，也可以把这一步拆出来，变成四次握手也是可以的。四次挥手的第二和三次不能合并是因为此前连接已建立，贸然关闭会导致部分报文没有接受完成。&lt;/p&gt;
 &lt;h3 id=&#34;四次挥手&#34;&gt;四次挥手&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
@@ -15925,38 +15986,6 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;p&gt;&lt;strong&gt;syn cookie&lt;/strong&gt;：在收到SYN包后，服务器根据一定的方法，以数据包的源地址、端口等信息为参数计算出一个cookie值作为自己的SYNACK包的序列号，回复SYN+ACK后，服务器并不立即分配资源进行处理，等收到发送方的ACK包后，重新根据数据包的源地址、端口计算该包中的确认序列号是否正确，如果正确则建立连接，否则丢弃该包。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;SYN Proxy防火墙&lt;/strong&gt;：服务器防火墙会对收到的每一个SYN报文进行代理和回应，并保持半连接。等发送方将ACK包返回后，再重新构造SYN包发到服务器，建立真正的TCP连接。&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;h2 id=&#34;包头&#34;&gt;包头&lt;/h2&gt;
-&lt;p&gt;&lt;figure 
-	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/TCP%e5%8c%85%e5%a4%b4.jpg&#34;
-			
-			
-			
-			loading=&#34;lazy&#34;
-			alt=&#34;TCP包头&#34;&gt;
-	&lt;/a&gt;
-	
-	&lt;figcaption&gt;TCP包头&lt;/figcaption&gt;
-	
-&lt;/figure&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;端口号：用于找到对应的应用，TCP包是没有IP地址的，因为IP数据是网络层的事，所以这一层只有端口号；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;序号：让包能顺序发送和接收，&lt;strong&gt;解决乱序问题，也可以区分连接的阶段，区分不同的连接&lt;/strong&gt;。三次握手除了确立双方建立连接，最重要的是确立双方包的序列号，每一次连接都要有不同的序列号用于区别，序列号的起始通常是随时间，如果每次连接的序列号相同，可能会导致前一次连接的包发送到了下一次连接里；序号的增加和传输的字节数相关；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;确认序列号：发出去的数据包时进行确认的标记，&lt;strong&gt;解决丢包问题&lt;/strong&gt;，接收方回复的ACK包的确认序号 = 发送方数据包的序号 + TCP的数据载荷字节数，注意此时的载荷数据可能是这一次报文的完整数据，也有可能是包含了上一次报文的部分数据和此次报文的部分数据；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;状态位：客户端和服务端连接的状态，即包的类型，操控TCP的状态机；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;窗口大小：&lt;strong&gt;解决流量控制问题&lt;/strong&gt;，标识自己当前的处理能力；&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
 &lt;h2 id=&#34;如何实现靠谱协议&#34;&gt;如何实现靠谱协议&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;TCP协议规定在建立连接后，会确定包的序号的起始ID，按照ID一个个发送，对于发送的包会进行应答，应答是累计应答，应答某个ID的包就表示在这个ID之前的包都收到了。&lt;/li&gt;
@@ -16155,7 +16184,7 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
 &lt;/ul&gt;
 &lt;h2 id=&#34;应用场景-1&#34;&gt;应用场景&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;针对网络资源少，对丢包不敏感的应用，比如应用层的DHCP，在获取IP地址和子网掩码的使用&lt;/li&gt;
+&lt;li&gt;针对网络资源少，对丢包不敏感的应用，比如应用层的DHCP，在获取IP地址和子网掩码的使用，DNS、SNMP等&lt;/li&gt;
 &lt;li&gt;需要广播的应用，比如DHCP、VXLAN&lt;/li&gt;
 &lt;li&gt;需要处理速度快，时延低，容忍丢包、网络拥塞的应用，比如直播、视频，允许丢包，虽然丢包会导致丢帧，但影响不会很大；实时游戏、物联网终端的数据收集，其实大多数会基于UDP做一定的改进，减少UDP劣势的影响&lt;/li&gt;
 &lt;/ul&gt;
@@ -16247,6 +16276,8 @@ Slave连接Master并同步他们的存储状态，Slave不接受客户端连接�
     &gt;TCP 的那些事儿&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://juejin.cn/post/6983639186146328607&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;面试必备！TCP协议经典十五连问！&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://xiaolincoding.com/network/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;小林coding - 图解网络&lt;/a&gt;&lt;/p&gt;
 </description>
         </item>
         <item>
