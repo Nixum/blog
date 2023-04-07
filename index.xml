@@ -11418,6 +11418,46 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;段（Segment）由一个或多个区组成，区在文件系统是一个连续分配的空间（在InnoDB中是连续的64个页），不过在段中不要求区与区之间是相邻的。段是数据库中的分配单位，不同类型的数据库对象以不同的段形式存在。当我们创建数据表、索引的时候，就会相应创建对应的段，比如创建一张表时会创建一个表段，创建一个索引时会创建一个索引段。&lt;/p&gt;
 &lt;p&gt;表空间（Tablespace）是一个逻辑容器，表空间存储的对象是段，在一个表空间中可以有一个或多个段，但是一个段只能属于一个表空间。数据库由一个或多个表空间组成，表空间从管理上可以划分为系统表空间、用户表空间、撤销表空间、临时表空间等。&lt;/p&gt;
 &lt;/blockquote&gt;
+&lt;h2 id=&#34;buffer-pool&#34;&gt;Buffer Pool&lt;/h2&gt;
+&lt;p&gt;InnoDB使用了Buffer Pool来提高数据库读写性能；MySQL启动时，&lt;strong&gt;InnoDB 会为 Buffer Pool 申请一片连续的内存空间，然后按照默认的&lt;code&gt;16KB&lt;/code&gt;的大小划分出一个个的页， Buffer Pool 中的页就叫做缓存页&lt;/strong&gt;，默认配置下 Buffer Pool 只有 &lt;code&gt;128MB&lt;/code&gt; 。&lt;/p&gt;
+&lt;p&gt;Buffer Pool会缓存索引页、数据页、undo页、插入缓存、自适应哈希索引、锁信息等；&lt;/p&gt;
+&lt;p&gt;使用三种链表来管理：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Free list链表：关联空闲的页，以便快速找到空闲页；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Flush list链表：关联脏页，以便将脏页刷盘；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;LRU List链表：管理脏页和干净页；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;作用：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;当读取数据时，如果数据存在于 Buffer Pool 中，客户端就会直接读取 Buffer Pool 中的数据，否则再去磁盘中读取。&lt;/p&gt;
+&lt;p&gt;查询一条数据时，会把这个页的数据都加载到Buffer Pool中，因为通过索引只能定位到磁盘中的页，而不能定位到页中的一条数据，将页加载到Buffer Pool后，再通过页里的页目录去定位到具体的行记录；&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;MySQL加载数据时，会进行预读，但是这些提前被加载进来的数据页，可能并不会被访问到，造成预读失效；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;使用LRU算法提升缓存命中率，将LRU链表划分为两个区域，前半段是young区，后半段是old区，比例大概是64：37，预读的页会先加入到old区的头部，当页被真正访问时，才会插入young区的头部，如果预读的页一直没有被访问到，就会从old区移除，这样就不会影响young区的热点数据，解决预读失效导致缓存命中率低的问题；&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;当一个SQL语句需要扫描大量的数据，在Buffer Pool空间比较有限的情况下，把所有页都替换出去了，导致大量热点数据被淘汰，造成缓存污染，等到这些热点数据被访问时，由于缓存未命中，就会产生大量磁盘IO。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;数据加入young区条件增加门槛，只有同时满足「被访问」与「在 old 区域停留时间超过 1 秒」两个条件，才会被插入到 young 区域头部，解决 缓存污染的问题；&lt;/p&gt;
+&lt;p&gt;另外，为了防止young区节点并频繁移动到头部，前1/4被访问不会移动，后3/4被访问才会移动；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;当修改数据时，首先是修改 Buffer Pool 中数据所在的页，然后将其页设置为脏页，最后由后台线程将脏页写入到磁盘，触发脏页刷盘的时机：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;redo log日志满时，主动触发脏页刷盘；&lt;/li&gt;
+&lt;li&gt;Buffer Pool空间不足，此时需要淘汰一部分数据页 ，如果淘汰的是脏页，就要刷盘；&lt;/li&gt;
+&lt;li&gt;MySQL 空闲时，定期适量将脏页刷盘；&lt;/li&gt;
+&lt;li&gt;MySQL正常关闭，会把所有脏页刷盘；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h1 id=&#34;索引&#34;&gt;索引&lt;/h1&gt;
 &lt;h2 id=&#34;1常见索引及概念&#34;&gt;1.常见索引及概念&lt;/h2&gt;
 &lt;ul&gt;
@@ -17762,6 +17802,18 @@ rev={4 1}, key=key2, value=&amp;quot;v22&amp;quot;
 &lt;li&gt;最后通过「数据总线」来传输数据；&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/CPU%e4%bb%8e%e5%86%85%e5%ad%98%e8%af%bb%e5%8f%96%e6%95%b0%e6%8d%ae.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/CPU%e4%bb%8e%e5%86%85%e5%ad%98%e8%af%bb%e5%8f%96%e6%95%b0%e6%8d%ae.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
 &lt;h2 id=&#34;cpu位宽与线路位宽&#34;&gt;CPU位宽与线路位宽&lt;/h2&gt;
 &lt;p&gt;线路通过高低电压传输数据，一位一位串行传输，下一个bit必须等待上一个bit传输完成才能进行下一个，想要一次多传些数据，就要增加线路，实现并行传输。&lt;/p&gt;
 &lt;p&gt;CPU想要操作内存地址，就需要地址总线，比如，CPU想操作4G大的内存，就需要32条地址总线，因为&lt;code&gt;2^32=4G&lt;/code&gt;。&lt;/p&gt;
@@ -18068,17 +18120,65 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;p&gt;在进程运行期间只分配映射当前使用到的内存，暂时不使用的数据则写回磁盘作为副本保存，需要用的时候再读入内存，动态地在磁盘和内存之间交换数据。&lt;/p&gt;
 &lt;p&gt;如果分配后的虚拟内存没有被访问的话，虚拟内存是不会映射到物理内存的，这样就不会占用物理内存了。&lt;/p&gt;
 &lt;p&gt;只有在访问已分配的虚拟地址空间的时候，操作系统通过查找页表，发现虚拟内存对应的页没有在物理内存中，就会触发缺页中断，然后进程会从用户态切换到内核态，将缺页中断交给内核的缺页中断函数，该函数会检查是否有空闲的物理内存，如果有，就进行分配，建立虚拟内存和物理内存之间的映射关系，如果没有，就回收空闲内存，如果回收后仍然不够分配，就会触发OOM，该机制会杀死物理内存占用最高的进程，以释放内存，直到内存足够分配。&lt;/p&gt;
-&lt;p&gt;可被回收的内存类型有两种，这两种回收都是基于LRU算法&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;文件页回收：对于干净页是直接释放内存，不影响性能，对于脏页是先刷到磁盘，因为涉及磁盘IO，会影响性能；&lt;/li&gt;
-&lt;li&gt;匿名页回收：如果开启了Swap机制，就会把不常访问的匿名页swap到磁盘，下次访问到再swap回来；&lt;/li&gt;
-&lt;/ul&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;虚拟内存的作用：&lt;/p&gt;
+&lt;h3 id=&#34;作用&#34;&gt;作用&lt;/h3&gt;
 &lt;ul&gt;
 &lt;li&gt;使得进程可以对运行内存使用超过物理内存的大小，如果超出内存大小，会使用swap，把不常用的内存换到磁盘&lt;/li&gt;
 &lt;li&gt;每个进程有自己的页表，每个进程的虚拟内存就是相互独立的，进程也没办法访问其他进程的页表，属于私有页表，解决多进程之间地址冲突问题&lt;/li&gt;
 &lt;li&gt;页表里的页表项除了物理地址外，还有一些标记属性的比特，比如控制一个页的读写权限，标记该页是否存在，为操作系统提供更好的安全性。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;linux中的虚拟内存空间&#34;&gt;Linux中的虚拟内存空间&lt;/h3&gt;
+&lt;p&gt;32 位机器上进程虚拟内存空间分布：&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e7%94%a8%e6%88%b7%e6%80%81%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e7%94%a8%e6%88%b7%e6%80%81%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;保留区：不可访问，数值较小的地址通常认为是不合法的地址，比如设置无效的指针为NULL，就指向这里；&lt;/li&gt;
+&lt;li&gt;代码段、数据段、BSS段：存储程序的二进制文件中的机器码，以及定义的有初始值的全局变量、静态变量放在数据段和没有初始值的放在BSS段；&lt;/li&gt;
+&lt;li&gt;堆和待分配区域：堆空间地址增长从低地址到高地址增长，申请新内存时，只需移动堆顶指针到待分配区即可，从而实现空间扩展；&lt;/li&gt;
+&lt;li&gt;文件映射和匿名映射区域：进程运行所依赖的动态链接库中的代码段、数据段和BSS段就加载在这里，mmap函数映射出来的虚拟内存地址也保存在这；&lt;/li&gt;
+&lt;li&gt;栈和待分配区域：用户程序函数运行过程所需要的局部变量，函数参数等调用信息存放在此，栈空间地址增长方向是从高到低增长；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;64位机器上进程用户态虚拟内存空间分布类似，用低48位表示虚拟地址，高16位的128T表示内核虚拟内存空间，低16位的128T表示用户虚拟内存空间。中间16位空闲地址被称为 canonical address作为空洞，可用来扩展或者做非法访问用；&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;通过 fork() 函数创建出的子进程，它的虚拟内存空间以及相关页表相当于父进程虚拟内存空间的一份拷贝，直接从父进程中拷贝到子进程中。子进程共享父进程的虚拟内存空间，这样的子进程也就是线程了，在Linux中都是使用 &lt;code&gt;task_struct&lt;/code&gt; 来表示他们，因为对内核来说他们是一样的；&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;32位机器上内核虚拟内存空间，&lt;strong&gt;其前 896M 区域是直接映射到物理内存中的前 896M 区域中的，直接映射区中的映射关系是一比一映射。映射关系是固定的不会改变。主要存放进程的调用链&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e5%86%85%e6%a0%b8%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e5%86%85%e6%a0%b8%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;直接映射区有896M，由以下几部分组成：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;前1M由系统占用，存放内核代码段、数据段、BSS段；&lt;/li&gt;
+&lt;li&gt;前16M由内核用来为DMA分配内存，称为ZONE_DMA；&lt;/li&gt;
+&lt;li&gt;16M到896M称为ZONE_NORMAL区，没有任何限制；&lt;/li&gt;
+&lt;li&gt;物理内存896M以上的部分为高端内存区ZONE_HIGHMEM，这部分会动态映射到虚拟内存内核态剩余的128M里；这128M里还会继续分：
+&lt;ul&gt;
+&lt;li&gt;有8M的内存空洞；&lt;/li&gt;
+&lt;li&gt;vmalloc动态映射区，映射剩余的物理内存；&lt;/li&gt;
+&lt;li&gt;永久映射区，允许这段虚拟地址空间与物理高端内存建立长期的映射关系；&lt;/li&gt;
+&lt;li&gt;固定映射区，在此区域的虚拟内存地址可以自由映射到物理内存的高端地址上，但是与动态映射区以及永久映射区不同的是，在固定映射区中虚拟地址是固定的，而被映射的物理地址是可以改变的；&lt;/li&gt;
+&lt;li&gt;临时映射区，比如一些缓存页临时映射，用完就回收；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;mmu&#34;&gt;MMU&lt;/h2&gt;
 &lt;p&gt;虚拟地址转换为物理地址通过MMU(内存管理单元)实现，只能在保护模式或者长模式下开启。&lt;/p&gt;
