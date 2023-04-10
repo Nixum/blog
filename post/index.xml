@@ -150,7 +150,7 @@ defer 和 return 的执行顺序是：1. 先为返回值赋值；2. 然后执行
 undo log和数据页的刷盘策略是一样的，都需要通过redo log保证持久化，Buffer Pool中也有undo 页，对undo页的修改会记录到redo log中，跟着redo log刷盘一起刷盘；
 同时，如果在内存中修改undo页，需要更新记录对应的redo log。
   redo log重做日志：InnoDB独有，物理日志，记录这个页做了什么改动，本质上记录了对某个表空间的某个数据页的某个偏移量修改了哪几个字节的值，具体修改的值是什么，一条redo log也就几个字节到十几个字节，格式是 日志类型，表空间ID，数据页号，数据页偏移量，具体修改的数据。
-使用二阶段提交保证两份日志逻辑一致。当有日志要写入时，先写到redo log buffer后状态是prepare，开始写bin log cache，bin log 写完后，事务提交，redo log 改为commit状态，redo log写完，此时事务就算完成；这里描述的写redo log和bin log都只写在了缓冲区，何时写进磁盘，是根据innodb_flush_log_at_trx_commit和sync_binlog配置决定。用于实现数据持久化，以及宕机恢复数据。
+使用二阶段提交保证两份日志逻辑一致。当有日志要写入时，先写到redo log buffer后状态是prepare，开始写bin log cache，bin log 写完后，事务提交，redo log 改为commit状态，redo log写完，此时事务就算完成；这里描述的写redo log和bin log都只写在了缓冲区，何时写进磁盘，是根据innodb_flush_log_at_trx_commit和sync_binlog配置决定，用于实现数据持久化，以及宕机恢复数据。
 之所以要使用二阶段提交，是为了保证redo log和bin log的数据一致性，对于处于 prepare 阶段的 redo log，即可以提交事务，也可以回滚事务，这取决于是否能在 binlog 中查找到与 redo log 相同的 XID，如果有就提交事务，如果没有就回滚事务，这样就可以保证 redo log 和 binlog 这两份日志的一致性。</description>
     </item>
     
