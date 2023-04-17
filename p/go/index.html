@@ -1107,7 +1107,7 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
 <p>确定使用buckets数组还是oldbuckets数组：判断oldbuckets数组中是否为空，不为空说明正处于扩容中，还没完成迁移，则重新计算桶的位置，并在oldbuckets数组找到对应的桶；如果为空，则在buckets数组中找到对应的桶。</p>
 </li>
 <li>
-<p>在桶中找tophash的位置：用key哈希计算得到的哈希值，取高8个bit位 + minTopshash，计算得到此bucket桶中的tophash，即key在桶中的编号，之后在桶中的正常位遍历比较。</p>
+<p>在桶中找tophash的位置：用key哈希计算得到的哈希值，取高8个bit位 + minTopshash(小于minTopshash值时才需要加)，计算得到此bucket桶中的tophash，即key在桶中的编号，之后在桶中的正常位遍历比较。</p>
 </li>
 <li>
 <p>每个桶是一整片连续的内存空间，先遍历bucket桶中的正常位，与桶中的tophash进行比较，当找到对应的tophash时，根据tophash进行计算得到key，根据key的大小计算得到value的地址，找到value。</p>
@@ -2038,6 +2038,10 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
                 RPC
             </a>
         
+            <a href="/tags/select%E5%8E%9F%E7%90%86/" class="font_size_1">
+                select原理
+            </a>
+        
             <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
                 session和cookie
             </a>
@@ -2076,10 +2080,6 @@ make(T) 返回一个类型为 T 的初始值，它只<strong>适用于 3 种内�
         
             <a href="/tags/web%E6%A1%86%E6%9E%B6/" class="font_size_1">
                 web框架
-            </a>
-        
-            <a href="/tags/zookeeper/" class="font_size_1">
-                zookeeper
             </a>
         
     </div>

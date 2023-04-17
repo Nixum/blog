@@ -336,7 +336,7 @@ if (!doNotTrack) {
 <p>当装载因子&gt;= 1，且哈希表被允许rehash，即此时没有进行RDB和AOF重写，即没有执行或正在执行 <code>BGSAVE</code> 命令或者 <code>BGREWRITEAOF</code> 命令</p>
 </li>
 <li>
-<p>当装载因子&gt;= 5，因为此时数据量已远远大于哈希桶的个数了，此时会立马进行rehash</p>
+<p>当装载因子&gt;= 5，因为此时数据量已远远大于哈希桶的个数了，此时会立马进行rehash，不管是否有没有在执行RDB快照或AOF重写，都会强制进行rehash操作；</p>
 </li>
 </ul>
 <h4 id="rehash过程">rehash过程</h4>
@@ -380,9 +380,20 @@ if (!doNotTrack) {
 </figure></p>
 <p>本质上是一个数组，数组中每一个元素保存一个数据。压缩列表的结构：</p>
 <ul>
-<li>表头有三个字段：<code>zlbytes</code>记录整个压缩列表占用的内存字节数，可算出列表长度；<code>zltail</code>记录列表最后一个<code>entry</code>的偏移量，可算出尾节点到列表起始地址的字节数，快速完成pop操作；<code>zllen</code>记录列表中的<code>entry</code>个数，只占用2bytes，如果压缩列表中<code>entry</code>的数目小于 65535 ，2的16次方，该字段存储的就是实际的<code>entry</code>数，如果超过或等于该值，则实际数量要遍历<code>entry</code>才能得到；</li>
-<li>每个节点元素<code>entry</code>有四个字段：<code>previous_entry_length</code>记录前一个节点的长度；<code>encoding</code>记录<code>content</code>的数据类型和长度；<code>content</code>保存元素的值；<code>len</code>表示自身长度。</li>
-<li>表尾有一字段：<code>zlend</code>终止字符，用于标记列表末端。</li>
+<li>
+<p>表头有三个字段：</p>
+<ul>
+<li><code>zlbytes</code>记录整个压缩列表占用的内存字节数，可算出列表长度；</li>
+<li><code>zltail</code>记录列表最后一个<code>entry</code>的偏移量，可算出尾节点到列表起始地址的字节数，快速完成pop操作；</li>
+<li><code>zllen</code>记录列表中的<code>entry</code>个数，只占用2bytes，如果压缩列表中<code>entry</code>的数目小于 65535 ，2的16次方，该字段存储的就是实际的<code>entry</code>数，如果超过或等于该值，则实际数量要遍历<code>entry</code>才能得到；</li>
+</ul>
+</li>
+<li>
+<p>每个节点元素<code>entry</code>有四个字段：<code>previous_entry_length</code>记录前一个节点的长度；<code>encoding</code>记录<code>content</code>的数据类型和长度；<code>content</code>保存元素的值；<code>len</code>表示自身长度。</p>
+</li>
+<li>
+<p>表尾有一字段：<code>zlend</code>终止字符，用于标记列表末端。</p>
+</li>
 </ul>
 <p>数据类型List、Hash、ZSet都有使用到压缩列表。</p>
 <p>压缩列表可以存储字符串或整数，存储整数时采用整数的二进制而不是字符串形式存储，能在O(1)时间复杂度下完成 list 两端的 push 和 pop 操作，由于每次操作都需要重新分配压缩列表的内存，so实际复杂度跟其内存使用量有关。</p>
@@ -391,8 +402,26 @@ if (!doNotTrack) {
 <p>压缩列表或者数组主要因为其数据结构紧凑，节省空间，避免内存碎片，提升内存利用率，线性顺序存储，对CPU高速缓存支持友好。对于查找的时间复杂度的优势提升不大。但是，由于压缩列表比较紧凑，在新增更新删除操作时可能会引发连锁更新，此时最坏为O(n^2)，但触发概率相对较低，利大于弊。</p>
 <h3 id="快表---quick-list">快表 - Quick List</h3>
 <p>3.2版本后才添加，之前的版本是双向链表，本质上是一个链表，只是每个节点都是一个压缩列表。</p>
+<p>快表为了解决压缩列表增删元素时的连锁反应导致的性能下降，会控制每个链表节点中的压缩列表的大小或元素个数，来避免这个问题，因为压缩列表越小或元素个数越少，新增或删除时带来的影响就越小。</p>
 <h3 id="跳表---skip-list">跳表 - Skip List</h3>
-<p>本质是为链表增加索引，建立多层索引，查找时从顶层的索引开始逐步往下层找，最终定位到元素，适用于范围查询的场景。查找的时间复杂度为O(logN)</p>
+<p>Redis只有ZSet对象底层使用跳表，ZSet结构体里有两个数据结构，一个是跳表，一个是哈希表，哈希表只在用在获取权重，大部分操作还是通过跳表实现；</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/rredis_%e8%b7%b3%e8%a1%a8.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/rredis_%e8%b7%b3%e8%a1%a8.png"
+			
+			
+			
+			loading="lazy"
+			alt="Redis Ziplist">
+	</a>
+	
+	<figcaption>Redis Ziplist</figcaption>
+	
+</figure></p>
+<p>先排序分数，分数相同时，再排序元素值，默认是从小到大排。</p>
+<p>跳表本质是为链表增加索引，建立多层索引，查找时从顶层的索引开始逐步往下层找，最终定位到元素，适用于范围查询的场景。跳表的相邻两层的节点数量最理想的比例是 2:1，查找的时间复杂度为O(logN)</p>
+<p>但是，redis在创建跳表时，随机生成每个节点的层数，没有严格维持相邻两层节点2:1的比例，比如在创建节点时，会生成范围为[0-1]的一个随机数，如果这个随机数小于0.25，那么层数加一，然后生成下一个随机数，直到改随机数大于0.25，最终确定改节点的层数；这样做相当于每增加一层的概率不超过25%，层数越高，概率越低，层高最大限制是64；Redis 7.0 定义层高为 32，Redis 5.0 定义为 64，Redis 3.0 定义为 32</p>
 <p>参考：<a class="link" href="https://www.pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html"  target="_blank" rel="noopener"
     >Redis底层数据结构详解</a></p>
 <blockquote>
@@ -1571,6 +1600,10 @@ if (!doNotTrack) {
                 RPC
             </a>
         
+            <a href="/tags/select%E5%8E%9F%E7%90%86/" class="font_size_1">
+                select原理
+            </a>
+        
             <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
                 session和cookie
             </a>
@@ -1609,10 +1642,6 @@ if (!doNotTrack) {
         
             <a href="/tags/web%E6%A1%86%E6%9E%B6/" class="font_size_1">
                 web框架
-            </a>
-        
-            <a href="/tags/zookeeper/" class="font_size_1">
-                zookeeper
             </a>
         
     </div>
