@@ -132,7 +132,7 @@ if (!doNotTrack) {
 
 
                 <time class="article-time--reading">
-                    3 minute read
+                    4 minute read
                 </time>
             </div>
         
@@ -143,9 +143,102 @@ if (!doNotTrack) {
 
     <section class="article-content">
     <p>[TOC]</p>
+<h1 id="系统设计的思路">系统设计的思路</h1>
+<p>缓存、异步、多线程、分片、高可用、扩容、分布式集群、并发、锁不锁、对持久化、内存的要求、量大的就想办法把量过滤或者拆小，分治处理、对数据库的写操作量很大时，可以考虑时间窗口合并</p>
+<h1 id="api协议设计">API协议设计</h1>
+<p>其实分成了API和协议两部分</p>
+<ul>
+<li>一般API会符合Restful规范，由行为 + 资源组合而成；</li>
+<li>协议一般就包含了请求/响应头和响应/请求体的内容，参数结构化，比如参数类型是Hash，就不要存成String，值是Hash的序列化后的字符串；</li>
+<li>响应结果要统一，尽量不要因为参数的不同而返回不同类型的响应结构，个人比较喜欢的做法是，在网络层面，如果接口没有问题，统一返回HTTP code是200，响应体里分为<code>code、msg、data</code>来表示业务响应；</li>
+<li>需要考虑认证和安全相关，比如是否需要签名、票据、token等</li>
+<li>多服务之间，保证风格一致；</li>
+<li>考虑幂等；</li>
+<li>加入版本控制，加在URL上，或者请求头有个字段标识；</li>
+<li>接口职责单一，一个接口只干一件事；</li>
+<li>考虑兼容性；</li>
+</ul>
+<h1 id="解决多重if-else嵌套问题">解决多重if-else嵌套问题</h1>
+<p>比如有下面这种代码，优化if-else问题</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">Handle</span><span class="p">()</span> <span class="kt">error</span> <span class="p">{</span>
+       <span class="kd">var</span> <span class="nx">err</span> <span class="kt">error</span>
+       <span class="k">if</span> <span class="nf">Operation1</span><span class="p">(){</span>
+             <span class="k">if</span> <span class="nf">Operation2</span><span class="p">(){</span>
+                    <span class="k">if</span> <span class="nf">Operation3</span><span class="p">(){</span>
+                           <span class="k">if</span> <span class="nf">Operation4</span><span class="p">(){</span>
+                                 <span class="c1">// do
+</span><span class="c1"></span>                           <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+                                 <span class="nx">err</span> <span class="p">=</span> <span class="nx">OPERATION4FAILED</span>
+                           <span class="p">}</span>
+                    <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+                           <span class="nx">err</span> <span class="p">=</span> <span class="nx">OPERATION3FAILED</span>
+                    <span class="p">}</span>
+             <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+                    <span class="nx">err</span> <span class="p">=</span> <span class="nx">OPERATION2FAILED</span>
+             <span class="p">}</span>
+       <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+             <span class="nx">err</span> <span class="p">=</span> <span class="nx">OPERATION1FAILED</span>
+       <span class="p">}</span>
+       <span class="k">return</span> <span class="nx">err</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>或者</p>
+<pre tabindex="0"><code>func Handle() error {
+       var err error
+       if Operation1(){
+             // do something
+       } else if Operation2() {
+       		// do something
+       } else if Operation3() {
+       		// do something
+       } else if Operation4() {
+       		// do something
+       } else {
+             err = OPERATION1FAILED
+       }
+       return err
+}
+</code></pre><p>解决方案：</p>
+<ul>
+<li>分析条件，对于互斥的条件，可以使用表驱动，key是入参，value是方法</li>
+<li>短路条件，尽量平铺 if-else 判断，比如 把 if-else 拆分，提前返回</li>
+<li>使用switch-case</li>
+<li>比如对于多重嵌套的if-else，嵌套条件必须同时成立，可以使用责任链设计模式，将多个条件封装成方法，装进数组或链表中，遍历判断</li>
+<li>策略模式 + 工厂模式，抽象一个公共接口，所有条件判断封装成对象，实现这个接口；定义工厂方法，根据参数获取对应的策略对象，执行对应的判断函数，返回判断后的结果</li>
+</ul>
 <h1 id="防止表单重复提交">防止表单重复提交</h1>
 <p><strong>场景</strong>：用户点击下单页面，跳转至下单页面，提交订单，此时有可能网络原因或者用户点击多次，导致订单重复提交。</p>
 <p><strong>解决</strong>：用户跳转至下单页前，会先获取订单号(也作为订单表主键)，将订单号绑定在下单页，利用数据库主键唯一的特性，让创建订单的操作变成幂等性。</p>
+<p>也可以前端在同一个页面发送订单创建请求时，为页面生成一个requestId，重复下单后端即可通过这个id判重；</p>
+<p>订单创建接口，也可以对参数进行排序后MD5的方式判重；</p>
+<p>订单场景还好，如果是IM场景，因为每个用户发送信息都比较频繁，如果都每条信息都创建一个请求id，可能每太必要，后端可以对每条信息+user_id进行MD5，判重，但需要处理用户真的重复发送的情况；</p>
+<p>还有一种处理方式，为每条消息生成一个时间戳，服务端处理时判断上下两条消息的时间差</p>
 <h1 id="解决aba问题">解决ABA问题</h1>
 <p>**场景：**类似MySQL的丢失更新，比如有操作1，操作2先后对记录A进行更新，操作1的响应丢失导致重试，此时操作2已经更新成功，操作1重试时会覆盖操作2的更新。</p>
 <p>**解决：**通过版本号解决，订单表增加一列作版本号，版本号可以使用递增序列、时间戳等，通过比较版本号来确定操作的先后顺序，更新成功时也需要更新版本号。</p>
@@ -215,21 +308,6 @@ if (!doNotTrack) {
 <p>多路归并排序：将所有原文件按照内存最大大小读取并进行排序，输出到新的、多个的文件中，然后对这些新的已排序的小文件进行归并排序。</p>
 <p><a class="link" href="https://www.cnblogs.com/GarrettWale/p/14478347.html"  target="_blank" rel="noopener"
     >https://www.cnblogs.com/GarrettWale/p/14478347.html</a></p>
-<h1 id="api协议设计">API协议设计</h1>
-<p>其实分成了API和协议两部分</p>
-<ul>
-<li>一般API会符合Restful规范，由行为 + 资源组合而成；</li>
-<li>协议一般就包含了请求/响应头和响应/请求体的内容，参数结构化，比如参数类型是Hash，就不要存成String，值是Hash的序列化后的字符串；</li>
-<li>响应结果要统一，尽量不要因为参数的不同而返回不同类型的响应结构，个人比较喜欢的做法是，在网络层面，如果接口没有问题，统一返回HTTP code是200，响应体里分为<code>code、msg、data</code>来表示业务响应；</li>
-<li>需要考虑认证和安全相关，比如是否需要签名、票据、token等</li>
-<li>多服务之间，保证风格一致；</li>
-<li>考虑幂等；</li>
-<li>加入版本控制，加在URL上，或者请求头有个字段标识；</li>
-<li>接口职责单一，一个接口只干一件事；</li>
-<li>考虑兼容性；</li>
-</ul>
-<h1 id="系统设计的思路">系统设计的思路</h1>
-<p>缓存、异步、多线程、分片、高可用、扩容、分布式集群、并发、锁不锁、对持久化、内存的要求、量大的就想办法把量过滤或者拆小，分治处理、对数据库的写操作量很大时，可以考虑时间窗口合并</p>
 <h1 id="库存">库存</h1>
 <p>这里仅讨论分布式场景下的</p>
 <ul>
@@ -463,6 +541,32 @@ if (!doNotTrack) {
 <p>对于未读计数：比如一系统通知列表，记录全量用户未读数，如果全量用户，每个用户都去计算未读数是多少，那效率太差了，正确的做法是：因为这个列表对所有用户共享，所有用户都能看到这一份系统通知数据，不同的人最近看到的消息不同，所以每个人就会有不同的计数，因此可以通过记录每个人看过的最后一条消息的ID，推断出该ID之后还有多少消息未读；</p>
 <p>用户红点计数方案：判断用户是否点过某一个页面或功能，可以为每一个用户存储一个时间戳，代表最近点过这个红点的时间，用户点了这个红点，就更新这个时间戳，然后我们再记录一个全局时间戳，通过这个全局时间戳与用户点击的时间戳比较，判断是否要展示红点；</p>
 <p>基于关系的信息流未读方案：通用计数器记录每一个用户发布的博文数，在Redis中记录一个人所有关注人的博文数快照，当用户点击未读消息时重置未读数为0时，将他关注所有人的博文数更新到快照中，此时，他关注的所有人的博文数减去快照中的博文数就是他信息流的未读数了，不过此方案会存在一点误差。</p>
+<h2 id="计数器redis实现">计数器Redis实现</h2>
+<ul>
+<li>
+<p>记录和更新</p>
+<p>使用hash记录计数值，key为<code>计数器名称:时间精度</code>，hash key是开始的时间戳，表示当前时间片开始时间（<code>计算方式 当前时间 / 时间精度 * 时间精度</code>），hash value是计数值；命令：<code>hincrby counter:5 1682045703000 1</code>，表示统计5秒内的计数</p>
+<p>因为要保存所有的时间精度，又需要保证不会重复，所以使用zset用于清除旧数据，key为随便起，是一个定值，value为时间精度+计数器名称，socre为0，命令：<code>zadd countSort 0 counter:5</code>，socre设置为0是为了让zset只根据value按字母序排列，方便后续获取</p>
+</li>
+<li>
+<p>查询：<code>hgetall 计数器名称:时间精度</code>，然后排序遍历，即可获取各个时间片的计数</p>
+</li>
+<li>
+<p>清除旧值</p>
+<p>设定一个异步任务，对于每秒更新一次或每5秒更新一次的计数器，异步任务可以按每分钟的频率清除旧数据，从而保证只存储一定的数量，避免bigkey问题</p>
+<p>比如分页遍历 zset，根据value，查 hash，然后移除hash里失效时间范围内的元素；由于存在覆盖问题，如果要保证计数正确，需要使用lua脚本，保证整个过程原子，如果不care，直接程序处理即可。</p>
+</li>
+</ul>
+<h2 id="存储统计数据redis实现">存储统计数据Redis实现</h2>
+<p>场景：统计前一小时和当前一小时内的数据的最值</p>
+<ul>
+<li>
+<p>记录和更新</p>
+<p>使用 两个string 记录当前小时数、值和上一个小时值，比如 上一个时间是 12:23 ，存储命令就是 <code>set lastHour 12</code>；</p>
+<p>使用两个zset保存临时的统计数据，使用zset并非为了按socre进行排序，而是要对这两个zset做并集和聚合运算，使用redis的内置函数，使用命令<code>zunionstore + 聚合函数，比如max()、min()</code>；</p>
+<p>将两个临时保存统计数据的zset做一定的运算后得到最终结果zset，然后删除临时的两个zset；</p>
+</li>
+</ul>
 <h1 id="feed流">feed流</h1>
 <h2 id="推模式---写扩散">推模式 - 写扩散</h2>
 <p>用户发送一条微博，主动将这条微博推送给他的粉丝，即，为该用户和其粉丝insert一条微博数据，粉丝查看微博时，直接一条sql即可查询得到；因为写入压力和存储压力问题，比较适合粉丝数有限的场景；</p>
@@ -557,7 +661,27 @@ if (!doNotTrack) {
 </span><span class="c1"></span><span class="nx">result</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">((</span><span class="nx">num</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#34;.&#34;</span> <span class="o">+</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">((</span><span class="nx">num</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#34;.&#34;</span> <span class="o">+</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">((</span><span class="nx">num</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#34;.&#34;</span> <span class="o">+</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">Itoa</span><span class="p">(</span><span class="nx">num</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><h1 id="扫码登录">扫码登录</h1>
+</div><p>根据IP查询国家（比如给定一批数据是 {开始的ip, 结束ip, 国家}），使用Redis做缓存，实现方案：</p>
+<p>使用Redis的zset结构，key是定值，比如叫ip2Country，score是IP转数字，value是国家二字码+一定的标识（需要加标识是因为zset的value是唯一），比如如果ip是开始ip，标识就加begin，结束ip就加end，如果一个国家会对应多条IP起始范围，则标识还要加上数字</p>
+<p>但是这种方案有个缺点，就是无法处理ip范围重叠的情况，所以最好还是DB存，存ip的字符串，还有转成数字后的开始ip和结束ip</p>
+<p>存储时：</p>
+<pre tabindex="0"><code>比如有一条数据是 2.255.1.40, 5.2.255.255, CN
+即ip在以 2.255.1.40 开始，以 5.2.255.255 结束 范围内，对应的国家二字码是 CN
+转成数字就是 50266408, 84082687, CN
+
+存到redis时，对应的命令就是
+zadd ip2Country 50266408 begin_1_CN
+zadd ip2Country 84082687 end_1_CN
+</code></pre><p>查询时：</p>
+<pre tabindex="0"><code>比如有ip 2.255.1.41，转成数字是 50266409，查询redis时，使用命令
+zrevrangebyscore ip2Country 50266409 0 LIMIT 0 1   
+# 后面的LIMIT很关键，这个命令时间复杂度是 O(log(N)+M)， N是zset的总数量，M是查询到的结果集的数量
+
+该命令表示查询 key为ip2Country的zset，socre从高到低排列，返回socre从0到50266409范围内的元素的第一个元素，所以会返回最接近且小于等于 50266409 的元素，然后进行判断：
+1. 如果返回值为空，说明没找到对应的ip范围
+2. 如果是start开头，说明找到了对应的国家二字码
+3. 如果是end开头，说明没找到对应的ip范围 
+</code></pre><h1 id="扫码登录">扫码登录</h1>
 <p><figure 
 	>
 	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/PC%e7%ab%af%e6%89%ab%e7%a0%81%e7%99%bb%e5%bd%95.png" >
@@ -817,6 +941,9 @@ if (!doNotTrack) {
                 <div class="widget--toc">
                     <nav id="TableOfContents">
   <ol>
+    <li><a href="#系统设计的思路">系统设计的思路</a></li>
+    <li><a href="#api协议设计">API协议设计</a></li>
+    <li><a href="#解决多重if-else嵌套问题">解决多重if-else嵌套问题</a></li>
     <li><a href="#防止表单重复提交">防止表单重复提交</a></li>
     <li><a href="#解决aba问题">解决ABA问题</a></li>
     <li><a href="#流量大数据量大的商品详情页数据存储">流量大、数据量大的商品详情页数据存储</a></li>
@@ -826,8 +953,6 @@ if (!doNotTrack) {
     <li><a href="#不停机情况下更换数据库">不停机情况下更换数据库</a></li>
     <li><a href="#海量数据处理">海量数据处理</a></li>
     <li><a href="#大文件在有限内存内排序">大文件在有限内存内排序</a></li>
-    <li><a href="#api协议设计">API协议设计</a></li>
-    <li><a href="#系统设计的思路">系统设计的思路</a></li>
     <li><a href="#库存">库存</a></li>
     <li><a href="#秒杀">秒杀</a>
       <ol>
@@ -840,7 +965,12 @@ if (!doNotTrack) {
       </ol>
     </li>
     <li><a href="#短链">短链</a></li>
-    <li><a href="#海量数据计数">海量数据计数</a></li>
+    <li><a href="#海量数据计数">海量数据计数</a>
+      <ol>
+        <li><a href="#计数器redis实现">计数器Redis实现</a></li>
+        <li><a href="#存储统计数据redis实现">存储统计数据Redis实现</a></li>
+      </ol>
+    </li>
     <li><a href="#feed流">feed流</a>
       <ol>
         <li><a href="#推模式---写扩散">推模式 - 写扩散</a></li>
