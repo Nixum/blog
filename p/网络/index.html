@@ -480,6 +480,11 @@ if (!doNotTrack) {
 <blockquote>
 <p>服务器推送资源时，会先发送 PUSH_PROMISE 帧，告诉客户端接下来在哪个 Stream 发送资源，然后用偶数号 Stream 发送资源给客户端。</p>
 </blockquote>
+<h2 id="使用长连接需要考虑的点">使用长连接需要考虑的点</h2>
+<ul>
+<li>客户端和服务端的数量，因为要保持连接，如果客户端的数量远超服务端的数量，服务端与每个客户端都维持一个长连接，对服务端来说负担比较大，此时需要设置一个合理的超时时间，在空闲时间过长时断开连接，释放服务端资源；</li>
+<li>因为长连接的多路复用，连接一旦建立便不会断开，流量会被分到同一个服务端，会导致负载不均衡，需要连接池能分辨出服务端的多个实例，自己实现；</li>
+</ul>
 <h1 id="tcptransmission-control-protocol-传输控制协议">TCP（Transmission Control Protocol 传输控制协议）</h1>
 <h2 id="特点">特点</h2>
 <ul>
@@ -959,7 +964,7 @@ if (!doNotTrack) {
 <p>解决方法：</p>
 <ul>
 <li>
-<p>慢开始 + 拥塞避免，一开始慢慢的发送，逐渐增大发送速率（线性上升直至网络最佳值），再慢下来依次重复。</p>
+<p><strong>慢开始 + 拥塞避免，一开始慢慢的发送，逐渐增大发送速率（线性上升直至网络最佳值），再慢下来依次重复。</strong></p>
 <p>慢开始阶段，TCP连接每收到一个数据的ACK（不包括重复的ACK），拥塞窗口就翻倍增加一个MSS(最大报文大小)，当达到了慢开始的阈值，增长速度就会放缓，进入拥塞避免阶段，变成了每过一个RTT，拥塞窗口就会增长一个MSS；</p>
 <p>每一个TCP连接独立维护自己的拥塞窗口，拥塞窗口一般比MSS大，一般是MSS的某个倍数，MSS的上限一般是1460字节，一个窗口就是n个MSS；发送窗口大小 = min(拥塞窗口大小，接收窗口大小)；</p>
 <p>拥塞窗口由发送方维护，不放在TCP头部中；</p>
@@ -980,7 +985,7 @@ if (!doNotTrack) {
 </figure></p>
 </li>
 <li>
-<p>快重传 + 快恢复，<strong>当拥塞发生时，减少超时重传的使用，而是使用快速重传机制</strong>。</p>
+<p><strong>快重传 + 快恢复，当拥塞发生时，减少超时重传的使用，而是使用快速重传机制</strong>。</p>
 <p>TCP每发送一个报文，就会启动一个超时计时器，如果在限定时间内没有收到这个报文的ACK，发送方就会认为报文丢失，此时就会进行超时重传，一般最小的超时重传时间是200ms，为了解决每次丢包都要等待200ms或者更长的时间才会重传的问题，TCP就会采用快速重传，一旦发送方收到3次重复确认，就不用等超时计时器了，会直接重传这个报文。</p>
 <p>在Reno拥塞控制算法中，TCP在遇到拥塞点后，不会反复进行慢开始+拥塞避免，而是拥塞窗口减半，直接进入快速重传，不进入慢开始，保持跟拥塞避免一样的线性增长，直到下一个拥塞点。</p>
 <p>网络上的限速，原理其实就是设置拥塞窗口的上限，当超过限制，就会丢弃这些报文，主动进入拥塞避免阶段，确保传输速度。</p>
@@ -1103,6 +1108,9 @@ if (!doNotTrack) {
 <li>线程池 + 连接池，每个线程管理一个socket，连接池实现socket复用</li>
 <li>IO多路复用，一个线程维护多个socket，如Java NIO、Netty的网络模型</li>
 </ul>
+<h1 id="连接池实现">连接池实现</h1>
+<p>写得真不错，清晰易懂 <a class="link" href="https://yusank.space/posts/conn-pool/"  target="_blank" rel="noopener"
+    >https://yusank.space/posts/conn-pool/</a></p>
 <h1 id="参考">参考</h1>
 <p><a class="link" href="https://blog.csdn.net/jungle_hello/article/details/51465119"  target="_blank" rel="noopener"
     >TCP/IP参考1</a></p>
@@ -1387,6 +1395,7 @@ if (!doNotTrack) {
         <li><a href="#多路复用">多路复用</a></li>
         <li><a href="#请求优先级">请求优先级</a></li>
         <li><a href="#服务端推送">服务端推送</a></li>
+        <li><a href="#使用长连接需要考虑的点">使用长连接需要考虑的点</a></li>
       </ol>
     </li>
     <li><a href="#tcptransmission-control-protocol-传输控制协议">TCP（Transmission Control Protocol 传输控制协议）</a>
@@ -1444,6 +1453,7 @@ if (!doNotTrack) {
         <li><a href="#基于udp协议的socket">基于UDP协议的Socket</a></li>
       </ol>
     </li>
+    <li><a href="#连接池实现">连接池实现</a></li>
     <li><a href="#参考">参考</a></li>
   </ol>
 </nav>

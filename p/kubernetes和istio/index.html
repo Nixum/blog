@@ -2818,9 +2818,9 @@ KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 
 <p>Pilot负责配置下发，将配置文件转化为Istio可识别的配置项，分发给各个sidecar代理(piloy-agent)；Pilot能为sidecar提供服务发现、智能路由、流量管理、超时、重试、熔断灯功能，原理是将这些功能转化为路由规则配置，下发到各个sidecar中；</p>
 <p>pilot有两个子组件：</p>
 <ul>
-<li>pilot-discovery：是控制面与数据面的桥梁，从kubernetes中获取服务信息，如service、endpoint、pod、node的资源信息；监控istio控制面的信息，如vs、gw、dr等，将服务信息和流量规则信息转化为数据面可以理解的格式，通过xDS下发到各个sidecar中；</li>
-<li>pilot-agent：根据API-Server中配置的信息生成sidecar配置文件，负责启动、监控sidecar进程，是istio-proxy的一部分，注入到pod中；</li>
-<li>pilot-proxy：即pod中的sidecar-istio-proxy，负责流量代理，直接连接pilot-discovery，间接获取集群中各个微服务的注册情况；</li>
+<li><strong>pilot-discovery：是控制面与数据面的桥梁，从kubernetes中获取服务信息，如service、endpoint、pod、node的资源信息；监控istio控制面的信息，如vs、gw、dr等，将服务信息和流量规则信息转化为数据面可以理解的格式，通过xDS下发到各个sidecar中；</strong></li>
+<li><strong>pilot-agent：根据API-Server中配置的信息生成sidecar配置文件，负责启动、监控sidecar进程，是istio-proxy的一部分，注入到pod中；</strong></li>
+<li><strong>pilot-proxy：即pod中的istio-proxy，负责流量代理，直接连接pilot-discovery，间接获取集群中各个微服务的注册情况；istio-proxy发起的连接都是长连接，不受业务服务的影响，通过连接池维护；</strong></li>
 </ul>
 </li>
 <li>
@@ -3165,6 +3165,8 @@ curl -XPOST http://localhost:15000/logging?level=info
     >源码分析 kubernetes client-go workqueue 的实现原理</a></p>
 <p><a class="link" href="https://github.com/rfyiamcool/notes/blob/main/kubernetes_scheduler_code.md"  target="_blank" rel="noopener"
     >源码分析 kubernetes scheduler 核心调度器的实现原理</a></p>
+<p><a class="link" href="https://www.infoq.cn/article/cpxr35bwjttgncltyekz"  target="_blank" rel="noopener"
+    >gRPC 长连接在微服务业务系统中的实践</a></p>
 
 </section>
 
