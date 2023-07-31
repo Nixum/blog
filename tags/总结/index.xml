@@ -6,7 +6,7 @@
     <description>Recent content in 总结 on Nixum Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 09 May 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E6%80%BB%E7%BB%93/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 23 Jun 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E6%80%BB%E7%BB%93/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>毕业后四年工作总结 - 第一阶段结束</title>
       <link>http://nixum.cc/p/%E6%AF%95%E4%B8%9A%E5%90%8E%E5%9B%9B%E5%B9%B4%E5%B7%A5%E4%BD%9C%E6%80%BB%E7%BB%93-%E7%AC%AC%E4%B8%80%E9%98%B6%E6%AE%B5%E7%BB%93%E6%9D%9F/</link>
@@ -42,6 +42,27 @@
 对于system design，这个就比较吃工作经验了，有些场景你没遇到过，没仔细思考过，当场回答起来是比较费时费力的，效果也不太好。
 解决办法可以是上面有提到的把自己遇到业务场景转换为技术模型，平时多看点系统设计的书，一些大佬的解决方案，或者是平时自己看到的一些功能，思考一下别人是怎么实现，通过这些方式来积累了，这也是我目前做的不够好的，还需要总结出一个指导思想出来。
 对于算法，这个真的是性价比极低的投入，极低的ROI，基本都是靠量堆起来的，靠量变引起质变，反正个人能力有限，跟大佬们还是没得比，基本都是刷了忘，忘了刷，除开那些简单题，很少能达到一次性bug free的程度，但是至少，个人觉得leetcode Top 100还是要过个几遍来保持手感的。</description>
+    </item>
+    
+    <item>
+      <title>英语学习总结</title>
+      <link>http://nixum.cc/p/%E8%8B%B1%E8%AF%AD%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</link>
+      <pubDate>Fri, 23 Jun 2023 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E8%8B%B1%E8%AF%AD%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</guid>
+      <description>[TOC]
+方法论 整体参考视频：自学英语零基础到中高级！超详细学习指南！
+初学   找核心学习资料（50%），《走进美国》、《每日英语听力》《新概念一册，Leo老师》《欧陆词典》
+ 边听边看文本热身 查词学语法点 逐句反复跟读 原速跟读 遮盖原文原速听    背单词（25%）
+ 在语境下背单词    听说训练（25%）
+  发音、音标课《BBC learn all 44 engilsh sounds》 音-词-句，泛听（语音语调、抓单词、重复）
+  可利用 博树，多邻国，speak、call annie、talkface、Ainder
+  摸鱼时进行泛听，泡耳朵，平时没事多听或者跟读新概念的音频，主要是用来提升语音、语调、语速、变音，在此过程中要多注意里面的单词，语法的习惯用法
+跟读时，听一句，读一句，尽可能的模仿，直到满意
+    需要设定目标：长期目标 -&amp;gt; 中期 -&amp;gt; 短期，目的是控制学习量
+具体计划   核心学习资料-30分钟
+ 新概念英语一册，一节或半节，搭配leo视频    背单词 - 15分钟
+ 《欧路词典》《新概念一册、二册》词库    听书训练 - 15分钟</description>
     </item>
     
   </channel>
