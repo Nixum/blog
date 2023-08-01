@@ -13,7 +13,7 @@
       <pubDate>Tue, 18 Jun 2019 00:00:00 +0000</pubDate>
       
       <guid>http://nixum.cc/p/jvm/</guid>
-      <description>[TOC]
+      <description>JVM [TOC]
 JVM内存模型  JVM内存模型 
 方法区也叫永久代，持久代，非堆，不算在堆里面
 年轻代也叫新生代

@@ -409,7 +409,7 @@ Linux高清全结构图：https://makelinux.github.io/kernel/map/
       <pubDate>Tue, 18 Jun 2019 00:00:00 +0000</pubDate>
       
       <guid>http://nixum.cc/p/jvm/</guid>
-      <description>[TOC]
+      <description>JVM [TOC]
 JVM内存模型  JVM内存模型 
 方法区也叫永久代，持久代，非堆，不算在堆里面
 年轻代也叫新生代
@@ -711,8 +711,18 @@ A &amp;lt;&amp;gt;—————— B : A是集体，B是个体 （实线 + 空
       <pubDate>Tue, 12 Feb 2019 00:00:00 +0000</pubDate>
       
       <guid>http://nixum.cc/p/readme/</guid>
-      <description>为了更好的阅读体验，可前往 个人bolg、gitbook
+      <description>README  \
+为了更好的阅读体验，可前往 个人bolg、gitbook
 目录 Java  Java SE JUC Java IO JVM  Go  Go SE Go Goroutine和GC Go Context和Channel Go Sync  框架  Spring SpringMVC MyBatis Gin  数据存储  MySQL MongoDB Redis  微服务与云原生  Kubernetes 容器 etcd 与 ZooKeeper 微服务 分布式相关 RPC与异步设计 其他  消息队列  消息队列基本原理  计算机网络  网络  操作系统  操作系统  设计模式  设计模式  工具  git UML图  </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://nixum.cc/p/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/</guid>
+      <description>Table of contents  公告 英语学习总结 Gin框架原理 git Go Context和Channel Go Sync包相关 Go Goroutine和GC Go Java并发 JVM Java IO Java List Map Java SE Kubernetes和Istio MongoDB MyBatis MySQL README RPC与异步设计 Redis Spring和SpringBoot SpringMVC UML etcd和ZooKeeper 常见的业务场景解决方案整理 其他 分布式相关 容器 毕业后四年工作总结 - 第一阶段结束 微服务 操作系统 消息队列 网络 设计模式 Algorithm  SwordToOffer  src  main  java  backtracking            </description>
     </item>
     
   </channel>
