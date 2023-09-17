@@ -6,7 +6,7 @@
     <description>Recent content in Posts on Nixum Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 23 Jun 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 05 Aug 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>公告</title>
       <link>http://nixum.cc/p/%E5%85%AC%E5%91%8A/</link>
@@ -401,6 +401,21 @@ Linux高清全结构图：https://makelinux.github.io/kernel/map/
 分离硬件的相关性 分离硬件的相关性其实就是屏蔽底层硬件操作细节，形成一个独立的软件抽象层，对外提供接口，方便应用层接入。
 是内核设计的一种指导思想，所以在设计操作系统内核的时候，就可以分为
  内核接口层：向应用层提供系统接口函数； 内核功能层：系统函数的主要实现，实现进程管理、内存管理、中断管理、设备管理、驱动、文件系统等； 内核硬件层：对硬件资源的操作，比如初始化CPU、内存、中断控制、其他IO设备  混合内核 混合内核在微内核的基础上进行改进，层次分明，动态加载模块到内核，兼具宏内核和微内核的优点。</description>
+    </item>
+    
+    <item>
+      <title>理财方案收集</title>
+      <link>http://nixum.cc/p/%E7%90%86%E8%B4%A2%E6%96%B9%E6%A1%88%E6%94%B6%E9%9B%86/</link>
+      <pubDate>Sat, 05 Aug 2023 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E7%90%86%E8%B4%A2%E6%96%B9%E6%A1%88%E6%94%B6%E9%9B%86/</guid>
+      <description>初期：
+  理财软件：支付宝、微信、各个银行 app (如招商银行)、微众银行
+  活钱理财，比如余额宝、余利宝、活期，银行app里的各自xx宝、各种货币基金、微众银行的活期、活期plus，优点是随时可以转入转出，收益率大概是3%
+  定期理财，跨度在 1/3/6/12 个月
+  纯债基金，会有短期波动
+  指数基金、债券基金、黄金基金
+ 境外的指数，如美国的标普 500 、纳斯达克 100 指数、德国的 DAX 指数、越南指数 国内的指数，如中证 1000 、中证 500 、上证 50 等 黄金，黄金的 ETF 指数    </description>
     </item>
     
     <item>

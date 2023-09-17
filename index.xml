@@ -6,7 +6,7 @@
         <description>Recent content on Nixum Blog</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en-us</language>
-        <lastBuildDate>Fri, 23 Jun 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Sat, 05 Aug 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>公告</title>
         <link>http://nixum.cc/p/%E5%85%AC%E5%91%8A/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -150,7 +150,7 @@
 &lt;p&gt;Device Plugin：管理节点上的硬件设备，比如GPU&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;Worker节点作用：运行或执行用户作业&lt;/p&gt;
+&lt;p&gt;Node节点作用：运行或执行用户作业&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;kubelet：负责创建、管理各个节点上运行时的容器和Pod，这个交互依赖CRI的远程调用接口，通过Socket和CRI通信；&lt;/p&gt;
@@ -163,10 +163,10 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;Kube-Proxy：作为daemonset部署在每个节点上，负责宿主机的子网管理，用于为Pod创建代理服务，同时也能将服务暴露给外部，其原理就是在多个隔离的网络中把请求转发给正确的Pod或容器；&lt;/p&gt;
 &lt;p&gt;从API-Server获取所有service信息，创建Endpoints，转发service到Pod间的请求，默认使用iptables模式，但当service数量变多时有性能问题，1.8版本后使用IPVS模式提升性能；&lt;/p&gt;
 &lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;coreDNS：低版本的kubernetes使用kube-dns，1.12后默认使用coreDNS，用于实现域名查找功能&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;核心组件的协作流程&#34;&gt;核心组件的协作流程&lt;/h3&gt;
@@ -534,7 +534,15 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;p&gt;&lt;strong&gt;一个 Pod 只有一个 IP 地址，由Pod内容器共享，Pod 的生命周期只跟 Infra 容器一致，Infra管理共享资源&lt;/strong&gt;。&lt;/p&gt;
 &lt;p&gt;kubelet会为每个节点上创建一个基本的cbr0网桥，并为每一个Pod创建veth虚拟网络设备，绑定一个IP地址，同一个Pod中的所有容器会通过这个网络设备共享网络，从而能通过localhost相互访问彼此暴露的端口和服务。&lt;/p&gt;
 &lt;p&gt;对于initContainer命令的作用是按配置顺序最先执行，执行完之后才会执行container命令，例如，对war包所在容器使用initContainer命令，将war包复制到挂载的卷下后，再执行tomcat的container命令启动tomcat以此来启动web应用，这种先启动一个辅助容器来完成一些独立于主进程（主容器）之外的工作，称为sidecar，边车。&lt;/p&gt;
-&lt;p&gt;Pod可以理解为一个机器，容器是里面的进程，凡是调度、网络、储存、安全相关、跟namespace相关的属性，都是Pod级别的。&lt;/p&gt;
+&lt;p&gt;Pod可以理解为一个机器，容器是里面的进程，凡是调度、网络、储存、安全相关、跟namespace相关的属性，都是Pod级别的：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PID Namespace：默认不共享，但是可以调参&lt;code&gt;shareProcessNamespace=true&lt;/code&gt;打开，默认情况下，容器内的PID一致，但是PID名词空间不一致；&lt;/li&gt;
+&lt;li&gt;Network Namespace：Pod中的多个容器共享同一个IP和端口范围；&lt;/li&gt;
+&lt;li&gt;IPC Namespace：Pod中的多个容器能够使用共享内存，信号量，消息队列等IPC机制进行通信；&lt;/li&gt;
+&lt;li&gt;UTS Namespace：Pod中的多个容器共享一个主机名和域名；&lt;/li&gt;
+&lt;li&gt;Mount Namespace：Pod中的各个容器可以访问在Pod级别定义的Volumes；&lt;/li&gt;
+&lt;li&gt;User Namespace：算是比较特殊的，高版本才有，把宿主机的一个普通用户映射到容器中的root用户，这样容器进程以为自己是root并且在它所在的名称空间内有各种权限，以此控制容器的用户权限&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h3 id=&#34;关于pause容器--infra容器&#34;&gt;关于Pause容器 / Infra容器&lt;/h3&gt;
 &lt;p&gt;pause容器，也叫Infra容器，每个Pod都会自动创建的容器，但不属于用户自定义容器。因为Pod的作用，就是管理Pod内多个容器之间最高效的共享某些资源和数据，而Pod内的容器是被namespace和cgroups隔开的。Infra容器在Pod中担任Linux Namespace共享的基础，启用Pid namespace，开启init进程。Infra容器可使得Pod内的容器共享pid namespace、network namespace、ipc namespace(用于共享systemV IPC或POSIX消息队列进行通信)、uts namespace(共享主机名)、共享Pod级别的Volumes。&lt;/p&gt;
 &lt;p&gt;以network namespace为例，如果里面只有用户自己的容器，没有Infra容器这个第三方容器，只要network的owner容器退出了，Pod内的其他容器的网络就都异常了，这显然不合理。所以在同一个Pod内的其他容器通过 join namespace的方式加入到Infra container的netword namespace中，这样，Pod内的所有容器共享同一份网络资源，Pod的IP地址 = Pod第一次创建的Infra container的IP地址。&lt;/p&gt;
@@ -858,14 +866,14 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;nn&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;livenessProbe&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;httpGet&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 除此之外还有Exec、TCPSocket两种不同的probe方式&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;httpGet&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 除此之外还有Exec命令、TCPSocket两种不同的probe方式&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/healthz&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8080&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;httpHeaders&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;X-Custom-Header&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Awesome&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;initialDelaySeconds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;periodSeconds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;initialDelaySeconds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 容器启动后多久开始探测&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;periodSeconds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 探测周期&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h3 id=&#34;pod的恢复机制&#34;&gt;Pod的恢复机制&lt;/h3&gt;
@@ -3109,6 +3117,8 @@ curl -XPOST http://localhost:15000/logging?level=info
     &gt;源码分析 kubernetes scheduler 核心调度器的实现原理&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.infoq.cn/article/cpxr35bwjttgncltyekz&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;gRPC 长连接在微服务业务系统中的实践&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.hwchiu.com/k8s-network-issue.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;從網路觀點來看導入 Kubernetes 的可能痛點&lt;/a&gt;&lt;/p&gt;
 </description>
         </item>
         <item>
@@ -10743,13 +10753,28 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;a crowd of beggars：一群人乞丐&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;a short while age：不久前&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;admit doing sth：承认做某事 / sb admin that&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;ask (sb) for sth：向某人想要某些东西&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;ask sb to do sth：请求某人做某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;account for the fact that：解释事实，that后面加一个句子解释这个事实&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;as if : 好像，似乎，就像&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;a few hours earlier：几个小时前&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;a pile of：一大堆&amp;hellip;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;at five to twelve：差5分钟到12点，即11点55分&lt;/p&gt;
@@ -10780,7 +10805,19 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;as &amp;hellip; as&amp;hellip; ：像什么什么一样什么，eg：as busy as usal 像往常一样忙碌，否定是 not as(也可以用so) &amp;hellip; as &amp;hellip;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;介词 + 地方：at + 小地方，on + 大地方&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;base on：基于xxx&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;be able to do：能做某事，与 can / could 的区别：两者都表达一种普通能力，只是 was able to do，表示过去的成功事件&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;be busy doing sth：忙于做某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;be going to do sth：将来要做啥 等价于 be gonna do sth&lt;/p&gt;
@@ -10795,6 +10832,9 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;be aware of ：对什么很清楚，知道什么，意识到什么&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;be astonish at sth：对什么感到很惊讶&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;be interested in doing sth：做某事感兴趣&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -10804,10 +10844,22 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;be keen on sth/doing sth：热衷某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;begin to do sth：开始做某事&lt;/p&gt;
+&lt;p&gt;be / get upset about sth：对什么感到沮丧/不安&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;be up for sale：待售&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;get / be tired of sth / doing sth：厌倦做某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;begin to do sth：等价于begin doing sth，都是表示 开始做某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;belong to sb：属于某人&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;be confined to xxx：被困在 xxx&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;bear sth in mind：牢记这sth一点&lt;/p&gt;
@@ -10831,6 +10883,15 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;call at 等价于 visit 等价于 call on：访问&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;clear conscience（良心）：问心无愧&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;catch up with sb：追上某人 / 遇见某人&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;complain about sth：抱怨某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;drive on to sw：继续开向某处&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -10840,10 +10901,19 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;dream of doing sth：梦想做某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;don&amp;rsquo;t have to do 等价于 don&amp;rsquo;t need to do ，不必做某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;enter for：参加&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;expect sth to be done：期待mou&amp;rsquo;s&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;fail to do sth：失败做某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;far more interesting：有趣得多得多，far 这里表达远超，程度副词&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;get sth for sb：给某人拿某些东西&lt;/p&gt;
@@ -10852,25 +10922,19 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;give up doing sth：放弃做某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;have gone to：已经去了，人没回来&lt;/p&gt;
+&lt;p&gt;get a fright / give me a fright：受到惊吓 / 吓我一跳&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;have been to：已经去过，人回来了&lt;/p&gt;
+&lt;p&gt;going througth：翻阅&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;have done : 现在完成时&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;用法一：表示过去的事情对现在产生了影响，等价于 did + do/does（做过了什么，现在怎么样）&lt;/li&gt;
-&lt;li&gt;用法二：从过去持续到现在的事情，一般会加时间&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;have trouble with sth：做某事情有麻烦或困难&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;had done：过去完成时&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;用法一：过去的过去，强调的是两个过去是有关联的，不然用一般过去时即可&lt;/li&gt;
-&lt;li&gt;用法二：过去时间点A发生，对过去时间点B产生了影响&lt;/li&gt;
-&lt;li&gt;用法三：一个动作从过去A持续或重复到过去B&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;have a glimpse of sth/sb：瞥见某人 / 某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;hear / see doing sth：非全程听/看到做某事，hear / see do sth：全程都听 / 看到做某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;in this way：在路上&lt;/p&gt;
@@ -10880,6 +10944,15 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;in twenty minutes(&#39; time)：12分钟之后 / in six months：6个月后&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;intend to do sth：计划做某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;inquire about：询问&amp;hellip;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;it occurred to sb that（to do sth）&amp;hellip;：某人突然间想到&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;knock at the door：敲门&lt;/p&gt;
@@ -10897,6 +10970,9 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;laugh at sb：嘲笑某人&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;look forward to sth / doing sth：盼望做某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;make a decision：做决定&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -10909,6 +10985,15 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;move to a house in 地方 / move to 地方：搬到某个地方&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;not know the way to 地方：不知道那个地方的路&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;no sooner &amp;hellip; than &amp;hellip; ：等价于 as soon as，表示 一 &amp;hellip; 就&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;on doing sth, &amp;hellip; 等价于 as soon as，都表示 一&amp;hellip;就&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;on the last day：在最后一天&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -10919,6 +11004,9 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;one good turn deserves another：礼尚往来，好人有好报，turn这里表行为&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;once upon a time：很久以前&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;pocket money：零钱，零花钱&lt;/p&gt;
@@ -10942,6 +11030,12 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;remind sb of sth/sb：提醒某人想起某事/人&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;regretted doing sth：后悔做某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;run into serious trouble：遇到严重的困难&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;spend固定用法：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;spend on：在&amp;hellip;方面花费&lt;/li&gt;
@@ -10953,7 +11047,21 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;stand on sb&amp;rsquo;s head：倒立&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;start doing sth：开始做某事&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;set up a new world record：创建新的世界记录 / break the record：打破世界记录&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;shout at sb：带情绪的那种喊，shout to sb：使某人能听到的那种喊&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;so + adj/adv：表程度，可以是形容词或副词，&lt;/p&gt;
+&lt;p&gt;such + adj + n：表程度，但一定是形容词+名词，形容词也可以去掉&lt;/p&gt;
+&lt;p&gt;so adj/adv that &amp;hellip; 、 such + (adj) + n + that：如此&amp;hellip;以至于&amp;hellip;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;succeed in doing sth：成功做某事&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;take it away from me：从我身边抢走&lt;/p&gt;
@@ -11001,8 +11109,14 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;p&gt;up to now：到目前为止&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;use to do sth：过去常常做某事（现在不做了）&lt;/p&gt;
+&lt;p&gt;use to do sth：过去常常做某事（现在不做了），否定式为 didn&amp;rsquo;t use to do&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;区别 be use to doing：习惯做某事&lt;/li&gt;
+&lt;/ul&gt;
 &lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;语法&#34;&gt;语法&lt;/h1&gt;
+&lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;比较级，最高级，一般规则是加 er/ est，其他的&lt;/p&gt;
 &lt;ul&gt;
@@ -11030,12 +11144,56 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
+&lt;p&gt;have gone to：已经去了，人没回来&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;have been to：已经去过，人回来了&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;have / has done : 现在完成时&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用法一：表示过去的事情对现在产生了影响，等价于 did + do/does（做过了什么，现在怎么样）&lt;/li&gt;
+&lt;li&gt;用法二：从过去持续到现在的事情，一般会加时间&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;had done：过去完成时&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用法一：过去的过去，强调的是两个过去是有关联的，不然用一般过去时即可&lt;/li&gt;
+&lt;li&gt;用法二：过去时间点A发生，对过去时间点B产生了影响&lt;/li&gt;
+&lt;li&gt;用法三：一个动作从过去A持续或重复到过去B&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;will have done：将来完成时，否定：won&amp;rsquo;t have done&lt;/p&gt;
+&lt;p&gt;后面常见于接未来时间 &lt;strong&gt;by&lt;/strong&gt; next Monday、&lt;strong&gt;by&lt;/strong&gt; tomorrow&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用法一：一个动作持续或重复到将来&lt;/li&gt;
+&lt;li&gt;用法二：一个动作截止到未来某个时间前完成&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%8c%e6%88%90%e6%97%b6%e6%97%b6%e6%80%81.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%ae%8c%e6%88%90%e6%97%b6%e6%97%b6%e6%80%81.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
 &lt;p&gt;被动语句&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;am/is/are + done&lt;/li&gt;
 &lt;li&gt;was/were + done&lt;/li&gt;
 &lt;li&gt;am/is/are + being + done&lt;/li&gt;
 &lt;li&gt;have/has + been + done&lt;/li&gt;
+&lt;li&gt;had + been + done&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;
@@ -11105,6 +11263,142 @@ make(T) 返回一个类型为 T 的初始值，它只&lt;strong&gt;适用于 3 �
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;need&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;动词，含义同want：need to do sth，否定 don&amp;rsquo;t need to do sth（等价于 don&amp;rsquo;t have to do sth，不必做某事）&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;情态动词，含义同can，表不必（常出现在否定句/疑问句）：needn&amp;rsquo;t do 等价于 can’t do&lt;/p&gt;
+&lt;p&gt;needn&amp;rsquo;t have done：本不必如此，但事情已经发生了，有后悔的语言效果；要区分needn&amp;rsquo;t do，两种意思还是不太一样&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;need doing sth：被动语句，等价于 need to be done&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;并列连词&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;both A and B ：A 和 B 都&lt;/li&gt;
+&lt;li&gt;either A or B：A 或 B，就近原则，看B是不是复数，来决定后面的动词是什么&lt;/li&gt;
+&lt;li&gt;neither A nor B：既不是 A 也不是 B ，就近原则，看B是不是复数，来决定后面的动词是什么&lt;/li&gt;
+&lt;li&gt;not only &amp;hellip; but also &amp;hellip;：不仅&amp;hellip;而且&amp;hellip;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;虚拟语气：&lt;strong&gt;if + did/were, 主语 + would / should / could / might do&lt;/strong&gt;，这里的did并非表示过去，比如有 &lt;code&gt;if i were you, i wouldn&#39;t do that&lt;/code&gt;这句话是对的&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;if 从句中的 动词 与现在的事实相反&lt;/li&gt;
+&lt;li&gt;说话人认为，if 从句中 动词 发生的机率非常低，所以如果 if 从句里是否定句，那将biao&amp;rsquo;s&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;定语从句 与 同位语从句 的区别：&lt;/p&gt;
+&lt;p&gt;两者都作补充说明，但定语从句是修饰，而同位语从句是一个完整的句子补充说明一个名词，去掉连接词也是完整的，而定语从句的 that / which / who 是充当句子成分的，比如主语或宾语，不能去掉&lt;/p&gt;
+&lt;p&gt;名词性从句，从句一般充当名词，解释名词，常用的连词：that / if or whether / 常用特殊疑问词&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;宾语从句：&lt;/p&gt;
+&lt;p&gt;He asked (&lt;strong&gt;if&lt;/strong&gt; Mr. Gilbert&amp;rsquo;s operation had been successful) and the doctor told him (&lt;strong&gt;that&lt;/strong&gt; it had been).&lt;/p&gt;
+&lt;p&gt;He then asked (&lt;strong&gt;when&lt;/strong&gt; Mr. Gilbert would be allowed to go home)&amp;hellip;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;同位语从句：&lt;/p&gt;
+&lt;p&gt;No one could account for the fact &lt;strong&gt;that&lt;/strong&gt; one of the boxes was extremely heavy.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;表语从句：&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;主语从句：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;It&lt;/strong&gt; seem certain &lt;strong&gt;that their plane would crash.&lt;/strong&gt; 这里从句指代的是it&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;形容词从句，从句解释形容词，常用连接词 that / who /which / where / whose / when&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;定语从句：&lt;/p&gt;
+&lt;p&gt;Jasper White is one of those rare people (&lt;strong&gt;who&lt;/strong&gt; believe in acient myths.)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;非限定性定语从句&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;副词性从句，从句解释副词，如 状语从句；&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;时间状语从句：常用连词：when / while / as / before / after / as soon as / til / until；特殊连词：ever since / since / the moment / no sooner &amp;hellip; than &amp;hellip; / hardly &amp;hellip; when&lt;/li&gt;
+&lt;li&gt;地点状语从句&lt;/li&gt;
+&lt;li&gt;原因状语从句：常用连词：because / as / for / since&lt;/li&gt;
+&lt;li&gt;目的状语从句：常用连词：so that / in order that / that &amp;hellip;； 特殊连词：in order to / as &amp;hellip; as to&lt;/li&gt;
+&lt;li&gt;结果状语从句：常用连词：so &amp;hellip; that / such &amp;hellip; that &amp;hellip;&lt;/li&gt;
+&lt;li&gt;条件状语从句：常用连词：if / unless&lt;/li&gt;
+&lt;li&gt;让步状语从句：常用连词：although / though / even thougt / even if / no matter how / whatever / whoever&amp;hellip;&lt;/li&gt;
+&lt;li&gt;比较状语从句：as &amp;hellip; as / than&lt;/li&gt;
+&lt;li&gt;方式状语从句：as / like / as if / the way&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;分词作定语&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;done作定语&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;被动一般&lt;/p&gt;
+&lt;p&gt;The taxi is a small airplane &lt;strong&gt;called&lt;/strong&gt; a &amp;lsquo;Pilatus Porter&amp;rsquo;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;被动完成&lt;/p&gt;
+&lt;p&gt;on a &lt;strong&gt;ploughed&lt;/strong&gt; field&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;主动完成&lt;/p&gt;
+&lt;p&gt;a &lt;strong&gt;retired&lt;/strong&gt; captain = a captain who has retired&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;doing作定语&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;主动进行&lt;/p&gt;
+&lt;p&gt;the &lt;strong&gt;sleeping&lt;/strong&gt; child = the child who is sleeping.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;主动一般&lt;/p&gt;
+&lt;p&gt;I like the girl &lt;strong&gt;dancing with that guy&lt;/strong&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;分词作状语，简化状语从句&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;一般需要&lt;strong&gt;前后主语一致&lt;/strong&gt;；去掉状语从句的主语，连词可留；从句的动词变成分词；分词有两种，如果从句是主动进行或者主动一般，使用doing，如果从句是被动完成 或 被动一般，使用done；&lt;/p&gt;
+&lt;p&gt;原句：When the baby opened his eyes, he began to cry.&lt;/p&gt;
+&lt;p&gt;改成分词状语引导：Opening his eyes, the baby began to cry.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果分词要强调从句的动词发生在主句动作前，使用having done&lt;/p&gt;
+&lt;p&gt;原句：After he had completed the book, he had a holiday.&lt;/p&gt;
+&lt;p&gt;改成分词状语引导：(After) Having completed the book, he had a holiday.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果是否定的，使用 not + 分词&lt;/p&gt;
+&lt;p&gt;原句：Because i didn&amp;rsquo;t want to wake her, I left the house silently.&lt;/p&gt;
+&lt;p&gt;改成分词状语引导：Not wanting to wake her, I left the house silently.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;特殊的，be + 形容词 + 名词&lt;/p&gt;
+&lt;p&gt;原句：My girlfriend is a doctor, she knows what medicine you should take;&lt;/p&gt;
+&lt;p&gt;改成分词状语引导：（Being）a doctor, my grilfriend knows what medicine you should take.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 </description>
@@ -19011,107 +19305,6 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 	
 &lt;/figure&gt;&lt;/p&gt;
 &lt;h1 id=&#34;内存管理&#34;&gt;内存管理&lt;/h1&gt;
-&lt;h2 id=&#34;内存划分与组织&#34;&gt;内存划分与组织&lt;/h2&gt;
-&lt;h3 id=&#34;内存碎片&#34;&gt;内存碎片&lt;/h3&gt;
-&lt;p&gt;内部内存碎片：由于采用固定大小的内存分区，当一个进程不能完全使用分给它的固定内存区域时就会产生内部内存碎片，这通常难以避免；&lt;/p&gt;
-&lt;p&gt;外部内存碎片：由于某些未分配的连续内存区域太小，以至于不能满足任意进程的内存分配请求，从而不能被进程利用的内存区域；&lt;/p&gt;
-&lt;p&gt;如果只是简单的通过基址和界限寄存器，将划分的虚拟内存区域一整块直接映射到物理内存，由于虚拟内存并不会完全用完，中间会空出一小块，对应到物理内存里也是，导致内存利用率不高，内存碎片的产生，所以才有了分段、分页、段页式等的内存分配方案；&lt;/p&gt;
-&lt;p&gt;&lt;figure 
-	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%9b%b4%e6%8e%a5%e6%98%a0%e5%b0%84.png&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%9b%b4%e6%8e%a5%e6%98%a0%e5%b0%84.png&#34;
-			
-			
-			
-			loading=&#34;lazy&#34;
-			&gt;
-	&lt;/a&gt;
-	
-&lt;/figure&gt;&lt;/p&gt;
-&lt;p&gt;现在普遍使用段页式内存分配方案，将内存分为不同的段，再将每一段分成固定大小的页，通过页表机制，使得段内的页可以不必连续处于同一内存区域。&lt;/p&gt;
-&lt;h3 id=&#34;分段&#34;&gt;分段&lt;/h3&gt;
-&lt;p&gt;&lt;figure 
-	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e6%ae%b5.png&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e6%ae%b5.png&#34;
-			
-			
-			
-			loading=&#34;lazy&#34;
-			&gt;
-	&lt;/a&gt;
-	
-&lt;/figure&gt;&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;段的长度大小不一，可动态改变，需要多少分配多少，产生连续的内存空间，但不便于用一个统一的数据结构表示，容易产生内存碎片；&lt;/li&gt;
-&lt;li&gt;产生内存碎片后，如果产生多个不连续的内存片段，而新的程序无法使用它，就需要进行内存交换，内存交换需要用到磁盘，就涉及到访问速度得问题，内存交换的效率就低；&lt;/li&gt;
-&lt;li&gt;地址是二维的，一维是段号，二维是段内地址，每个段的长度不一样，且每个段内部都是从0开始编址；&lt;/li&gt;
-&lt;li&gt;在分段管理中，每个段内部是连续的内存分配，但是段与段之间是离散分配的，存在一个逻辑地址到物理地址的映射，即段表机制；&lt;/li&gt;
-&lt;li&gt;内存不足时，内存数据会写回硬盘来释放内存，由于段的长度大小不一，每段的读写时间就会不一样，导致性能抖动；&lt;/li&gt;
-&lt;li&gt;通过段表实现虚拟地址与物理地址的映射；&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;分段主要是为了程序和数据可以被划分为逻辑上独立的地址空间，有助于数据的共享和保护，比如数据共享、数据保护、动态链接等，需要程序员显式划分每个段。&lt;/p&gt;
-&lt;h3 id=&#34;分页&#34;&gt;分页&lt;/h3&gt;
-&lt;p&gt;&lt;figure 
-	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e9%a1%b5.png&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e9%a1%b5.png&#34;
-			
-			
-			
-			loading=&#34;lazy&#34;
-			&gt;
-	&lt;/a&gt;
-	
-&lt;/figure&gt;&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;页的大小固定，可以用位图表示页的分配和释放，作为主存的基本单位，分页可以使得内存分配粒度变小；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;分页的地址空间是一维的，分配的最小单位是页，页也会产生内存碎片，但是可以通过修改页表的方式，让连续的虚拟页面映射到非连续的物理页面，实现分段的效果，比如有1，2，3是空闲，4已被分配，5是空闲，可以通过映射让5接上3；&lt;/p&gt;
-&lt;p&gt;通过降低内存分配的粒度 + 页表映射，解决分段内存带来的内存碎片过大和内存置换效率低的问题。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;操作系统在对内存管理时，使用一个数据结构描述一个内存页，每个数据结构包含相邻页的指针，多个内存页形成一个链表，Linux下每页大小是4KB。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;内存不足时，内存数据会写回硬盘来释放内存（页置换算法），由于每页大小一致，每页的读写时间也会一致；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;因为程序数据存储在不同的页中，而页又离散分布在内存中，因此需要一个页表来记录映射关系，以实现页号到物理块号的映射，访问分页系统中的内存数据需要两次访问，第一次是从内存中访问页表，找到指定的物理块号，加上页的偏移量得到实际的物理地址；第二次是根据第一次中得到的物理地址访问内存取出数据；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;在完成虚拟内存和物理内存页之间的映射后，并不真的把页加载到物理内存里，而是只有在程序运行中，需要用到的对应虚拟内存页里面的指令和数据时，再加载到物理内存里；&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;因为每个进程有自己的虚拟空间地址，如果每个进程都拥有自己的页表，那数量会非常庞大，操作系统就使用多级页表解决这个问题，比如32位和页大小4KB的环境下，4GB的虚拟内存的单级页表需要占4MB，有100多万个页表项，一旦分配就要分配这么多内存，但实际上进程可能用不到这么多虚拟地址，于是采用多级页表，将单级页表进行分页，比如分为1024个一级页表，每个二级页表再分为1024个单表项，映射而成就需要4KB + 4MB内存空间，一级页表如果没被用到，二级页表就不需要创建了，所以可以省很多内存空间；&lt;/p&gt;
-&lt;p&gt;多级页表解决空间上的问题，但是虚拟地址到物理地址转换多了步骤，降低地址转换效率，利用局部性原理，在CPU芯片中，加入一个存放程序最常访问的页表项的Cache，叫TLB，又叫页表缓存、转址旁路缓存、快表，CPU芯片也会封装MMU，CPU寻址时，先查TLB，没找到再去查常规的页表。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;通过内存管理单元MMU实现虚拟内存和物理内存的映射工作，当进程访问的虚拟地址在页表中不存在时，产生缺页异常，进入系统内核空间分配物理内存，更新进程页表，最后返回用户空间，恢复进程的运行。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h3 id=&#34;段页式&#34;&gt;段页式&lt;/h3&gt;
-&lt;p&gt;将程序分为多个有逻辑意义的段，方便管理，比如地址范围为多少多少的内存区域就给硬件用，多少多少的给内核区，多少多少给应用区等，再对段内内存进行分页，划分成固定大小的页。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;段页式地址变换中要得到物理地址须经过三次内存访问：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;第一次访问段表，得到页表起始地址；&lt;/li&gt;
-&lt;li&gt;第二次访问页表，得到物理页号；&lt;/li&gt;
-&lt;li&gt;第三次将物理页号与页内位移组合，得到物理地址。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;可用软、硬件相结合的方法实现段页式地址变换，这样虽然增加了硬件成本和系统开销，但提高了内存的利用率。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h3 id=&#34;组织内存页&#34;&gt;组织内存页&lt;/h3&gt;
-&lt;p&gt;为了能高效的分配内存，需要把内存区数据结构和内存页面数据结构关联起来，组织成一个内存分割合并的数据结构。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;以2的N次方为页面数组织页面的原因：&lt;/p&gt;
-&lt;p&gt;1、内存对齐，提升CPU寻址速度
-2、内存分配时，根据需求大小快速定位至少从哪一部分开始
-3、内存分配时，并发加锁，分组可以提升效率
-4、内存分配回收时，很多计算也更简单&lt;/p&gt;
-&lt;/blockquote&gt;
 &lt;h2 id=&#34;虚拟地址&#34;&gt;虚拟地址&lt;/h2&gt;
 &lt;p&gt;由于各个应用程序由不同的公司开发，且每台计算机的内存容量都不一样，如果应用程序在运行时使用的是真实地址，将会导致各个应用程序在使用内存地址时产生冲突。为了解耦内存真实地址和应用使用的内存地址，对不同的应用程序使用的内存进行隔离和保护，引出虚拟地址概念。&lt;/p&gt;
 &lt;p&gt;虚拟地址：让每个应用程序都各自享有一个从0开始到最大地址的空间，在每个应用程序独立且私有，其他应用程序无法观察到，再由操作系统将虚拟地址映射成真实的物理地址，实现内存的使用。&lt;/p&gt;
@@ -19131,7 +19324,7 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;li&gt;每个进程有自己的页表，每个进程的虚拟内存就是相互独立的，进程也没办法访问其他进程的页表，属于私有页表，解决多进程之间地址冲突问题&lt;/li&gt;
 &lt;li&gt;页表里的页表项除了物理地址外，还有一些标记属性的比特，比如控制一个页的读写权限，标记该页是否存在，为操作系统提供更好的安全性。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3 id=&#34;所需要的硬件支持&#34;&gt;所需要的硬件支持&lt;/h3&gt;
+&lt;h3 id=&#34;所需要的最基础的硬件支持&#34;&gt;所需要的最基础的硬件支持&lt;/h3&gt;
 &lt;ul&gt;
 &lt;li&gt;一位，用于特权模式和用户模式的切换&lt;/li&gt;
 &lt;li&gt;基址寄存器：用于虚拟地址与物理地址的转换；界限寄存器：用于地址的界限检查，防止用户程序访问到不属于它的地址&lt;/li&gt;
@@ -19139,13 +19332,17 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;li&gt;修改基址/界限寄存器的特权指令&lt;/li&gt;
 &lt;li&gt;注册异常处理程序的特权指令&lt;/li&gt;
 &lt;li&gt;能够触发异常&lt;/li&gt;
+&lt;li&gt;段寄存器，比如前两位拿来表示什么类型的段，比如栈、堆、代码区，用于计算段内的偏移量，配合基址寄存器和界限寄存器，计算出虚拟地址要映射的物理地址；设置保护位实现代码段共享；&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3 id=&#34;linux中的虚拟内存空间&#34;&gt;Linux中的虚拟内存空间&lt;/h3&gt;
-&lt;p&gt;32 位机器上进程虚拟内存空间分布：&lt;/p&gt;
+&lt;h2 id=&#34;内存划分与组织&#34;&gt;内存划分与组织&lt;/h2&gt;
+&lt;h3 id=&#34;内存碎片&#34;&gt;内存碎片&lt;/h3&gt;
+&lt;p&gt;内部内存碎片：由于采用固定大小的内存分区，当一个进程不能完全使用分给它的固定内存区域时就会产生内部内存碎片，这通常难以避免；&lt;/p&gt;
+&lt;p&gt;外部内存碎片：由于某些未分配的连续内存区域太小，以至于不能满足任意进程的内存分配请求，从而不能被进程利用的内存区域；&lt;/p&gt;
+&lt;p&gt;如果只是简单的通过基址和界限寄存器，将划分的虚拟内存区域一整块直接映射到物理内存，由于虚拟内存并不会完全用完，中间会空出一小块，对应到物理内存里也是，导致内存利用率不高，内存碎片的产生，所以才有了分段、分页、段页式等的内存分配方案；&lt;/p&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e7%94%a8%e6%88%b7%e6%80%81%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e7%94%a8%e6%88%b7%e6%80%81%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%9b%b4%e6%8e%a5%e6%98%a0%e5%b0%84.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%9b%b4%e6%8e%a5%e6%98%a0%e5%b0%84.png&#34;
 			
 			
 			
@@ -19154,22 +19351,12 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 	&lt;/a&gt;
 	
 &lt;/figure&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;保留区：不可访问，数值较小的地址通常认为是不合法的地址，比如设置无效的指针为NULL，就指向这里；&lt;/li&gt;
-&lt;li&gt;代码段、数据段、BSS段：存储程序的二进制文件中的机器码，以及定义的有初始值的全局变量、静态变量放在数据段、没有初始值的放在BSS段；&lt;/li&gt;
-&lt;li&gt;堆和待分配区域：堆空间地址增长从低地址到高地址增长，申请新内存时，只需移动堆顶指针到待分配区即可，从而实现空间扩展；&lt;/li&gt;
-&lt;li&gt;文件映射和匿名映射区域：进程运行所依赖的动态链接库中的代码段、数据段和BSS段就加载在这里，mmap函数映射出来的虚拟内存地址也保存在这；&lt;/li&gt;
-&lt;li&gt;栈和待分配区域：用户程序函数运行过程所需要的局部变量，函数参数等调用信息存放在此，栈空间地址增长方向是从高到低增长；&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;64位机器上进程用户态虚拟内存空间分布类似，用低48位表示虚拟地址，高16位的128T表示内核虚拟内存空间，低16位的128T表示用户虚拟内存空间，中间16位空闲地址被称为 canonical address作为空洞，可用来扩展或者做非法访问用；&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;通过 fork() 函数创建出的子进程，它的虚拟内存空间以及相关页表相当于父进程虚拟内存空间的一份拷贝，直接从父进程中拷贝到子进程中。子进程共享父进程的虚拟内存空间，这样的子进程也就是线程了，在Linux中都是使用 &lt;code&gt;task_struct&lt;/code&gt; 来表示他们，因为对内核来说他们是一样的；&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;32位机器上内核虚拟内存空间，&lt;strong&gt;其前 896M 区域是直接映射到物理内存中的前 896M 区域中的，直接映射区中的映射关系是一比一映射。映射关系是固定的不会改变。主要存放进程的调用链&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;现在普遍使用段页式内存分配方案，将内存分为不同的段，再将每一段分成固定大小的页，通过页表机制，使得段内的页可以不必连续处于同一内存区域，只分配必要的内存，提升内存空间的利用率&lt;/strong&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;分段&#34;&gt;分段&lt;/h3&gt;
 &lt;p&gt;&lt;figure 
 	&gt;
-	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e5%86%85%e6%a0%b8%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34; &gt;
-		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e5%86%85%e6%a0%b8%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e6%ae%b5.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e6%ae%b5.png&#34;
 			
 			
 			
@@ -19178,21 +19365,89 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 	&lt;/a&gt;
 	
 &lt;/figure&gt;&lt;/p&gt;
-&lt;p&gt;直接映射区有896M，由以下几部分组成：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;前1M由系统占用，存放内核代码段、数据段、BSS段；&lt;/li&gt;
-&lt;li&gt;前16M由内核用来为DMA分配内存，称为ZONE_DMA；&lt;/li&gt;
-&lt;li&gt;16M到896M称为ZONE_NORMAL区，没有任何限制；&lt;/li&gt;
-&lt;li&gt;物理内存896M以上的部分为高端内存区ZONE_HIGHMEM，这部分会动态映射到虚拟内存内核态剩余的128M里；这128M里还会继续分：
-&lt;ul&gt;
-&lt;li&gt;有8M的内存空洞；&lt;/li&gt;
-&lt;li&gt;vmalloc动态映射区，映射剩余的物理内存；&lt;/li&gt;
-&lt;li&gt;永久映射区，允许这段虚拟地址空间与物理高端内存建立长期的映射关系；&lt;/li&gt;
-&lt;li&gt;固定映射区，在此区域的虚拟内存地址可以自由映射到物理内存的高端地址上，但是与动态映射区以及永久映射区不同的是，在固定映射区中虚拟地址是固定的，而被映射的物理地址是可以改变的；&lt;/li&gt;
-&lt;li&gt;临时映射区，比如一些缓存页临时映射，用完就回收；&lt;/li&gt;
-&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;地址是二维的，一维是段号，二维是段内偏移量，每个段的长度不一样，且每个段偏移量都是从0开始编址，通过段号找到对应的段内描述符，再通过段基地址 + 段内偏移量，最终确定物理内存地址；&lt;/li&gt;
+&lt;li&gt;在分段管理中，每个段内部是连续的内存分配，但是段与段之间是离散分配的，存在一个逻辑地址到物理地址的映射，即段表机制；通过段表实现虚拟地址与物理地址的映射；&lt;/li&gt;
+&lt;li&gt;段的长度大小不一，可动态改变，好处是需要多少分配多少，产生连续的内存空间，坏处是不便于用一个统一的数据结构表示，容易产生外部内存碎片；&lt;/li&gt;
+&lt;li&gt;产生外部内存碎片后，如果产生多个不连续的内存片段，而新的程序无法使用它，就需要进行内存交换，内存交换需要用到磁盘，就涉及到访问速度的问题，内存交换的效率就低；&lt;/li&gt;
+&lt;li&gt;内存不足时，内存数据会写回硬盘来释放内存，由于段的长度大小不一，每段的读写时间就会不一样，导致性能抖动；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;分段主要是为了程序和数据可以被划分为逻辑上独立的地址空间（比如分成代码、堆、栈这些段），有助于数据的共享和保护，比如数据共享、数据保护、动态链接等，需要程序员显式划分每个段。&lt;/p&gt;
+&lt;h3 id=&#34;分页&#34;&gt;分页&lt;/h3&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e9%a1%b5.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%86%85%e5%ad%98%e5%88%86%e9%a1%b5.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;页的大小固定，可以用位图表示页的分配和释放，作为主存的基本单位，分页可以使得内存分配粒度变小，以此来减少外部内存碎片的产生，但如果程序需要的内存不足一页，由于最小分配单位是一页，就会造成内部内存碎片的情况出现；&lt;/p&gt;
+&lt;p&gt;页会产生内存碎片，但可以通过修改页表的方式，让连续的虚拟页面映射到非连续的物理页面，实现分段的效果；比如有1，2，3是空闲，4已被分配，5是空闲，可以通过映射让5接上3；&lt;/p&gt;
 &lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;因为程序数据存储在不同的页中，而页又离散分布在内存中，因此需要一个页表来记录映射关系，页表也是存储在内存中的，通过内存管理单元MMU实现虚拟地址和物理地址的转换；&lt;/p&gt;
+&lt;p&gt;通过降低内存分配的粒度 + 页表映射，解决分段内存带来的外部内存碎片过大和内存交换效率低的问题。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;分页的地址空间是一维的，分配的最小单位是页。页内的虚拟地址按位划分为页号和页内偏移，通过页号找到对应的页表，再通过页表上的物理页号找到对应的物理页，再通过页内偏移量 + 物理页的基地址，最终确定物理内存地址；&lt;/p&gt;
+&lt;p&gt;所以，访问分页系统中的内存数据需要两次访问，第一次确定物理内存的地址，第二次根据第一次得到的物理地址访问内存取出数据；&lt;/p&gt;
+&lt;p&gt;当进程访问虚拟地址在页表中查不到时，系统会产生一个缺页异常，进入系统内核空间分配物理内存，更新进程页表，最后再返回到用户空间，恢复进程运行；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;操作系统在对内存管理时，使用一个数据结构描述一个内存页，每个数据结构包含相邻页的指针，多个内存页形成一个链表，Linux下每页大小是4KB。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;内存不足时，内存数据会写回硬盘来释放内存（页置换算法），由于每页大小一致，每页的读写时间也会一致，内存交换效率相对比较稳定；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在完成虚拟内存和物理内存页之间的映射后，并不真的把页加载到物理内存里，而是只有在程序运行中，需要用到的对应虚拟内存页里面的指令和数据时，再加载到物理内存里；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;多级页表&#34;&gt;多级页表&lt;/h4&gt;
+&lt;p&gt;因为每个进程有自己的虚拟空间地址，如果每个进程都拥有自己的页表，那数量会非常庞大，比如在32位CPU、页大小4KB的环境下，一个进程，4GB的虚拟内存的单级页表就需要100万个，每个页表需要4个字节存储，4G的虚拟内存就需要占4MB，当进程有100个，就需要分配400MB的内存来存储页表，但实际上进程一次可能用不到这么多虚拟地址，于是操作系统使用多级页表解决这个问题。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9a%e7%ba%a7%e9%a1%b5%e8%a1%a8.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/%e5%a4%9a%e7%ba%a7%e9%a1%b5%e8%a1%a8.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;多级页表，就是将单级页表进行分页，比如分为1024个一级页表，每个二级页表再分为1024个单表项（相乘就有100万个了），映射而成就需要4KB + 4MB内存空间，一级页表如果没被用到，二级页表就不需要创建了，所以可以省很多内存空间；&lt;/p&gt;
+&lt;p&gt;页表的作用就是将虚拟地址转换为物理地址，如果虚拟地址在页表中找不到对应的页表项，就会出问题，所以页表一定要覆盖全部虚拟地址；对于64位的系统，两级页表就不够用了，需要变成四级页表，以此类推成多级页表；&lt;/p&gt;
+&lt;p&gt;多级页表解决空间上的问题，但是虚拟地址到物理地址的转换就多了步骤，因为如果页表也是存在物理内存，那做虚拟地址转换时，需要先读页表所在的物理内存，得到转换后的物理地址，进而才能读到对应物理地址的值，多了一次额外的读取，降低地址转换效率，因此，需要额外的硬件来加速地址转换。&lt;/p&gt;
+&lt;p&gt;为了加速地址翻译，在CPU芯片中加入一个存放程序最常访问的页表项的Cache，叫TLB（translation lookaside buffer），又叫页表缓存、转址旁路缓存、快表，CPU芯片也会封装MMU，CPU寻址时，先查TLB，没找到再去查常规的页表，TLB会利用局部性原理，会加载相邻的地址。&lt;/p&gt;
+&lt;h3 id=&#34;段页式&#34;&gt;段页式&lt;/h3&gt;
+&lt;p&gt;将程序分为多个有逻辑意义的段，方便管理，比如地址范围为多少多少的内存区域就给硬件用，多少多少的给内核区，多少多少给应用区等，再对段内内存进行分页，划分成固定大小的页，从而更好的利用内存，减少内存碎片的产生。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;段页式地址变换中要得到物理地址须经过三次内存访问：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;第一次访问段表，得到页表起始地址；&lt;/li&gt;
+&lt;li&gt;第二次访问页表，得到物理页号；&lt;/li&gt;
+&lt;li&gt;第三次将物理页号与页内位移组合，得到物理地址。&lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;可用软、硬件相结合的方法实现段页式地址变换，这样虽然增加了硬件成本和系统开销，但提高了内存的利用率。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;组织内存页&#34;&gt;组织内存页&lt;/h3&gt;
+&lt;p&gt;为了能高效的分配内存，需要把内存区数据结构和内存页面数据结构关联起来，组织成一个内存分割合并的数据结构。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;以2的N次方为页面数组织页面的原因：&lt;/p&gt;
+&lt;p&gt;1、内存对齐，提升CPU寻址速度
+2、内存分配时，根据需求大小快速定位至少从哪一部分开始
+3、内存分配时，并发加锁，分组可以提升效率
+4、内存分配回收时，很多计算也更简单&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;h2 id=&#34;mmu&#34;&gt;MMU&lt;/h2&gt;
 &lt;p&gt;虚拟地址转换为物理地址通过MMU(内存管理单元)实现，只能在保护模式或者长模式下开启。&lt;/p&gt;
 &lt;p&gt;MMU使用分页模型，即把虚拟地址空间和物理地址空间都分成同等大小的页，按照虚拟页和物理页进行转换，一个虚拟地址对应一个物理地址，一个虚拟页对应一个物理页，页大小一经配置就是固定，通过内存中存储的一个地址关系转换表（页表）实现转换。&lt;/p&gt;
@@ -19201,6 +19456,37 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/blockquote&gt;
 &lt;p&gt;分层的结构是根据页大小决定。&lt;/p&gt;
 &lt;p&gt;为了解决进程通过MMU访问内存比直接访问内存多了一次内存访问，导致性能下降的问题，引入TLB快表进行加速。TLB可以简单理解成页表的高速缓存，保存了最高频次被访问的页表项，一般由硬件实现，速度极快。&lt;/p&gt;
+&lt;h2 id=&#34;空闲空间管理&#34;&gt;空闲空间管理&lt;/h2&gt;
+&lt;h3 id=&#34;基本机制&#34;&gt;基本机制&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;分割与合并：根据请求的大小进行空闲空间分割，回收时，对被回收空间相邻的空间进行检查，如果也是空闲空间，则进行合并；&lt;/li&gt;
+&lt;li&gt;追踪已分配空间的大小：分配空间时，除了分配请求的大小，还会分配一块头部，记录已分配空间的元数据信息，方便查找和释放；&lt;/li&gt;
+&lt;li&gt;嵌入空闲列表：在空闲空间本身建立空闲空间列表，实现对空闲空间的管理；&lt;/li&gt;
+&lt;li&gt;内存增长：当当前的空闲空间内存耗尽，向操作系统申请更大的空闲空间&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;内存分配基本策略&#34;&gt;内存分配基本策略&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;最优匹配：遍历整个空闲列表，找到和请求大小一样或更大的空闲块，返回这组候选者中最小的一块，缺点是需要遍历查找，性能不高；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;最差匹配：尝试找到最大的空闲块，根据请求大小进行分割，然后把剩余的空闲块加入空闲列表，缺点是同样需要遍历，且更容易产生内存碎片，一般不使用这种策略；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;首次匹配：找到第一块满足请求的块，分配完后剩余空闲块加入空闲列表，这种方法不需要遍历所有空闲块，但不稳定，有时候会产生很多内存碎片，如何管理空闲列表的顺序就变得重要，一般是基于地址排序，通过保持空闲块按内存地址有序，方便合并，减少内存碎片；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;下次匹配：不同于首次匹配每次都从列表头部开始遍历查找，下次匹配是从上次结束查找的位置开始查找，避免对列表开头进行频繁分割；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;分离空闲列表：如果某个程序经常申请一种或几种大小相同的内存空间，就用一个独立的列表，只管理这样大小的对象，其他大小的对象则交给更通用的内存分配程序，像Go的内存分配就从mspan、mcache、mcentral里分配内存；&lt;/p&gt;
+&lt;p&gt;这种分配方式的好处是不会产生多余的内存碎片，也没有复杂的列表查找过程，内存的分配和释放都很快；&lt;/p&gt;
+&lt;p&gt;难点在于初始时要分配多少空间给这种空闲列表，常见的做法是先分配一小块内存，不够用时，向通用内存申请一块总量是页大小和对象大小的公倍数内存厚块，当内存厚快的对象引用计数为0时，则进行回收；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;伙伴系统：空闲空间首先从概念上被当成 2^N 的大空间，当有一个内存分配请求时，空间空间系统被递归一分为二，直到刚好满足请求的大小，这种分配策略只允许分配2的整数次幂大小的空闲块，因此会有内部内存碎片，好处是当内存被释放时，可以递归检查，并且检查相邻空间，如果是则合二为一，直到合并整个内存区域，或者某一块的伙伴还不能被释放；&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h2 id=&#34;页置换算法&#34;&gt;页置换算法&lt;/h2&gt;
 &lt;p&gt;由于程序是分多次装入内存的，运行到一定时间，在地址映射过程中如果发现要访问的页不存在内存中，会发生缺页中断，此时操作系统必须在内存里选择一个页把它移除内存，为即将调入的页面让出空间，而选择淘汰哪一页就需要页面置换算法。&lt;/p&gt;
 &lt;p&gt;缺页中断与一般中断的区别：&lt;/p&gt;
@@ -19249,7 +19535,7 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;p&gt;堆内存和栈内存是基于对象生命周期、分配、回收的时机进行划分&lt;/p&gt;
 &lt;p&gt;栈内存：一般是一种后进先出（LIFO）的数据结构，对连续内存的线性分配，用来存储函数调用时的局部变量、函数参数和返回值等临时性的数据简单高效，方便回收。&lt;/p&gt;
 &lt;p&gt;堆内存：动态分配的内存，用来存储程序运行时动态创建的对象、数组等数据，比如指针依赖，全局变量。由于堆内存的大小和生命周期都比较不确定，所以操作系统需要动态地管理它。在使用堆内存时，程序需要显式地申请内存空间，并在不再需要时释放它，否则就可能导致内存泄漏等问题。&lt;/p&gt;
-&lt;h2 id=&#34;内存分配&#34;&gt;内存分配&lt;/h2&gt;
+&lt;h2 id=&#34;内存分配与回收&#34;&gt;内存分配与回收&lt;/h2&gt;
 &lt;h3 id=&#34;系统调用函数&#34;&gt;系统调用函数&lt;/h3&gt;
 &lt;ul&gt;
 &lt;li&gt;brk()：从用户态的堆中分配内存，只是将堆顶指针向高地址移动，获得新内存；c语言的malloc函数，当用户分配的内存小于128KB时会调用此方法；在free释放内存时，并不会把内存归还给操作系统，而是缓存在malloc的内存池，待下次使用；&lt;/li&gt;
@@ -19302,6 +19588,59 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;p&gt;如果数据被访问了一次，就将数据加入到活跃LRU链表中，只解决了预读失效的问题，缓存污染的问题还没解决，比如，当批量读取数据的时候，由于这些数据被访问了一次，被加入到活跃LRU链表中，导致之前缓存在活跃链表中的热点数据被淘汰了，但是这些新加入的数据，只被读取了一次，之后很长一段时间都不会被访问了，就导致这个活跃LRU链表一点都不活跃，就是被污染了，当之前的热点数据被再次访问的时候，又会产生大量的磁盘IO，导致性能下降。&lt;/p&gt;
 &lt;p&gt;Linux的解决方式：提高加入到活跃LRU链表的门槛，保证活跃链表中的热点数据不会被轻易替换掉。比如内存页第一次访问的时候还是加入非活跃链表，第二次被访问的时候，才将页从非活跃链表中升级到活跃链表中。&lt;/p&gt;
 &lt;h2 id=&#34;linux内存管理&#34;&gt;Linux内存管理&lt;/h2&gt;
+&lt;h3 id=&#34;虚拟内存空间&#34;&gt;虚拟内存空间&lt;/h3&gt;
+&lt;p&gt;32 位机器上进程虚拟内存空间分布：&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e7%94%a8%e6%88%b7%e6%80%81%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e7%94%a8%e6%88%b7%e6%80%81%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;保留区：不可访问，数值较小的地址通常认为是不合法的地址，比如设置无效的指针为NULL，就指向这里；&lt;/li&gt;
+&lt;li&gt;代码段、数据段、BSS段：存储程序的二进制文件中的机器码，以及定义的有初始值的全局变量、静态变量放在数据段、没有初始值的放在BSS段；&lt;/li&gt;
+&lt;li&gt;堆和待分配区域：堆空间地址增长从低地址到高地址增长，申请新内存时，只需移动堆顶指针到待分配区即可，从而实现空间扩展；&lt;/li&gt;
+&lt;li&gt;文件映射和匿名映射区域：进程运行所依赖的动态链接库中的代码段、数据段和BSS段就加载在这里，mmap函数映射出来的虚拟内存地址也保存在这；&lt;/li&gt;
+&lt;li&gt;栈和待分配区域：用户程序函数运行过程所需要的局部变量，函数参数等调用信息存放在此，栈空间地址增长方向是从高到低增长；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;64位机器上进程用户态虚拟内存空间分布类似，用低48位表示虚拟地址，高16位的128T表示内核虚拟内存空间，低16位的128T表示用户虚拟内存空间，中间16位空闲地址被称为 canonical address作为空洞，可用来扩展或者做非法访问用；&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;通过 fork() 函数创建出的子进程，它的虚拟内存空间以及相关页表相当于父进程虚拟内存空间的一份拷贝，直接从父进程中拷贝到子进程中。子进程共享父进程的虚拟内存空间，这样的子进程也就是线程了，在Linux中都是使用 &lt;code&gt;task_struct&lt;/code&gt; 来表示他们，因为对内核来说他们是一样的；&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;32位机器上内核虚拟内存空间，&lt;strong&gt;其前 896M 区域是直接映射到物理内存中的前 896M 区域中的，直接映射区中的映射关系是一比一映射。映射关系是固定的不会改变。主要存放进程的调用链&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;figure 
+	&gt;
+	&lt;a href=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e5%86%85%e6%a0%b8%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34; &gt;
+		&lt;img src=&#34;https://github.com/Nixum/Java-Note/raw/master/picture/32%e4%bd%8d%e6%9c%ba%e5%99%a8%e4%b8%8aLinux%e8%bf%9b%e7%a8%8b%e5%86%85%e6%a0%b8%e8%99%9a%e6%8b%9f%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e5%88%86%e5%b8%83.png&#34;
+			
+			
+			
+			loading=&#34;lazy&#34;
+			&gt;
+	&lt;/a&gt;
+	
+&lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;直接映射区有896M，由以下几部分组成：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;前1M由系统占用，存放内核代码段、数据段、BSS段；&lt;/li&gt;
+&lt;li&gt;前16M由内核用来为DMA分配内存，称为ZONE_DMA；&lt;/li&gt;
+&lt;li&gt;16M到896M称为ZONE_NORMAL区，没有任何限制；&lt;/li&gt;
+&lt;li&gt;物理内存896M以上的部分为高端内存区ZONE_HIGHMEM，这部分会动态映射到虚拟内存内核态剩余的128M里；这128M里还会继续分：
+&lt;ul&gt;
+&lt;li&gt;有8M的内存空洞；&lt;/li&gt;
+&lt;li&gt;vmalloc动态映射区，映射剩余的物理内存；&lt;/li&gt;
+&lt;li&gt;永久映射区，允许这段虚拟地址空间与物理高端内存建立长期的映射关系；&lt;/li&gt;
+&lt;li&gt;固定映射区，在此区域的虚拟内存地址可以自由映射到物理内存的高端地址上，但是与动态映射区以及永久映射区不同的是，在固定映射区中虚拟地址是固定的，而被映射的物理地址是可以改变的；&lt;/li&gt;
+&lt;li&gt;临时映射区，比如一些缓存页临时映射，用完就回收；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h3 id=&#34;伙伴系统&#34;&gt;伙伴系统&lt;/h3&gt;
 &lt;p&gt;Linux使用分页机制管理物理内存系统，把物理内存分成4KB大小的页面进行管理，通过一个Page结构体表示一个物理内存页面。&lt;/p&gt;
 &lt;p&gt;因为硬件的限制，Linux把属性相同的物理内存页面，归结到一个区，不同的硬件，划分不同的区。在32位的x86平台中，将0~16MB划分位DMA区，高内存区适用于要访问的物理地址空间大于虚拟地址空间，Linux内核不能建立直接映射的情况。物理内存中剩余的页面就划分位常规内存区，64位的x86平台则没有高内存区。&lt;/p&gt;
@@ -19689,7 +20028,7 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
 &lt;/figure&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2 id=&#34;空闲空间管理&#34;&gt;空闲空间管理&lt;/h2&gt;
+&lt;h2 id=&#34;空闲空间管理-1&#34;&gt;空闲空间管理&lt;/h2&gt;
 &lt;p&gt;进行空闲空间管理，主要是为了快速找到可用空间，进行写入。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -19926,6 +20265,37 @@ C、寄存器的长度升级后，其低位可以兼容上一代的寄存器&lt;
     &gt;Unix的五种IO模型介绍&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://xiaolincoding.com/os/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;小林coding - 图解系统&lt;/a&gt;，写得通俗易懂，适合快餐式阅读，强推！&lt;/p&gt;
+</description>
+        </item>
+        <item>
+        <title>理财方案收集</title>
+        <link>http://nixum.cc/p/%E7%90%86%E8%B4%A2%E6%96%B9%E6%A1%88%E6%94%B6%E9%9B%86/</link>
+        <pubDate>Sat, 05 Aug 2023 00:00:00 +0000</pubDate>
+        
+        <guid>http://nixum.cc/p/%E7%90%86%E8%B4%A2%E6%96%B9%E6%A1%88%E6%94%B6%E9%9B%86/</guid>
+        <description>&lt;p&gt;初期：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;理财软件：支付宝、微信、各个银行 app (如招商银行)、微众银行&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;活钱理财，比如余额宝、余利宝、活期，银行app里的各自xx宝、各种货币基金、微众银行的活期、活期plus，优点是随时可以转入转出，收益率大概是3%&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;定期理财，跨度在 1/3/6/12 个月&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;纯债基金，会有短期波动&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;指数基金、债券基金、黄金基金&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;境外的指数，如美国的标普 500 、纳斯达克 100 指数、德国的 DAX 指数、越南指数&lt;/li&gt;
+&lt;li&gt;国内的指数，如中证 1000 、中证 500 、上证 50 等&lt;/li&gt;
+&lt;li&gt;黄金，黄金的 ETF 指数&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 </description>
         </item>
         <item>

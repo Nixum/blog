@@ -208,7 +208,7 @@ if (!doNotTrack) {
 <p>Device Plugin：管理节点上的硬件设备，比如GPU</p>
 </li>
 <li>
-<p>Worker节点作用：运行或执行用户作业</p>
+<p>Node节点作用：运行或执行用户作业</p>
 <ul>
 <li>
 <p>kubelet：负责创建、管理各个节点上运行时的容器和Pod，这个交互依赖CRI的远程调用接口，通过Socket和CRI通信；</p>
@@ -221,10 +221,10 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p>Kube-Proxy：作为daemonset部署在每个节点上，负责宿主机的子网管理，用于为Pod创建代理服务，同时也能将服务暴露给外部，其原理就是在多个隔离的网络中把请求转发给正确的Pod或容器；</p>
 <p>从API-Server获取所有service信息，创建Endpoints，转发service到Pod间的请求，默认使用iptables模式，但当service数量变多时有性能问题，1.8版本后使用IPVS模式提升性能；</p>
 </li>
-</ul>
-</li>
 <li>
 <p>coreDNS：低版本的kubernetes使用kube-dns，1.12后默认使用coreDNS，用于实现域名查找功能</p>
+</li>
+</ul>
 </li>
 </ul>
 <h3 id="核心组件的协作流程">核心组件的协作流程</h3>
@@ -592,7 +592,15 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <p><strong>一个 Pod 只有一个 IP 地址，由Pod内容器共享，Pod 的生命周期只跟 Infra 容器一致，Infra管理共享资源</strong>。</p>
 <p>kubelet会为每个节点上创建一个基本的cbr0网桥，并为每一个Pod创建veth虚拟网络设备，绑定一个IP地址，同一个Pod中的所有容器会通过这个网络设备共享网络，从而能通过localhost相互访问彼此暴露的端口和服务。</p>
 <p>对于initContainer命令的作用是按配置顺序最先执行，执行完之后才会执行container命令，例如，对war包所在容器使用initContainer命令，将war包复制到挂载的卷下后，再执行tomcat的container命令启动tomcat以此来启动web应用，这种先启动一个辅助容器来完成一些独立于主进程（主容器）之外的工作，称为sidecar，边车。</p>
-<p>Pod可以理解为一个机器，容器是里面的进程，凡是调度、网络、储存、安全相关、跟namespace相关的属性，都是Pod级别的。</p>
+<p>Pod可以理解为一个机器，容器是里面的进程，凡是调度、网络、储存、安全相关、跟namespace相关的属性，都是Pod级别的：</p>
+<ul>
+<li>PID Namespace：默认不共享，但是可以调参<code>shareProcessNamespace=true</code>打开，默认情况下，容器内的PID一致，但是PID名词空间不一致；</li>
+<li>Network Namespace：Pod中的多个容器共享同一个IP和端口范围；</li>
+<li>IPC Namespace：Pod中的多个容器能够使用共享内存，信号量，消息队列等IPC机制进行通信；</li>
+<li>UTS Namespace：Pod中的多个容器共享一个主机名和域名；</li>
+<li>Mount Namespace：Pod中的各个容器可以访问在Pod级别定义的Volumes；</li>
+<li>User Namespace：算是比较特殊的，高版本才有，把宿主机的一个普通用户映射到容器中的root用户，这样容器进程以为自己是root并且在它所在的名称空间内有各种权限，以此控制容器的用户权限</li>
+</ul>
 <h3 id="关于pause容器--infra容器">关于Pause容器 / Infra容器</h3>
 <p>pause容器，也叫Infra容器，每个Pod都会自动创建的容器，但不属于用户自定义容器。因为Pod的作用，就是管理Pod内多个容器之间最高效的共享某些资源和数据，而Pod内的容器是被namespace和cgroups隔开的。Infra容器在Pod中担任Linux Namespace共享的基础，启用Pid namespace，开启init进程。Infra容器可使得Pod内的容器共享pid namespace、network namespace、ipc namespace(用于共享systemV IPC或POSIX消息队列进行通信)、uts namespace(共享主机名)、共享Pod级别的Volumes。</p>
 <p>以network namespace为例，如果里面只有用户自己的容器，没有Infra容器这个第三方容器，只要network的owner容器退出了，Pod内的其他容器的网络就都异常了，这显然不合理。所以在同一个Pod内的其他容器通过 join namespace的方式加入到Infra container的netword namespace中，这样，Pod内的所有容器共享同一份网络资源，Pod的IP地址 = Pod第一次创建的Infra container的IP地址。</p>
@@ -916,14 +924,14 @@ kubelet 的另一个重要功能，则是调用网络插件和存储插件为容
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nn">...</span><span class="w">
 </span><span class="w"></span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
-</span><span class="w">     </span><span class="nt">httpGet</span><span class="p">:</span><span class="w"> </span><span class="c"># 除此之外还有Exec、TCPSocket两种不同的probe方式</span><span class="w">
+</span><span class="w">     </span><span class="nt">httpGet</span><span class="p">:</span><span class="w"> </span><span class="c"># 除此之外还有Exec命令、TCPSocket两种不同的probe方式</span><span class="w">
 </span><span class="w">       </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/healthz</span><span class="w">
 </span><span class="w">       </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
 </span><span class="w">       </span><span class="nt">httpHeaders</span><span class="p">:</span><span class="w">
 </span><span class="w">       </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">X-Custom-Header</span><span class="w">
 </span><span class="w">         </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">Awesome</span><span class="w">
-</span><span class="w">       </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
-</span><span class="w">       </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span><span class="w">       </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="c"># 容器启动后多久开始探测</span><span class="w">
+</span><span class="w">       </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="c"># 探测周期</span><span class="w">
 </span></code></pre></td></tr></table>
 </div>
 </div><h3 id="pod的恢复机制">Pod的恢复机制</h3>
@@ -3167,6 +3175,8 @@ curl -XPOST http://localhost:15000/logging?level=info
     >源码分析 kubernetes scheduler 核心调度器的实现原理</a></p>
 <p><a class="link" href="https://www.infoq.cn/article/cpxr35bwjttgncltyekz"  target="_blank" rel="noopener"
     >gRPC 长连接在微服务业务系统中的实践</a></p>
+<p><a class="link" href="https://www.hwchiu.com/k8s-network-issue.html"  target="_blank" rel="noopener"
+    >從網路觀點來看導入 Kubernetes 的可能痛點</a></p>
 
 </section>
 
