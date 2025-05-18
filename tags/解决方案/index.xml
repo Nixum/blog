@@ -6,7 +6,20 @@
     <description>Recent content in 解决方案 on Nixum Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 14 May 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 01 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/tags/%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>系统设计</title>
+      <link>http://nixum.cc/p/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/</link>
+      <pubDate>Tue, 01 Oct 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/</guid>
+      <description>[TOC]
+思考的维度  明确需求，确定核心功能和非核心功能 容量估算，比如用户数，qps，读写比例，DB存储容量，网络带宽 架构设计，确定有什么模块，服务的定位和功能，DB，缓存，MQ，与外部服务的交互，API与通信协议， 针对某一个模块深入思考细节 扩展设计，需要考虑可靠性、可扩展性、安全性、成本等方面  参考 https://github.com/ByteByteGoHq/system-design-101
+https://github.com/checkcheckzz/system-design-interview
+https://github.com/ashishps1/awesome-system-design-resources
+https://github.com/donnemartin/system-design-primer/blob/master/README-zh-Hans.md</description>
+    </item>
+    
     <item>
       <title>常见的业务场景解决方案整理</title>
       <link>http://nixum.cc/p/%E5%B8%B8%E8%A7%81%E7%9A%84%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E6%95%B4%E7%90%86/</link>

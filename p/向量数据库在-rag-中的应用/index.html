@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en-us">
     <head><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='简单介绍向量数据库以及在RAG中的应用，附带小demo'><title>向量数据库与RAG</title>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='简单介绍向量数据库以及在RAG中的应用，附带小demo'><title>向量数据库在 RAG 中的应用</title>
 
-<link rel='canonical' href='http://nixum.cc/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8Erag/'>
+<link rel='canonical' href='http://nixum.cc/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8-rag-%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/'>
 
-<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='向量数据库与RAG'>
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='向量数据库在 RAG 中的应用'>
 <meta property='og:description' content='简单介绍向量数据库以及在RAG中的应用，附带小demo'>
-<meta property='og:url' content='http://nixum.cc/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8Erag/'>
+<meta property='og:url' content='http://nixum.cc/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8-rag-%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/'>
 <meta property='og:site_name' content='Nixum Blog'>
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='向量数据库' /><meta property='article:tag' content='RAG' /><meta property='article:tag' content='AI' /><meta property='article:published_time' content='2024-06-22T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2024-06-22T00:00:00&#43;00:00'/>
-<meta name="twitter:title" content="向量数据库与RAG">
+<meta name="twitter:title" content="向量数据库在 RAG 中的应用">
 <meta name="twitter:description" content="简单介绍向量数据库以及在RAG中的应用，附带小demo">
     <link rel="shortcut icon" href="/img/favicon.ico" />
 
@@ -103,7 +103,7 @@ if (!doNotTrack) {
     
 
     <h2 class="article-title">
-        <a href="/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8Erag/">向量数据库与RAG</a>
+        <a href="/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8-rag-%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/">向量数据库在 RAG 中的应用</a>
     </h2>
 
     
@@ -154,18 +154,14 @@ if (!doNotTrack) {
 <h2 id="一从场景出发">一、从场景出发</h2>
 <p>虽然目前ChatGPT等大语言模型已经十分好用了，无论是响应速度和回答的质量，基本上能解决我们日常一些问题和简单的工作，但不可否认，目前的大语言模型仍然有很多缺陷，比如：</p>
 <ul>
-<li>回答幻觉：大语言模型回答问题的本质上是基于其已有的训练数据，<strong>预测</strong>(推理)出哪些可能的文字作为答案，所以难免会出现张冠李戴、胡说八道的情况，最典型的比如你在 ChatGPT-3.5问他”西红柿炒钢丝球要怎么做“，它会十分正经的回答，又或者问一些代码问题，它有时也会回答出一些不存在的语法或者方法的调用，产生不正确的答案；</li>
+<li>回答幻觉：大语言模型回答问题的本质上是基于其已有的训练数据，<strong>预测</strong>(概率计算)出哪些可能的文字作为答案，所以难免会出现张冠李戴、胡说八道的情况，特别是在大模型不擅长的领域，最典型的比如你在 ChatGPT-3.5问他“西红柿炒钢丝球要怎么做“，它会十分正经的回答出让人哭笑不得的答案，又或者问一些代码问题，它有时会回答出一些不存在的语法或者方法的调用，产生不正确的答案；</li>
 <li>上下文限制：比如Chat GPT-3.5 Turbo的上下文限制是4K tokens（大概3000字），GPT-4 Turbo的上下文限制是128K tokens（大概9.6万字），这意味着其最多只能处理（记忆）这么多字的内容，且随着处理的上下文越多，响应速度也会越来越慢，成本越来越高；</li>
 <li>训练的语料更新不够及时：比如Chat GPT-3.5 Turbo训练的语料库只记录了2021年9月之前的数据，GPT-4 Turbo则是2023年4月，这意味着在此之后产生的数据模型是不知道的；</li>
-<li>在某些领域还不够专业：比如某些垂直领域的训练语料往往比较封闭，不对外公开，GPT训练的语料不够丰富准确，进而回答的质量就会大打折扣；</li>
+<li>在某些领域还不够专业：比如某些垂直领域的训练语料往往比较封闭，不对外公开，又或者是企业的内部数据，处于对数据的安全性的考量，并不希望上传到第三方平台进行训练，大模型无法获取这些数据进行训练，此时只依赖通用大模型的能力，回答的质量就会大打折扣；</li>
 </ul>
-<p>为了优化上述问题，提升大语言模型回答的质量，其中一种解决方案就是在提问时向大语言模型提供更加准确且核心的资料供其参考，这个时候向量数据库就派上用场了。</p>
-<h2 id="二向量数据库的作用">二、向量数据库的作用</h2>
-<p>向量数据库并不是什么特别新的技术，早在机器学习场景中就有广泛应用，比如人脸识别、以图搜图、音乐软件的听音识曲等都有应用到，只是最近被大模型带火了一把。</p>
-<blockquote>
-<p>向量数据库用专门的数据结构和算法来处理向量之间的相似性计算和查询。 通过构建索引结构，向量数据库可以快速找到最相似的向量，以满足各种应用场景中的查询需求。</p>
-</blockquote>
-<p>上面是AWS上找到的对向量数据库的描述，以此代入到提升大模型回答质量的场景下，向量数据库的核心作用，就是将用户准备好的强相关性的<strong>文本转成向量，存储到数据库中</strong>，当用户输入问题时，也将问题转成向量，然后在数据库中进行<strong>相似性搜索</strong>，找到相关联的向量和上下文，进而找到对应的文本，最后跟着问题一起发送给大语言模型，从而达到减少模型的计算量，提升理解能力和响应速度，降低成本，绕过tokens限制，提高回答质量的目的，这种方式也被称为RAG（Retrieval Augmented Generation）检索增强生成。</p>
+<p>为了优化上述问题，提升大语言模型回答的质量，其中一种解决方案就是外挂一个知识库，在提问时先根据问题，检索出相关更加准确且核心的资料，指导大语言模型生成更加准确的答案。</p>
+<h2 id="二rag的基本原理">二、RAG的基本原理</h2>
+<p>下面是一个最简单的RAG基本流程：</p>
 <p><figure 
 	>
 	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/rag-flow.png" >
@@ -178,7 +174,50 @@ if (!doNotTrack) {
 	</a>
 	
 </figure></p>
-<h2 id="三与传统数据库功能上的差异">三、与传统数据库功能上的差异</h2>
+<h3 id="阶段一">阶段一</h3>
+<ol>
+<li>结构化数据并进行文本分割：将大量文档（可能是pdf、word、文本、网页等等）进行结构化，统一数据结构，分割成多个文本块；</li>
+<li>将文本块向量化：使用Embedding模型，将分割后的文本块转换成向量，通过向量将不同文本块进行关联；</li>
+<li>存入向量数据库：将向量以及对应的文本块（元数据），选择合适的算法，存入到向量数据库中；</li>
+</ol>
+<h3 id="阶段二">阶段二</h3>
+<ol>
+<li>用户提问向量化：用户提出问题时，使用阶段一中相同的Embedding模型，将问题转成向量；</li>
+<li>检索召回：将问题转换后的向量，在向量数据库中进行检索，选择合适的算法，计算向量间的距离，得到与之相似的向量以及对应的文本块；</li>
+<li>提示词增强：将用户的问题以及上一步检索到的文本数据，进行提示词优化，构建出最终的提示词，发送给大模型，由大模型生成最终的结果并返回；</li>
+</ol>
+<h3 id="核心步骤">核心步骤</h3>
+<p>在上面整个流程中，有几个核心步骤决定了最终RAG的质量，包括后续的优化，也是从这三个步骤入手：</p>
+<ol>
+<li>
+<p>文本的处理和索引：如何更好的把文本数据存起来</p>
+<p>文本分割的目的，一个是因为解决大模型输入长度的限制，另一个在保持语义连贯的同时，减少嵌入内容的噪声，更加有效的检索到用户问题更相关的文本资料；</p>
+<p>怎么分割是一个取舍的问题，如果分块太大，可能会导致分块包含了太多信息，降低检索的准确性，分块太小又可能会丢失必要的上下文信息，导致最终生成的回答缺乏连贯性或深度；</p>
+<p>分割后的文本最终需要被检索，因此需要将文本转换为向量，这也依赖embedding模型的能力，而embedding模型的训练语料、参数的数量级，决定了转换出来的向量的关联性，最终影响文本间的语义相似度；</p>
+</li>
+<li>
+<p>检索召回：如何在大量的文本数据中，找到一小部分有用的数据，给到模型参考</p>
+<p>向量和对应文本的存储和检索，又依赖向量数据库，需要解决不同数量级维度的向量要如何存储，如何才能快速计算其相似度，快速精确的定位和检索数据的问题，甚至为了进一步提升检索的质量，除了需要提供相似度检索，还需要提供传统的关键字检索等；</p>
+<p>单纯的向量召回存在精度问题，因此可能需要多种召回的方式，比如分词召回、图谱召回等，对于召回出来的数据，可能还需要进一步的处理，进行各种去重、合并和重排等，检索出到更加精确的数据；</p>
+</li>
+<li>
+<p>内容的生成：如何让大模型生成更有用的答案</p>
+<p>通过提示词优化，指导大模型如何利用这些检索出来的数据，如何排除无关的数据，如何更好的回答问题等；</p>
+</li>
+</ol>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/RAG%e6%a0%b8%e5%bf%83%e6%b5%81%e7%a8%8b.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/RAG%e6%a0%b8%e5%bf%83%e6%b5%81%e7%a8%8b.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<h2 id="三为什么要使用向量数据库">三、为什么要使用向量数据库</h2>
 <p>或许你可能会疑惑，如果用传统数据库或者es等搜索出关联的信息，再跟着问题一起发送给大语言模型，也能实现类似的效果，这样行不行？答案当然是可以，但它不是最优的，出来的效果也并不好，原因在于传统数据库的搜索功能都是基于关键字搜索，只能匹配出对应的文本，语义上的联系其实非常弱。</p>
 <p>传统数据库都是基于B+树或者分词+倒排索引的方式进行关键字匹配和排序，得到最终结果，例如，通过传统数据库搜索”布偶猫“，只能匹配得到带有”布偶猫“这个关键字相关的结果，无法得到”银渐层“、”蓝猫“等结果，因为他们是不同的词，传统数据库无法识别他们的语义关系。</p>
 <p><figure 
@@ -206,13 +245,18 @@ if (!doNotTrack) {
 	</a>
 	
 </figure></p>
+<p>向量数据库并不是什么特别新的技术，早在机器学习场景中就有广泛应用，比如人脸识别、以图搜图、音乐软件的听音识曲等都有应用到，只是最近被大模型带火了一把。</p>
+<blockquote>
+<p>向量数据库用专门的数据结构和算法来处理向量之间的相似性计算和查询。 通过构建索引结构，向量数据库可以快速找到最相似的向量，以满足各种应用场景中的查询需求。</p>
+</blockquote>
+<p>上面是AWS上找到的对向量数据库的描述，在RAG的场景下，向量数据库的核心作用，就是将用户准备好的强相关性的文本转成向量，存储到数据库中，当用户输入问题时，也将问题转成向量，然后在数据库中进行<strong>相似性搜索</strong>，找到相关联的向量和上下文，进而找到对应的文本，最后跟着问题一起发送给大语言模型，从而达到减少模型的计算量，提升理解能力和响应速度，降低成本，绕过tokens限制，提高回答质量的目的。</p>
 <h2 id="四向量数据库的核心要点">四、向量数据库的核心要点</h2>
 <ul>
 <li>将事物根据特征转换为不同维度的向量的过程，就叫做<strong>vector embedding向量嵌入：</strong></li>
 <li>通过计算多个向量之间的距离来判断它们的相似度，就叫做<strong>similarity search相似性搜索；</strong></li>
 </ul>
 <p>这两个步骤，都决定着搜索质量的好坏。</p>
-<h3 id="41-向量嵌入">4.1 向量嵌入</h3>
+<h3 id="文本分割与向量嵌入">文本分割与向量嵌入</h3>
 <p>以大语言模型对话的场景来说，涉及的语料就是大量的文本了，而文本包含的特征可以是词汇、语法、语义、情感、情绪、主题、上下文等等，这些特征太多了，可能需要几百上千个特征才能区分出一段文本表达的含义，很难进行人为的标注，因此需要有一种自动化的方式来提取这些特征，这就可以通过 vector embedding来实现。</p>
 <p>这一步其实并不属于向量数据库的功能，更像是数据入库前的前置操作，向量数据库本事只提供存储向量和搜索的功能。</p>
 <p>现在常用的大语言模型，基本都提供了embedding接口，供用户把文本转换为向量，比如 OpenAI的text-embedding-ada-002模型可以把文本分解成1536维的向量，网易的bce-embedding-base_v1模型，可以把文本分解为768维的向量等等，具体排名可以参考<a class="link" href="https://huggingface.co/spaces/mteb/leaderboard"  target="_blank" rel="noopener"
@@ -228,7 +272,7 @@ if (!doNotTrack) {
 <li>第 5 层：使用大语言模型分割，使用适合的prompt指导大语言模型推理分割。</li>
 </ul>
 <p>简单来说，我们更倾向于把上下文关联性强的文本合一起分割，得到的整体效果最好，下面的demo，就是按第4层的分割方式，可以参考一下。</p>
-<h3 id="42-相似性搜索">4.2 相似性搜索</h3>
+<h3 id="相似性搜索">相似性搜索</h3>
 <p>具体可以看这个<a class="link" href="https://www.bilibili.com/video/BV11a4y1c7SW"  target="_blank" rel="noopener"
     >视频</a>，有上下两集，讲得非常容易理解，这里仅作简单归纳。</p>
 <p>现在我们已经将文本转换为向量存储在向量数据库中，如果想要在海量的数据里找到某个相似的向量，计算量会非常大，因此需要一种高效的算法来解决这个问题，类比到传统数据库，就是通过B+树建立索引进行查找，本质都是减少查询范围，从而快速找到结果。</p>
@@ -315,7 +359,7 @@ if (!doNotTrack) {
 </ul>
 <p>可以理解为反向哈希，以往我们都期望往哈希表里添加数据，都期望减少哈希碰撞的次数，即桶上的数据越少越好，这样方便我们快速找到对应的value，但是在向量搜索中，因为是为了找到相似的向量，所以我们期望哈希碰撞的次数尽可能的高，这样相似的向量都会落在一个桶上。</p>
 <p>这些算法本身就在查询速度、查询质量、内存开销上进行取舍，做出一个权衡。</p>
-<h3 id="43-相似性度量">4.3 相似性度量</h3>
+<h3 id="相似性度量">相似性度量</h3>
 <p>判断两个向量是否相似，其实就是计算出两个向量间的距离，根据距离来判断他们的相似度，常见的有三种相似度算法：</p>
 <ul>
 <li>欧几里得距离：</li>
@@ -333,6 +377,9 @@ if (!doNotTrack) {
 	</a>
 	
 </figure></p>
+<blockquote>
+<p>欧几里得距离算法的优点是可以反映向量的绝对距离，适用于需要考虑向量长度的相似性计算。例如推荐系统中，需要根据用户的历史行为来推荐相似的商品，这时就需要考虑用户的历史行为的数量，而不仅仅是用户的历史行为的相似度。</p>
+</blockquote>
 <ul>
 <li>余弦相似度：</li>
 </ul>
@@ -349,6 +396,9 @@ if (!doNotTrack) {
 	</a>
 	
 </figure></p>
+<blockquote>
+<p>余弦相似度对向量的长度不敏感，只关注向量的方向，因此适用于高维向量的相似性计算。例如语义搜索和文档分类。</p>
+</blockquote>
 <ul>
 <li>点积相似度：</li>
 </ul>
@@ -365,8 +415,11 @@ if (!doNotTrack) {
 	</a>
 	
 </figure></p>
-<p>都是纯数学的直接代入公式即可得出结果，计算出一个数值，然后跟我们设定的相似度阈值做比较，小于该阈值说明非常相似，大于阈值说明不相似。</p>
-<h3 id="44-过滤">4.4 过滤</h3>
+<blockquote>
+<p>点积相似度算法的优点在于它简单易懂，计算速度快，并且兼顾了向量的长度和方向。它适用于许多实际场景，例如图像识别、语义搜索和文档分类等。但点积相似度算法对向量的长度敏感，因此在计算高维向量的相似性时可能会出现问题。</p>
+</blockquote>
+<p>都是纯数学的直接代入公式即可得出结果，计算出一个数值，然后跟我们设定的相似度阈值做比较，小于该阈值说明非常相似，大于阈值说明不相似，每一种相似性测量算法都有其优点和缺点，需要开发者根据自己的数据特征和业务场景来选择。</p>
+<h3 id="过滤">过滤</h3>
 <p>向量数据库也具备传统数据库那种可以根据部分业务字段进行过滤，之后再进行相似性查询，这些字段构成的就称为元数据，所以向量数据库通常需要维护两个索引，一个是向量索引，另一个是元数据索引，两者相结合从而快速找到需要的数据。</p>
 <h2 id="五常见的向量数据库">五、常见的向量数据库</h2>
 <table>
@@ -428,7 +481,7 @@ if (!doNotTrack) {
 </tr>
 </tbody>
 </table>
-<h2 id="六rag-demo">六、RAG demo</h2>
+<h2 id="六rag-实战">六、RAG 实战</h2>
 <p>强烈建议可以看<a class="link" href="https://python.langchain.com/v0.2/docs/introduction/"  target="_blank" rel="noopener"
     >langchain的官方文档</a>，写得非常详细且清晰，demo也很容易跑起来，而且也可以在他们的官方文档上体验一下相似性搜索。</p>
 <p>这里也基于langchain框架，使用chroma作为向量数据库，使用ollama管理的本地大模型llama2-chinese（也用它作为vector embedding），文本预处理使用<a class="link" href="https://baoyu.io/translations/rag/5-levels-of-text-splitting"  target="_blank" rel="noopener"
@@ -688,7 +741,56 @@ if (!doNotTrack) {
 <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s2">&#34;answer&#34;</span><span class="p">])</span>
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="七其他参考">七、其他参考</h2>
+</div><h2 id="七rag的局限性">七、RAG的局限性</h2>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/RAG%e7%9a%84%e5%9b%9b%e4%b8%aa%e6%9f%a5%e8%af%a2%e7%ba%a7%e5%88%ab.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/RAG%e7%9a%84%e5%9b%9b%e4%b8%aa%e6%9f%a5%e8%af%a2%e7%ba%a7%e5%88%ab.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<p>用户的任何问题可以大致分为四类：</p>
+<ul>
+<li>
+<p>显性事实查询：</p>
+<p>最简单查询，可以直接从提供的数据中检索到明确的事实信息，无需复杂的推理和思考，难点在于检索的准确性和高效性。</p>
+<p>比如问”某门店上个月的营业额是多少？“这种问题，可以直接从数据源中获取；</p>
+</li>
+<li>
+<p>隐性事实查询：</p>
+<p>隐性事实并不会在原始数据中显现，推导隐性事实的信息可能会分散在多个段落或数据表中，需要进行关联、少量的推理和逻辑判断得出。</p>
+<p>比如问”查询过去一年营收增长率最高的门店是哪一家？“，此时就需要向LLM提供过去一年所有门店的营业额，帮助LLM计算每个门店的增长率，最后得出结论</p>
+</li>
+<li>
+<p>可解释性推理查询：</p>
+<p>可解释性推理，是指无法从显性事实和隐性事实中获取，需要综合多方数据进行较为复杂的推理、归纳和总结的问题，并且推理过程具备业务可解释性。</p>
+<p>比如问”过去一年，某地区门店营业额收入下滑5%的原因是什么？“这种问题无法从数据源中直接获取，但可以通过其他方式进行推理，比如告诉LLM 总营收由什么部分组成，让LLM直接从这些部分进行推断，最终得出结论；</p>
+</li>
+<li>
+<p>隐性推理查询：</p>
+<p>隐性推理查询，是指难以通过事先约定的业务规则或决策逻辑进行判断，而必须从外部数据中进行观察和分析，最终推理出结论。</p>
+<p>比如问”预测某地区未来三个月内可能关闭的门店，并说明原因“，这种问题，除了需要给LLM提供各门店的经营数据，还需要LLM结合外部数据如市场调研报告、新闻报道、政策信息等，进行深度分析和推理才能得出结论；</p>
+</li>
+</ul>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/RAG%e5%9b%9b%e4%b8%aa%e6%9f%a5%e8%af%a2%e7%ba%a7%e5%88%ab%e5%af%b9%e5%ba%94%e7%9a%84%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/RAG%e5%9b%9b%e4%b8%aa%e6%9f%a5%e8%af%a2%e7%ba%a7%e5%88%ab%e5%af%b9%e5%ba%94%e7%9a%84%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<p>可以看到，RAG还是有其局限性，最基础的RAG流程虽然实现简单，但大部分情况下只能解决显性事实查询和部分隐性事实查询，RAG的发展，从Naive RAG，到Advanced RAG，再到Module RAG，都是在尽量优化这些问题，但对于用户来说，大多数有价值的问题都属于可解释性推理和隐性推理查询，对于这些需要推理查询的问题，RAG就无法解决了，只能依靠其他更复杂和更有针对性的解决方案；</p>
+<h2 id="八参考">八、参考</h2>
 <p><a class="link" href="https://www.bilibili.com/video/BV1JF4m177Wd"  target="_blank" rel="noopener"
     >RAG + 向量数据库科普</a></p>
 <p><a class="link" href="https://juejin.cn/post/7250794190120353847"  target="_blank" rel="noopener"
@@ -707,6 +809,8 @@ if (!doNotTrack) {
     >chatgpt原理1</a></p>
 <p><a class="link" href="https://brightliao.com/2023/04/25/chatgpt-a-technical-summary/"  target="_blank" rel="noopener"
     >chatgpt原理2</a></p>
+<p><a class="link" href="https://arxiv.org/html/2409.14924v1"  target="_blank" rel="noopener"
+    >Retrieval Augmented Generation (RAG) and Beyond: A Comprehensive Survey on How to Make your LLMs use External Data More Wisely</a></p>
 
 </section>
 
@@ -823,7 +927,7 @@ if (!doNotTrack) {
         
             2020 - 
         
-        2024 Nixum Blog
+        2025 Nixum Blog
     </section>
     
     <section class="powerby">
@@ -944,19 +1048,26 @@ if (!doNotTrack) {
     <li>
       <ol>
         <li><a href="#一从场景出发">一、从场景出发</a></li>
-        <li><a href="#二向量数据库的作用">二、向量数据库的作用</a></li>
-        <li><a href="#三与传统数据库功能上的差异">三、与传统数据库功能上的差异</a></li>
+        <li><a href="#二rag的基本原理">二、RAG的基本原理</a>
+          <ol>
+            <li><a href="#阶段一">阶段一</a></li>
+            <li><a href="#阶段二">阶段二</a></li>
+            <li><a href="#核心步骤">核心步骤</a></li>
+          </ol>
+        </li>
+        <li><a href="#三为什么要使用向量数据库">三、为什么要使用向量数据库</a></li>
         <li><a href="#四向量数据库的核心要点">四、向量数据库的核心要点</a>
           <ol>
-            <li><a href="#41-向量嵌入">4.1 向量嵌入</a></li>
-            <li><a href="#42-相似性搜索">4.2 相似性搜索</a></li>
-            <li><a href="#43-相似性度量">4.3 相似性度量</a></li>
-            <li><a href="#44-过滤">4.4 过滤</a></li>
+            <li><a href="#文本分割与向量嵌入">文本分割与向量嵌入</a></li>
+            <li><a href="#相似性搜索">相似性搜索</a></li>
+            <li><a href="#相似性度量">相似性度量</a></li>
+            <li><a href="#过滤">过滤</a></li>
           </ol>
         </li>
         <li><a href="#五常见的向量数据库">五、常见的向量数据库</a></li>
-        <li><a href="#六rag-demo">六、RAG demo</a></li>
-        <li><a href="#七其他参考">七、其他参考</a></li>
+        <li><a href="#六rag-实战">六、RAG 实战</a></li>
+        <li><a href="#七rag的局限性">七、RAG的局限性</a></li>
+        <li><a href="#八参考">八、参考</a></li>
       </ol>
     </li>
   </ol>
@@ -975,6 +1086,10 @@ if (!doNotTrack) {
         
             <a href="/tags/javase/" class="font_size_2">
                 JavaSE
+            </a>
+        
+            <a href="/tags/%E4%B8%9A%E5%8A%A1/" class="font_size_2">
+                业务
             </a>
         
             <a href="/tags/%E6%80%BB%E7%BB%93/" class="font_size_2">
@@ -997,8 +1112,16 @@ if (!doNotTrack) {
                 数据库优化
             </a>
         
+            <a href="/tags/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" class="font_size_2">
+                系统设计
+            </a>
+        
             <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
                 索引
+            </a>
+        
+            <a href="/tags/%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" class="font_size_2">
+                解决方案
             </a>
         
             <a href="/tags/ai/" class="font_size_1">
@@ -1155,18 +1278,6 @@ if (!doNotTrack) {
         
             <a href="/tags/spring-security/" class="font_size_1">
                 Spring Security
-            </a>
-        
-            <a href="/tags/springboot/" class="font_size_1">
-                SpringBoot
-            </a>
-        
-            <a href="/tags/springmvc/" class="font_size_1">
-                SpringMVC
-            </a>
-        
-            <a href="/tags/tcp/" class="font_size_1">
-                TCP
             </a>
         
     </div>
