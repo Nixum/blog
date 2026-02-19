@@ -8,6 +8,21 @@
     <language>en-us</language>
     <lastBuildDate>Thu, 01 May 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://nixum.cc/categories/ai/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>AI基础概念整理</title>
+      <link>http://nixum.cc/p/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E6%95%B4%E7%90%86/</link>
+      <pubDate>Thu, 01 May 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://nixum.cc/p/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E6%95%B4%E7%90%86/</guid>
+      <description>基础概念 1. 模型的参数  
+参数是什么？
+ 大模型就像一个超级复杂的“公式 + 神经网络大脑”。 里面有无数个可以调整的“小旋钮”，每个旋钮的数值就是一个“参数”。 每个参数都是一个数字（通常是 16 或 32 位浮点数），它们本身是没有任何含义的。 “70B 参数模型” = 有 700 亿个这样的数字参与计算。  这些参数本质上就是“模型记住的东西”和“模型如何变换信息的方式”。
+参数是怎么来的？
+参数是训练出来的，不是人为写的，训练的时候只知道输入和输出，通过训练后得到参数。
+ 
+ 一开始参数是随机的 → 模型啥都不会。 通过“预测下一个词/下一个 token”这个任务，不断修正参数。 训练规模越大、数据越丰富，模型越“聪明”。 我们常说模型开源，开源的就是训练后的参数，训练过程一般是不开源的。  2. Token  Token 也叫词元，是模型眼中“最小的语义单位”，是模型处理文本的基本粒度。不是严格意义的“字”或“词”，而是由 tokenizer 定义的一种切分方式。  &amp;ldquo;Hello&amp;rdquo; → 可能是一个 token；&amp;ldquo;incredible&amp;rdquo; → 可能被拆成 &amp;quot;in&amp;quot;, &amp;quot;cred&amp;quot;, &amp;quot;ible&amp;quot; 三个 token； 有的模型：一字一 token：“你”“好”“吗”；有的模型会把常用词合并，例如“人工智能”可能是 1~2 个 token。   Tokenizer：把文本切分成 token，再将 token 映射成 id，方便在后续的处理时，把 id 再映射成向量。因为模型只能处理数字，所以需要先将文本转换成数字。 Token 的类型：  prompt_tokens：输入的 token completion_tokens：输出的 token total_tokens：总 token context：上下文，包含了输入和输出 和 历史对话 KV 缓存：是模型内部的机制（自回归生成时的优化技术），作用于单次对话的生成阶段。  比如：在对话里输入 1000 个 token，LLM 需要对这 1000 个 token 一次性建模，计算注意力，产生很多 KV，这些 KV 会被缓存，生成第一个 token 时，LLM 只需要对新生成的 token 做计算，再利用上一轮缓存的结果进行重新的计算即可，无需重新重头计算对话里的 1001 个 token。   提示词缓存：是 推理服务层面的优化，不属于 LLM 的内部机制，缓存的是输入 prompt 的处理结果，作用于跨请求的优化，取决于 API 提供方的实现。  比如：第一次对话输入 800(system_prompt) + 200(user_prompt) token，LLM 回答 100 (assistant_prompt) token，第二次对话输入 800(system_prompt) + 200(user_prompt) + 100 (assistant_prompt) token + 50 (user_prompt) token ，此时会缓存 800 + 200 个 token     Prompt 的类型：  system_prompt：系统提示词，通常只会有一个，不是必需的，但有助于设定 assistant 的整体行为，帮助模型了解用户的需求，并根据这些需求提供相应的响应 user_prompt：用户提示词，用户输入的内容 assistant_prompt：LLM 回答的提示词，可以携带工具的调用信息    3.</description>
+    </item>
+    
+    <item>
       <title>向量数据库在 RAG 中的应用</title>
       <link>http://nixum.cc/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8-rag-%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/</link>
       <pubDate>Sat, 22 Jun 2024 00:00:00 +0000</pubDate>
@@ -38,21 +53,6 @@ https://www.bilibili.com/video/BV1CpAnebEpJ/?spm_id_from=333.1387.upload.video_c
 单纯的向量召回存在精度问题，因此可能需要多种召回的方式，比如分词召回、图谱召回等，对于召回出来的数据，可能还需要进一步的处理，进行各种去重、合并和重排等，检索出到更加精确的数据；
   内容的生成：如何让大模型生成更有用的答案
 通过提示词优化，指导大模型如何利用这些检索出来的数据，如何排除无关的数据，如何更好的回答问题等；</description>
-    </item>
-    
-    <item>
-      <title>AI基础概念整理</title>
-      <link>http://nixum.cc/p/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E6%95%B4%E7%90%86/</link>
-      <pubDate>Thu, 01 May 2025 00:00:00 +0000</pubDate>
-      
-      <guid>http://nixum.cc/p/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E6%95%B4%E7%90%86/</guid>
-      <description>基础概念 1. 模型的参数  
-参数是什么？
- 大模型就像一个超级复杂的“公式 + 神经网络大脑”。 里面有无数个可以调整的“小旋钮”，每个旋钮的数值就是一个“参数”。 每个参数都是一个数字（通常是 16 或 32 位浮点数），它们本身是没有任何含义的。 “70B 参数模型” = 有 700 亿个这样的数字参与计算。  这些参数本质上就是“模型记住的东西”和“模型如何变换信息的方式”。
-参数是怎么来的？
-参数是训练出来的，不是人为写的，训练的时候只知道输入和输出，通过训练后得到参数。
- 
- 一开始参数是随机的 → 模型啥都不会。 通过“预测下一个词/下一个 token”这个任务，不断修正参数。 训练规模越大、数据越丰富，模型越“聪明”。 我们常说模型开源，开源的就是训练后的参数，训练过程一般是不开源的。  2. Token  Token 也叫词元，是模型眼中“最小的语义单位”，是模型处理文本的基本粒度。不是严格意义的“字”或“词”，而是由 tokenizer 定义的一种切分方式。  &amp;ldquo;Hello&amp;rdquo; → 可能是一个 token；&amp;ldquo;incredible&amp;rdquo; → 可能被拆成 &amp;quot;in&amp;quot;, &amp;quot;cred&amp;quot;, &amp;quot;ible&amp;quot; 三个 token； 有的模型：一字一 token：“你”“好”“吗”；有的模型会把常用词合并，例如“人工智能”可能是 1~2 个 token。   Tokenizer：把文本切分成 token，再将 token 映射成 id，方便在后续的处理时，把 id 再映射成向量。因为模型只能处理数字，所以需要先将文本转换成数字。 Token 的类型：  prompt_tokens：输入的 token completion_tokens：输出的 token total_tokens：总 token context：上下文，包含了输入和输出 和 历史对话 KV 缓存：是模型内部的机制（自回归生成时的优化技术），作用于单次对话的生成阶段。  比如：在对话里输入 1000 个 token，LLM 需要对这 1000 个 token 一次性建模，计算注意力，产生很多 KV，这些 KV 会被缓存，生成第一个 token 时，LLM 只需要对新生成的 token 做计算，再利用上一轮缓存的结果进行重新的计算即可，无需重新重头计算对话里的 1001 个 token。   提示词缓存：是 推理服务层面的优化，不属于 LLM 的内部机制，缓存的是输入 prompt 的处理结果，作用于跨请求的优化，取决于 API 提供方的实现。  比如：第一次对话输入 800(system_prompt) + 200(user_prompt) token，LLM 回答 100 (assistant_prompt) token，第二次对话输入 800(system_prompt) + 200(user_prompt) + 100 (assistant_prompt) token + 50 (user_prompt) token ，此时会缓存 800 + 200 个 token     Prompt 的类型：  system_prompt：系统提示词，通常只会有一个，不是必需的，但有助于设定 assistant 的整体行为，帮助模型了解用户的需求，并根据这些需求提供相应的响应 user_prompt：用户提示词，用户输入的内容 assistant_prompt：LLM 回答的提示词，可以携带工具的调用信息    3.</description>
     </item>
     
   </channel>
