@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='记录常见的AI基础概念以及一些工程方案'><title>AI基础概念整理</title>
+
+<link rel='canonical' href='http://nixum.cc/p/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E6%95%B4%E7%90%86/'>
+
+<link rel="stylesheet" href="/scss/style.min.92530ae6146419b2553c7da1866a1ac352d4c1a4d2f985110524bd60c6094d8c.css"><meta property='og:title' content='AI基础概念整理'>
+<meta property='og:description' content='记录常见的AI基础概念以及一些工程方案'>
+<meta property='og:url' content='http://nixum.cc/p/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E6%95%B4%E7%90%86/'>
+<meta property='og:site_name' content='Nixum Blog'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='AI基础概念' /><meta property='article:tag' content='上下文工程' /><meta property='article:tag' content='大模型LLM' /><meta property='article:published_time' content='2025-05-01T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2025-05-01T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="AI基础概念整理">
+<meta name="twitter:description" content="记录常见的AI基础概念以及一些工程方案">
+    <link rel="shortcut icon" href="/img/favicon.ico" />
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2D1N64V8VB"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-2D1N64V8VB', { 'anonymize_ip': false });
+}
+</script>
+
+    </head>
+    <body class="
+    article-page has-toc
+">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex 
+    
+        extended
+    
+">
+    
+        <div id="article-toolbar">
+            <a href="/" class="back-home">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="15 6 9 12 15 18" />
+</svg>
+
+
+
+                <span>Back</span>
+            </a>
+
+
+
+
+
+
+
+
+
+        </div>
+    
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/ai/" >
+                AI
+            </a>
+        
+            <a href="/categories/%E5%B7%A5%E7%A8%8B/" >
+                工程
+            </a>
+        
+    </header>
+    
+
+    <h2 class="article-title">
+        <a href="/p/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E6%95%B4%E7%90%86/">AI基础概念整理</a>
+    </h2>
+
+    
+    <h3 class="article-subtitle">
+        记录常见的AI基础概念以及一些工程方案
+    </h3>
+    
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">May 01, 2025</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    9 minute read
+                </time>
+            </div>
+        
+    </footer>
+    
+</div>
+</header>
+
+    <section class="article-content">
+    <h1 id="基础概念">基础概念</h1>
+<h2 id="1-模型的参数">1. 模型的参数</h2>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/%e7%a5%9e%e7%bb%8f%e7%bd%91%e7%bb%9c.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/%e7%a5%9e%e7%bb%8f%e7%bd%91%e7%bb%9c.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<p><strong>参数是什么？</strong></p>
+<ul>
+<li>大模型就像一个超级复杂的“公式 + 神经网络大脑”。</li>
+<li>里面有无数个可以调整的“小旋钮”，每个旋钮的数值就是一个“参数”。</li>
+<li>每个参数都是一个数字（通常是 16 或 32 位浮点数），它们本身是没有任何含义的。</li>
+<li>“70B 参数模型” = 有 700 亿个这样的数字参与计算。</li>
+</ul>
+<p>这些参数本质上就是“模型记住的东西”和“模型如何变换信息的方式”。</p>
+<p><strong>参数是怎么来的？</strong></p>
+<p>参数是<strong>训练</strong>出来的，不是人为写的，训练的时候只知道输入和输出，通过训练后得到参数。</p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/LLM%e8%ae%ad%e7%bb%83.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/LLM%e8%ae%ad%e7%bb%83.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<ul>
+<li>一开始参数是随机的 → 模型啥都不会。</li>
+<li>通过“预测下一个词/下一个 token”这个任务，不断修正参数。</li>
+<li>训练规模越大、数据越丰富，模型越“聪明”。</li>
+<li>我们常说模型开源，开源的就是训练后的参数，训练过程一般是不开源的。</li>
+</ul>
+<h2 id="2-token">2. Token</h2>
+<ul>
+<li><strong>Token</strong> 也叫词元，是模型眼中“最小的语义单位”，是模型处理文本的基本粒度。不是严格意义的“字”或“词”，而是由 tokenizer 定义的一种切分方式。
+<ul>
+<li>&ldquo;Hello&rdquo; → 可能是一个 token；&ldquo;incredible&rdquo; → 可能被拆成 <code>&quot;in&quot;</code>, <code>&quot;cred&quot;</code>, <code>&quot;ible&quot;</code> 三个 token；</li>
+<li>有的模型：一字一 token：“你”“好”“吗”；有的模型会把常用词合并，例如“人工智能”可能是 1~2 个 token。</li>
+</ul>
+</li>
+<li><strong>Tokenizer</strong>：把文本切分成 token，再将 token 映射成 id，方便在后续的处理时，把 id 再映射成向量。因为模型只能处理数字，所以需要先将文本转换成数字。</li>
+<li><strong>Token 的类型</strong>：
+<ul>
+<li>prompt_tokens：输入的 token</li>
+<li>completion_tokens：输出的 token</li>
+<li>total_tokens：总 token</li>
+<li>context：上下文，包含了输入和输出 和 历史对话</li>
+<li>KV 缓存：是模型内部的机制（自回归生成时的优化技术），作用于单次对话的生成阶段。
+<ul>
+<li>比如：在对话里输入 1000 个 token，LLM 需要对这 1000 个 token 一次性建模，计算注意力，产生很多 KV，这些 KV 会被缓存，生成第一个 token 时，LLM 只需要对新生成的 token 做计算，再利用上一轮缓存的结果进行重新的计算即可，无需重新重头计算对话里的 1001 个 token。</li>
+</ul>
+</li>
+<li>提示词缓存：是 推理服务层面的优化，不属于 LLM 的内部机制，缓存的是输入 prompt 的处理结果，作用于跨请求的优化，取决于 API 提供方的实现。
+<ul>
+<li>比如：第一次对话输入 800(system_prompt) + 200(user_prompt)  token，LLM 回答 100 (assistant_prompt) token，第二次对话输入 800(system_prompt) + 200(user_prompt) +  100 (assistant_prompt) token + 50 (user_prompt) token ，此时会缓存 800 + 200 个 token</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Prompt</strong> <strong>的类型</strong>：
+<ul>
+<li>system_prompt：系统提示词，通常只会有一个，不是必需的，但有助于设定 <code>assistant</code> 的整体行为，帮助模型了解用户的需求，并根据这些需求提供相应的响应</li>
+<li>user_prompt：用户提示词，用户输入的内容</li>
+<li>assistant_prompt：LLM 回答的提示词，可以携带工具的调用信息</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-词嵌入-embedding">3. 词嵌入 Embedding</h2>
+<p><strong>Embedding 是什么</strong></p>
+<ul>
+<li>将文本转换为一组坐标，也称向量，本质上是一个一维数组，维度表示数组的长度，维度越大，对事物的描述越具体，计算也会越耗时。</li>
+</ul>
+<p><strong>为什么需要 Embedding</strong></p>
+<ul>
+<li>因为计算机擅长做“向量间距离/相似度”的运算，但不擅长直接理解“自然语言”的语义。通过将两个事物（如文本）转换成向量， 计算他们的距离，从而判断他们是否语义相似</li>
+</ul>
+<p><strong>区分 LLM 里的 Embedding 和 RAG 里的 Embedding</strong></p>
+<ul>
+<li>大模型对话的场景里，用户输入的文字，经过 token 拆分，再将 token 映射成 id，因为 id 本身没有含义，无法进行计算，需要再将 id 映射成 向量（这一步也是 Embedding），从而理解用户输入，作为后续模型的推理使用。
+<ul>
+<li>这一步跟用户无关，是 LLM 的行为，属于模型内部的机制。</li>
+</ul>
+</li>
+<li>RAG 场景里，RAG 本身是一套机制，作为 LLM 外挂的知识库进行补充，本身跟 LLM 没有任何关系，是一种独立的方案，只是 RAG 会使用 Embedding 这种能力，将用户的输入转换为向量，在向量数据库里进行语义搜索，搜索出相关的资料贴到上下文里，帮助 LLM 进行更好的回答。
+<ul>
+<li>
+<p>RAG 本质上只是一种搜索的能力，跟使用关键字搜索是等价的，都是搜索不同的实现方式，主要是解决关键字搜索没有语义相关性的问题。</p>
+</li>
+<li>
+<p>RAG 是可以使用跟对话模型不同的模型进行 Embedding，处理外挂的知识库的。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="4-处理流程">4. 处理流程</h2>
+<p>对话时，大模型是逐个 token 地生成答案的：</p>
+<ol>
+<li>用户输入先被 tokenizer 切成 token，并根据<strong>词表</strong>映射为 token id 序列。</li>
+<li>这些 id 通过模型内部的 <strong>embedding矩阵</strong> 层变成向量序列，输入到 Transformer 神经网络里计算。</li>
+<li>模型根据当前所有上下文，在<strong>词表</strong>的所有 token 上算出一个概率分布，然后挑出一个作为“下一个 token id”。</li>
+<li>把这个新 id 加到上下文里，再重新喂给模型，继续算下一个 token。</li>
+<li>如此循环，直到生成结束。</li>
+<li>最后把所有生成的 token id 再映射回具体的 token，并拼成自然语言文本，就是我们看到的最终答案。</li>
+</ol>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/LLM%e5%a4%84%e7%90%86%e6%b5%81%e7%a8%8b.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/LLM%e5%a4%84%e7%90%86%e6%b5%81%e7%a8%8b.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<h2 id="5-moe-机制mixture-of-experts混合专家">5. MoE 机制（Mixture of Experts，混合专家）</h2>
+<ul>
+<li>传统大模型里，每次生成答案都是所有参数一起参运算，参数越大，算力和成本也会跟着变高，甚至无法承受</li>
+<li>有了 MoE 机制后，模型内部会分为多个“专家子网络” + 一个“调度员”，调度员会先根据用户的问题进行分类判断，然后把这个问题分配给少数几个最擅长的专家，每次只激活其中的一部分参数，使得计算成本变低</li>
+<li>因为每次只用少数专家，你可以放心地堆更多专家（也就是总参数更多），这样模型的“总体知识容量”更大，能覆盖更多领域，但单次推理算力依然可控。</li>
+<li>不同专家可以在训练中，慢慢学会擅长不同类型的数据/任务，比如 有的更擅长数学推理、有的更擅长代码、有的更擅长日常对话或文学写作</li>
+<li>MoE 解决的是“如何把模型做得更大、更强但算力还扛得住”的问题</li>
+</ul>
+<h2 id="6-蒸馏">6. 蒸馏</h2>
+<ul>
+<li>可以简单分为数据蒸馏和模型蒸馏</li>
+<li>数据蒸馏：因为原始数据可能又多又杂，因此可以先用模型 或 人 对原始数据进行筛选、改写、打更细致的标，浓缩成更精炼、更有效的训练集，或者是通过模型生成大量“带解释、带推理过程”的样本，生成更多小而精的数据集</li>
+<li>模型蒸馏：如果只用大模型，效果虽然很好，但是部署成本高、推理慢、很难在手机、iot 设备上普及，如果直接训练一个小模型，虽然训练简单、部署便宜，但性能通常明显不如大模型，也很难达到大模型的水平，而模型蒸馏，就是用大模型对数据进行蒸馏，生成更多带有 CoT 题解的数据集用于小模型的训练，从而得到一个更小、更快、计算和部署成本低，但性能尽量接近大模型的小模型</li>
+<li>模型蒸馏解决的是“如何把这种强能力复制到更小、更便宜的模型里”</li>
+</ul>
+<h2 id="7-模型耗时">7. 模型耗时</h2>
+<p><strong>参数大小对质量和速度的影响</strong></p>
+<ul>
+<li>质量方面：
+<ul>
+<li>大参数模型：
+<ul>
+<li>语言表达更自然，风格更多样；</li>
+<li>更善于理解复杂指令、隐含意图；</li>
+<li>推理能力更好（数学、逻辑、代码、规划等）。</li>
+</ul>
+</li>
+<li>小参数模型：
+<ul>
+<li>能力更有限；</li>
+<li>适合做简单任务（分类、打标签、简单聊天、补全）。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>速度 &amp; 成本方面：
+<ul>
+<li>参数多 → 每次计算要遍历更多数字 → 每个 token 生成更慢 → 一次调用更贵。</li>
+<li>参数少 → 计算轻 → 更快更便宜 → 更适合部署在本地或高并发业务。</li>
+</ul>
+</li>
+</ul>
+<p>同样输入 1k token，输出 200 token：</p>
+<ul>
+<li>7B 模型：0.2s 出 first token，2s 输出完毕</li>
+<li>70B 模型：0.8s 出 first token，6s 输出完毕（但答案明显更聪明）</li>
+</ul>
+<p>**输入上下文的长度（输入 token 数）：**越长，内部计算越多 → 首 token 时间变长。</p>
+<p><strong>输出长度（需要生成多少 token）</strong>：每生成 1 个 token 都要跑一遍模型 → 输出越多，总时间越长。提示词的复杂程度不会影响LLM 的输出耗时，但是复杂的提示词可能会导致输出长度变长，从而影响耗时。</p>
+<p><strong>硬件配置</strong>：如 GPU 性能、并行度、云厂商还是私有化、网络延时等。</p>
+<p><strong>First Token Latency</strong>：从请求发出，到 LLM 开始返回第一个 token 的时间，包含请求到达服务器、排队、LLM输出；影响 first token 的因素：输入的长度（上下文 + 当前问题）、模型大小、服务器负载和网络延时</p>
+<p><strong>Total Latency</strong>：从请求发出，到最后一个 token 输出完的总时间。包含 first token 时间 + 后续每个 token 的平均生成时间 x 输出的 token 数</p>
+<h1 id="应用层概念">应用层概念</h1>
+<p>目前 AI 应用都是 基于 LLM chat API + 提示词工程 + 上下文工程 + 各种策略来实现，下面会介绍在 AI 应用里涉及到的相关技术。</p>
+<h2 id="1-cot">1. CoT</h2>
+<ul>
+<li>Chain-of-Thought 思维链：让 LLM 把它中间思考的步骤展示出来的方式。
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go">  <span class="nx">问题</span><span class="err">：</span>
+  <span class="nx">一个班有</span> <span class="mi">30</span> <span class="nx">个学生</span><span class="err">，</span><span class="nx">其中</span> <span class="mi">18</span> <span class="nx">个是女生</span><span class="err">，</span><span class="nx">男生有多少个</span><span class="err">？</span>
+  <span class="nx">不用</span> <span class="nx">CoT</span><span class="err">（</span><span class="nx">直接给答案</span><span class="err">）：</span>
+  <span class="nx">答案</span><span class="err">：</span><span class="mi">12</span> <span class="nx">人</span>
+  <span class="o">---</span>
+  <span class="nx">用</span> <span class="nx">CoT</span><span class="err">：</span>
+  <span class="nx">班级总人数是</span> <span class="mi">30</span> <span class="nx">人</span><span class="err">。</span>
+  <span class="nx">女生有</span> <span class="mi">18</span> <span class="nx">人</span><span class="err">。</span>
+  <span class="nx">男生人数</span> <span class="p">=</span> <span class="nx">总人数</span> <span class="o">-</span> <span class="nx">女生人数</span> <span class="p">=</span> <span class="mi">30</span> <span class="o">-</span> <span class="mi">18</span> <span class="p">=</span> <span class="mi">12</span><span class="err">。</span>
+  <span class="nx">所以男生有</span> <span class="mi">12</span> <span class="nx">人</span><span class="err">。</span>
+  <span class="o">---</span>
+  <span class="nx">这中间的</span><span class="err">“</span><span class="nx">先算什么</span><span class="err">、</span><span class="nx">再算什么</span><span class="err">”</span><span class="nx">的步骤就是</span> <span class="nx">Chain</span> <span class="nx">of</span> <span class="nx">Thought</span><span class="err">。</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>只要模型在回答过程中显式写出了中间推理过程（哪怕是你在 prompt 里说“请分步骤说明推理过程”），就可以说是在做 CoT，方式：
+<ul>
+<li>
+<p>Reasoning API，侧重推理，如 deepseek r1 在回答的时候，会先展示一段引用，引用里是思考过程，展示完思考过程后，才会输出答案，这种方式会让 LLM 内部生成更长更细致的思考，再基于这些内部思考，生成答案对用户展示，比较强制，思考和推理的能力更强，但同时也更慢。</p>
+<ul>
+<li>Reasoning API 只是帮你更稳定、高效地利用这种“思考过程”的一个产品形态。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON">  <span class="p">{</span>
+    <span class="nt">&#34;id&#34;</span><span class="p">:</span> <span class="s2">&#34;resp_0217****&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;created_at&#34;</span><span class="p">:</span> <span class="mf">1756280722.0</span><span class="p">,</span>
+    <span class="nt">&#34;error&#34;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+    <span class="nt">&#34;incomplete_details&#34;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+    <span class="nt">&#34;instructions&#34;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+    <span class="nt">&#34;model&#34;</span><span class="p">:</span> <span class="s2">&#34;doubao-seed-1-6-250615&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;object&#34;</span><span class="p">:</span> <span class="s2">&#34;response&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;output&#34;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&#34;id&#34;</span><span class="p">:</span> <span class="s2">&#34;rs_0217****404a&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;summary&#34;</span><span class="p">:</span> <span class="p">[</span>
+          <span class="p">{</span>
+            <span class="nt">&#34;text&#34;</span><span class="p">:</span> <span class="s2">&#34;\n用户说“你好呀。”，这是一个很友好的问候，我需要用同样友好的方式回应。首先，应该回应用户的问候，然后可以表达一下愿意帮助的态度，让对话能够继续下去。用户可能接下来会有其他问题或者想聊聊天，所以回应要自然、亲切。\n\n首先，直接回“你好呀！”来呼应对方的问候，保持一致的语气。然后加上一句“很高兴见到你～ 有什么我可以帮你的吗？”这样既表达了友好，又主动提供帮助，让用户知道我在这里可以协助他们。这样的回应比较温暖，也符合日常交流的习惯，不会显得太生硬。\n\n需要注意的是，用户可能只是想打个招呼，所以回应不要太复杂，保持简洁和亲切就好。避免使用太正式的语言，保持口语化，让用户感觉舒适。总结一下，回应应该包含问候、表达高兴见到对方，以及提供帮助的意愿。&#34;</span><span class="p">,</span>
+            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;summary_text&#34;</span>
+          <span class="p">}</span>
+        <span class="p">],</span>
+        <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;reasoning&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;status&#34;</span><span class="p">:</span> <span class="s2">&#34;completed&#34;</span>
+      <span class="p">},</span>
+      <span class="p">{</span>
+        <span class="nt">&#34;id&#34;</span><span class="p">:</span> <span class="s2">&#34;msg_0217****a93c&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;content&#34;</span><span class="p">:</span> <span class="p">[</span>
+          <span class="p">{</span>
+            <span class="nt">&#34;text&#34;</span><span class="p">:</span> <span class="s2">&#34;你好呀！很高兴见到你～ 有什么我可以帮你的吗？ 😊&#34;</span><span class="p">,</span>
+            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;output_text&#34;</span><span class="p">,</span>
+            <span class="nt">&#34;annotations&#34;</span><span class="p">:</span> <span class="kc">null</span>
+          <span class="p">}</span>
+        <span class="p">],</span>
+        <span class="nt">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;assistant&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;status&#34;</span><span class="p">:</span> <span class="s2">&#34;completed&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;message&#34;</span>
+      <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&#34;max_output_tokens&#34;</span><span class="p">:</span> <span class="mi">32768</span><span class="p">,</span>
+    <span class="nt">&#34;service_tier&#34;</span><span class="p">:</span> <span class="s2">&#34;default&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;status&#34;</span><span class="p">:</span> <span class="s2">&#34;completed&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;usage&#34;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&#34;input_tokens&#34;</span><span class="p">:</span> <span class="mi">88</span><span class="p">,</span>
+      <span class="nt">&#34;input_tokens_details&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;cached_tokens&#34;</span><span class="p">:</span> <span class="mi">0</span>
+      <span class="p">},</span>
+      <span class="nt">&#34;output_tokens&#34;</span><span class="p">:</span> <span class="mi">230</span><span class="p">,</span>
+      <span class="nt">&#34;output_tokens_details&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;reasoning_tokens&#34;</span><span class="p">:</span> <span class="mi">211</span>
+      <span class="p">},</span>
+      <span class="nt">&#34;total_tokens&#34;</span><span class="p">:</span> <span class="mi">318</span>
+    <span class="p">},</span>
+    <span class="nt">&#34;caching&#34;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;disabled&#34;</span>
+    <span class="p">},</span>
+    <span class="nt">&#34;store&#34;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="nt">&#34;expire_at&#34;</span><span class="p">:</span> <span class="mi">1756539922</span>
+  <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>Chat API，侧重思考，普通的对话 API 也支持开启深度思考能力，部分模型支持，在输出答案的同时也会输出思考的内容，分开两个字段承载，与 Reasoning API  相比，速度会更快，但质量一般比不上</p>
+</li>
+<li>
+<p>应用层在展示时，把 reasoning 的内容展示出来，也是一种 CoT</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="p">{</span>
+   <span class="nt">&#34;choices&#34;</span><span class="p">:</span> <span class="p">[</span>
+     <span class="p">{</span>
+       <span class="nt">&#34;finish_reason&#34;</span><span class="p">:</span> <span class="s2">&#34;stop&#34;</span><span class="p">,</span>
+       <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+       <span class="nt">&#34;logprobs&#34;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+       <span class="nt">&#34;message&#34;</span><span class="p">:</span> <span class="p">{</span>
+         <span class="nt">&#34;reasoning&#34;</span><span class="p">:</span> <span class="s2">&#34;思考的内容&#34;</span><span class="p">,</span>
+         <span class="nt">&#34;content&#34;</span><span class="p">:</span> <span class="s2">&#34;最终的答案&#34;</span><span class="p">,</span>
+         <span class="nt">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;assistant&#34;</span>
+       <span class="p">}</span>
+     <span class="p">}</span>
+   <span class="p">],</span>
+   <span class="nt">&#34;created&#34;</span><span class="p">:</span> <span class="mi">1742631811</span><span class="p">,</span>
+   <span class="nt">&#34;id&#34;</span><span class="p">:</span> <span class="s2">&#34;0217426318107460cfa43dc3f3683b1de1c09624ff49085a456ac&#34;</span><span class="p">,</span>
+   <span class="nt">&#34;model&#34;</span><span class="p">:</span> <span class="s2">&#34;doubao-1-5-pro-32k-250115&#34;</span><span class="p">,</span>
+   <span class="nt">&#34;object&#34;</span><span class="p">:</span> <span class="s2">&#34;chat.completion&#34;</span><span class="p">,</span>
+   <span class="nt">&#34;usage&#34;</span><span class="p">:</span> <span class="p">{</span>
+     <span class="err">...</span>
+   <span class="p">}</span>
+ <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>通过提示词 + Chat API，比如 Agent 常用的 ReAct 策略，强制要求 LLM 以 Thought、Action、Observation 等结构进行输出，Thought 本质上就是思考的过程，输出时，内容都是耦合在 LLM 的回答里的，通过一个字段承载。</p>
+</li>
+<li>
+<p>应用层在展示时，解析出 Thought 的内容，并把它展示出来，也是一种 CoT，但输出结果不一定稳定，比如直接输出内容，没有以 Thought 开头。</p>
+</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON">   <span class="p">{</span>
+     <span class="nt">&#34;choices&#34;</span><span class="p">:</span> <span class="p">[</span>
+       <span class="p">{</span>
+         <span class="nt">&#34;finish_reason&#34;</span><span class="p">:</span> <span class="s2">&#34;stop&#34;</span><span class="p">,</span>
+         <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+         <span class="nt">&#34;logprobs&#34;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+         <span class="nt">&#34;message&#34;</span><span class="p">:</span> <span class="p">{</span>
+           <span class="nt">&#34;content&#34;</span><span class="p">:</span> <span class="s2">&#34;Thought: 思考的内容。Action: 调用什么工具&#34;</span><span class="p">,</span>
+           <span class="nt">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;assistant&#34;</span>
+         <span class="p">}</span>
+       <span class="p">}</span>
+     <span class="p">],</span>
+     <span class="nt">&#34;created&#34;</span><span class="p">:</span> <span class="mi">1742631811</span><span class="p">,</span>
+     <span class="nt">&#34;id&#34;</span><span class="p">:</span> <span class="s2">&#34;0217426318107460cfa43dc3f3683b1de1c09624ff49085a456ac&#34;</span><span class="p">,</span>
+     <span class="nt">&#34;model&#34;</span><span class="p">:</span> <span class="s2">&#34;doubao-1-5-pro-32k-250115&#34;</span><span class="p">,</span>
+     <span class="nt">&#34;object&#34;</span><span class="p">:</span> <span class="s2">&#34;chat.completion&#34;</span><span class="p">,</span>
+     <span class="nt">&#34;usage&#34;</span><span class="p">:</span> <span class="p">{</span>
+       <span class="err">...</span>
+     <span class="p">}</span>
+   <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+<h2 id="2-function-calling">2. Function calling</h2>
+<ul>
+<li>因为 LLM 只能输出一大段文字，输出并不稳定，但是调用工具时需要结构化的输入，为了让 LLM 能更好的格式化生成输入参数，由此诞生了 Function calling 功能。</li>
+<li>Function calling 是一种机制，本质是让 LLM “按规范输出一段结构化信息”，这样外部程序就能据此去调用函数/接口，再把结果喂回模型。</li>
+<li>现在的 LLM Chat API 都支持 Function calling 功能，可以将工具方法以 Json-Schema 格式描述，作为接口参数进行传递，以这种方式调用 LLM chat api，方法描述通常不会完整计入“上下文 token”中，但仍然会有一定的计算开销，只是计费/长度处理上和普通上下文不同。</li>
+</ul>
+<h2 id="3-rag">3. RAG</h2>
+<p><a class="link" href="https://nixum.cc/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8-rag-%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/"  target="_blank" rel="noopener"
+    >向量数据库与RAG初识</a></p>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/rag-flow.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/rag-flow.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<ul>
+<li><strong>RAG（Retrieval-Augmented Generation）（检索增强生成）</strong>：可以理解为一种工具或方式，给大模型外挂一个搜索/知识库，再让模型根据搜到的内容来回答问题，让模型接入最新、特定领域、甚至私有的知识库，限制模型尽量“根据检索结果说话”，减少胡编。</li>
+<li>RAG 流程主要分为两部分：
+<ul>
+<li>检索（Retrieval）：到外部知识库里“查资料”，比如文档、网页、公司内部文档。</li>
+<li>生成（Generation）：把“查到的资料 + 用户的问题”一起喂给大模型，让模型基于这些资料组织答案。</li>
+</ul>
+</li>
+<li>解决的问题：
+<ul>
+<li>知识过期：模型训练数据有时间截止，最新政策、产品更新都不知道。</li>
+<li>不了解私有数据：公司内部文档、个人笔记不在训练集里，模型天然不知道。</li>
+<li>容易胡编（幻觉）：不知道的东西也照样一本正经编出来。</li>
+<li>专业度不够：在法律、医疗、金融等垂直领域知识不全或不准确。</li>
+</ul>
+</li>
+<li>与其他概念的关系：
+<ul>
+<li>当调用 LLM chat api 时，想让 LLM 参考更加精准的资料，就可以使用 RAG 工具；</li>
+<li>当 Agent 完成某些工作时，需要外部知识库的内容，就可以使用 RAG 工具；</li>
+<li>在 MCP 框架里，可以把 RAG 工具封装成 MCP 方法，供 LLM 自行调用</li>
+</ul>
+</li>
+</ul>
+<h2 id="4-mcp">4. MCP</h2>
+<p><a class="link" href="https://modelcontextprotocol.io/docs/learn/architecture"  target="_blank" rel="noopener"
+    >Architecture overview - Model Context Protocol</a></p>
+<ul>
+<li>**MCP （Model Context Protocol）模型上下文协议）**是一个标准化协议，规定模型如何安全、通用地访问外部的资源和工具，可以理解为面向对象里的接口和实现，大家在提供各种不同工具时都遵循这套接口，就可以有百花齐放的工具市场，丰富 LLM 的能力；</li>
+<li>在没有 MCP 之前，想要使用 LLM chat api 并调用工具，虽然可以直接用 api 里支持的 tool 参数实现，但是这样有个问题，需要在调用 api 的逻辑里耦合工具调用的处理逻辑，比如解析 chat api 返回的内容，进行工具调用，这样在不同的应用里都需要重新接入；</li>
+<li>有了 MCP 之后，MCP 规定了 client（工具调用方，通常与 LLM chat api 集成） 和 server 的规范（工具提供方，执行工具返回结果），任何应用只要遵循了这套规范，都可以接入调用。
+<ul>
+<li>比如现在有指标数据查询的 API，将其用 MCP 包一层后，不过是 A 组的聊天机器人，还是 B 组的 Agent 应用，只要支持 MCP 协议，都可以在配置后调用这些工具，无需重复造轮子。</li>
+</ul>
+</li>
+<li>与其他概念的关系：
+<ul>
+<li>与 function call （tool call） 的区别，function call 本身是 LLM Chat Api 提供的一种能力，通过对工具方法按 Json-Schema 转换成 json 后，作为参数传递，当 LLM 判断出需要调用工具时，会在响应体里一个特定的字段返回：
+<ul>
+<li>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">请求体：</span>
+<span class="p">{</span>
+    <span class="nt">&#34;model&#34;</span><span class="p">:</span> <span class="s2">&#34;DeepSeek-V3.1&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;stream&#34;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="nt">&#34;messages&#34;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;user&#34;</span><span class="p">,</span>
+            <span class="nt">&#34;content&#34;</span><span class="p">:</span> <span class="s2">&#34;今天的天气怎么样&#34;</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&#34;tools&#34;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;function&#34;</span><span class="p">,</span>
+            <span class="nt">&#34;function&#34;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;query_date&#34;</span><span class="p">,</span>
+                <span class="nt">&#34;description&#34;</span><span class="p">:</span> <span class="s2">&#34;查询今天的日期&#34;</span><span class="p">,</span>
+                <span class="nt">&#34;parameters&#34;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="nt">&#34;additionalProperties&#34;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+                    <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;object&#34;</span><span class="p">,</span>
+                    <span class="nt">&#34;description&#34;</span><span class="p">:</span> <span class="s2">&#34;查询今天的日期&#34;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">响应体：</span>
+<span class="p">{</span>
+    <span class="nt">&#34;id&#34;</span><span class="p">:</span> <span class="s2">&#34;22b4db60f0d34e08a55f2e3d229aa879&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;created&#34;</span><span class="p">:</span> <span class="mi">1768908785</span><span class="p">,</span>
+    <span class="nt">&#34;model&#34;</span><span class="p">:</span> <span class="s2">&#34;ms-dwnrrcdx&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;object&#34;</span><span class="p">:</span> <span class="s2">&#34;chat.completion&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;choices&#34;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&#34;finish_reason&#34;</span><span class="p">:</span> <span class="s2">&#34;tool_calls&#34;</span><span class="p">,</span>
+            <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="nt">&#34;message&#34;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&#34;content&#34;</span><span class="p">:</span> <span class="s2">&#34;我需要先查询今天的日期&#34;</span><span class="p">,</span>
+                <span class="nt">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;assistant&#34;</span><span class="p">,</span>
+                <span class="nt">&#34;tool_calls&#34;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="mi">-1</span><span class="p">,</span>
+                        <span class="nt">&#34;function&#34;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="nt">&#34;arguments&#34;</span><span class="p">:</span> <span class="s2">&#34;&#34;</span><span class="p">,</span>
+                            <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;query_date&#34;</span>
+                        <span class="p">},</span>
+                        <span class="nt">&#34;id&#34;</span><span class="p">:</span> <span class="s2">&#34;call_0a313188b3374df585f51e34&#34;</span><span class="p">,</span>
+                        <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;function&#34;</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">},</span>
+            <span class="nt">&#34;provider_specific_fields&#34;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&#34;matched_stop&#34;</span><span class="p">:</span> <span class="kc">null</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&#34;usage&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;completion_tokens&#34;</span><span class="p">:</span> <span class="mi">336</span><span class="p">,</span>
+        <span class="nt">&#34;prompt_tokens&#34;</span><span class="p">:</span> <span class="mi">3976</span><span class="p">,</span>
+        <span class="nt">&#34;total_tokens&#34;</span><span class="p">:</span> <span class="mi">4312</span><span class="p">,</span>
+        <span class="nt">&#34;prompt_tokens_details&#34;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&#34;cached_tokens&#34;</span><span class="p">:</span> <span class="mi">2</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nt">&#34;metadata&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;weight_version&#34;</span><span class="p">:</span> <span class="s2">&#34;default&#34;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+</li>
+<li>MCP Client 也可以将 MCP Server 提供的工具 schema 转换成 function call 的形式调用 LLM，这取决于 MCP client 的实现方式</li>
+<li>RAG 是怎么用知识库增强模型回答的能力</li>
+<li>MCP 是一种 AI 应用使用工具的规范，RAG 可以是其中之一</li>
+<li>Agent 是决策大脑，是一种执行流程，Agent 通过决策后调用满足 MCP 规范的工具</li>
+</ul>
+</li>
+</ul>
+<h2 id="5-workflow">5. Workflow</h2>
+<ul>
+<li>Workflow（工作流）：一个复杂任务拆成一系列有顺序、有条件的步骤，然后自动执行的那条“流程链条”。常见于各种工作流引擎，在 AI 应用里诸如 coze、dify、n8n 等平台，支持用户拖拉拽组件来实现一整套自动化流程。</li>
+<li>在 AI 应用里，可以通过这类平台，或者 以自己手搓代码 的形式，将一个次次都要重复的人类流程进行统一编排（哪一步该用哪个模型，哪个工具）让业务流程可视化、可配置化、可维护，按照特定的输入执行流程完成输出。</li>
+<li>比如现在有一个“智能客服工单处理”的 workflow，它的流程是：
+<ul>
+<li>收到用户问题（输入）；</li>
+<li>分类：是投诉、咨询还是报修（调用分类模型）；</li>
+<li>如果是问业务规则 → 走 RAG 去知识库查；</li>
+<li>如果是需要改订单 → 走“调用订单系统 API”的分支；</li>
+<li>生成答复草稿 → 人工审核或自动发送；</li>
+<li>写入日志和工单系统。</li>
+<li>这整条就是一个 Workflow，里面可以嵌 RAG、普通 LLM 调用、外部 API 调用等等</li>
+</ul>
+</li>
+<li>与其他概念的关系：
+<ul>
+<li>Workflow 像“流程图 + 状态机”，步骤比较固定</li>
+<li>Agent 则是有决策能力，能自己决定下一步怎么干的智能体</li>
+<li>RAG、MCP、Function calling 是 workflow 流程中的一个步骤</li>
+</ul>
+</li>
+</ul>
+<h2 id="6-agent">6. Agent</h2>
+<ul>
+<li>
+<p>Agent（智能体）：一个“围绕某个目标，能自主规划步骤、调用工具、记忆上下文、与环境交互”的智能实体，它不是一个固定的流程，而是具备一定的决策能力。</p>
+</li>
+<li>
+<p>Agent 让 LLM 具备完成某项任务的能力，而不是只能进行对话，当然，它本身也是调用 LLM chat api，只是引入了更加复杂的流程和提示词，从而驱动 LLM 自主实现任务目标。它通常具备几种关键能力：</p>
+<ul>
+<li>理解任务：从指令中抽象出目标；</li>
+<li>规划步骤：决定先做什么，再做什么；</li>
+<li>调用工具：包括 RAG、API、数据库、脚本等；</li>
+<li>与环境交互：读写文件、发请求等；</li>
+<li>记忆和反思：根据历史结果调整策略。</li>
+</ul>
+</li>
+<li>
+<p>实现 Agent 常见的策略：</p>
+</li>
+<li>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">策略</th>
+<th style="text-align:left">核心思想</th>
+<th style="text-align:left">流程</th>
+<th style="text-align:left">优点</th>
+<th style="text-align:left">缺点/风险</th>
+<th style="text-align:left">典型场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">纯 function call 追加 prompt 列表</td>
+<td style="text-align:left">直接让模型在对话中选工具并调用，基本不显式“想步骤”</td>
+<td style="text-align:left">给模型一串工具定义，放在系统 prompt 或 api tools 字段里没有显式的“计划”步骤，也没有显式的“思考段落”，就是用户说话 → 模型要么直接回答，要么返回一个 tool_call → 工具执行 → 再继续聊 → 直到没有工具执行，返回结果</td>
+<td style="text-align:left">实现简单、成本低、延迟短</td>
+<td style="text-align:left">容易瞎调用、缺乏长期规划、多步任务易乱。很难知道它“为什么这么调工具”，排查问题比较痛苦</td>
+<td style="text-align:left">简单助手、单步调用、工具数量少、调用模式很线性的场景</td>
+</tr>
+<tr>
+<td style="text-align:left">ReAct</td>
+<td style="text-align:left">“先想想，再行动”：交替 Reasoning + Acting</td>
+<td style="text-align:left">ReAct 的基本范式：Thought: 先在自然语言里写出“思考”（我现在应该干嘛、要查什么）Action: 再显式写出要调用哪个工具、用什么参数Observation: 记录工具返回结果然后循环：Thought → Action → Observation → Thought …</td>
+<td style="text-align:left">每一步都有“先想再做”，能维持一个清晰的推理链。Thought 可以直接展示给开发者或审计系统，看得出它的决策路径出错时可以分析是“想错了”还是“调工具错了”。</td>
+<td style="text-align:left">Token 消耗多、成本高；输出容易啰嗦，导致输出耗时长；需要精心提示词需要解析/约定 Thought / Action / Observation 的格式，做一个 loop 控制</td>
+<td style="text-align:left">多工具、多步推理、作为“多工具 Agent”的基础策略，适合中高复杂度任务</td>
+</tr>
+<tr>
+<td style="text-align:left">Plan-and-Execute</td>
+<td style="text-align:left">先整体规划步骤（Plan），再逐步执行（Execute）</td>
+<td style="text-align:left">把任务拆成两大阶段：Plan（规划）阶段：模型根据用户目标，生成一个结构化的“任务计划”，比如：步骤 1：调用工具 A 拉数据；步骤 2：调用工具 B 清洗数据；步骤 3：调用工具 C 画图；步骤 4：调用 LLM 写报告。Execute（执行）阶段：“执行器”按照这个计划一步步调用工具、处理结果；必要时再回头让模型调整计划。</td>
+<td style="text-align:left">结构化强，流程清晰，适合长流程，可以可视化、审核、拆解给子 Agent 或 Workflow计划可以先让人看一眼：OK 再执行，或者部分步骤需要人工确认。Plan 可以直接转换为一个 Workflow 或 DAG（有向无环图）去跑</td>
+<td style="text-align:left">实现复杂，需要设计“计划的结构化格式”，有一个执行器来解释计划。Plan 容易过时/不够细，先规划再执行，过程中环境变了、某个工具失败了，需要调整，缺少反思机制容易僵化多轮协调成本高</td>
+<td style="text-align:left">长流程任务、工作流型、有审计需求，需要“计划记录”和“执行轨迹”的企业场景、需要把 Agent 决策输出给其他系统/工作流引擎复用的场景，一般的 AI Coding 就是使用这种策略。</td>
+</tr>
+<tr>
+<td style="text-align:left">Self-Reflect</td>
+<td style="text-align:left">多轮尝试、反思、搜索更优方案</td>
+<td style="text-align:left">通过多个不同的上下文 + 不同模型（或同一模型）来实现对自己的结果进行“复盘和改进”：上下文 1 + 模型 1 生成初稿上下文 2 + 模型 2 对步骤 1 产生的初稿进行反思，并按照一定的格式输出上下文 1 + 模型 1 根据步骤 2 产生的反思进行修改重复以上步骤直至得出结论</td>
+<td style="text-align:left">质量明显好于“一次性输出”，通过第二遍自查 + 修正，效果通常有肉眼可见提升。能弥补推理 /规划策略的一些遗漏可以通过“反思提示词”让模型重点关注</td>
+<td style="text-align:left">成本很高、实现复杂、多一轮审稿调用、多一轮改稿调用，多轮迭代后，成本是线性甚至接近倍数增长；“反思”质量也受模型能力限制可能引入“过度修改”或风格漂移</td>
+<td style="text-align:left">复杂决策、代码修复、规划、文案/报告/文档类任务、需要高可靠性的 reasoning 输出</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>与其他概念的关系：</p>
+<ul>
+<li>Agent 为完成任务，会在某个步骤调用 RAG 来查知识</li>
+<li>MCP 给 Agent 提供统一的“工具接口”，Agent 决策“以什么顺序用哪些工具”</li>
+<li>Workflow 更像固定流程，Agent 是根据情况动态规划流程（当然，也可以在 Agent 内部使用固定 workflow 作为子流程）。</li>
+<li>Agent Skills 可以理解为是 Agent 身上的“技能插件包”。</li>
+</ul>
+</li>
+</ul>
+<h2 id="7-skills">7. Skills</h2>
+<ul>
+<li>Skills 本质上也是一种规范，一种模块化的能力，教 Agent 如何完整处理特定工作，它将执行方法、工具调用方式以及相关知识材料，按照 SOP 流程，封装为一个完整的「能力扩展包」，本身需要 Agent 进行驱动。</li>
+<li>Agent Skills 通常包含下面四个东西，Agent 使用该 skill 时，无需提前将这坨东西加载到上下文里，通过动态加载（渐进式披露）不同的 Skill 包（通常仅需名字和描述），来具备不同的专业知识、工具使用能力，稳定完成特定任务。因此 skill 非常适合将某一项任务执行流程 sop 进行成 skill，从而实现复用。</li>
+</ul>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/AgentSkill%e7%9b%ae%e5%bd%95.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/AgentSkill%e7%9b%ae%e5%bd%95.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<ul>
+<li>
+<p>主要实现复用和模块化，一个 skill 多个 Agent 都能用，skill 可独立升级，降低复杂度，更便于编排和优化。**但目前只有少数 AI 应用支持，比如 Claude Code、Coze 等，**当然，我们也可以自己手搓</p>
+<ul>
+<li>比如现在有一种数据分析的 Skill，它能查询数据，并转换成图片，主 Agent 不需要知道查询数据、转换图片是怎么实现的，只需要知道它能进行数据分析，当它需要进行数据分析时，只需要加载对应的 skill，按照指引，就能进行数据分析。</li>
+</ul>
+</li>
+<li>
+<p>与其他概念的关系：</p>
+<ul>
+<li>
+<p>MCP 和 工具调用(function calling)，更偏向于“底层能力”（比如 HTTP 请求），而 Skill 更像“面向业务的封装好的能力模块”（例如“生成周报”）。</p>
+<ul>
+<li>MCP 是一种开放标准的协议，关注的是 AI 如何以统一方式调用外部的工具、数据和服务，本身不定义任务逻辑或执行流程，工具调用 function calling 同理。</li>
+</ul>
+</li>
+<li>
+<p>Agent 是“会思考会规划的主体”；Skills 是“它可调用的能力库”。</p>
+</li>
+<li>
+<p>一个 Skill 内部可能：走一个 Workflow（多个步骤）、通过 MCP 调用后台系统、在其中一步使用 RAG 去查知识库；</p>
+</li>
+<li>
+<p>关于Agent / Sub-Agent / Skill 的区别，可以用“公司组织架构”来比喻：</p>
+<ul>
+<li>
+<ul>
+<li>Agent（主 Agent）：
+<ul>
+<li>像一个“项目经理/主负责人”。</li>
+<li>负责：
+<ul>
+<li>理解用户目标、</li>
+<li>拆解任务、</li>
+<li>协调资源（工具、技能、子 Agent）。</li>
+</ul>
+</li>
+<li>安排哪个 Sub-Agent 上；</li>
+<li>在什么时机用哪个 Skill；</li>
+<li>统一管理“用户视角下的这场对话”。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Sub-Agent（子 Agent）：
+<ul>
+<li>像不同部门的“小负责人”，各自专长不同：
+<ul>
+<li>法务 Agent、数据分析 Agent、运营 Agent 等。</li>
+</ul>
+</li>
+<li>他们通常是：
+<ul>
+<li>有自己的系统 prompt（角色/目标）；</li>
+<li>有自己的工具和技能配置；</li>
+<li>由主 Agent 调用/协同。</li>
+</ul>
+</li>
+<li>是“能自己跑一段流程”的小 Agent，有自己的目标和工具；</li>
+<li>一般有自己的对话记忆，和主 Agent 只共享必要的信息；</li>
+<li>是否让它看到全局上下文，是一个设计选择，而不是能力限制：</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Skill（技能）：
+<ul>
+<li>像“某部门的具体能力模块/职能”：
+<ul>
+<li>“翻译文档”“写 SQL 报表”“总结长文”“生成周报”等。</li>
+</ul>
+</li>
+<li>更偏“函数/模块”的概念：
+<ul>
+<li>相对无状态；</li>
+<li>输入→输出明确；</li>
+<li>不自己负责高层决策，而是被 Agent 调用。</li>
+</ul>
+</li>
+<li>本身不主动“跑起来”，需要主 Agent 决定什么时候调用；</li>
+<li>Skill 不直接“拥有”完整上下文，是主 Agent 把当前需要的信息打包给它；</li>
+<li>调用结束后，主 Agent 决定要不要把结果写进全局记忆。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>关于 Agent / Sub-Agent / Skill 在应用层面：</p>
+</li>
+<li>
+<ul>
+<li>
+<p>Agent（主 Agent）：</p>
+<ul>
+<li>
+<p>主 Agent = 全局导演 + 记忆管理员</p>
+</li>
+<li>
+<p>维护“全局会话记忆”（用户目标、主要事件、阶段结果）是“唯一看见所有东西”的角色。；</p>
+</li>
+<li>
+<p>安排哪个 Sub-Agent 上；</p>
+</li>
+<li>
+<p>在什么时机用哪个 Skill；</p>
+</li>
+<li>
+<p>统一管理“用户视角下的这场对话”。</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Sub-Agent（子 Agent）：
+<ul>
+<li>是“能自己跑一段流程”的小 Agent，有自己的目标和工具（有自己的 system prompt / role / tools / skills）；</li>
+<li>一般有自己的对话记忆，和主 Agent 只共享必要的信息；</li>
+<li>是否让它看到全局上下文，是一个设计选择，而不是能力限制：</li>
+<li>由主 Agent 决定：
+<ul>
+<li>初始给它什么信息；</li>
+<li>从它的输出中保存哪些要写入全局记忆。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Skill（技能）：
+<ul>
+<li>无状态函数 / 小工具</li>
+<li>不维护长期上下文；</li>
+<li>每次调用只依赖，参数 + 显式传入的必要背景；</li>
+<li>本身不主动“跑起来”，需要主 Agent 决定什么时候调用；</li>
+<li>Skill 不直接“拥有”完整上下文，是主 Agent 把当前需要的信息打包给它；</li>
+<li>调用结束后，主 Agent 决定要不要把结果写进全局记忆。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="全景图">全景图</h1>
+<p><figure 
+	>
+	<a href="https://github.com/Nixum/Java-Note/raw/master/picture/AI%e6%a6%82%e5%bf%b5%e5%85%a8%e6%99%af%e5%9b%be.png" >
+		<img src="https://github.com/Nixum/Java-Note/raw/master/picture/AI%e6%a6%82%e5%bf%b5%e5%85%a8%e6%99%af%e5%9b%be.png"
+			
+			
+			
+			loading="lazy"
+			>
+	</a>
+	
+</figure></p>
+<h1 id="技术调研">技术调研</h1>
+<p><a class="link" href="https://github.com/MoonshotAI/kimi-cli"  target="_blank" rel="noopener"
+    >读 kimi 的 cli 源码</a>，看到里面有两个机制，也分享一下</p>
+<h2 id="上下文压缩---被动上下文管理">上下文压缩 - 被动上下文管理</h2>
+<h3 id="核心目的">核心目的</h3>
+<p>上下文压缩是自动优化机制，当上下文接近模型上限时，使用 LLM 将历史消息压缩为精简摘要，保留最近的关键消息，释放上下文窗口空间</p>
+<h3 id="触发流程">触发流程</h3>
+<ol>
+<li>上下文长度检查</li>
+</ol>
+<ul>
+<li>当前 token 数 + 保留空间 &gt;= 模型最大上下文</li>
+<li>默认保留空间：50,000 tokens（默认保留最近 2 条消息，确保当前对话连续性）</li>
+</ul>
+<ol start="2">
+<li>在 Agent 循环的每步开始前检查</li>
+</ol>
+<ul>
+<li>在创建 checkpoint 之前</li>
+<li>在执行 下一步 之前</li>
+</ul>
+<ol start="3">
+<li>需要有效的 LLM 实例</li>
+</ol>
+<ul>
+<li>LLM 必须已初始化</li>
+<li>用于执行压缩任务（使用 LLM 理解上下文并生成结构化摘要，压缩结果按优先级组织）</li>
+</ul>
+<h3 id="典型使用场景">典型使用场景</h3>
+<h4 id="场景-1-长时间对话导致上下文接近上限">场景 1: 长时间对话导致上下文接近上限</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">情况：Agent</span> <span class="err">与用户进行了多轮对话，上下文</span> <span class="err">token</span> <span class="err">数接近模型上限</span>
+<span class="err">操作：系统自动触发压缩，保留最近</span> <span class="mi">2</span> <span class="err">条消息，压缩更早的历史</span>
+<span class="err">效果：将历史对话压缩为结构化摘要，释放大量上下文空间</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>示例流程：</p>
+<ol>
+<li>用户与 Agent 进行了 50 轮对话</li>
+<li>上下文 token 数达到 180,000（上限 200,000，保留 50,000）</li>
+<li>系统检测到：token_count + reserved &gt;= max_context_size</li>
+<li>自动触发压缩流程</li>
+<li>保留最近 2 条消息（用户问题和 Agent 回答）</li>
+<li>将前 48 轮对话压缩为结构化摘要</li>
+<li>压缩后的上下文：2 条完整消息 + 1 条压缩摘要（约 10,000 tokens）</li>
+</ol>
+<h4 id="场景-2-大量代码和文件操作后需要继续对话">场景 2: 大量代码和文件操作后需要继续对话</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">情况：Agent</span> <span class="err">读取了多个大文件、进行了大量代码修改，上下文已满</span>
+<span class="err">操作：自动压缩，保留当前任务状态，压缩历史操作细节</span>
+<span class="err">效果：保留关键信息（错误、解决方案、最终代码），删除中间过程</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>示例流程：</p>
+<ol>
+<li>Agent 读取了 10 个文件（每个 1000 行）</li>
+<li>进行了 20 次代码修改和调试</li>
+<li>上下文接近上限</li>
+<li>系统触发压缩</li>
+<li>压缩提示词指导 LLM：</li>
+</ol>
+<ul>
+<li>保留：当前任务状态、错误和解决方案、最终代码版本</li>
+<li>删除：中间调试过程、冗余解释</li>
+</ul>
+<ol start="6">
+<li>压缩结果：结构化摘要（当前焦点、环境、已完成任务、代码状态等）</li>
+</ol>
+<h4 id="场景-3-多步骤任务执行过程中上下文溢出">场景 3: 多步骤任务执行过程中上下文溢出</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">情况：复杂任务需要多步骤执行，每步都产生大量上下文</span>
+<span class="err">操作：在关键步骤前自动压缩，确保有足够空间继续执行</span>
+<span class="err">效果：保留任务进度和关键决策，压缩执行细节</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>示例流程：</p>
+<ol>
+<li>任务：重构大型项目（需要 100+ 步骤）</li>
+<li>执行到第 30 步时，上下文接近上限</li>
+<li>系统在 Step 31 开始前自动压缩</li>
+<li>保留：最近 2 条消息（当前步骤）</li>
+<li>压缩：前 28 步的执行历史</li>
+<li>压缩摘要包含：已完成的重构任务、遇到的错误、设计决策、当前代码状态</li>
+<li>Agent 继续执行，有足够上下文空间</li>
+</ol>
+<h2 id="d-mail消息回溯--主动上下文管理">D-Mail（消息回溯）- 主动上下文管理</h2>
+<h3 id="核心目的-1">核心目的</h3>
+<p>D-Mail 用于主动管理上下文窗口，当 Agent 发现上下文中有大量不相关信息时，可以回滚到之前的 checkpoint，并用一条精简消息替换中间的多条消息。</p>
+<h3 id="触发流程-1">触发流程</h3>
+<ol>
+<li>Agent 主动调用 SendDMail 工具</li>
+</ol>
+<ul>
+<li>需要 Agent 判断上下文中有冗余信息</li>
+<li>需要 Agent 识别到合适的 checkpoint</li>
+</ul>
+<ol start="2">
+<li>工具执行成功</li>
+</ol>
+<ul>
+<li>工具未被用户拒绝</li>
+<li>Checkpoint ID 有效</li>
+</ul>
+<ol start="3">
+<li>当前 Step 完成</li>
+</ol>
+<ul>
+<li>所有工具调用完成</li>
+<li>上下文已更新</li>
+</ul>
+<h3 id="典型使用场景-1">典型使用场景</h3>
+<h4 id="场景-1-读取大文件后发现内容不相关">场景 1: 读取大文件后发现内容不相关</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">情况：Agent</span> <span class="err">读取了一个很大的文件，但发现大部分内容与当前任务无关</span>
+<span class="err">操作：发送</span> <span class="err">D-Mail</span> <span class="err">到读取文件之前的</span> <span class="err">checkpoint</span>
+<span class="err">内容：只告诉</span><span class="s2">&#34;过去的自己&#34;</span><span class="err">文件中与任务相关的关键信息</span>
+<span class="err">效果：删除文件读取的完整内容，只保留有用信息</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>示例流程：</p>
+<ol>
+<li>Checkpoint 0: 用户要求&quot;分析项目结构&quot;</li>
+<li>Agent 读取 large_file.py（5000行代码）</li>
+<li>Agent 发现只有 50 行相关</li>
+<li>Agent 调用 SendDMail，回滚到 Checkpoint 0</li>
+<li>D-Mail 消息：&ldquo;我读取了 large_file.py，只有第 100-150 行与任务相关：&hellip;&rdquo;</li>
+</ol>
+<h4 id="场景-2-网络搜索结果过大">场景 2: 网络搜索结果过大</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">情况</span> <span class="err">A：搜索到了需要的信息，但结果很长</span>
+<span class="err">操作：发送</span> <span class="err">D-Mail</span> <span class="err">到搜索之前的</span> <span class="err">checkpoint</span>
+<span class="err">内容：只保留搜索结果中的关键信息</span>
+<span class="err">情况</span> <span class="err">B：搜索没有找到需要的信息</span>
+<span class="err">操作：发送</span> <span class="err">D-Mail</span> <span class="err">到搜索之前的</span> <span class="err">checkpoint</span>
+<span class="err">内容：告诉</span><span class="s2">&#34;过去的自己&#34;</span><span class="err">尝试不同的搜索查询</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>示例流程（情况 A）：</p>
+<ol>
+<li>Checkpoint 1: 用户要求&quot;查找 Python 异步编程最佳实践&quot;</li>
+<li>Agent 调用 SearchWeb，返回 20 条结果</li>
+<li>Agent 分析后找到 3 条相关</li>
+<li>Agent 发送 D-Mail 回滚到 Checkpoint 1</li>
+<li>D-Mail 消息：&ldquo;我搜索了网络，以下是 3 条相关的最佳实践：&hellip;&rdquo;</li>
+</ol>
+<h4 id="场景-3-代码调试过程冗长且不相关">场景 3: 代码调试过程冗长且不相关</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-JSON" data-lang="JSON"><span class="err">情况：写了一段代码，但有问题，经过很多步骤才修复</span>
+      <span class="err">这些调试过程对最终目标不重要</span>
+<span class="err">操作：发送</span> <span class="err">D-Mail</span> <span class="err">到写代码之前的</span> <span class="err">checkpoint</span>
+<span class="err">内容：告诉</span><span class="s2">&#34;过去的自己&#34;</span><span class="err">最终的正确代码版本，并说明已经写入文件系统</span>
+<span class="err">效果：删除所有调试步骤，只保留最终结果</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>示例流程：</p>
+<ol>
+<li>Checkpoint 2: 用户要求&quot;实现一个排序函数&quot;</li>
+<li>Agent 编写代码（Step 1-5）</li>
+<li>代码有 bug，Agent 调试（Step 6-20）</li>
+<li>最终修复成功（Step 21）</li>
+<li>Agent 发送 D-Mail 回滚到 Checkpoint 2</li>
+<li>D-Mail 消息：&ldquo;我已经实现了排序函数并写入文件，最终版本如下：&hellip;（代码）。不需要再写一遍了。&rdquo;</li>
+</ol>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/">AI基础概念</a>
+        
+            <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B/">上下文工程</a>
+        
+            <a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8Bllm/">大模型LLM</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+        <link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn"crossorigin="anonymous"
+            ><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js"integrity="sha384-vZTG03m&#43;2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl"crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script>
+    window.addEventListener("DOMContentLoaded", () => {
+        renderMathInElement(document.querySelector(`.article-content`), {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });})
+</script>
+    
+</article>
+
+    
+
+    <aside class="related-contents--wrapper">
+    
+    
+        <h2 class="section-title">Related contents</h2>
+        <div class="related-contents">
+            <div class="flex article-list--tile">
+                
+                    
+<article class="">
+    <a href="/p/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8-rag-%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">向量数据库在 RAG 中的应用</h2>
+        </div>
+    </a>
+</article>
+                
+            </div>
+        </div>
+    
+</aside>
+
+     
+    
+        
+    <script src="https://utteranc.es/client.js" 
+        repo="Nixum/blog"
+        issue-term="pathname"
+        
+        crossorigin="anonymous"
+        async
+        >
+</script>
+
+<style>
+    .utterances {
+        max-width: unset;
+    }
+</style>
+
+<script>
+    function setUtterancesTheme(theme) {
+        let utterances = document.querySelector('.utterances iframe');
+        if (utterances) {
+            utterances.contentWindow.postMessage(
+                {
+                    type: 'set-theme',
+                    theme: `github-${theme}`
+                },
+                'https://utteranc.es'
+            );
+        }
+    }
+
+    addEventListener('message', event => {
+        if (event.origin !== 'https://utteranc.es') return;
+        setUtterancesTheme(document.documentElement.dataset.scheme)
+    });
+
+    window.addEventListener('onColorSchemeChange', (e) => {
+        setUtterancesTheme(e.detail)
+    })
+</script>
+
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2020 - 
+        
+        2026 Nixum Blog
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.6.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer="true"
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    
+        <aside class="sidebar right-sidebar sticky">
+
+            <section class="widget archives">
+                <form action="/search/" class="search-form widget" >
+        <p>
+            <label>Search</label>
+            <input name="keyword" required placeholder="Type something..." />
+        
+            <button title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+            </button>
+        </p>
+    </form>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Contents</h2>
+
+                <div class="widget--toc">
+                    <nav id="TableOfContents">
+  <ol>
+    <li><a href="#基础概念">基础概念</a>
+      <ol>
+        <li><a href="#1-模型的参数">1. 模型的参数</a></li>
+        <li><a href="#2-token">2. Token</a></li>
+        <li><a href="#3-词嵌入-embedding">3. 词嵌入 Embedding</a></li>
+        <li><a href="#4-处理流程">4. 处理流程</a></li>
+        <li><a href="#5-moe-机制mixture-of-experts混合专家">5. MoE 机制（Mixture of Experts，混合专家）</a></li>
+        <li><a href="#6-蒸馏">6. 蒸馏</a></li>
+        <li><a href="#7-模型耗时">7. 模型耗时</a></li>
+      </ol>
+    </li>
+    <li><a href="#应用层概念">应用层概念</a>
+      <ol>
+        <li><a href="#1-cot">1. CoT</a></li>
+        <li><a href="#2-function-calling">2. Function calling</a></li>
+        <li><a href="#3-rag">3. RAG</a></li>
+        <li><a href="#4-mcp">4. MCP</a></li>
+        <li><a href="#5-workflow">5. Workflow</a></li>
+        <li><a href="#6-agent">6. Agent</a></li>
+        <li><a href="#7-skills">7. Skills</a></li>
+      </ol>
+    </li>
+    <li><a href="#全景图">全景图</a></li>
+    <li><a href="#技术调研">技术调研</a>
+      <ol>
+        <li><a href="#上下文压缩---被动上下文管理">上下文压缩 - 被动上下文管理</a>
+          <ol>
+            <li><a href="#核心目的">核心目的</a></li>
+            <li><a href="#触发流程">触发流程</a></li>
+            <li><a href="#典型使用场景">典型使用场景</a>
+              <ol>
+                <li><a href="#场景-1-长时间对话导致上下文接近上限">场景 1: 长时间对话导致上下文接近上限</a></li>
+                <li><a href="#场景-2-大量代码和文件操作后需要继续对话">场景 2: 大量代码和文件操作后需要继续对话</a></li>
+                <li><a href="#场景-3-多步骤任务执行过程中上下文溢出">场景 3: 多步骤任务执行过程中上下文溢出</a></li>
+              </ol>
+            </li>
+          </ol>
+        </li>
+        <li><a href="#d-mail消息回溯--主动上下文管理">D-Mail（消息回溯）- 主动上下文管理</a>
+          <ol>
+            <li><a href="#核心目的-1">核心目的</a></li>
+            <li><a href="#触发流程-1">触发流程</a></li>
+            <li><a href="#典型使用场景-1">典型使用场景</a>
+              <ol>
+                <li><a href="#场景-1-读取大文件后发现内容不相关">场景 1: 读取大文件后发现内容不相关</a></li>
+                <li><a href="#场景-2-网络搜索结果过大">场景 2: 网络搜索结果过大</a></li>
+                <li><a href="#场景-3-代码调试过程冗长且不相关">场景 3: 代码调试过程冗长且不相关</a></li>
+              </ol>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+                </div>
+            </section>
+
+            <section class="widget archives">
+                <h2 class="widget-title section-title">Other Article Tags</h2>
+                <section class="widget tagCloud">
+    <div class="tagCloud-tags">
+        
+            <a href="/tags/%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84/" class="font_size_3">
+                主从架构
+            </a>
+        
+            <a href="/tags/javase/" class="font_size_2">
+                JavaSE
+            </a>
+        
+            <a href="/tags/%E4%B8%9A%E5%8A%A1/" class="font_size_2">
+                业务
+            </a>
+        
+            <a href="/tags/%E6%80%BB%E7%BB%93/" class="font_size_2">
+                总结
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="font_size_2">
+                数据库
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93-%E9%94%81/" class="font_size_2">
+                数据库-锁
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1/" class="font_size_2">
+                数据库事务
+            </a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/" class="font_size_2">
+                数据库优化
+            </a>
+        
+            <a href="/tags/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" class="font_size_2">
+                系统设计
+            </a>
+        
+            <a href="/tags/%E7%B4%A2%E5%BC%95/" class="font_size_2">
+                索引
+            </a>
+        
+            <a href="/tags/%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" class="font_size_2">
+                解决方案
+            </a>
+        
+            <a href="/tags/ai/" class="font_size_1">
+                AI
+            </a>
+        
+            <a href="/tags/ai%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/" class="font_size_1">
+                AI基础概念
+            </a>
+        
+            <a href="/tags/context%E5%8E%9F%E7%90%86/" class="font_size_1">
+                context原理
+            </a>
+        
+            <a href="/tags/docker/" class="font_size_1">
+                docker
+            </a>
+        
+            <a href="/tags/etcd/" class="font_size_1">
+                etcd
+            </a>
+        
+            <a href="/tags/git/" class="font_size_1">
+                git
+            </a>
+        
+            <a href="/tags/go/" class="font_size_1">
+                Go
+            </a>
+        
+            <a href="/tags/go-channel%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Go channel原理
+            </a>
+        
+            <a href="/tags/go-gc/" class="font_size_1">
+                Go GC
+            </a>
+        
+            <a href="/tags/go-gin%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Go Gin原理
+            </a>
+        
+            <a href="/tags/go-slice%E5%92%8Cmap%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Go slice和map原理
+            </a>
+        
+            <a href="/tags/go-sync%E5%8C%85/" class="font_size_1">
+                Go sync包
+            </a>
+        
+            <a href="/tags/goroutine/" class="font_size_1">
+                Goroutine
+            </a>
+        
+            <a href="/tags/go%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Go并发
+            </a>
+        
+            <a href="/tags/http/" class="font_size_1">
+                HTTP
+            </a>
+        
+            <a href="/tags/ioc%E5%92%8Caop/" class="font_size_1">
+                IOC和AOP
+            </a>
+        
+            <a href="/tags/istio/" class="font_size_1">
+                Istio
+            </a>
+        
+            <a href="/tags/java-bio/" class="font_size_1">
+                Java BIO
+            </a>
+        
+            <a href="/tags/java-gc/" class="font_size_1">
+                Java GC
+            </a>
+        
+            <a href="/tags/java-nio/" class="font_size_1">
+                Java NIO
+            </a>
+        
+            <a href="/tags/java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="font_size_1">
+                Java内存模型
+            </a>
+        
+            <a href="/tags/java%E5%B9%B6%E5%8F%91/" class="font_size_1">
+                Java并发
+            </a>
+        
+            <a href="/tags/java%E9%9B%86%E5%90%88%E7%B1%BB%E5%8E%9F%E7%90%86/" class="font_size_1">
+                Java集合类原理
+            </a>
+        
+            <a href="/tags/juc/" class="font_size_1">
+                JUC
+            </a>
+        
+            <a href="/tags/jvm/" class="font_size_1">
+                JVM
+            </a>
+        
+            <a href="/tags/jwt/" class="font_size_1">
+                JWT
+            </a>
+        
+            <a href="/tags/kubernetes/" class="font_size_1">
+                Kubernetes
+            </a>
+        
+            <a href="/tags/linux/" class="font_size_1">
+                Linux
+            </a>
+        
+            <a href="/tags/mongodb/" class="font_size_1">
+                MongoDB
+            </a>
+        
+            <a href="/tags/mysql/" class="font_size_1">
+                MySQL
+            </a>
+        
+            <a href="/tags/netty/" class="font_size_1">
+                Netty
+            </a>
+        
+            <a href="/tags/orm/" class="font_size_1">
+                ORM
+            </a>
+        
+            <a href="/tags/rag/" class="font_size_1">
+                RAG
+            </a>
+        
+            <a href="/tags/redis/" class="font_size_1">
+                Redis
+            </a>
+        
+            <a href="/tags/rpc/" class="font_size_1">
+                RPC
+            </a>
+        
+            <a href="/tags/select%E5%8E%9F%E7%90%86/" class="font_size_1">
+                select原理
+            </a>
+        
+            <a href="/tags/session%E5%92%8Ccookie/" class="font_size_1">
+                session和cookie
+            </a>
+        
+            <a href="/tags/socket/" class="font_size_1">
+                socket
+            </a>
+        
+            <a href="/tags/spring/" class="font_size_1">
+                Spring
+            </a>
+        
+    </div>
+</section>
+            </section>
+
+        </aside>
+    
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                defer="false"
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+
+    </body>
+</html>
